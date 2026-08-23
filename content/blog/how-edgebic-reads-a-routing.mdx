@@ -1,0 +1,202 @@
+---
+title: "How EDGEBIC Reads a Routing: From Steps to Scheduled Hours"
+description: "How routings drive scheduling: the link graph, routing levels, start-time resolution, and the exact order queue, overlap and transit times compose."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - how routings drive scheduling
+  - routing dependency graph
+  - step timing composition
+  - routing levels manufacturing
+  - material step scheduling
+  - sub assembly resolution
+  - EDGEBIC scheduling engine
+targetPhrase: "how routings drive scheduling"
+wordCount: 2300
+readingTime: 12
+faqQuestions:
+  - question: "How does a routing turn into a production schedule?"
+    answer: "The scheduler reads the next-in-sequence links as a dependency graph, orders the steps so no step is scheduled before its predecessors, and walks them in that order. For each step it takes the later of the order's start time and every predecessor's release time, computes booked hours as setup plus hours per unit times quantity, finds real shift capacity on the work center, and records when the next step may begin."
+  - question: "What decides when a routing step can start?"
+    answer: "A step starts no earlier than the latest release time among its predecessors, and no earlier than the order's own start time. A predecessor's release time is not simply when it finished: it is the result of that step's queue time, any overlap gate, and any transit days, applied in that order. The step then lands on the first shift slot at or after that time where the work center has capacity."
+  - question: "Do component rows consume machine capacity?"
+    answer: "No. A component row names a product rather than a work center, so the scheduler gives it an instant assignment at its start time and books no capacity. Any transit time on a component is absorbed into that assignment rather than applied again afterwards, which is why setting transit days on both the component row and the consuming step double counts the travel."
+  - question: "What happens when a routing has a circular link?"
+    answer: "The level calculation detects the cycle, anchors the affected steps at level 0, and flags the routing rather than refusing to run. That matters because the schedule that comes out looks plausible and is wrong: two steps that should have different depths are treated as the same depth. Fix the chain when the warning marker appears rather than scheduling around it."
+qaQuestions:
+  - question: "Two steps in one job overlap on the Gantt. Is the schedule broken?"
+    answer: "Check the upstream step's overlap fields before you call it a defect. If it carries a transfer batch or a flow step, the overlap is exactly what those fields ask for: the downstream operation is released before the upstream one finishes, which is the entire point of lot streaming. The scheduler's own dependency check knows this and excludes steps with either field set from its overlap warnings. If both fields are zero and the steps still overlap, that is a real finding and the anomaly report will list it. The practical rule when reading a sequencing problem is to zero the overlap fields first, reschedule, and see whether the symptom survives."
+  - question: "One of our jobs has a six-day hole between two consecutive steps and nothing in the routing explains it. Where do we look?"
+    answer: "Three causes account for almost all of them. First, transit days set in calendar mode across a weekend and a holiday, which stretches further than the number suggests. Second, a genuine capacity wait: the downstream work center is booked solid by other jobs, so the gap is the schedule telling you the truth about your load. Third, a work center whose shift calendar does not cover the days you assumed, which is a configuration gap rather than a routing problem. The anomaly report separates these for you: it flags an unexplained gap of more than four days only when no competing job accounts for it, so a flagged gap means look at the routing and calendar, and an unflagged gap means look at your load."
+---
+
+**A routing becomes a schedule in four moves: the link chain is read as a dependency graph, the steps are ordered so nothing runs before its predecessors, each step's booked hours are computed from setup and per-unit time, and each step's release time is composed from queue, overlap and transit.** Understanding those four moves is what lets you look at a schedule that surprises you and know which routing field to check.
+
+This post is the mechanism. For the field definitions, start at [the bill of routing explained](/blog/edgebic-bill-of-routing-explained). For the wider engine that consumes what this post describes, [inside a modern finite capacity scheduling engine](/blog/edgebic-scheduling-engine-guide) is the pillar treatment.
+
+## Move One: The Links Become a Graph
+
+EDGEBIC by User Solutions does not schedule a routing top to bottom in grid order. It reads the next-in-sequence link on every step and builds a dependency graph from those links, then orders the steps so that no step is ever scheduled before something it depends on.
+
+That distinction matters as soon as a routing stops being a straight line. Two feeder legs converging on one assembly bench have no single correct grid order, and any sort you invent will be wrong for one of the legs. A graph has no such problem: both legs are scheduled before the bench, in whatever order capacity makes sensible, and the bench waits for the later of the two.
+
+The link on a step can point at another step, at the end product itself, or at several targets when the process fans out. The end-product link is what closes the chain, and it is why the last operation must carry it. A routing where no step points at the end product still schedules, but the engine has no anchor for depth, which brings us to levels.
+
+## Move Two: Levels Give the Graph Depth
+
+From the same links, EDGEBIC computes a **routing level** for every step by walking the chain toward the end product. Level 0 is the step immediately before the finished good, and the numbers climb upstream.
+
+Walk the three-step bracket routing:
+
+```
+Saw (S10) -> Drill (S20) -> Deburr (S30) -> Bracket (end product)
+
+S30 points at the end product        -> level 0
+S20 points at S30 (level 0)          -> level 1
+S10 points at S20 (level 1)          -> level 2
+```
+
+Levels do real work. They order a routing where legs of different depths converge, they drive how the designer lays a routing out, and they are what makes a sub-assembly's steps sit at the right depth relative to the parent's.
+
+Three chain conditions get flagged during this walk, and each has a different symptom on the floor:
+
+| Condition | What it means | What you see |
+|---|---|---|
+| Empty link | The step points at nothing | A warning marker on the step, and the step is orphaned from the chain |
+| Dangling reference | The link points at a step that was deleted | Warning marker; downstream steps lose their predecessor |
+| Cycle | A points at B and B points back at A | Both steps anchored at level 0 and flagged |
+
+The cycle case deserves emphasis because it fails quietly. The engine does not refuse to schedule. It treats both steps as the same depth and produces a plan that looks reasonable, so nobody investigates. When a warning marker appears on a routing, repairing the chain is cheaper than explaining the schedule later.
+
+## Move Three: How Many Hours a Step Books
+
+For every work-center step the engine computes the hours it must place:
+
+```
+booked hours = setup time + (hours per unit x order quantity)
+```
+
+That is the whole formula. Setup is a fixed cost per run; run time scales with quantity. When sequence-dependent changeover is configured, the setup value is resolved from [the setup matrix](/blog/edgebic-setup-matrix-explained) rather than taken flat from the step, and the resolved value is what enters the formula.
+
+Those hours are then placed against real shift capacity on the work center. The engine does not assume an eight-hour block exists. It searches forward day by day and shift by shift, respects holidays, downtime and the work center's utilization percentage, and splits the hours across as many shifts and machine units as it needs. That allocation is its own subject, covered in [multi-shift scheduling](/blog/edgebic-multi-shift-scheduling-explained) and [machine instances](/blog/edgebic-machine-instances-explained). The point here is that the routing supplies the quantity of hours and the calendar supplies where they fit.
+
+Component rows work differently and deliberately so. A row that names a product rather than a work center gets an instant assignment at its start time and books no capacity at all. That is what makes a purchased casting appear on the plan without pretending it occupies a machine.
+
+## Move Four: The Composition Order
+
+This is the part that explains most "why did the next step start then" questions. After a step's hours are placed, its **release time** for downstream steps is composed in a strict order:
+
+```
+1. allocation end        the moment the booked hours finish
+2. + queue time          shift-aware buffer after the step
+3. -> overlap gate       transfer batch or flow step, if either is set
+4. + transit days        travel time, calendar or working days
+5. = release time        the earliest any successor may start
+```
+
+Two properties of that pipeline surprise people.
+
+**Queue time is shift-aware and consumes nothing.** A two-hour queue does not tick overnight or on a holiday, and the work center is free to run other jobs during it. It models parts sitting on a rack, not a machine being held.
+
+**The overlap gate replaces, it does not add.** When a step carries a transfer batch or a flow step, the gate that model produces becomes the successor's release time, and the queue time on that same step is discarded even when the queue would have ended later. That is intentional and it is the single most misread interaction in the routing model. If you want a handling lag on top of an overlap gate, the transfer-delay field is what composes; a queue on the same step does not. The anomaly report flags every step that carries both so you can confirm which one you meant. Full treatment in [lot streaming](/blog/edgebic-lot-streaming-explained) and [queue and transit times](/blog/edgebic-queue-and-transit-times-explained).
+
+Transit applies after whichever gate fired, and only on work-center steps. On a component row the travel is already inside the component's own availability, so applying it again on the consuming step double counts it.
+
+## Move Five: Where a Step Actually Starts
+
+Now the two halves meet. A step's earliest start is:
+
+```
+start = the latest of:
+          the order's own start time
+          every predecessor's release time
+```
+
+Then the capacity search takes over and finds the first slot at or after that time where the work center can take the hours. Two consequences follow.
+
+A step never starts before its slowest predecessor releases, which is why a single late feeder leg moves an assembly and everything after it. And a step's actual start can be later than its earliest start, sometimes much later, because capacity was not available. That gap is the schedule being honest about load, and it is not a routing problem.
+
+Distinguishing the two matters when you are debugging. An unexplained gap of more than four days between sequential steps, with no queue, overlap or transit on the routing and no competing job occupying the downstream machine, is flagged by the diagnostics as a finding. A gap with a competing job in it is excluded, because the wait is real. That distinction is described in [what the anomaly checks look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for).
+
+## A Worked Pass Through a Routing
+
+Take a steel bracket, 500 pieces, on day and night shifts.
+
+| Step | Work center | Hours per unit | Setup | Queue |
+|---|---|---|---|---|
+| S10 | Saw | 0.02 | 1.0 | 0 |
+| S20 | Drill-1 | 0.015 | 0.5 | 2.0 |
+| S30 | Deburr | 0.005 | 0 | 0 |
+
+The engine's pass:
+
+```
+S10  booked = 0.02 x 500 + 1.0  = 11.0 h
+     starts Monday 08:00, runs across the day and night shifts
+     queue 0, no overlap, no transit
+     release = allocation end, so S20 may start then
+
+S20  booked = 0.015 x 500 + 0.5 = 8.0 h
+     earliest start = S10 release; capacity search lands it on the day shift
+     queue 2.0 h, shift-aware, added after the hours finish
+     release = allocation end + 2 working hours
+
+S30  booked = 0.005 x 500 + 0   = 2.5 h
+     earliest start = S20 release
+     no queue, no overlap, no transit
+     release = allocation end, and the chain reaches the end product
+```
+
+Every date on that job traces to one of those three arithmetic lines plus the calendar. Change the drill's per-unit time from 0.015 to 0.020 and S20 books 10.5 hours instead of 8.0, which pushes S30 and the promise date. That traceability is the reason routing accuracy pays back faster than any engine tuning.
+
+## Transit: Calendar Days Versus Working Days
+
+One field changes answers more than its size suggests. Transit days can count flat calendar days or only days on which the work center has shifts.
+
+Send shafts out for five-day heat treatment, finishing on a Wednesday:
+
+- **Working days.** Count Thursday, Friday, Monday, Tuesday, Wednesday. The gate lands at the end of the following Wednesday's shift.
+- **Calendar days.** Add five flat days, landing on the Monday, with the weekend consumed silently.
+
+Both are correct for some vendors and wrong for others. A vendor quoting business days needs working-day mode. A carrier quoting flat turnaround needs calendar mode. The two diverge most across weekends and holiday weeks, which is precisely when a promise date is most likely to be quoted.
+
+## Sub-Assemblies and the Frozen Snapshot
+
+When a component row names a product that has a routing of its own, the scheduler expands that routing at scheduling time. The sub-assembly's own steps are planned against real capacity, the parent's consuming step waits for the sub-assembly to be available, and both appear on the job. The routing you maintain stays one level deep; the plan the engine builds is as deep as your product structure.
+
+One rule governs what happens afterwards. At scheduling time, each job records its own copy of the routing it was planned with. Later edits to the standard routing do not reach back into that job. This is why a corrected mill rate improves every new order and leaves last week's job showing its original hours, and it is what keeps the paperwork on the floor valid. Rescheduling a job against the current standard routing is an explicit choice, described in [editing a live job's routing](/blog/editing-a-live-jobs-routing-in-edgebic).
+
+## Reading a Schedule Backwards
+
+Put the four moves together and you have a diagnostic procedure. A step landed somewhere you did not expect, so:
+
+1. **Check its predecessors' release times**, not their end times. Queue, overlap and transit sit between them.
+2. **Check the link chain**, not the sequence numbers. A warning marker explains a strange order instantly.
+3. **Check the arithmetic**: setup plus per-unit hours times quantity. A wild number is almost always a batch total in a per-unit field.
+4. **Check capacity**: if the work center was booked, the gap is load, not configuration.
+
+Those four cover the large majority of routing-driven surprises. The ones they do not cover are collected in [routing setup mistakes](/blog/routing-setup-mistakes-edgebic), and the systematic sweep across a whole plant is [schedule diagnostics explained](/blog/edgebic-schedule-diagnostics-explained). If you are still deciding whether finite capacity is the right model at all, [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) is the category piece.
+
+The full platform map is the [complete EDGEBIC guide](/blog/edgebic-complete-guide), and the product hub is [EDGEBIC](/edgebic).
+
+Bring a job whose dates you cannot explain. [Contact US](/contact-us) and we will trace it field by field.
+
+<Accordion title="How does a routing turn into a production schedule?">
+The scheduler reads the next-in-sequence links as a dependency graph, orders the steps so no step is scheduled before its predecessors, and walks them in that order. For each step it takes the later of the order's start time and every predecessor's release time, computes booked hours as setup plus hours per unit times quantity, finds real shift capacity on the work center, and records when the next step may begin.
+</Accordion>
+
+<Accordion title="What decides when a routing step can start?">
+A step starts no earlier than the latest release time among its predecessors, and no earlier than the order's own start time. A predecessor's release time is not simply when it finished: it is the result of that step's queue time, any overlap gate, and any transit days, applied in that order. The step then lands on the first shift slot at or after that time where the work center has capacity.
+</Accordion>
+
+<Accordion title="Do component rows consume machine capacity?">
+No. A component row names a product rather than a work center, so the scheduler gives it an instant assignment at its start time and books no capacity. Any transit time on a component is absorbed into that assignment rather than applied again afterwards, which is why setting transit days on both the component row and the consuming step double counts the travel.
+</Accordion>
+
+<Accordion title="What happens when a routing has a circular link?">
+The level calculation detects the cycle, anchors the affected steps at level 0, and flags the routing rather than refusing to run. That matters because the schedule that comes out looks plausible and is wrong: two steps that should have different depths are treated as the same depth. Fix the chain when the warning marker appears rather than scheduling around it.
+</Accordion>

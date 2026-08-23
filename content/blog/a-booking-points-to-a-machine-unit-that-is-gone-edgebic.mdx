@@ -1,0 +1,85 @@
+---
+title: "A Booking Points to a Machine Unit That Is Gone"
+description: "An orphan instance booking references a machine unit that was removed after scheduling. Restore the unit or re-run the schedule so the engine picks a live instance."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - orphan instance booking
+  - machine instance removed after scheduling
+  - resource references missing instance
+  - instance count trimmed
+  - restore machine instance
+  - reschedule after instance change
+targetPhrase: "orphan instance booking"
+wordCount: 1300
+readingTime: 7
+faqQuestions:
+  - question: "What is an orphan instance booking?"
+    answer: "An orphan instance booking is a schedule allocation that points to a specific machine unit that no longer exists on its work center. It happens when the work center's instance list is trimmed after scheduling ran, leaving allocations pinned to a unit number that is gone. The anomaly report flags it as critical because the Gantt and capacity views resolve instance names to draw and roll up the booking."
+  - question: "How do I fix a resource that references a missing machine instance?"
+    answer: "Two paths. Restore the deleted machine instance if it was removed by mistake, which reconnects the booking to a live unit. Or re-run scheduling for the affected job, which lets the engine pick a valid instance from the current list and replaces the orphaned allocation. Either path clears the critical flag once a fresh pass or a restored unit gives the booking a real machine to sit on."
+  - question: "Why did reducing a work center's instance count orphan a booking?"
+    answer: "Existing allocations are pinned to specific instance numbers. If a job was booked on instance three and the count is later reduced to two, instance three no longer exists and that allocation is orphaned. Reducing the instance count does not automatically reschedule the jobs already assigned to the units you removed, so re-run scheduling for those jobs after any reduction to move them onto surviving instances."
+qaQuestions:
+  - question: "We dropped a work center from four machines to three, and now one job errors on a missing unit. Did we do the change wrong?"
+    answer: "The change itself was fine; what was missed is the follow-up. Jobs already booked on the fourth unit are pinned to it, and dropping the count to three orphaned them. Re-run scheduling for any job that was sitting on the removed unit, and the engine reassigns it to one of the three surviving instances. A quick way to catch this is to run the anomaly report after any instance-count reduction, so the orphaned bookings surface before they reach the floor."
+  - question: "The report flags an orphan instance, but the work center looks correct now with the right number of machines. Why is it still firing?"
+    answer: "Because the flag is about the existing booking, not the current configuration. The work center may have the right instance count today, but a schedule row created before the change still points to a unit that was removed. The current setup being correct does not rewrite old allocations. Re-run scheduling for the flagged job so its rows are rebuilt against today's instance list, and the orphan clears."
+---
+
+**A booking that points to a machine unit that is gone is an orphan instance allocation: it references a specific instance number that was removed from the work center after scheduling ran.** The anomaly report flags it as critical because the Gantt and capacity views resolve instance names to draw and total the booking. The fix is to restore the removed unit or re-run scheduling so the engine reassigns the job to a live instance.
+
+[EDGEBIC by User Solutions](/edgebic) tracks each work center's machines as numbered instances, and each allocation is pinned to a specific one. When that unit is later removed, the allocation is left pointing at nothing. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), covers the two fixes and how to avoid orphaning bookings in the first place.
+
+## What an Orphan Instance Booking Is
+
+A work center with more than one machine models each as a numbered instance. When the engine schedules an operation, it assigns it to a particular instance so the Gantt can show which physical unit runs the job and capacity can be tracked per machine. That assignment is a reference to an instance that must continue to exist.
+
+If the work center's instance list is later trimmed, an allocation pinned to a removed unit becomes an orphan. The critical anomaly check fires when a booking references an instance number that is not in the work center's current instance list. The symptom looks similar to [a schedule pointing to a deleted work center](/blog/a-schedule-points-to-a-deleted-work-center-edgebic), but here the work center still exists; it is one of its machine units that is gone.
+
+## How It Happens
+
+The usual trigger is reducing the instance count. A work center runs four machines, jobs get booked across all four including instance four, and later the count is dropped to three because a machine was retired or the number was corrected. The jobs already sitting on instance four are pinned to a unit that no longer exists. Reducing the count does not reschedule those jobs automatically, so their allocations are orphaned until a fresh pass moves them.
+
+A direct removal of a specific instance, rather than a count reduction, produces the same result for any job booked on it.
+
+## How to Tell
+
+Run the anomaly report and look for the critical config-gap chip that reports an instance not present in the work center's instance list. The Detail names the instance number and the work center. You will also notice it on the Gantt, where the affected operation cannot resolve its machine unit, and in per-machine capacity views that cannot total the orphaned booking.
+
+## Fix 1: Restore the Removed Instance
+
+If the unit was removed by mistake, restore it so the work center's instance list includes it again. The orphaned booking reconnects to a live unit immediately, and reports resolve it. This is the right path when the machine is still real and the removal was an error.
+
+## Fix 2: Re-Run Scheduling
+
+If the unit is genuinely gone, re-run scheduling for the affected job. The engine picks a valid instance from the current list and replaces the orphaned allocation, moving the work onto a surviving machine. This is the right path after a deliberate reduction: the job simply needs to be rebooked onto the instances that remain.
+
+See [how to configure instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic) and [how to change the number of machines in a work center](/blog/how-to-change-the-number-of-machines-in-a-work-center-in-edgebic) for where the instance count lives.
+
+## Confirming the Fix
+
+After restoring the unit or re-running scheduling, re-open the anomaly report and confirm the orphan-instance chip returns zero rows for the job. On the Gantt, the operation should resolve to a real machine unit, and per-machine capacity views should total it correctly.
+
+## Prevention
+
+- **Reschedule after any instance reduction.** Whenever you lower a work center's instance count or remove a specific unit, run one scheduling pass over the jobs that used the removed units, so their bookings move onto surviving machines before anyone opens a report.
+- **Run the anomaly report after configuration changes.** A quick plant-wide scan after trimming instances surfaces every orphaned booking at once.
+- **Prefer adjusting over removing when possible.** If a machine is temporarily down rather than gone, a downtime window or deactivation keeps the instance in the list while stopping new work, which avoids orphaning existing allocations. This connects to the wider habit of deactivating rather than deleting machines with history.
+- **Audit after imports.** If instance counts [come in from your ERP](/edgebic-erp-integration), a scheduling pass and an anomaly-report read catch a count that dropped in the source before it distorts a live plan.
+
+<Accordion title="What is an orphan instance booking?">
+An orphan instance booking is a schedule allocation that points to a specific machine unit that no longer exists on its work center. It happens when the work center's instance list is trimmed after scheduling ran, leaving allocations pinned to a unit number that is gone. The anomaly report flags it as critical because the Gantt and capacity views resolve instance names to draw and roll up the booking.
+</Accordion>
+
+<Accordion title="How do I fix a resource that references a missing machine instance?">
+Two paths. Restore the deleted machine instance if it was removed by mistake, which reconnects the booking to a live unit. Or re-run scheduling for the affected job, which lets the engine pick a valid instance from the current list and replaces the orphaned allocation. Either path clears the critical flag once a fresh pass or a restored unit gives the booking a real machine to sit on.
+</Accordion>
+
+<Accordion title="Why did reducing a work center's instance count orphan a booking?">
+Existing allocations are pinned to specific instance numbers. If a job was booked on instance three and the count is later reduced to two, instance three no longer exists and that allocation is orphaned. Reducing the instance count does not automatically reschedule the jobs already assigned to the units you removed, so re-run scheduling for those jobs after any reduction to move them onto surviving instances.
+</Accordion>

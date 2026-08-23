@@ -1,0 +1,136 @@
+---
+title: "TOC Anchor Scheduling in EDGEBIC, Explained"
+description: "How theory of constraints scheduling software works: EDGEBIC pins the constraint operation to a date, then plans upstream backward and downstream forward."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - theory of constraints scheduling software
+  - anchor scheduling
+  - constraint based scheduling
+  - bottleneck scheduling software
+  - TOC production scheduling
+  - subordinate to the constraint
+targetPhrase: "theory of constraints scheduling software"
+wordCount: 1890
+readingTime: 9
+faqQuestions:
+  - question: "What is anchor scheduling?"
+    answer: "Anchor scheduling pins one operation of a job, normally the one that runs on your constraint work center, to a specific date and time, then plans everything upstream backward to feed that moment and everything downstream forward from it. The pinned operation is scheduled first, at maximum priority, so it claims its capacity before any other operation in the job can compete for the same slots."
+  - question: "Which of the five focusing steps does scheduling software actually perform?"
+    answer: "Identify, exploit, and subordinate can be executed by the scheduler. EDGEBIC computes a load factor per work center to confirm which resource is genuinely tightest for a given job, gives the constraint operation top priority so its capacity is claimed first, and times every other operation around that decision. Elevating the constraint is a capital or staffing decision a person makes, and repeating the cycle after the constraint moves is the planner's job."
+  - question: "Does marking a work center as a bottleneck change the schedule by itself?"
+    answer: "No, and this surprises most new users. The bottleneck flag drives display and the load analysis that decides how large the protective buffers should be. Anchor scheduling activates when a planner sets a target start date on the schedule row for that operation. Both are needed: the flag says which resource is the constraint, the target date says when this job must have it."
+  - question: "Does anchor scheduling change my customer due date?"
+    answer: "Never. The due date on a manufacturing order is a customer promise entered by a person, and the scheduling engine does not modify it under any circumstances. EDGEBIC computes a projected end date from the anchored plan and shows it beside the due date, so slack or lateness is visible without the promise itself being quietly rewritten."
+  - question: "What are TOC buffers and are they on by default?"
+    answer: "TOC buffers are deliberate time cushions: a constraint buffer before the pinned operation, a feeding buffer on the step that directly feeds it, and a shipping buffer after it finishes. EDGEBIC can size all three from the routing's own work content. They are off by default so a first anchored schedule reads cleanly, and you turn them on when you want protection against upstream variation."
+qaQuestions:
+  - question: "We have one heat-treat oven that everything routes through. Do we need anchor scheduling, or is normal finite capacity scheduling enough?"
+    answer: "Normal finite capacity scheduling already prevents the oven from being over-booked, and for a lightly loaded oven that is enough. Anchor scheduling earns its place when the oven's calendar is contested: when a specific job must hit a specific window because other jobs, a maintenance shutdown, or a customer milestone claim the slots around it. Pin the oven operation and the whole routing rearranges around that decision instead of around whatever happens to arrive first."
+  - question: "If I pin a job's constraint step to Monday 06:00 and the upstream work cannot finish in time, what does the schedule show?"
+    answer: "The constraint still starts Monday 06:00 and the upstream steps show as finishing late against it. EDGEBIC schedules faithfully rather than quietly sliding the pin to make the plan look feasible, so the conflict is visible on the dates instead of hidden. Compare the last upstream operation's end date with the pinned start: if the end is later, you have your answer and your options are more upstream capacity, an earlier release, or a later pin."
+---
+
+**Theory of Constraints scheduling software does one thing differently from ordinary forward scheduling: it plans the whole job around the constraint rather than around the first operation.** In [EDGEBIC by User Solutions](/edgebic) the mechanism is called anchor scheduling. You pin the constraint operation to a date, and the engine schedules everything upstream backward so material arrives just in time, and everything downstream forward from the moment the constraint finishes.
+
+This post explains what the capability is and when to reach for it. If you want a single job traced end to end with real dates, read the [TOC anchor scheduling walkthrough](/blog/toc-bottleneck-anchor-scheduling-example-edgebic). If you want the configuration steps, read [how to flag and schedule around a bottleneck](/blog/how-to-flag-and-schedule-around-a-bottleneck-in-edgebic). If Theory of Constraints itself is new to you, the [practical TOC guide](/blog/theory-of-constraints-scheduling) covers the philosophy first.
+
+## Why Forward Scheduling Alone Fails at the Constraint
+
+A pure forward scheduler starts each job at its release date and pushes every operation as early as capacity allows. The logic is reasonable and the outcome, in a plant with a real constraint, is not.
+
+Work piles up in front of the constraint because upstream operations run as fast as their own capacity permits, not as fast as the constraint can consume. That queue is inventory, it is cash, and it is lead time: every job in it is waiting. Meanwhile the constraint itself can still starve, because "lots of work in the queue" and "the right work available at the right moment" are different conditions.
+
+Goldratt's insight is that the plant's output equals the constraint's output, so an hour lost at the constraint is an hour lost by the whole plant, and an hour saved anywhere else is largely an illusion. That has a direct scheduling consequence. The constraint's calendar is the scarce thing. Plan it first and let everything else be timed to serve it.
+
+If you are not yet sure which resource is your constraint, start with [how to identify production bottlenecks](/blog/production-bottleneck-identification). Anchor scheduling assumes you already know.
+
+## The Five Focusing Steps, Mapped to What the Software Does
+
+TOC's five focusing steps are well known. What is less often stated is which of them a scheduler can execute and which remain human decisions. Here is the honest split.
+
+| Focusing step | What EDGEBIC does |
+|---|---|
+| **1. Identify** the constraint | You mark the resource. The engine computes a load factor per work center for the job and confirms whether the marked resource is genuinely the tightest for that job at that quantity. |
+| **2. Exploit** it | The pinned constraint operation is scheduled first, at the engine's maximum priority, with a utilization-maximizing strategy, so its capacity is claimed before any other operation can compete for the same slots. |
+| **3. Subordinate** everything else | Upstream operations are planned backward from the pin so they finish just before it needs them. Downstream operations are planned forward from the moment it finishes. Every other operation runs at reduced priority behind the constraint. |
+| **4. Elevate** it | A capital or staffing decision that a person makes. The engine surfaces the signal (a constraint running past 85 percent utilization is flagged in the run log) but never adds capacity on its own. |
+| **5. Repeat** | Yours. Once the old constraint is relieved, a new one emerges somewhere else, and the flag has to move with it. [Bottleneck migration](/blog/bottleneck-migration-constraint-shifting) is the normal outcome of success, not a failure. |
+
+Steps 1 through 3 are mechanical, so the software does them consistently on every run. Steps 4 and 5 are judgment, so the software's job is to make the evidence obvious.
+
+## What Actually Happens on a Run
+
+Once a job qualifies for anchor scheduling, the engine works in three phases.
+
+**Phase one: the constraint.** The pinned operation is scheduled at its target date with priority raised to maximum. This is the whole point of exploitation: the constraint gets its slot before subordinated work can take it.
+
+**Phase two: upstream, backward.** The engine works back from the pinned start, minus the constraint buffer if buffers are on. Each upstream operation's duration is computed (run hours times quantity, plus setup, plus queue time), and its latest acceptable start is the running deadline minus that duration. The step that directly feeds the constraint can carry an additional feeding buffer. Each step's placement then becomes the deadline for the step before it, working back through the routing in reverse.
+
+**Phase three: downstream, forward.** From the constraint's finish plus the shipping buffer, the remaining operations chain forward normally: each starts at the later of its own predecessor's end and that post-constraint start.
+
+The result is a plan that reads differently from a forward schedule. Upstream operations often start later than a forward scheduler would place them, sometimes noticeably later, and that is the intended behavior. Releasing work earlier than the constraint can absorb it does not make the constraint faster. It makes the queue longer.
+
+## Two Settings, Two Different Jobs
+
+The most common misunderstanding about this feature is worth stating plainly, because it wastes real time.
+
+**The bottleneck flag on a work center** tells the system which resource is your constraint. It drives display, it drives the load analysis, and it decides how generously the protective buffers are sized when they are enabled. On its own it does not change any dates.
+
+**The target start date on a schedule row** is what activates anchor scheduling for that job. It is the planner saying "this job needs the constraint at this moment," and it is the trigger the engine looks for.
+
+Both are needed. Marking the oven as the bottleneck and expecting anchored plans to appear is the single most common false start. The configuration walkthrough covers exactly where each setting lives.
+
+## The Buffers, and Why They Are Off by Default
+
+Anchor scheduling without buffers is tight. Upstream work is timed to finish exactly when the constraint needs it, which is elegant on paper and fragile in a real plant where a saw has a bad morning.
+
+EDGEBIC can size three classic TOC buffers from the routing's own work content:
+
+| Buffer | Sits between | Sized from |
+|---|---|---|
+| Constraint buffer | The last upstream operation and the constraint's start | A share of the total upstream path |
+| Feeding buffer | Applied to the operation that directly feeds the constraint | A smaller share of the same path |
+| Shipping buffer | The constraint's finish and the first downstream operation | A share of the downstream path, with a floor |
+
+When the pinned operation is confirmed as the genuine constraint for that job, the buffers are proportional to the work they protect, so a big job gets a big cushion. When the pin is on a resource that is not the tightest for that job, conservative fixed values apply instead, because there is less to protect against.
+
+Buffers are off by default so a first anchored schedule is easy to read, and you enable them when you want the protection. The trade they make is explicit and worth understanding: earlier release and a little more work in process, bought deliberately, in exchange for a constraint that does not starve. [The buffers and direction precedence deep dive](/blog/toc-buffers-and-direction-precedence-in-edgebic) covers the sizing arithmetic and the priority rules that decide which scheduling direction wins when several could apply.
+
+## What Anchoring Changes About Material
+
+One side effect of anchoring is easy to miss and worth knowing, because it changes when parts arrive.
+
+In an ordinary forward schedule, a material step with a lead time pushes everything that consumes it later: the material is placed as early as it can be and the operations that need it follow. In an anchored job the logic flips to just in time. A material step is placed in the window that ends when the material is needed, rather than as early as possible.
+
+That is consistent with the whole point of anchoring. If the constraint is pinned to Monday at 06:00, having steel arrive the previous Tuesday buys nothing except storage and cash tied up on the floor. Having it arrive Friday, ready for the upstream operations that feed Monday's constraint slot, is the plan you actually want.
+
+The same flip applies to whole-order backward scheduling, which right-aligns an entire order to its due date. Both directions share the reasoning: when the finish is what you are planning to, everything before it should be timed to arrive rather than to be early. [Forward versus backward scheduling](/blog/forward-vs-backward-scheduling) covers the general distinction, and the precedence rules that decide which direction wins are in the deep dive.
+
+## What Anchor Scheduling Does Not Do
+
+Four boundaries are worth knowing before you rely on the feature.
+
+**It does not move your due date.** The customer promise on a manufacturing order is never rewritten by the engine. The plan produces a projected end date that sits beside the promise so slack or lateness is visible.
+
+**It does not slide the pin to make the plan feasible.** If upstream capacity cannot deliver by the pinned date, the constraint still starts when you pinned it and the upstream operations show as late against it. That conflict is visible on the dates rather than hidden by a silent adjustment, and reacting to it is a planning decision.
+
+**It does not re-plan work that has already happened.** If the constraint operation carries actual start and end dates from the shop floor, that row is preserved exactly, on its original machine, and only the remaining downstream work is planned forward from where the actuals ended. Completed work is never moved by a reschedule. Backward planning to a step that already occurred would be meaningless, so the job correctly falls through to normal forward scheduling for what remains.
+
+**It anchors one constraint per job.** A routing with several resources marked as bottlenecks resolves to a single anchor. If two resources genuinely contend for that role, that is a signal about your plant rather than a scheduling setting: see [multi-constraint scheduling](/blog/multi-constraint-scheduling).
+
+## When to Use It
+
+Reach for anchor scheduling when the constraint's calendar is contested. A single job on an empty Gantt does not need it: plain forward scheduling will finish that job sooner. The value appears when this job must hit a specific window because other jobs, maintenance, or a customer milestone claim the slots around it. Pinning the constraint operation lets you place that decision deliberately and have the entire routing rearrange itself around it.
+
+That is the real difference: reserving the bottleneck slot instead of hoping it is free when the job gets there.
+
+## Next Steps
+
+Three companion posts finish the chapter. [How to flag and schedule around a bottleneck](/blog/how-to-flag-and-schedule-around-a-bottleneck-in-edgebic) is the configuration path. [TOC buffers and direction precedence](/blog/toc-buffers-and-direction-precedence-in-edgebic) is the mechanism with worked numbers. [Bottleneck scheduling mistakes](/blog/bottleneck-scheduling-mistakes-edgebic) is the list to read before your first anchored run. For where anchoring sits among the rest of the platform, from routings through actuals to the optimizer, the [complete guide to EDGEBIC](/blog/edgebic-complete-guide) is the map.
+
+User Solutions has been building finite capacity scheduling since 1991, including for GE Railcar, where on-time delivery moved from 30 percent to 90 percent. Bring your constraint and one contested week to a demo and pin a real job.

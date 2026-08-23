@@ -1,0 +1,102 @@
+---
+title: "What Changes When EDGEBIC Moves to a Shared Database"
+description: "Moving EDGEBIC from one workstation to a shared SQL Server changes three assumptions at once: who may overwrite whom, how an open screen stays current, and who may run the scheduler."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - shared scheduling database
+  - multi workstation scheduling
+  - SQL Server production scheduling
+  - concurrent planners
+  - shared production plan
+  - finite capacity scheduling
+targetPhrase: "shared scheduling database"
+wordCount: 1500
+readingTime: 7
+faqQuestions:
+  - question: "What actually changes when EDGEBIC moves from one PC to a shared database?"
+    answer: "Three things that were previously guaranteed by having only one application running stop being guaranteed, and each gets its own replacement. Only one person could edit a record at a time, so now a save that was loaded before somebody else's change is refused rather than applied over the top. Only one application held the data in memory, so now every workstation checks a change marker every few seconds and re-reads what moved. Only one scheduling run could ever be in flight, so now a plant-wide lock admits exactly one run and tells the second person to wait. Nothing about how the engine schedules changes at all."
+  - question: "Is there a multi-user mode to switch on in EDGEBIC?"
+    answer: "No, and that is deliberate. Choosing SQL Server as the data source is the only switch. Everything that makes several workstations safe together, the refused stale save, the cross-workstation change checking, and the plant-wide scheduling lock, turns on from that provider choice alone. The single-file local database is the opposite case: it is single-machine by contract, so the change checking does not run and coordination stays local to that one PC. There is no half-way setting to get wrong."
+  - question: "Does moving to a shared database change how the schedule is calculated?"
+    answer: "No. The scheduling engine, the routings, the calendars, the capacity rules, and every result they produce are identical on both database types. What changes is coordination between people, not arithmetic. A plan produced on a shared server and the same plan produced on a single workstation from the same data are the same plan. That is why proving your workflow on the local database first is a sensible rollout step rather than wasted effort."
+qaQuestions:
+  - question: "We have run EDGEBIC on one planner's PC for a year and are about to put four people on a server. What should we expect to feel different on day one?"
+    answer: "Three small behaviors, none of which existed before. Occasionally a save will be refused with a message saying the record was changed by another user, which means somebody edited the same work center or product while you had it open. Lists will quietly update themselves while you watch, because a change made elsewhere reaches your screen within a few seconds. And when two people press the scheduling button close together, the second one gets told a run is already in progress on another workstation and asked to try again. All three are the system doing its job. What will not feel different is the schedule itself, since the engine is unchanged and your existing routings and calendars produce exactly the same plan."
+  - question: "Do we still need to agree who owns which data now that saves are protected?"
+    answer: "Yes, because the protection stops silent loss, not wasted effort. A refused save tells you the record moved and asks you to reload, which means somebody has to re-apply their edit and neither person enjoys that. Ownership of master data by area, one person for work centers, one for routings, one for the order book, means the collision rarely arises in the first place. Think of the refusal as the guardrail at the edge of the road rather than the thing that keeps you in your lane. It is also worth knowing that a few screens are not yet covered by the refusal, so the working agreement still carries real weight."
+---
+
+**Moving EDGEBIC from one workstation to a shared SQL Server database is not a bigger version of the same thing: it changes three assumptions the software could previously take for granted, and each one gets its own replacement.** In [EDGEBIC by User Solutions](/edgebic) that change is triggered by a single decision, choosing SQL Server as the data source, and everything else follows from it automatically.
+
+This post is about what genuinely changes underneath. For the shape of the deployment itself, [how several planners share one database](/blog/edgebic-shared-database-multi-planner-explained) covers what is shared and what stays personal, and [planning a multi-user rollout](/blog/planning-a-multi-user-edgebic-rollout) covers the sequence.
+
+## One Decision, Not a Mode
+
+There is no multi-user switch in EDGEBIC. The data source you choose is the whole decision.
+
+The single-file local database is single-machine by design rather than by limitation. It needs no server and no database administrator, it is the default, and it is genuinely productive for one planner. Everything described below is deliberately inactive on it, because none of it has anything to coordinate.
+
+Point the application at SQL Server instead and every coordination mechanism turns on at once. You do not enable them individually, and you cannot get a half-configured state where saves are protected but screens are stale. That is worth knowing because it removes an entire category of setup mistake.
+
+## Three Assumptions That Quietly Break
+
+Running on one PC, three things were true without anybody arranging them.
+
+**Only one person could edit a record at a time.** Nobody could overwrite you, because there was nobody else.
+
+**One application's memory was the truth.** When you changed a work center, the same running program updated its own lists. Nothing else could have a different idea about what a work center was called.
+
+**Only one scheduling run could ever be in flight.** You cannot press the button twice at once on a single machine.
+
+Put five people on five PCs against one database and all three fail simultaneously. A colleague overwrites your edit and neither of you notices. Your work center dropdown keeps offering a machine somebody deleted an hour ago. Two people start scheduling runs that interleave their results into one incoherent plan. None of these announce themselves, which is why each one needed a mechanism rather than a warning in the manual.
+
+## What Replaces Each One
+
+| The old guarantee | What replaces it | What you see |
+|---|---|---|
+| Only one editor at a time | A save carries the version it loaded, and is refused if the record moved on | "This record was changed by another user. Reload and try again." |
+| One memory holds the truth | Every write stamps a change marker; every workstation checks it every few seconds and re-reads what changed | Lists update themselves while you watch |
+| Only one scheduling run | A plant-wide lock admits exactly one run at a time | "A scheduling run is already in progress on another workstation." |
+
+The design principle behind all three is the same: nobody gets locked out while they work. You are never blocked from opening a record because somebody else has it open, and you are never blocked from reading while a run is in progress. The check happens at the moment of the save, not at the moment of the open, which is why the software feels no heavier with five people on it than with one.
+
+## The Refused Save
+
+The record you load carries a version number you never see. When you save, EDGEBIC asks the database to apply the change only if the record is still at that version. If a colleague saved in between, it is not, so no rows are updated and the save is refused rather than applied.
+
+This covers the master data most worth protecting: work centers, work center groups, products, departments, customers, shifts, routings, tools, operators, skills, users and roles. It deliberately does not cover schedule rows, manufacturing orders, and the allocation records that hang off them, because the scheduling engine rewrites those wholesale on every run. A version check there would raise conflicts against the engine itself rather than against a person. Those are protected by the scheduling lock instead, which is the right tool for that job.
+
+[Why the second save is refused](/blog/why-edgebic-refuses-a-stale-save) goes through the mechanism and its honest gaps in detail.
+
+## The Screen That Updates Itself
+
+Every write stamps a small change marker for the family of data it touched, in the same transaction as the change itself. Every workstation reads those markers every few seconds, notices which families moved, and re-reads them.
+
+The important detail is that the re-read merges into the list you are already looking at rather than rebuilding it. Your selection survives, your scroll position survives, and an open dropdown does not deselect itself. That matters much more on a shared database than it did before, because the refresh is now triggered by somebody else's work rather than by yours, and a planner should never be reset mid-task by an edit they did not make. [How an open screen notices someone else's edit](/blog/how-an-open-edgebic-screen-notices-someone-elses-edit) covers the timing and the exceptions.
+
+## The Run That Waits
+
+A scheduling run is minutes of calculation followed by a short burst of writes. Two runs overlapping would produce a plan that is neither person's answer.
+
+So a run takes a named lock that spans the whole plant. The second person to press the button waits about five seconds and then gets told plainly that a run is in progress on another workstation. That is a message, not an error, and it is deliberately fast: somebody who clicked a button deserves an answer rather than a frozen window.
+
+The lock covers the calculation and the writing, but the database transaction covers only the writing. So while a two-minute run is in progress, everybody else keeps reading, editing and saving normally. [Why only one run happens at a time](/blog/why-only-one-edgebic-scheduling-run-happens-at-a-time) explains why that split is the point.
+
+## What Does Not Change
+
+Two things are worth stating because people expect them to move and they do not.
+
+The engine is identical. Same routings, same calendars, same capacity arithmetic, same plan. A schedule produced on a shared server is the schedule the same data would have produced on one PC. That is exactly why proving the workflow on the local database before the move is time well spent rather than a throwaway phase.
+
+And what is personal stays personal. Column widths, grid layouts, filters, and the way your Gantt is configured are yours and are saved per user. Two people can look at the same plan through completely different displays without touching each other's setup.
+
+## Where to Go Next
+
+The three mechanisms are the answer to "is this safe with several people on it." The remaining work is human: deciding who runs the scheduler and when, who owns which slice of master data, and whether a server should be hosting your ERP syncs rather than whichever workstation happens to be open. [What to decide before sharing one database](/blog/what-to-decide-before-sharing-one-edgebic-database) collects those decisions in one place.
+
+For the platform overview, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps how the pieces connect, and [/edgebic](/edgebic) covers the product as a whole.

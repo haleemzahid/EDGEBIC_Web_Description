@@ -1,0 +1,108 @@
+---
+title: "Clearing Scheduler Anomalies Before You Publish a Schedule in EDGEBIC"
+description: "A pre-publish walkthrough: run the Scheduler Anomalies scan, read the U, X, D, and K checks, fix each root cause, and rerun until the plan is clean."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - scheduler anomalies report
+  - schedule validation
+  - production schedule check
+  - instance collision
+  - dependency violation
+  - schedule integrity
+targetPhrase: "scheduler anomalies report"
+wordCount: 2000
+readingTime: 10
+faqQuestions:
+  - question: "What is a scheduler anomaly scan and why run it before publishing?"
+    answer: "It is a plant-wide validation that checks a finished schedule for structural faults before anyone acts on it. The Scheduler Anomalies report evaluates more than 28 checks across the schedule, grouped by code, and lists each finding with a severity, the affected job and work center, a plain-language description, and a suggested fix. Running it before you publish means you catch an over-booked machine or an out-of-order step at your desk instead of on the floor Thursday afternoon."
+  - question: "What do the U, X, D, and K anomaly codes mean?"
+    answer: "They group faults by type. U-series flags over-utilization, such as more scheduled hours than a machine's shift can hold. X-series flags instance collisions, where two jobs occupy the same machine instance at the same time. D-series flags dependency violations, where a later routing step is scheduled before its predecessor ends. K-series flags off-calendar bookings, where work is placed on a holiday or non-shift day. Each series points at a specific root cause, usually a wrong instance count, a broken routing link, or a calendar added after scheduling."
+  - question: "How do you clear an over-utilization anomaly?"
+    answer: "Fix the underlying master data, then reschedule. A U-series over-utilization finding most often means a work center's instance count is wrong: three physical machines configured as one make the engine pile all the load onto a single modeled machine. Correct the instance count on the work center, run a fresh schedule so the engine can redistribute the allocation across the real machines, and rerun the anomaly scan. The finding disappears because the cause, not the symptom, was fixed."
+qaQuestions:
+  - question: "I am about to send next week's schedule to the floor. What is the five-minute check that keeps me from publishing a broken plan?"
+    answer: "Run the Scheduler Anomalies report with the job field blank for a plant-wide scan, and read it grouped by code. Zero Critical findings is your green light. If U-series fires, a machine is over-booked, usually a wrong instance count. If X-series fires, two jobs share a machine instance at once. If D-series fires, a step is scheduled before its predecessor. If K-series fires, something is booked on a holiday. Fix each root cause in the master data, reschedule, and rerun the scan until it is clean. Five minutes at your desk beats a foreman calling you at 2 PM because two jobs want the same mill."
+  - question: "The scan shows an X1 instance collision, but the two jobs are a synchronized parallel pair. Is that a real problem?"
+    answer: "No, that one is expected. Dependent-parallel operations mirror the parent onto a second machine and legitimately share timing, so they can show as an instance-collision finding even though they are intentional. The way to tell is the parallel-child marker on the mirrored schedule: a real collision is two unrelated jobs on the same instance, while a mirror is the same physical event modeled on both machines. Confirm the flag, and if it is a genuine mirror, leave it. If the two jobs are unrelated, reschedule the lower-priority one to clear the overlap."
+---
+
+**Before you publish a schedule in EDGEBIC by User Solutions, you run the Scheduler Anomalies report: a plant-wide scan of more than 28 structural checks that flags over-booked machines, instance collisions, out-of-order steps, and off-calendar bookings, each with a suggested fix, so a clean scan is your green light to send the plan to the floor.** This walkthrough runs that scan, reads the findings, fixes each root cause, and reruns until the plan is clean. It is part of our [worked examples series](/blog/edgebic-worked-examples), and it is the last gate before a schedule becomes the floor's marching orders. When something does look wrong, the [troubleshooting guide](/blog/edgebic-troubleshooting-guide) goes deeper.
+
+## The Setup: A Finished Schedule That Might Not Be Sound
+
+Harbor Precision has just run next week's schedule. It looks fine on the Gantt, but "looks fine" is not "is sound," and the planner, Lena, has been burned before by a plan that read clean and fell apart Wednesday. So before she publishes, she runs the anomaly scan. Everything below is the documented report behavior.
+
+## Step 1: Run the Plant-Wide Scan
+
+Lena opens the Reports hub, clicks **Scheduler Anomalies**, leaves the Job Number field blank for a whole-plant scan, and clicks OK. The service loads the schedules, resources, work centers, shifts, routings, calendars, and downtime in one pass and evaluates every check in memory. The result is a flat list of findings, grouped by check code, each row carrying:
+
+- **Check Id** and **Severity** (Critical or Warning).
+- **Job Number**, **Schedule Id**, **Work Center**, **Instance**, and **Date**.
+- A plain-language **Description** and a **Suggested Fix**.
+
+The in-app report and the SQL companion check are one to one, so the same findings appear either way. A large schedule scan can take a moment; if it drags, the SQL version profiles faster.
+
+## Step 2: Read the U-Series (Over-Utilization)
+
+The first group is a U-series finding on the mill: a day where scheduled hours exceed what the shift can hold. Lena reads the description, then checks the mill's **Number Of Instances**. The floor has three mills; the record says one. That is the whole problem: with one modeled machine, the engine piled three machines' worth of load onto it, and the check correctly flagged the impossible day.
+
+She corrects the instance count to three, saves, and runs a fresh schedule so the engine can spread the allocation across the real machines. This is a root-cause fix, not a symptom mask: the hours were always feasible; the model just did not know there were three mills.
+
+## Step 3: Read the X-Series (Instance Collision)
+
+Next is an X-series finding: two jobs overlapping on the same machine instance at the same time. Lena opens both jobs' Gantt rows and confirms the overlap. Most X-series findings are real collisions, cleared by rescheduling the lower-priority job so it queues behind the other.
+
+But one X-series row here is a synchronized parallel pair: a dependent-parallel operation that mirrors the parent onto a second machine and legitimately shares timing. She confirms the parallel-child marker on the mirrored schedule. That flag is how you tell an intentional mirror from a genuine clash, so she leaves the mirror alone and reschedules only the real collision. The [synchronized multi-spindle walkthrough](/blog/synchronized-multi-spindle-scheduling-example-edgebic) explains why mirrors share an instance on purpose.
+
+## Step 4: Read the D-Series (Dependency Violation)
+
+A D-series finding flags a routing step scheduled to start before its predecessor ends: a dependency violation. Lena notes the two schedule ids and the job, opens the Job View, and sees the out-of-order pair. The fix is a full reschedule, which rebuilds the topological dependency order so every step falls behind its predecessor. D-series only checks steps that carry a recorded next-in-sequence link, so if a logical ordering is assumed but not recorded in the routing, she adds the link first, then reschedules. Correct [forward scheduling](/blog/forward-vs-backward-scheduling) depends on those links being right.
+
+## Step 5: Read the K-Series (Off-Calendar Booking)
+
+Finally a K-series finding, a Warning rather than Critical: a booking on a day the machine is not supposed to work. Lena checks the date and finds a holiday was added to that machine's calendar after the schedule was created, so the plan predates the holiday. A reschedule fixes it by never offering slots on the blocked day. K-series is a Warning because the job can sometimes still run (the machine may in practice be available), but it signals a calendar-versus-schedule mismatch worth resolving before publishing.
+
+## Step 6: Rerun Until Clean
+
+After each fix Lena reschedules, then reruns the anomaly scan. The loop is fix root cause, reschedule, rescan, and she repeats it until the report shows zero Critical findings. The remaining rows, if any, are the expected parallel mirror (confirmed intentional) and perhaps a benign Warning she has judged acceptable. A clean or fully-explained scan is her green light. Now she publishes.
+
+## What This Pre-Publish Gate Proves
+
+1. **A clean Gantt is not a sound schedule.** The scan checks structure the eye cannot, across more than 28 rules.
+2. **Each code points at a root cause.** U (over-utilization), X (instance collision), D (dependency order), K (off-calendar), each with a specific fix.
+3. **Fixes are in the master data, not the schedule.** Correct the instance count, the routing link, or the calendar, then reschedule.
+4. **Some findings are intentional.** A dependent-parallel mirror shows as a collision on purpose; the parallel-child flag tells them apart.
+5. **The gate is a loop.** Fix, reschedule, rescan, until Critical is zero.
+
+## Variations Worth Trying
+
+**Scan one job before a big delivery.** Enter a single job number to check just that order's structure before you promise a key customer a date. Some checks (the inventory-integrity I-series) are always plant-wide regardless of the filter.
+
+**Read the inventory checks.** If you run stocked products, the I-series flags on-hand cache drift or a mis-shaped satisfied-from-stock row. An I-series finding usually clears with a ledger reconcile or a reschedule of the affected job, keeping the shelf and the schedule in agreement.
+
+**Use the optimization suggestions.** After the schedule is clean, the BOR Optimization Suggestions report proposes routing and capacity changes that would cut lead time, with an estimated hour impact per suggestion. Clean first, optimize second.
+
+## The Bigger Point: Publish With Confidence, Not Hope
+
+The difference between a schedule the floor trusts and one it quietly ignores is whether the planner can vouch for it. A plant-wide anomaly scan lets you vouch for it, because it turns "I think this is fine" into "I checked, and it is clean." That habit, validate before publish, is what keeps a live [production schedule](/blog/what-is-production-scheduling) credible week after week, and it is one of the hardest [job shop challenges](/blog/job-shop-scheduling-challenges) to get right by eye.
+
+User Solutions has built that discipline into scheduling tools since 1991, for operations where a broken published schedule is expensive: the US Navy, GE, BAE Systems, and Cummins among them. The USS Nimitz overhaul tracked more than 26,000 tasks through exactly this kind of validation pressure. [EDGEBIC](/edgebic) carries that lineage into a modern scan.
+
+Bring a schedule you are about to publish. [Contact us](/contact-us) and we will run the anomaly gate against your own data, or read the [rush-order walkthrough](/blog/adding-a-rush-order-to-a-full-schedule-edgebic) to see the kind of mid-week change that makes a re-scan worthwhile.
+
+<Accordion title="What is a scheduler anomaly scan and why run it before publishing?">
+It is a plant-wide validation that checks a finished schedule for structural faults before anyone acts on it. The Scheduler Anomalies report evaluates more than 28 checks across the schedule, grouped by code, and lists each finding with a severity, the affected job and work center, a plain-language description, and a suggested fix. Running it before you publish means you catch an over-booked machine or an out-of-order step at your desk instead of on the floor Thursday afternoon.
+</Accordion>
+
+<Accordion title="What do the U, X, D, and K anomaly codes mean?">
+They group faults by type. U-series flags over-utilization, such as more scheduled hours than a machine's shift can hold. X-series flags instance collisions, where two jobs occupy the same machine instance at the same time. D-series flags dependency violations, where a later routing step is scheduled before its predecessor ends. K-series flags off-calendar bookings, where work is placed on a holiday or non-shift day. Each series points at a specific root cause, usually a wrong instance count, a broken routing link, or a calendar added after scheduling.
+</Accordion>
+
+<Accordion title="How do you clear an over-utilization anomaly?">
+Fix the underlying master data, then reschedule. A U-series over-utilization finding most often means a work center's instance count is wrong: three physical machines configured as one make the engine pile all the load onto a single modeled machine. Correct the instance count on the work center, run a fresh schedule so the engine can redistribute the allocation across the real machines, and rerun the anomaly scan. The finding disappears because the cause, not the symptom, was fixed.
+</Accordion>

@@ -1,0 +1,80 @@
+---
+title: "What Is a BOR Split Around an Anchor Step?"
+description: "A BOR split divides a routing into the steps feeding a pinned constraint and the steps after it, so one half schedules backward and the other forward from the same point."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - BOR split around anchor
+  - pre anchor and post anchor steps
+  - constraint scheduling split
+  - upstream downstream routing split
+  - anchor step scheduling
+  - routing sequence resolution
+targetPhrase: "BOR split around an anchor"
+wordCount: 1062
+readingTime: 6
+faqQuestions:
+  - question: "What is a BOR split around an anchor step?"
+    answer: "It is the division of a job's routing into two lists at the point of a pinned constraint operation: the steps that feed the anchor and the steps that follow it. The split exists because the two halves are scheduled in opposite directions. Steps feeding the anchor are placed backward from the anchor's start so material arrives just in time, while steps after it are placed forward from the anchor's end. Without the split, there would be no way to schedule one routing in two directions from a single fixed point."
+  - question: "How does the scheduler decide which steps come before the anchor?"
+    answer: "It tries three tests in order and uses the first one that produces a real answer. First it compares routing level, which distinguishes sub-assembly depth. If every step sits at the same level, it compares sequence numbers, so steps numbered below the anchor are upstream and steps numbered above are downstream. If sequence numbers are identical too, it follows the explicit next-step links, walking backward from the anchor to find every step that feeds it and forward to find everything it feeds."
+  - question: "What happens if a routing has no usable sequence information?"
+    answer: "The split returns two empty lists and only the anchor step gets scheduled at its target date. No upstream work is placed and no downstream work follows it, so the job's plan contains a single operation floating on its own. It is a quiet failure rather than an error, which is what makes it worth knowing about. The prevention is simple: populate sequence numbers in real order when you build a routing. At least one of routing level, sequence number, or explicit next-step links has to carry the structure."
+qaQuestions:
+  - question: "My anchored job scheduled only one operation. Where did the rest go?"
+    answer: "That is the signature of a split that returned nothing on both sides. The engine found the anchor, placed it at its target date, and then found no step it could classify as upstream or downstream, so nothing else was scheduled. Check the routing's sequence numbers first: if every step carries the same number, or all zero, the sequence test cannot separate them, and if routing levels are also uniform and no explicit next-step links exist, the third test has nothing to walk either. Populating sequence numbers in real order fixes it, and the next run places the whole routing."
+  - question: "Does the split change how long the operations take?"
+    answer: "No. The split only decides which direction each step is scheduled from. Durations still come from run time per unit, order quantity, and setup, and placement still respects shifts, holidays, and machine capacity exactly as it would in a plain forward plan. What the split changes is where each step lands in time relative to the anchor. The upstream half finishes as late as it can while still feeding the constraint on time, so an anchored job typically shows less slack in front of the constraint than the same job scheduled plain forward."
+---
+
+**A BOR split around an anchor step is the division of a job's routing into two lists at a pinned constraint operation: the steps feeding that operation and the steps following it, so the first half can be scheduled backward from the anchor's start and the second half forward from its end.** The split is what makes two-directional scheduling of a single routing possible. EDGEBIC by User Solutions performs it whenever a job carries an anchor, resolving which side each step belongs on before any hours are placed.
+
+## How it works
+
+Anchor scheduling starts from a fixed point rather than from a job's start or its due date. A planner pins the constraint operation to a date, and the engine builds outward from there in both directions at once. Before it can, it has to know which steps go which way.
+
+Three tests answer that, tried in order, and the first one that separates the routing wins.
+
+**Routing level.** Steps carry a level that reflects depth in the product structure, so a sub-assembly's operations sit at a different level from the final assembly's. Steps at a deeper level than the anchor feed it; steps at a shallower level follow it. This test is tried first because it reflects real product structure rather than numbering convention.
+
+**Sequence number.** If every step sits at the same level, the engine falls back to the sequence number on each step. Steps numbered below the anchor are upstream, steps numbered above it are downstream. This is the test that fires on most ordinary linear routings, and it is the reason sequence numbers should be populated in real order rather than left uniform.
+
+**Explicit next-step links.** If sequence numbers are also identical, the engine walks the links between steps. It traverses backward from the anchor, following the chain of steps that name the anchor as their successor, and collects everything it reaches as upstream. Then it walks forward from the anchor to collect the downstream side. This handles branching and rejoining routings where neither of the simpler tests can express the structure.
+
+Once the two lists exist, the scheduling proper runs. The anchor is placed at its target date first, packed as tightly as the constraint's capacity allows, so nothing else can claim those hours. Then the upstream list is scheduled backward from the anchor's start, each step finishing as late as it can while still feeding the next. Then the downstream list is scheduled forward from the anchor's end. Where protective time is configured, it is inserted at the split: in front of the anchor to keep upstream hiccups from starving it, and after it to keep downstream hiccups from eating the promise date.
+
+## A concrete example
+
+A shop runs 200 precision shafts through five operations. The heat-treatment oven is the plant constraint, and the planner pins the heat-treat operation to Monday at 07:00.
+
+| Step | Sequence | Work center | Side of the split | Scheduled |
+|---|---|---|---|---|
+| S10 | 10 | Lathe-1 | Upstream | Backward, third |
+| S20 | 20 | Mill-2 | Upstream | Backward, second |
+| S30 | 30 | **HeatTreat** | **The anchor** | **First, at Mon 07:00** |
+| S40 | 40 | Grind-1 | Downstream | Forward, fourth |
+| S50 | 50 | Inspect | Downstream | Forward, fifth |
+
+Every step sits at the same routing level, so the level test cannot separate them. The sequence test can: 10 and 20 fall below 30, so they are upstream; 40 and 50 sit above it, so they are downstream. The link-walking test is never reached.
+
+Scheduling then runs in that order. The oven takes 22 hours for this quantity, so it runs Monday 07:00 to Tuesday 05:00 and those hours are claimed before anything else can take them. Mill-2 needs 11.5 hours and is placed backward so it finishes just as the oven is ready, starting Sunday evening. Lathe-1 needs 19 hours and is placed backward from Mill-2's start, landing over the weekend. Then Grind-1 chains forward from Tuesday 05:00, and Inspect follows it.
+
+The oven starts exactly on the planner's target and its capacity is used without gaps, which is the entire purpose. The upstream work is not scheduled as early as it possibly could be; it is scheduled as late as it safely can be, which is a different and more useful answer.
+
+Now imagine the same five steps all carrying sequence number 10, at the same routing level, with no explicit links. The engine finds the anchor, places heat-treat at Monday 07:00, and then classifies nothing as upstream or downstream. The job's plan contains one operation. Nothing errors; the plan is simply incomplete, and the cause is upstream of the scheduler in how the routing was built.
+
+## How EDGEBIC uses it
+
+The split is internal to anchor scheduling and has no field of its own. What triggers it is the pin, described in [what is an anchor step in scheduling](/blog/what-is-an-anchor-step-in-scheduling), applied to a resource marked as the plant constraint per [what is a bottleneck work center](/blog/what-is-a-bottleneck-work-center).
+
+The three tests read three pieces of routing data you do control. Sequence numbers are covered in [what is a sequence number in a routing](/blog/what-is-a-sequence-number-in-a-routing), product-structure depth in [what is a BOR level in a routing](/blog/what-is-a-bor-level-in-a-routing), and the explicit links in [what is a next in sequence link in a routing](/blog/what-is-a-next-in-sequence-link-in-a-routing). Keeping at least one of those three genuinely populated is the whole prevention story for an incomplete split.
+
+The protective time inserted at the split point is defined separately in [what is a constraint buffer](/blog/what-is-a-constraint-buffer), which is what stands between the upstream half and the anchor.
+
+## The takeaway
+
+A BOR split is the small structural decision that lets one routing be scheduled in two directions from a single pinned point. It relies entirely on the routing carrying real structure, whether through product-structure depth, ordered sequence numbers, or explicit links between steps, and the failure mode when it does not is an anchored job with exactly one scheduled operation and no error message. Populate sequence numbers in real order and the split never troubles you. For the surrounding concepts see [what is an anchor step in scheduling](/blog/what-is-an-anchor-step-in-scheduling) and [what is a sequence number in a routing](/blog/what-is-a-sequence-number-in-a-routing), then explore [EDGEBIC](/edgebic) or, if you are coming from the legacy product, [RMDB to EDGEBIC](/rmdb-to-edgebic).

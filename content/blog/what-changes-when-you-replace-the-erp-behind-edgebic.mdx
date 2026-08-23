@@ -1,0 +1,131 @@
+---
+title: "What Changes in EDGEBIC When You Replace Your ERP"
+description: "Swapping ERPs while keeping your scheduler: what survives untouched, which masks get rebuilt, why identifier continuity is the whole risk, and how to keep scheduling through cutover."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - replacing ERP keep scheduler
+  - ERP migration production scheduling
+  - rebuild import masks new ERP
+  - identifier continuity ERP migration
+  - EDGEBIC ERP replacement
+  - scheduling during ERP cutover
+targetPhrase: "replacing the ERP behind your scheduler"
+wordCount: 1660
+readingTime: 8
+faqQuestions:
+  - question: "If we replace our ERP, do we have to reimplement EDGEBIC?"
+    answer: "No. The scheduling model stays exactly as it is: work centers, machine instance counts, shift and holiday calendars, setup matrices, work center groups, operator skills, and every job and actual already recorded. What changes is the mapping layer, because the new ERP's exports have different column headings. Rebuilding a mask is drag-and-drop work measured in minutes per file, not a project."
+  - question: "Is there anything to uninstall from the old ERP?"
+    answer: "No, because nothing was ever installed. The integration is a file interface: exports come out of the ERP and go into reusable import masks, with no connector, no script inside the ERP, no integration user, and no credential to rotate. That is one of the practical advantages of the approach, and it shows up most clearly on the day you decommission a system."
+  - question: "Can we keep scheduling the shop while the ERP is being cut over?"
+    answer: "Yes, and this is often the strongest argument for a file-based scheduler during a migration. The plan is computed locally from data already imported, so the shop still gets a dispatch list on the days the ERP is unavailable. You lose the ability to import new demand until the new system is exporting, which you cover by importing a final work order file before the freeze."
+qaQuestions:
+  - question: "Our new ERP renumbers every part. Is that a problem for the scheduler, and can we avoid it?"
+    answer: "It is the single biggest risk in the migration, because matching is on the identifier, so every renumbered part imports as a new product rather than an update. You end up with a duplicate catalog, and routings and open work orders split across two sets of records that describe the same parts. The clean answer is to carry the legacy part number into the new ERP as a cross-reference field and export that field as the identifier until you are ready to switch deliberately. If that is not possible, treat it as a planned identity change: import the new catalog, re-import routings under the new identifiers, close the old records once their jobs finish, and expect a high Created count on the first run rather than being alarmed by it. What you must not do is let some exports carry old numbers and others carry new ones, because the resulting mixture is far harder to unpick than either clean state."
+  - question: "We will run the old and new ERP in parallel for two months. Can EDGEBIC take data from both?"
+    answer: "Yes, because a mask is just a saved recipe and you can have as many as you need. Build a second set of masks for the new system's export shapes and run whichever applies to each file. The discipline that makes it work is dividing the demand cleanly: agree which plants, product families, or order ranges are live on which system, and make sure no work order can arrive from both. The failure to avoid is double-counted demand, where the same job imports under two references and books capacity twice, so a machine looks full while the floor stands idle. Reconcile the total open job count against the two ERPs weekly during the parallel period."
+---
+
+**Replacing the ERP under a file-based scheduler is a re-mapping exercise, not a re-integration project: your work centers, instance counts, calendars, setup matrices, groups, skills, routings, jobs, and history all stay exactly where they are, and what you rebuild is the set of import masks that read the new system's column headings.** Nothing was installed in the old ERP, so there is nothing to decommission, no connector license to repurchase, and no integration credential to retire.
+
+EDGEBIC by User Solutions has followed customers through ERP replacements since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the pattern holds: the scheduler is the thing that keeps working while the system of record changes underneath it.
+
+## What survives untouched
+
+Everything that encodes how your shop actually runs, which is most of the value in the model:
+
+| What stays | Why it is unaffected |
+|---|---|
+| Work centers and machine instance counts | Configured locally, never exported by any ERP at this grain |
+| Shifts and plant holidays | Authored as your own calendar |
+| Sequence-dependent setup matrices | No ERP carries a from-product-to-product matrix |
+| Work center groups and their efficiency factors | Built in EDGEBIC |
+| Operator skills and rosters | No routing export models a certification |
+| Bottleneck flags, queue policy, transfer batches | Planner judgment |
+| Existing jobs, actuals, and change history | Local records, untouched by any import |
+
+That list is exactly the set of fields covered in [choosing the system of record for each scheduling field](/blog/choosing-the-system-of-record-for-each-scheduling-field), and it is why the ownership map is worth writing down long before a migration is on the horizon. Everything EDGEBIC owns is immune to the change by construction.
+
+## What you rebuild
+
+Four things, and none of them are large:
+
+**The masks.** A new ERP produces different column headings, so each mask is rebuilt by dragging the new headings onto the same target fields. Products, work centers, routings, work orders, and optionally labor: five files, an afternoon.
+
+**The export mechanism.** Saved reports, list exports, or database views on the new system. Whether a view is worth the effort over a CSV is covered in [CSV versus database view export trade-offs](/blog/csv-vs-database-view-erp-export-tradeoffs).
+
+**The filter.** Status codes will be named differently, so the rule that decides which work orders reach the plan has to be restated. The framework is in [deciding which ERP work orders to import](/blog/deciding-which-erp-work-orders-to-import).
+
+**The unit conventions.** The new system may quote times in minutes where the old one used hours, or per hundred where the old one was per piece. Each is a conversion factor on a column in the mask, applied before the value is stored, and the table of factors is in [mapping your ERP's units of measure](/blog/mapping-your-erps-units-of-measure-for-scheduling).
+
+## Identifier continuity is the whole risk
+
+If one thing deserves a decision at project kickoff rather than at cutover, it is this.
+
+Products and work centers match on the identifier, case-insensitively, so `BRK-200` finds `brk-200`. A renumbered catalog therefore imports as a new catalog: every part Created rather than Updated, routings landing on new records, and open work orders splitting across two sets of products that describe the same physical parts.
+
+Three ways through, in order of preference:
+
+1. **Carry the legacy number across.** Most ERP implementations support a cross-reference or legacy part field. Export that field as the identifier until you deliberately switch.
+2. **Plan the identity change.** Import the new catalog, re-import routings under the new identifiers, and let the old records go quiet as their jobs finish. Expect a high Created count on the first run and treat it as expected rather than alarming.
+3. **Never mix.** The one genuinely bad option is some exports carrying old numbers and others carrying new ones. The resulting half-and-half state is harder to unpick than either clean version.
+
+The same reasoning applies to work center names and to job numbers. The conventions that hold up over time are in [keeping product masters in sync](/blog/keeping-product-masters-in-sync-erp-edgebic) and [keeping job numbers aligned between ERP and EDGEBIC](/blog/keeping-job-numbers-aligned-between-erp-and-edgebic).
+
+## Scheduling keeps running through cutover
+
+This is worth saying plainly, because it is unusual.
+
+The plan is computed locally from data already imported. During the days when the old ERP is frozen and the new one is not yet live, the shop still gets a schedule and a dispatch list. What you lose temporarily is the ability to bring in new demand, and you cover that by importing a final work order file before the freeze begins.
+
+Nothing else stops. Operators keep logging hours, actuals keep landing on jobs, completed work is never moved by a reschedule, and the plan can be re-run daily against whatever the last known demand was.
+
+## A workable sequence
+
+| When | Work |
+|---|---|
+| Before go-live | Decide identifier continuity; get a sample export of each entity from the new system |
+| 2 weeks before | Build the new masks against the sample files; confirm units and mandatory fields |
+| 1 week before | Dry run: import into a copy of your data, schedule, and compare dates against today's plan |
+| Cutover week | Final import from the old system before the freeze; keep scheduling locally |
+| Go-live +1 day | First real import from the new system; run the full reconciliation |
+| Go-live +1 week | Compare Created and Reused counts; clear orphan work centers and stale jobs |
+| Go-live +1 month | Full data audit, including planned versus logged hours on finished jobs |
+
+The dry run is the step people skip and then wish they had not. Building masks against a sample export a fortnight early turns cutover day into a repeat of something you have already done. The wider go-live shape is in [an ERP and EDGEBIC go-live cutover plan](/blog/an-erp-and-edgebic-go-live-cutover-plan), and the from-empty sequence is in [migrating work centers and shifts to EDGEBIC](/blog/migrating-work-centers-and-shifts-to-edgebic).
+
+## Watch for changes in shape, not just headings
+
+A new ERP often models the same data differently, and the mask alone will not tell you. Four to check specifically:
+
+- **Setup and run.** Blended into one standard, or split onto separate operation rows. Both cases are handled in [combined setup and run time](/blog/handling-combined-setup-and-run-time-from-your-erp) and [setup as its own operation row](/blog/when-your-erp-exports-setup-as-its-own-operation-row).
+- **Operation sequence.** Alphanumeric codes, or numbering that restarts per department. Covered in [importing ERP operation sequence numbers](/blog/importing-erp-operation-sequence-numbers).
+- **Quantity.** Original ordered versus open balance, which decides whether actuals or the ERP net your progress.
+- **Dates.** Which of the several date columns is the commitment, addressed in [customer due dates versus internal need dates](/blog/importing-customer-due-dates-vs-internal-need-dates).
+
+## Then it is a normal week again
+
+Once the new masks are saved, the recurring routine is what it was: export, pick the mask, run, read the counts, schedule, export dates back. The engine underneath never noticed the change, and it keeps doing what it does: finite capacity across shifts and machine instances, work center groups, sequence-dependent setups, lot streaming with transfer batches, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, the [ERP integration architecture](/edgebic-erp-integration) shows the import layer, and [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way) explains why the method does not care which system is on the other end.
+
+If the two systems will overlap for a while, the parallel-running case has its own post: [scheduling a shop that runs two ERPs](/blog/scheduling-a-shop-that-runs-two-erps).
+
+## Bring a sample from the new system
+
+As soon as your implementation team can produce sample exports from the new ERP, [bring them to a demo](/contact-us). Mapping them live tells you within half an hour whether the new system will hand you a cleaner routing than the old one, and where you will need a conversion factor.
+
+<Accordion title="If we replace our ERP, do we have to reimplement EDGEBIC?">
+No. The scheduling model stays exactly as it is: work centers, machine instance counts, shift and holiday calendars, setup matrices, work center groups, operator skills, and every job and actual already recorded. What changes is the mapping layer, because the new ERP's exports have different column headings. Rebuilding a mask is drag-and-drop work measured in minutes per file, not a project.
+</Accordion>
+
+<Accordion title="Is there anything to uninstall from the old ERP?">
+No, because nothing was ever installed. The integration is a file interface: exports come out of the ERP and go into reusable import masks, with no connector, no script inside the ERP, no integration user, and no credential to rotate. That is one of the practical advantages of the approach, and it shows up most clearly on the day you decommission a system.
+</Accordion>
+
+<Accordion title="Can we keep scheduling the shop while the ERP is being cut over?">
+Yes, and this is often the strongest argument for a file-based scheduler during a migration. The plan is computed locally from data already imported, so the shop still gets a dispatch list on the days the ERP is unavailable. You lose the ability to import new demand until the new system is exporting, which you cover by importing a final work order file before the freeze.
+</Accordion>

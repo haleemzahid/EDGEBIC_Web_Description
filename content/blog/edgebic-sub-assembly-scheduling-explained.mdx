@@ -1,0 +1,107 @@
+---
+title: "EDGEBIC Sub-Assembly Scheduling Explained: One Job, Several Levels"
+description: "How EDGEBIC schedules multi-level products: a component with its own routing is exploded into the parent job, timed to feed it, with hours and cost rolled up recursively."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - sub assembly scheduling
+  - multi level routing
+  - multi level manufacturing scheduling
+  - component routing explosion
+  - assembly production scheduling
+  - finite capacity scheduling
+targetPhrase: "sub assembly scheduling"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What makes a component a sub-assembly in EDGEBIC?"
+    answer: "A component becomes a sub-assembly the moment the product it points at has a routing of its own. A component with no routing is a plain material, an instant gate that says the part must be here before this step runs. A component that carries its own routing is exploded at schedule time, so its operations are planned on real work centers as part of the parent job. Nothing else has to be declared: the presence of a child routing is the switch."
+  - question: "Does a sub-assembly create a second manufacturing order?"
+    answer: "No. The sub-assembly's operations are exploded into the parent job and scheduled with it, so one order covers every level. The advantage is that the timing between levels is decided by the scheduler rather than by two orders and a planner guessing the offset between them. The frames are planned to finish when assembly needs them, on the same finite capacity as everything else competing for those machines."
+  - question: "Do sub-assembly hours count in a product's estimated hours and cost?"
+    answer: "Yes, and recursively. A product's estimated hours, labor, and material roll up through every level of sub-assembly below it, respecting the quantity multiplier at each step, so a parent whose work lives entirely in its children no longer reads near zero hours. Nested children count, a component referenced twice counts twice, and the rollup is protected against a data error that would otherwise make it recurse forever."
+qaQuestions:
+  - question: "Our frames feed three different products. Should each parent explode its own frames, or should we build frames to stock?"
+    answer: "It depends on whether the frames are genuinely interchangeable and whether you want inventory. Exploding per parent keeps everything tied to the order that needs it, which suits make-to-order work and means no frame is built that nobody wants. Building frames to stock decouples the levels: frames run in efficient batches, parents pull from the balance, and the assembly step stops waiting on a frame operation that is competing for the same welder as three other jobs. The scheduling consequence is the one to weigh. Exploding per parent puts every parent's frame work into the same finite capacity pool, so three parents due the same week compete for the welder three times over, and the constraint shows up honestly. That visibility is useful, and it is also the argument for building to stock ahead of a known peak rather than discovering the collision in the plan."
+  - question: "A planner turned off include sub-assemblies to make a run finish faster and now the schedule looks wrong. What actually changed?"
+    answer: "Turning it off tells the scheduler to plan only the top-level routing, so every level below the parent stops being planned at all. The parent's own operations still schedule, and they schedule earlier, because the work that used to have to happen first is no longer in the plan. That is why the schedule looks better and is worse: the frames are still needed, still take hours, and still compete for the same machines, but none of that is on the board. The setting is a site-wide policy, not a per-job option, so one person changing it changes what everyone sees on the next run. Treat it as a deliberate modeling decision for a plant that genuinely plans its component levels somewhere else, not as a performance dial."
+---
+
+**EDGEBIC by User Solutions schedules a multi-level product as one job: when a routing consumes a component that has a routing of its own, that child routing is exploded and planned alongside the parent, timed so the component is ready when the step that consumes it needs it.** No second order, no planner-guessed offset between levels, and no level exempt from finite capacity.
+
+The switch that turns a component into a sub-assembly is not a checkbox. It is whether the component product has a routing. Whether those child routings are planned alongside the parent at all is a separate option, [Include Sub-Assemblies in Schedule](/blog/what-is-the-include-sub-assemblies-in-schedule-setting), which is on by default.
+
+## Material or Sub-Assembly
+
+Both appear on a routing the same way, as a product step rather than a work center step. What distinguishes them is what sits behind the product.
+
+| The component product | How the routing step behaves |
+|---|---|
+| Has no routing of its own | A [material step](/blog/edgebic-material-steps-explained): an instant gate saying this part must be available before the consuming operation runs. No capacity is booked. |
+| Has a routing of its own | A sub-assembly: its operations are exploded at schedule time and planned on real work centers as part of this job. |
+
+EDGEBIC marks the difference where you can see it. In the routing grid and on the visual canvas the component carries a star, with a tooltip naming it as a sub-assembly that has its own routing and is exploded at schedule time, and a control to preview the child routing read-only without leaving the parent.
+
+That preview matters more than it sounds. The most common surprise with multi-level work is a parent whose apparent hours are small because most of the effort lives one level down, and being able to open the child routing from the parent is how a planner checks that instead of assuming it.
+
+## Building One
+
+On the [visual routing canvas](/blog/edgebic-visual-routing-editor-explained), adding a sub-assembly is three moves: drag the component product onto the canvas from the products toolbox, draw a connector from it into the operation that consumes it, and set its properties.
+
+The properties are short and both matter.
+
+**Quantity** is how many of the component go into one of the parent. It is a multiplier on everything below: the child's operations, its hours, its cost. A quantity of two on a frame that takes 0.5 hours per unit means one hour of frame work per parent unit, and on a 100-unit order that is 100 hours of frame work in the plan, not 50.
+
+**Lead time in days** is the procurement tail where the component needs one, which is the field that stops a planned component from being treated as available the instant its last operation ends.
+
+The step-by-step version is in [how to add a sub-assembly to a routing](/blog/how-to-add-a-sub-assembly-to-a-routing-in-edgebic).
+
+## How the Scheduler Handles the Levels
+
+Once exploded, the child's operations are ordinary operations. They book capacity on real work centers, respect shifts and holidays, queue behind other jobs, and obey the same setup and queue time rules as anything else. There is no separate, softer capacity model for component work.
+
+Ordering across levels is decided by the dependency graph, not by the order steps happen to sit in a list. Every operation, parent or child, is placed by its actual predecessor relationships, which is what guarantees the frame operations land before the assembly operation that consumes them rather than merely near it. The mechanics of that ordering are covered in [how EDGEBIC orders operations](/blog/how-edgebic-orders-operations-dependency-graphs).
+
+The practical consequence is the one worth internalizing: the parent's assembly step cannot start early just because the machine is free. It starts when its inputs are genuinely ready, and if the frame's welding operation is stuck behind three other jobs, the whole job moves. That is finite capacity doing its job across levels rather than only within one.
+
+## Hours and Cost Roll Up Recursively
+
+A product's estimated hours and cost include everything below it. The rollup walks the whole tree, adding hours, labor, and material at every level, and it applies each step's quantity multiplier as it goes.
+
+A worked shape from the regression suite makes it concrete. A product whose routing consumes a bracket assembly, which in turn consumes a base plate, resolves to 22.5 hours per unit once every level is counted, which is 225 hours on an order of ten. Before recursive rollup, a parent whose work lived entirely in its children read close to zero hours, and any quote priced off that estimate was wrong in the same direction every time.
+
+Three properties of the rollup are worth knowing:
+
+- **Nested levels count.** A child of a child is included, to any depth.
+- **Repeated references count.** A component used twice in a routing contributes twice.
+- **A data error cannot hang it.** A circular reference is detected rather than followed forever.
+
+The same rolled-up numbers feed the order cost analysis and the pre-simulation estimate on a quote, by construction, so the two surfaces agree. Where the quote goes further is [quote simulation](/blog/edgebic-quote-simulation-explained), which actually runs the scheduler against live capacity instead of summing a recipe.
+
+## The Site-Wide Switch
+
+EDGEBIC has one site-wide policy for this, on the Schedule tab of the Settings screen: **include sub-assemblies in schedule**, on by default.
+
+On, multi-level products are exploded and every level is planned. Off, only the top-level routing is planned, and the levels below it simply do not appear in the schedule.
+
+Off is a legitimate model for a plant that genuinely plans its component levels somewhere else, in a separate system or as independently released work. It is not a performance dial, and treating it as one produces a plan that looks better because it is smaller: the parent's operations move earlier, the machines look freer, and the component work is still going to happen. Because it is site-wide rather than per-job, one person's change is everyone's next run. The wider set of policy choices is covered in [configuration options](/blog/edgebic-configuration-options-explained).
+
+## Levels and Actuals
+
+When operators log work, sub-assembly operations carry their own actuals, separately from the parent's. That is what keeps a partially built job legible: you can see that the frames are done and assembly has not started, rather than one blended percentage across the whole tree.
+
+It also means the usual rule applies at every level: completed work is not moved by a reschedule. A frame operation finished on Tuesday keeps its Tuesday, and the reschedule replans only what is left, which is the same guarantee described in [how EDGEBIC preserves completed work](/blog/how-edgebic-preserves-completed-work-on-reschedule). The job's own [frozen routing copy](/blog/edgebic-routing-snapshots-explained) covers the sub-assembly structure too, so an engineering change to the standard routing does not restructure a job already running.
+
+## Where It Fits
+
+Sub-assembly scheduling is what makes EDGEBIC useful to plants that build things out of things they also build. The definition of the model lives in the [bill of routing](/blog/edgebic-bill-of-routing-explained), the general concept is covered in [what is a sub-assembly](/blog/what-is-a-sub-assembly-in-manufacturing), and the case where one component feeds several parents at once is covered in [scheduling sub-assemblies across jobs](/blog/scheduling-sub-assemblies-across-jobs-edgebic).
+
+The [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps how the levels connect to the rest of the system, and [/edgebic](/edgebic) covers the platform as a whole.
+
+## The Level You Forget Is the One That Makes You Late
+
+Multi-level products fail on schedule for a consistent reason: the parent was planned honestly and the level below it was planned optimistically, or not at all. Exploding the child routing into the same finite capacity as everything else removes the place that optimism was hiding. The plan may come out later than you hoped. It comes out true, which is the only version worth promising a customer.

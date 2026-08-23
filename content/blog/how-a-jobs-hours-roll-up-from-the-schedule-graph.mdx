@@ -1,0 +1,100 @@
+---
+title: "How a Job's Hours Roll Up From the Schedule Graph"
+description: "How EDGEBIC totals a job's planned, actual, and remaining hours from the placed schedule rows, why it excludes sub-assembly and parallel duplicates, and why the order estimate is the wrong source."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - job hours rollup
+  - planned vs actual hours
+  - remaining hours calculation
+  - schedule graph totals
+  - percent complete manufacturing
+  - job progress tracking
+targetPhrase: "job hours rollup"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "Where does a job's total planned hours number come from?"
+    answer: "It comes from the placed schedule rows, not the order's estimate. EDGEBIC sums the planned hours across every scheduled operation the engine created for the job, so the total reflects what was actually placed against capacity. The order-level estimate captured when the job was entered is a quoting figure and is frequently zero for a scheduled job, which is exactly why the header does not use it."
+  - question: "How is a job's remaining hours figured?"
+    answer: "Remaining is planned minus actual, computed from the same rolled-up schedule rows. If a job has 40 planned hours and 24 logged as actual across its operations, the remaining is 16. Because actual hours are logged per operation and per day, the remaining figure drops as the floor reports progress, and percent complete is actual divided by planned expressed as a percentage."
+  - question: "Why do job totals exclude sub-assembly and parallel rows?"
+    answer: "To avoid double counting. A sub-assembly rollup row and the parallel siblings of an operation represent the same physical work seen from more than one angle, so adding all of them would inflate the total. EDGEBIC always excludes sub-assembly rollup rows, and it excludes parallel siblings when the primary-hours-only setting is on, so the job total reflects real work once rather than the same hours several times."
+qaQuestions:
+  - question: "My job is fully scheduled but the header shows 0 hours and 0 percent complete. What is wrong?"
+    answer: "The header is almost certainly reading the order's estimate rather than the schedule graph. The estimate is a quote-time figure captured at order entry from the bill of routing, and it is often zero once a real routing has been scheduled, so binding a header to it makes a fully-placed job read as empty. EDGEBIC's job header instead sums the placed schedule rows through its hours rollup, so a scheduled job shows real planned hours, real actuals as they are logged, and a live percent complete. If you see 0, check that the figure is sourced from the schedule, not the order estimate."
+  - question: "I have two identical machines running one operation in parallel, and my job total looks twice as big as it should. Why?"
+    answer: "The parallel siblings are being counted as separate work. When one operation runs on several machines at once, each machine has its own schedule row, and summing all of them counts the same physical operation more than once. Turn on the primary-hours-only setting so the rollup counts only the primary row and treats the siblings as the same work, and the total drops back to the real figure. Sub-assembly rollup rows are always excluded for the same reason, but the parallel exclusion is a toggle because some shops genuinely want to see the combined machine hours."
+---
+
+**A job's total, actual, and remaining hours come from the placed schedule rows the engine produced, not from the estimate captured when the order was entered. EDGEBIC by User Solutions sums planned hours across every scheduled operation, subtracts the actuals logged against them to get remaining, and divides actual by planned for percent complete, excluding sub-assembly rollup rows and, optionally, parallel siblings so the same work is never counted twice.** This is why the job header on a fully-scheduled job shows real numbers even when the order's original estimate reads zero.
+
+There are two candidate sources for "how many hours is this job," and they are not the same number. Knowing which one the header uses explains a whole class of "why does this say zero?" confusion.
+
+## Two different hours numbers
+
+Every job carries an order-level estimate, computed at order entry by walking the [bill of routing](/blog/what-is-a-bill-of-routing) and summing the routing's hours against the ordered quantity. It is a quoting figure. It answers "roughly how much work is this?" before anything is scheduled, and for many scheduled jobs it sits at zero because the estimate was never populated or the routing changed after entry.
+
+The schedule graph is the other source. When the engine places a job, it produces one schedule row per operation, each carrying the planned hours the allocator actually reserved on a work center. Those rows are the real, placed work. Summing them gives a total that reflects what the plan committed, not what a quote guessed.
+
+The job header uses the schedule graph, deliberately. Binding it to the order estimate is the classic mistake: a fully-placed job would read 0 hours and 0 percent complete because the estimate is empty, even though the Gantt is full of bars. The rollup reads the bars.
+
+## Planned, actual, and remaining
+
+The rollup produces four figures the header shows: total planned, actual, remaining, and percent complete.
+
+**Total planned** is the sum of planned hours across the job's schedule rows. When a row's stamped planned total is unset, the rollup falls back to the sum of that operation's assigned resource hours, so the figure is never blank for a placed operation.
+
+**Actual** is the sum of hours logged against those operations by the floor, through the kiosk or the Log Actuals grid. Until anything is logged, actual shows a dash rather than a misleading zero, so an unstarted job reads "not started" rather than "zero hours of work."
+
+**Remaining** is planned minus actual. A 40-hour job with 24 logged has 16 remaining. As the floor reports progress the remaining figure falls, which is what makes the header a live progress readout rather than a static plan.
+
+**Percent complete** is actual divided by planned, expressed as a percentage. The same figure drives [percent complete](/blog/what-is-percent-complete-in-manufacturing-scheduling) wherever it appears, so the header and the reports agree.
+
+## Why duplicates are excluded
+
+A naive sum over every schedule row would double count, because some rows describe the same physical work from more than one angle.
+
+A **sub-assembly** exploded into a parent job produces its own operation rows plus a rollup row that represents the sub-assembly's contribution to the parent. Counting both the detailed rows and the rollup row would add the sub-assembly's hours twice. EDGEBIC always excludes the sub-assembly rollup rows from the job total, so the component's real machine operations are counted once.
+
+**Parallel siblings** are the other case. When one operation runs on several machines at once, each machine has its own schedule row for the same operation. Summing all of them counts one operation as many. EDGEBIC excludes the parallel siblings when the primary-hours-only setting is on, counting only the primary row. That exclusion is a toggle rather than a hard rule, because some shops genuinely want the combined machine hours in the total; the sub-assembly exclusion is always on because there is no legitimate reason to count a rollup row and its details together.
+
+## A worked example
+
+A job for 100 brackets, four operations, one of them running in parallel on two identical mills.
+
+| Operation | Machine | Planned hours | Actual logged |
+|---|---|---|---|
+| Saw | Saw-1 | 6 | 6 |
+| Mill (primary) | Mill-1 | 10 | 4 |
+| Mill (parallel sibling) | Mill-2 | 10 | 4 |
+| Deburr | Finish-1 | 4 | 0 |
+| Inspect | QC-1 | 2 | 0 |
+
+The two mill rows are the same operation split across two machines to finish faster. With primary-hours-only on, the rollup counts the Saw (6), the primary Mill (10), Deburr (4), and Inspect (2) for a **total planned of 22 hours**. It counts the logged actuals the same way: Saw 6 and primary Mill 4, for **10 actual hours**. Remaining is 22 minus 10, or **12 hours**, and percent complete is 10 over 22, about **45 percent**.
+
+Turn primary-hours-only off and the total becomes 32 planned and 14 actual, because both mill rows now count. Neither number is wrong; they answer different questions. Primary-hours-only asks "how much work is in this job," and the combined view asks "how many machine hours will this job consume." The order estimate, meanwhile, might read 0, which is why it never touches the header.
+
+## Why the source matters
+
+The reason to insist on the schedule graph is trust. A planner reading a job header wants to know where the job actually stands: how much is placed, how much is done, how much is left. The schedule rows carry that truth because the engine placed them and the floor logs against them. The order estimate carries a different, older truth, a quote made before the plan existed.
+
+The same principle runs through the whole engine. Capacity is consumed by placed rows, not by estimates; progress is measured by logged actuals, not by assumptions. That is why the header refreshes only after the schedule graph is finalized, so it never reports a half-built rollup. And it is why two places that both claim to show a job's hours can disagree only when one of them is reading the estimate and the other the graph, never because the arithmetic differs.
+
+For the bigger picture of how placed rows become a plan, see the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and for the raw material the actuals side of the rollup consumes, [planned versus actual hours](/blog/what-is-planned-vs-actual-hours) defines the pair. The way those hours land on specific days, one level below the job total, is covered in [how queue, flow, and transit stack after an operation](/blog/how-queue-flow-and-transit-stack-after-an-operation) and the multi-day placement in [how multi-shift allocation fills capacity](/blog/how-multi-shift-allocation-fills-capacity). To see your own jobs total correctly from the schedule rather than a stale estimate, explore [EDGEBIC](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="Where does a job's total planned hours number come from?">
+It comes from the placed schedule rows, not the order's estimate. EDGEBIC sums the planned hours across every scheduled operation the engine created for the job, so the total reflects what was actually placed against capacity. The order-level estimate captured when the job was entered is a quoting figure and is frequently zero for a scheduled job, which is exactly why the header does not use it.
+</Accordion>
+
+<Accordion title="How is a job's remaining hours figured?">
+Remaining is planned minus actual, computed from the same rolled-up schedule rows. If a job has 40 planned hours and 24 logged as actual across its operations, the remaining is 16. Because actual hours are logged per operation and per day, the remaining figure drops as the floor reports progress, and percent complete is actual divided by planned expressed as a percentage.
+</Accordion>
+
+<Accordion title="Why do job totals exclude sub-assembly and parallel rows?">
+To avoid double counting. A sub-assembly rollup row and the parallel siblings of an operation represent the same physical work seen from more than one angle, so adding all of them would inflate the total. EDGEBIC always excludes sub-assembly rollup rows, and it excludes parallel siblings when the primary-hours-only setting is on, so the job total reflects real work once rather than the same hours several times.
+</Accordion>

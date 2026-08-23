@@ -1,0 +1,103 @@
+---
+title: "Anchor Scheduling vs Plain Backward Scheduling"
+description: "Anchor scheduling vs plain backward scheduling: pinning a bottleneck to a target date against right-aligning a whole order to its due date, with worked dates."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - anchor scheduling vs backward scheduling
+  - theory of constraints scheduling
+  - bottleneck anchor
+  - backward scheduling
+  - constraint buffer
+  - target start date scheduling
+targetPhrase: "anchor scheduling vs backward scheduling"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between anchor scheduling and backward scheduling?"
+    answer: "Anchor scheduling pins one bottleneck operation to a target start date, then schedules the upstream steps backward to feed it and the downstream steps forward from it. Backward scheduling right-aligns the entire order to its due date, placing every step as late as feasible so the last one finishes just in time. Anchor protects a single constraint's timing; backward times the whole job to the delivery date. Anchor pins in the middle of the routing; backward pins at the end."
+  - question: "When should I anchor a job to a bottleneck instead of backward scheduling it?"
+    answer: "Anchor a job when a specific bottleneck operation must start at a known time and you want everything else timed to keep that constraint fed. This is the Theory of Constraints posture: the bottleneck sets the pace and the rest of the routing subordinates to it. Use plain backward scheduling when there is no single dominant constraint and you simply want the whole order to finish just in time at its due date, minimizing inventory rather than protecting one resource."
+  - question: "What happens if a job is marked both anchored and backward?"
+    answer: "The anchor wins. A pinned target start date is treated as a harder constraint than the due date, because the anchor path already runs its own backward-then-forward split around the pinned step, and a whole-order backward pass on top of it would fight the pin. So a job carrying both a target start date and a backward direction takes the anchor path, and the session log records that the anchor won because it is a user-placed constraint stronger than the due date."
+qaQuestions:
+  - question: "My heat-treat oven is the constraint and I need it to start exactly Monday at 07:00. How do I make the rest of the routing fit around that?"
+    answer: "Mark the oven as the bottleneck and set a target start date of Monday 07:00 on the oven's schedule row. The engine then pins the oven at 07:00, back-schedules the lathe and mill so they finish just in time to feed it, and forward-schedules the grind and inspect steps from the oven's end. In the worked case the oven runs 22 hours from Monday 07:00, the upstream steps land over the prior weekend, and the downstream steps chain forward, with no capacity wasted at the constraint."
+  - question: "I set a bottleneck flag but the job still scheduled forward. Why did anchor mode not fire?"
+    answer: "Marking a work center as a bottleneck is not enough on its own; you must also set a target start date on that step's schedule row. Anchor mode activates only when the engine finds an existing schedule row with a target start date and matches it to a routing step. Without the target date, the job falls through to standard forward scheduling even though the bottleneck flag is set. Both conditions are required, and on a brand-new job with no prior schedule row there is no row to carry the target date yet."
+---
+
+**Anchor scheduling pins one bottleneck operation to a target start date and builds the rest of the routing around it, while plain backward scheduling right-aligns the entire order to its due date.** Both involve scheduling backward, which is why they get confused, but they pin at different points and for different reasons. Anchor pins in the middle of the routing to protect a constraint; backward pins at the end to time the whole job to delivery. EDGEBIC by User Solutions implements both, and when a job carries instructions for both, the anchor wins, because a pinned constraint is a harder commitment than a due date.
+
+## Two backward passes that are not the same
+
+The word "backward" hides a real difference. Plain backward scheduling takes the whole order and places every step as late as feasible so the last step ends at or before the due date. The slack sits in front. This is the just-in-time posture covered in [forward vs backward scheduling](/blog/forward-vs-backward-scheduling).
+
+Anchor scheduling is a Theory of Constraints technique. It does not care primarily about the due date. It cares that the plant bottleneck never starves. So it pins the bottleneck operation to a planner-chosen target start date, schedules the upstream steps backward so they finish just in time to feed that pin, and schedules the downstream steps forward from the pin through to completion. The pin sits in the middle of the routing, not at the end.
+
+| | Anchor scheduling | Plain backward scheduling |
+|---|---|---|
+| Pin point | The bottleneck step, mid-routing | The last step, at the due date |
+| Goal | Keep the constraint fed and protected | Finish the whole order just in time |
+| Upstream | Backward from the pin | Backward from each successor |
+| Downstream | Forward from the pin | Part of the same backward pass |
+| Triggered by | A target start date on a step | The order's backward direction plus a real due date |
+
+## How anchor mode fires
+
+Anchor scheduling activates only when two conditions are both true. You mark the work center as a bottleneck, and you set a target start date on that step's schedule row. The flag alone does nothing; the target date alone on a non-bottleneck step still anchors but with smaller safety buffers. Both together give the full Theory of Constraints treatment.
+
+When it fires, the engine first validates the constraint by computing a load factor for every work center in the routing, demand hours divided by daily capacity. If the anchor really is the tightest resource, it earns the large demand-proportional buffers; if not, it gets small fixed ones. Then it splits the routing around the anchor and schedules in both directions.
+
+## A worked anchor example
+
+Two hundred precision shafts through a five-step routing. The heat-treat oven is the bottleneck, single instance, long cycle. The planner sets a target start of Monday 07:00 on the oven step.
+
+The load check confirms the oven dominates:
+
+```
+HeatTreat: (0.10 x 200 + 2) / (8 h x 1) = 2.75   <- highest, genuine constraint
+Lathe:     (0.08 x 200 + 1) / (8 h x 2) = 1.06
+Mill:      (0.05 x 200 + 0.5) / (8 h x 1) = 1.31
+Grind:     (0.06 x 200 + 0.5) / (8 h x 2) = 0.78
+```
+
+With buffers off, the schedule is tight:
+
+```
+Anchor  HeatTreat: Mon 07:00 to Tue 05:00 (22 h)
+Backward Mill (11.5 h):  starts Sun 19:30, feeds the oven just in time
+Backward Lathe (19 h):   starts Sat ~00:30
+Forward  Grind (12.5 h): Tue 05:00 to Tue 17:30
+Forward  Inspect (4 h):  Tue 17:30 to Tue 21:30
+```
+
+The oven starts exactly at the planner's target. The lathe and mill are back-calculated to their latest acceptable starts so they finish just in time, and the downstream steps chain forward. No capacity is wasted at the constraint. Turn on the optional buffers and the engine adds a constraint buffer before the anchor (half the upstream content), a shipping buffer after it, and a feeding buffer on the step that directly feeds it, trading lead time for protection against upstream variation.
+
+## Plain backward, by contrast
+
+Plain backward scheduling would take the same job and right-align the whole thing to the due date, without singling out the oven. Each step's deadline comes from its successors' actually placed starts, so capacity-forced moves ripple upstream through joins correctly. There is no priority escalation for the constraint, no constraint buffer, no forward pass from a mid-routing pin. It is the right tool when no single resource dominates and you just want the order to land on its due date with minimal inventory ahead of it.
+
+## Why the anchor wins when both apply
+
+If a job is both anchored and marked backward, the engine takes the anchor path. A target start date is a user-placed constraint that is harder than the due date, and the anchor path already performs its own backward-then-forward split around the pinned step. Running a whole-order backward pass on top of that would fight the pin. This is also why setting a target start date on any schedule row silently converts a backward job into an anchored one on the next run. The full precedence chain is anchor, then actuals, then planner pins, then backward, then forward.
+
+## Choosing between them
+
+Anchor a job when a specific bottleneck must start at a known time and everything else should subordinate to keeping it fed; that is the [Theory of Constraints](/blog/edgebic-toc-anchor-scheduling-explained) discipline. Use plain backward when there is no dominant constraint and you want the whole order timed just in time to the due date. If you are not sure which resource is your constraint, start with [identifying your production bottleneck](/blog/production-bottleneck-identification), and see how the engine keeps a shared constraint fed across many jobs in [how finite capacity scheduling handles a shared bottleneck](/blog/how-finite-capacity-scheduling-handles-a-shared-bottleneck). The full engine pipeline, including the direction-precedence rules, lives in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). Pin your own constraint and watch the routing rebuild around it in [EDGEBIC](/edgebic).
+
+<Accordion title="What is the difference between anchor scheduling and backward scheduling?">
+Anchor scheduling pins one bottleneck operation to a target start date, then schedules the upstream steps backward to feed it and the downstream steps forward from it. Backward scheduling right-aligns the entire order to its due date, placing every step as late as feasible so the last one finishes just in time. Anchor protects a single constraint's timing; backward times the whole job to the delivery date. Anchor pins in the middle of the routing; backward pins at the end.
+</Accordion>
+
+<Accordion title="When should I anchor a job to a bottleneck instead of backward scheduling it?">
+Anchor a job when a specific bottleneck operation must start at a known time and you want everything else timed to keep that constraint fed. This is the Theory of Constraints posture: the bottleneck sets the pace and the rest of the routing subordinates to it. Use plain backward scheduling when there is no single dominant constraint and you simply want the whole order to finish just in time at its due date, minimizing inventory rather than protecting one resource.
+</Accordion>
+
+<Accordion title="What happens if a job is marked both anchored and backward?">
+The anchor wins. A pinned target start date is treated as a harder constraint than the due date, because the anchor path already runs its own backward-then-forward split around the pinned step, and a whole-order backward pass on top of it would fight the pin. So a job carrying both a target start date and a backward direction takes the anchor path, and the session log records that the anchor won because it is a user-placed constraint stronger than the due date.
+</Accordion>

@@ -1,0 +1,159 @@
+---
+title: "How EDGEBIC Nets Demand Against Stock: The Decision, Step by Step"
+description: "Netting demand against inventory decides which orders build and which consume stock. Here are the gates, the reservation map and the ledger entries behind it."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - netting demand against inventory
+  - consume from stock scheduling
+  - satisfied from stock order
+  - inventory reservation scheduling run
+  - forward netting production
+  - reschedule inventory idempotency
+  - build quantity override netting
+targetPhrase: "netting demand against inventory"
+wordCount: 1937
+readingTime: 10
+faqQuestions:
+  - question: "What does netting demand against inventory mean in scheduling?"
+    answer: "Netting demand against inventory is the check a scheduling engine performs before committing machine time: does existing stock already cover this order, in whole or in part? If stock covers the full quantity, no work center operations are created and the order is marked satisfied from stock. If stock covers only part, the shortfall is built. The consumed quantity is posted to the inventory ledger as an issue pegged to that order."
+  - question: "Which orders are eligible to consume stock?"
+    answer: "Three gates must all pass. The product must be flagged as stocked, since an unstocked item skips inventory entirely. The order must not itself be a build-to-stock producer, because producers add to inventory rather than draw from it. And the order must have no logged actuals, because work already started on the floor is never retroactively cancelled by a stock balance."
+  - question: "Can two orders in the same scheduling run claim the same stock?"
+    answer: "No, because availability is decremented the moment the first order is netted, before the second is evaluated. The engine seeds a run-scoped availability figure per product from the ledger at the start of the run and draws it down order by order. If 80 units are available and the first order consumes 60, the next order sees 20, not 80. That ordering is what prevents the same units from being promised twice inside one run."
+  - question: "What happens to inventory when a scheduled order is rescheduled?"
+    answer: "The previous consumption is reversed before the engine re-decides. Reversal commits first, restoring availability to its pre-run level, then the netting decision runs fresh against the restored figure and posts a new issue if it still qualifies. The ledger accumulates an issue, a reversal and a re-issue, which is more rows but a complete history, and at most one live consumption exists for an order at any moment."
+qaQuestions:
+  - question: "An order for 100 finds only 60 in stock. Does it consume the 60 and build 40, or ignore stock and build all 100?"
+    answer: "Full satisfaction is the documented behavior: the order is either covered entirely from stock or scheduled normally. When available stock is short of the need, the netting check returns false and the order is scheduled onto the floor for its full quantity, leaving the 60 units untouched for a later demand they can fully cover. The engine does carry a run-scoped build quantity for each step, which is zero when a demand is met from stock, so partial netting has a natural home in the mechanism. Check how your configuration behaves on your own data before you build a policy around partial coverage."
+  - question: "Two orders this week make and then use the same subassembly. Why does the schedule build it twice?"
+    answer: "Because by default the netting check looks at a point-in-time balance taken at the start of the run, and the producer's output does not exist yet at that moment. The consumer sees zero available, so it builds. Turning on forward netting changes the question the engine asks: instead of a single number, it keeps a dated supply timeline, adding each build-to-stock order's projected completion to it, and a consumer whose need date falls on or after that completion nets against it. In the documented example a producer of 100 completing on July 10 lets a consumer needing 60 on July 12 consume rather than build, so the plant makes 100 instead of 160. The diagnostic log reports how many units a same-run producer would have supplied, so you can measure the over-build before changing anything."
+---
+
+**Netting demand against inventory is the decision, made per order and in run order, of whether an order is covered by stock already on the shelf or has to be built.** In [EDGEBIC by User Solutions](/edgebic) that decision happens inside the scheduling run itself, not at order entry, and it lands as one entry on the inventory ledger. This post is the mechanism: the gates each order passes, the reservation figure that stops double-allocation, the shape of the row the engine emits, and why rescheduling the same order ten times still leaves exactly one consumption on the record.
+
+For the narrative version with three orders and a running balance, read the [consume-from-stock walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic). This post explains why it behaves that way.
+
+## Why the Decision Sits Inside the Scheduling Run
+
+It would be simpler to net at order creation: check stock, reduce the quantity, done. It would also be wrong, for two reasons.
+
+First, stock moves between order entry and scheduling. A build completes, a count corrects, another order consumes. A decision made on Monday against Monday's balance is stale by Wednesday.
+
+Second, scheduling is where sequence exists. Two orders for the same part have a running order inside the engine, and that order determines who gets the stock. Netting at creation has no sequence to reason about, so both orders would see the same balance and both would claim it.
+
+So the check runs where the information is freshest and where sequence is known. The consequence is that rescheduling can change a netting outcome, which is exactly why the reversal contract described later exists.
+
+## The Three Gates
+
+Before an order can consume stock at all, three conditions must hold. Each one has a reason.
+
+**Gate one: is the product stocked?** Products carry a stocked flag. Turn it off and the item is treated as non-inventory: no receipts, no issues, no netting, no replenishment. Service items and overhead items belong here. The trap is a product set to make-to-stock with the stocked flag off, which looks configured and silently does nothing. An integrity check flags exactly that pairing, and it is covered in [inventory tracking mistakes](/blog/inventory-tracking-mistakes-edgebic).
+
+**Gate two: is this order a producer?** Build-to-stock orders exist to put units into inventory. Letting one consume from the pool it is meant to fill would be circular, so producers are excluded from consumption outright. How an order comes to be a producer, by product policy or by a per-order override, is covered in [make to stock vs make to order](/blog/make-to-stock-vs-make-to-order-in-edgebic).
+
+**Gate three: has work already started?** An order with logged actuals is in progress on the floor. Discovering stock that would have covered it does not undo the hours already spent, so an order with actuals is never retroactively satisfied from stock. This is the same principle that governs rescheduling generally: completed work is never moved.
+
+Only orders that pass all three reach the arithmetic.
+
+## The Reservation Figure and Why Order Matters
+
+At the start of every run, the engine seeds a run-scoped availability figure for each stocked product from the ledger balance. That figure is not the ledger. It is a working number that exists only for the duration of the run, and it is decremented immediately whenever an order is netted.
+
+The sequence for one order is:
+
+1. Read available for the product.
+2. Compare against the order's need.
+3. If available covers the need, decrement the figure by that amount right now, mark the order as consuming that quantity, and emit its result row.
+4. If not, leave the figure alone and schedule the order onto the floor normally.
+
+Step three is the whole anti-double-allocation design. The decrement happens before the next order is even looked at, so the second consumer of a part sees what the first one left behind. With 80 units seeded and a first order for 60, the second order sees 20.
+
+There is a second ordering rule stacked on top: build-to-stock producers are sorted ahead of their consumers inside the run. That way a producer's projected output is registered before any consumer for the same part is evaluated, which is the precondition for the time-phased netting described below.
+
+## The Result Row: What "Satisfied From Stock" Looks Like
+
+When an order is fully covered by stock, the engine still has to emit something. An empty result would read as a scheduling failure.
+
+What it emits is one material-shaped row: no work center, no routing step, zero hours, and the consumed quantity recorded as pieces. The order's status becomes satisfied from stock. On the Gantt it consumes no machine time, because it consumed none.
+
+That shape is load-bearing rather than cosmetic. The schedule integrity checks that hunt for real problems (a non-material row with no routing step, a non-material row with no resources, an unexplained multi-day gap between sequential steps) all use the material shape as their signal to skip a row. If a from-stock row ever carried a real work center, those checks would fire as false alarms on every subsequent scan, and a dedicated integrity check exists to catch that exact shape violation.
+
+## The Ledger Entry, and When It Posts
+
+Netting inside the engine is a decision. It becomes a fact when the schedule is saved.
+
+At the save boundary, an order that consumed stock gets one issue posted for the consumed quantity, pegged to the order, with the comment "Schedule Transaction". If the whole quantity came from stock, the order's status flips to satisfied from stock in the same pass. If the save fails, no issue posts, because the two are transactional together.
+
+This is why the comment matters. Manual issues carry your own text. Engine issues carry "Schedule Transaction". Filtering Transaction History on that string separates what the scheduler did from what people did, which is the first thing you want when a balance surprises you.
+
+## Idempotency: Reverse First, Then Decide
+
+Rescheduling is the normal state of a shop, not an exception. So the netting mechanism has to survive being run again and again against the same order without accumulating consumption.
+
+The contract is strict about order of operations: **reverse, then read, then decide.**
+
+1. Reverse any existing consumption for this order, and commit that reversal.
+2. Load current stock, which now includes the restored units.
+3. Run the netting decision fresh.
+4. Post a new issue if the order qualifies again.
+
+Reversal is targeted. It reverses this order's consumption issues only, and deliberately leaves any build receipt alone, because a receipt records units that physically exist. Reversing a receipt during a reschedule would destroy real stock on paper.
+
+The documented example makes the effect concrete. An order for 50 units of a part with 70 on hand is scheduled on June 1: 70 covers 50, so an issue of minus 50 posts and the balance goes to 20. The customer moves the delivery date, and the order is rescheduled on June 5:
+
+| Entry | Quantity | Type | Comment | Balance after |
+|---|---|---|---|---|
+| 3 | −50 | Issue | Schedule Transaction | 20 |
+| 4 | +50 | Issue reversal | Reversal of entry 3 | 70 |
+| 5 | −50 | Issue | Schedule Transaction | 20 |
+
+Three rows, one net effect. On-hand is still 20, exactly where it was, and the history shows precisely what happened and when. Reschedule it eight more times and you get more rows and the same balance. At no point do two live consumptions exist for one order.
+
+The same reversal machinery runs on other lifecycle events. Deleting an order reverses everything pegged to it, receipts included, before the order row goes, and the ledger rows survive with their order link cleared. Reopening a completed build order reverses its receipt so stock drops back to the pre-completion level.
+
+## Point-in-Time Versus Time-Phased Netting
+
+There are two ways to answer "how much is available", and the difference decides whether a plant over-builds.
+
+**Point in time** takes one number at the start of the run and draws it down. It is simple, and it has a known blind spot: a producer scheduled in the same run is invisible to a consumer in that run, because the producer's output does not exist at seed time. Both orders build. The plant makes more than it needs.
+
+**Time phased** keeps a dated supply timeline instead of a single number. Opening stock enters it as supply available from the beginning of time. Each build-to-stock producer, once scheduled, adds its projected completion date and quantity. A consumer then asks a better question: how much is available *by my need date*? Supply is drawn oldest first.
+
+The documented comparison uses one part with zero opening stock, a producer of 100 completing July 10, and a consumer needing 60 with a start of July 12.
+
+| Behavior | Producer builds | Consumer builds | Plant total |
+|---|---|---|---|
+| Point in time | 100 | 60 | 160 |
+| Time phased | 100 | 0 | 100 |
+
+Under time-phased netting the consumer sees the July 10 receipt as available on July 12, consumes 60, and the timeline's remaining balance drops to 40. The plant makes 100 instead of 160.
+
+The over-build in the first row is not silent. The scheduling session log records a netting line for every decision, including how many units a same-run producer would have supplied but was not counted, so you can measure the exposure on your own data before changing anything. That log line reports the order, the product, the need, what was available, what was used, the net build quantity, and whether the order was satisfied from stock.
+
+Because this behavior is configurable and its effect is plant-specific, treat the choice as an implementation decision rather than a default. Ask User Solutions to run both against a week of your real orders and compare the build totals.
+
+## How the Netted Quantity Reaches the Engine
+
+One implementation detail is worth knowing because it explains a class of bug that does not happen.
+
+The naive way to apply netting is to subtract the consumed quantity from the order's quantity. That mutates the order, and a mutated order quantity leaks: the next thing to read that order sees a reduced figure with no explanation, and restoring it reliably across every exit path is difficult.
+
+Instead the netted figure rides on a run-scoped build quantity attached to the routing step, never persisted and rebuilt on every run. Zero means the demand is fully covered and no operations are created. A positive value means build that many. The order's own quantity is never touched, so nothing downstream inherits a number it cannot account for.
+
+## What to Check When a Netting Result Surprises You
+
+Four questions resolve most cases.
+
+- **Is the product stocked?** An unstocked item never nets, whatever its build method says.
+- **Is this order a producer?** Build-to-stock orders do not consume.
+- **Does it have actuals?** Started work is never retroactively satisfied.
+- **Did another order get there first?** Availability is decremented in run order, so the sequence of orders decides who gets the units.
+
+The integrity report's inventory checks cover the remaining cases, including a satisfied-from-stock order with no matching consumption on the ledger, which means stock was never actually drawn down.
+
+For where these numbers surface as a forward plan, see [projected available balance explained](/blog/edgebic-projected-available-balance-explained). For the ledger design underneath the whole mechanism, see [the inventory ledger explained](/blog/edgebic-inventory-ledger-explained), and for how planning connects to capacity across the platform, the [inventory and planning guide](/blog/edgebic-planning-guide) and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

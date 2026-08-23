@@ -1,0 +1,190 @@
+---
+title: "MIE Trak Pro to EDGEBIC: The Data Mapping Reference"
+description: "MIE Trak Pro data export scheduling field by field: map parts, work centers, routers, work orders and labor into EDGEBIC masks with load order and upsert rules."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - MIE Trak Pro data export scheduling
+  - MIE Trak Pro field mapping scheduling
+  - MIE Trak Pro router export
+  - import mask field reference
+  - MIE Trak Pro work order export
+  - job shop data mapping
+targetPhrase: "MIE Trak Pro data export scheduling"
+wordCount: 2160
+readingTime: 11
+faqQuestions:
+  - question: "Which columns must a MIE Trak Pro export contain before EDGEBIC will import it?"
+    answer: "Each entity type has a short mandatory list. Products need a part number. Work centers need a work center id. Routers need end product, step name, an operation flag, and hours required. Work orders need product, quantity, and a job date. Labor rows need job number, work center id, and the actual date. Everything else is optional, and an unmapped mandatory field aborts the run before any row is read."
+  - question: "Does EDGEBIC read the MIE Trak Pro database directly or only files?"
+    answer: "Both. An import mask can read an Excel workbook, a delimited text file, or a database source such as a view over the MIE Trak Pro tables. The mapping works the same way in every case: point the mask at the source, confirm the delimiter or sheet, and drag each source column onto the matching EDGEBIC field. A database view is the lowest-maintenance source because the column names stay stable across every run."
+  - question: "In what order should MIE Trak Pro files be imported?"
+    answer: "Dependency order: parts first, then work centers, then routers, then open work orders, then labor. Routers reference both parts and work centers, and work orders reference parts, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default, but a record it creates carries only the name the file gave it."
+qaQuestions:
+  - question: "We route some parts through an outside plater and back. How do we model that transit so the schedule does not pretend we are working during shipping?"
+    answer: "Put the transport on the router as transit days on the step that ships out. Transit days is calendar time, not shop time, so the engine advances the clock without consuming any work center capacity during the trip, which is exactly the behavior you want for outside processing. If the outside step also has a queue before it can start, add queue time on the same step. Both compose with the run and setup hours, so a part that machines for two hours, ships to the plater for three days, and comes back for inspection shows realistic dates rather than an optimistic one that assumed the plater was on your floor."
+  - question: "Our parts have engineering revisions and the same part number can carry a new router. Does re-importing the router double the steps or replace them?"
+    answer: "It replaces them. A routing import wipes and recreates that part's steps on each run, so a re-import of a revised router leaves no leftover steps from the old revision, which is what makes re-imports idempotent. The one discipline is that all of that part's steps must travel together in one file, because the wipe happens per part on first reference, so splitting one part across two files means the second file's wipe deletes the first file's steps. Jobs already scheduled keep their frozen router snapshot, so pushing a revision never disturbs work already on the floor, and recorded operations never move."
+---
+
+**Mapping MIE Trak Pro data into EDGEBIC is a column-mapping exercise rather than a development project: you export parts, work centers, routers, open work orders, and optionally labor hours to Excel, CSV, or a database view, then drag each source column heading onto the matching EDGEBIC field once and save it as a reusable import mask.** This reference lists what maps to what, which columns are mandatory, how conversions and upserts behave, and what every row outcome means when a run finishes.
+
+EDGEBIC by User Solutions integrates with MIE Trak Pro through those masks rather than a connector, so nothing is installed in the ERP and no integration credential exists to maintain. If you have not read the end-to-end version yet, start with the [complete MIE Trak Pro integration guide](/blog/edgebic-mie-trak-pro-integration-guide). This post is the lookup table you keep open while building masks.
+
+A note on column names: MIE Trak Pro grid and report output varies by version and configuration, so the source headings on your export may not match another shop's. That does not matter. You map headings to EDGEBIC fields once per mask, and the EDGEBIC target fields below are the stable side of the mapping. Where a source column is genuinely unclear, map only what you are sure of; unmapped columns are ignored.
+
+## The load order
+
+Import in dependency order. Later files reference records that earlier files created.
+
+| # | MIE Trak Pro export | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Parts | Product | Nothing |
+| 2 | Work centers | Workcenter | Nothing |
+| 3 | Routers / operations | BOR (bill of routing) | Parts and work centers |
+| 4 | Open work orders | SalesOrder | Parts |
+| 5 | Labor hours (optional) | Actuals | Scheduled jobs |
+
+Two entity types have no MIE Trak Pro origin and come from a spreadsheet you write: **Shift** (one row per shift with a start and end pair per weekday, a blank pair meaning the day is off) and **PlantHoliday** (closures by name and date). Together they define the calendar every scheduled date is computed against, which makes them the ten minutes with the widest effect in the whole load.
+
+Auto-create is on by default, so a router file naming a work center that has not been imported yet creates it on the fly. Good safety net, poor strategy: an auto-created work center carries a name and nothing else, meaning one machine, no shift assignment, and no efficiency.
+
+## Reading the file itself
+
+MIE Trak Pro exports have their own habits, and all of them are handled on the mask rather than by editing files.
+
+| Export characteristic | Mask setting |
+|---|---|
+| Comma, semicolon, tab, or space delimited | Delimiter selector |
+| Text values wrapped in quotation marks | Text-enclosed-in-quotes |
+| First row is column headings | Header present (on) |
+| Raw extract with no headings | Header present (off), map by column position |
+| Excel workbook with several sheets | Sheet name on the mask |
+| Database view | Database source on the mask |
+
+If a worksheet is renamed later, the reader falls back to the first sheet rather than failing, which is forgiving but worth knowing: re-pick the file on the mask when a workbook's structure changes so the choice stays explicit.
+
+## Parts to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id` | Yes | The part number. Natural key, matched case-insensitively |
+| `Product_Name`, `Description` | | Descriptive text |
+| `UOM` | | Unit of measure |
+| `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Only the part number is required. Everything else can arrive later through a narrower refresh file, because blank cells preserve existing values on an update run. Keep the part number rendered identically across every export: matching ignores case, so `BRK-200` finds `brk-200`, but it does not reconcile a genuine spelling difference or a stray revision suffix.
+
+## Work centers to Workcenter
+
+This is where scheduling accuracy is won or lost, because this file carries capacity.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. Router steps match on it |
+| `Workcenter Name` | | Label on the Gantt and in reports |
+| `Number_Of_Instances` | | How many identical machines the center holds. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per router step where present |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint so the engine can anchor around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts`, `Shift_Names` | | Calendar assignment |
+| `Pieces_Per_Hour` | | Rate-based capacity where the center is measured in output |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+`Number_Of_Instances` is the single highest-value column here and the one ERP exports rarely carry, because a work center is usually modeled as one resource with a capacity figure. A cell of three identical brake presses imported as one instance produces a plan roughly three times too long, and it fails quietly: nothing errors, the dates are simply wrong. Fill it deliberately for every multi-machine center; the arithmetic is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## Machine pools have no export column
+
+Where machines are genuinely interchangeable, EDGEBIC models a **work center group**: a named pool whose membership is re-evaluated on every reschedule. A router step bound to the group picks by strategy (earliest completion, primary first, or earliest start) and applies a per-member efficiency factor, so a slower machine is chosen only when it still finishes first. Operations already started keep their machine, because recorded work is never moved.
+
+None of that exists as an export column. Import the members as ordinary work centers, then build the group inside EDGEBIC: a one-time configuration per pool that changes the schedule more than most imported columns do. The setup path is [how to create work center groups](/blog/how-to-create-work-center-groups-in-edgebic).
+
+## Routers to BOR
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Part number this router builds |
+| `Sub_Prod` | Yes | Work center id (operation row) or component part (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; chaining happens automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start (inspection queue, outside-process wait) |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and transport time for outside processing |
+| `Parallel_Op` | | Parent step's work center name for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent`, `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Applicable machine instances for this step |
+| `Fam_Dept` | | Department for auto-created work centers |
+
+`Op_Flag` is the field most often set wrong on a first load. True means the row is an operation running on a work center. False means the row is a component consumed at that point in the router, which is exactly how a subassembly is attached to its parent. Getting the flag backwards turns components into work centers, and the graphical designer shows it immediately.
+
+### Why the import takes two passes
+
+A router cannot be written row by row, because step 10 must point at step 20 and step 20 does not exist yet. The import therefore runs in two passes. Pass one validates each row, resolves or creates the parts and work centers it names, and buffers the row. Pass two groups the buffer by end product, sorts by sequence number, writes the steps, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished part so the router renders connected rather than floating free.
+
+Two rules follow. All of one part's steps must travel in one file, because a run wipes and recreates that part's steps on first reference, so splitting one part across two runs means the second wipe deletes the first run's work. And re-importing is safe for work orders in progress, because every scheduled job carries a frozen snapshot of the router it was planned with.
+
+## Work orders to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Part being built |
+| `Qty` | Yes | Order quantity |
+| `Job_Date` | Yes | Release or start date |
+| `Sales_Order(Ref#)` | | Order reference: shared references group into one order, jobs auto-number `{Ref}-{line}` |
+| `Job_Number` | | Your MIE Trak Pro work order number carried across |
+| `Due_Date`, `Order_Date`, `Priority` | | Promise, entry, and ranking |
+| `Customer_Name` | | Auto-created when missing |
+| `Unit_Price`, `User_Notes` | | Optional |
+
+Two mask options handle the case where an export carries only one date: one treats the job date as the due date, the other derives the job date backward from the due date. Set whichever matches your export once, on the mask. Carrying the MIE Trak Pro work order number into `Job_Number` keeps the reference your floor already recognizes on a dispatch list, which matters most on the AOG and hot jobs everyone is asking about.
+
+## Labor to Actuals
+
+Job number, work center id, and actual date are mandatory. Hours and pieces are each optional, and either can be derived from the other using the operation's rate. A `Complete` column marks the operation finished, and an explicit start column overrides the default of using the earliest imported date.
+
+The import always overwrites the days a file carries, so re-running a corrected extract fixes the numbers rather than doubling them. Days a file does not mention are preserved unless you ask for them to be cleared. Actuals go last because every row has to find an operation on a job that is already scheduled.
+
+## Conversions, blanks, and zeros
+
+| Situation | Behavior |
+|---|---|
+| Minutes in the export | Conversion factor `0.016667` on that mask column |
+| Seconds in the export | Conversion factor `0.000278` |
+| Hours quoted per 100 pieces | Conversion factor `0.01` |
+| Blank cell on an update | Existing value preserved |
+| Zero in a cell on an update | Zero is written: it is a value, not a blank |
+| Unmapped column | Ignored entirely |
+| Mandatory field unmapped | Run aborts before reading any row |
+| One bad row | Fails alone and the run continues, unless you choose strict mode |
+
+## Reading the outcomes
+
+Every row resolves to **Created**, **Updated**, **Reused**, or **Failed**. Reused is the default for a record that already exists, so a weekly parts file of 3,000 rows reporting Created 9, Reused 2,991 is the desired result rather than a problem. When counts look wrong, the per-run log file has one line per row with the exact reason for each failure.
+
+## What import cannot bring, and why it matters
+
+The settings that most differentiate a schedule have no column in any ERP export: the sequence-dependent setup matrix, operator skills and rosters, work center group strategies, bottleneck anchoring, and lot streaming transfer batches. They are configured once in EDGEBIC and then apply to every imported work order afterwards. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) explains why one mask design serves every platform.
+
+For the questions that come up before a project starts, see the [MIE Trak Pro integration FAQ](/blog/edgebic-mie-trak-pro-integration-faq). The [SYSPRO](/blog/syspro-to-edgebic-data-mapping-reference) and [Made2Manage](/blog/made2manage-to-edgebic-data-mapping-reference) references show how little changes from one platform to the next, and the [ERP integration hub](/edgebic-erp-integration) frames the category.
+
+<Accordion title="Which columns must a MIE Trak Pro export contain before EDGEBIC will import it?">
+Each entity type has a short mandatory list. Products need a part number. Work centers need a work center id. Routers need end product, step name, an operation flag, and hours required. Work orders need product, quantity, and a job date. Labor rows need job number, work center id, and the actual date. Everything else is optional, and an unmapped mandatory field aborts the run before any row is read.
+</Accordion>
+
+<Accordion title="Does EDGEBIC read the MIE Trak Pro database directly or only files?">
+Both. An import mask can read an Excel workbook, a delimited text file, or a database source such as a view over the MIE Trak Pro tables. The mapping works the same way in every case: point the mask at the source, confirm the delimiter or sheet, and drag each source column onto the matching EDGEBIC field. A database view is the lowest-maintenance source because the column names stay stable across every run.
+</Accordion>
+
+<Accordion title="In what order should MIE Trak Pro files be imported?">
+Dependency order: parts first, then work centers, then routers, then open work orders, then labor. Routers reference both parts and work centers, and work orders reference parts, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default, but a record it creates carries only the name the file gave it.
+</Accordion>

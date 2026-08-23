@@ -1,0 +1,100 @@
+---
+title: "How a Routing Graph Orders Steps for Scheduling"
+description: "How EDGEBIC turns a routing's step links into a dependency graph, topologically sorts it, and makes each step wait for the latest predecessor to finish."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - routing dependency graph
+  - topological sort scheduling
+  - operation sequencing
+  - bill of routing
+  - production scheduling
+  - step start time
+targetPhrase: "routing dependency graph"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler decide the order of operations in a routing?"
+    answer: "EDGEBIC builds a dependency graph from the successor links on each routing step, then runs a topological sort so every step is placed after all of its predecessors. The order is driven by the links, not by the row order in the grid, so a routing whose steps are stored out of sequence still schedules in the correct order. Steps with no remaining predecessors are ready first."
+  - question: "What is a topological sort in production scheduling?"
+    answer: "A topological sort orders the steps of a routing so that for every dependency, the earlier operation always comes before the later one. EDGEBIC uses it to convert a network of successor links into a single scheduling order. When two steps are both ready at the same moment, the routing's own list order breaks the tie, which keeps an already-correct routing byte-for-byte unchanged."
+  - question: "Why does an assembly step wait for the slower of two feeder paths?"
+    answer: "Because a step's start time is the maximum end time of every predecessor that feeds it. If two preparation steps both point at assembly, EDGEBIC records each one's finish under the assembly key and keeps the later value. Assembly cannot begin until the slower feeder is done, so a 40-hour path and a 60-hour path feeding one join make assembly wait for the 60-hour path."
+qaQuestions:
+  - question: "My routing steps are stored in the wrong order in the grid but they schedule correctly. Why?"
+    answer: "The scheduling order comes from the successor links between steps, not from the position of rows in the grid. EDGEBIC reads each step's link to its next operation, builds a dependency graph, and topologically sorts that graph, so the engine places a predecessor before its successor regardless of storage order. The grid order only matters as a tie-breaker when two steps are genuinely ready at the same time. If a step still schedules out of sequence, the fix is in the links, not the row order: check that each step points at the intended next step."
+  - question: "I have two sub-assemblies that both run through the same milling center. How does the engine keep them from reading each other's finish times?"
+    answer: "EDGEBIC keys each step's finish time under a unique per-step identity, not just the work center name. When a routing reuses the same work center in two places, or two sub-assemblies share a machine, a name-only lookup could let one path pick up the other path's end time and start too early. The engine records each predecessor's finish under a collision-free step key that is unique even when the work center is reused, so a successor resolves against its own real predecessor. This is why linking steps by their successor id is more reliable than linking by name alone."
+---
+
+**A routing dependency graph is how EDGEBIC by User Solutions turns a list of operations into a correct scheduling order. The engine reads the successor link on every routing step, builds a directed graph of "this step must finish before that one," topologically sorts it, and then schedules each step no earlier than the latest finish time of everything that feeds it.** The result is that operations run in true precedence order, an assembly waits for its slowest feeder, and the order is driven by the links you set, not by the accident of how rows happen to sit in the grid.
+
+Most "why did that step start so late?" questions trace back to this layer. Once you understand how the graph is built and how each start time is computed, the schedule stops looking arbitrary.
+
+## From links to a graph
+
+Every step in a bill of routing carries a pointer to the operation that should run after it. EDGEBIC walks the whole routing and turns those pointers into edges: an edge from step A to step B means "B cannot start until A has finished." A three-step routing of Cut, Drill, Paint, where Cut points at Drill and Drill points at Paint, becomes a simple chain.
+
+Two details make this robust. First, a single step can point at more than one successor. A preparation step that splits into two downstream paths lists both, and the engine creates one edge per successor rather than collapsing them. Second, the engine prefers to link steps by their unique step identity, and falls back to matching by work center name only when a step has no usable id link. That fallback is deliberately last, because names are not unique: a routing that visits the same inspection bench twice, or two sub-assemblies that share a milling center, would wire the wrong operation if the engine matched purely on name.
+
+The output is a graph where each step knows its successors. Steps with nothing feeding them are the natural starting points.
+
+## The topological sort
+
+A graph is not yet an order. To produce a single sequence the engine runs a topological sort, which arranges the steps so that for every edge from A to B, A always appears before B. EDGEBIC uses the standard approach: count how many predecessors each step still has, start with the steps that have none, and each time a step is placed, reduce the predecessor count of its successors. A successor that reaches zero remaining predecessors becomes ready and joins the queue.
+
+Two properties of this sort matter in practice. When several steps are ready at the same moment, the routing's own list order breaks the tie, so a routing that was already stored in a sensible order comes back unchanged, and turning on correct ordering causes no churn on healthy data. And if a routing contains a genuine loop (A depends on B which depends on A), those steps never reach zero predecessors, so instead of crashing the engine appends them at the end in list order. No step is ever dropped; a routing with a bad loop simply schedules its looped tail in a degraded order, which is a visible symptom you can trace back to the link chain.
+
+Because the order comes from the edges, the physical row order in the grid does not decide the schedule. This is the single most common surprise: steps stored out of sequence still schedule correctly, because the engine is reading links, not positions.
+
+## Each step waits for its latest predecessor
+
+Ordering says which step is considered next. Timing says when it can actually start. For each step, EDGEBIC computes a start time equal to the latest finish among all of its predecessors, floored at the job's own start time so no operation is ever placed before the job began.
+
+The engine records finish times in a small lookup that lives for the duration of one job's scheduling run. When a step completes, its finish time is written under the keys its successors will search: the successor's step identity, the successor's name, and any successor names the step points at. When a successor is scheduled, it reads those keys and keeps the maximum value it finds.
+
+The maximum is what makes joins correct. If two feeder paths both point at one assembly step, both write their finish under the assembly key, and the engine keeps the later one. Assembly then waits for the slower path, which is exactly right: you cannot assemble until every component is ready.
+
+The per-step identity key is what keeps shared work centers honest. Because it is unique even when the same machine appears twice in a routing, a successor resolves against its own real predecessor rather than accidentally reading a sibling's finish. That is what makes [a re-entrant routing](/blog/how-a-scheduler-handles-a-re-entrant-routing) schedulable, with each visit to the same work center treated as its own claim on the shared capacity. Linking steps by successor id, rather than by name alone, is what activates this collision-free path.
+
+## A worked example: a join
+
+Take a job for 10 units with three steps. Two preparation steps feed one assembly step, and both preparation steps start at the job's start of Monday 08:00.
+
+| Step | Work center | Hours per unit | Successor |
+|---|---|---|---|
+| Prep A | Mill-1 | 4 h | Assembly |
+| Prep B | Mill-2 | 6 h | Assembly |
+| Assembly | Assy-1 | 2 h | (end) |
+
+The graph has edges from Prep A to Assembly and from Prep B to Assembly. The topological sort makes both preparation steps ready first (the routing's list order breaks the tie), and releases Assembly only after both are placed.
+
+Prep A needs 4 hours per unit times 10 units, so 40 hours, and on an 8-hour day shift it finishes after five working days, Monday of the following week at 08:00. Prep B needs 60 hours and finishes at Thursday of the following week at noon. Both write their finish under the Assembly key; the engine keeps the later value, Thursday noon.
+
+Assembly needs 20 hours. It starts at Thursday noon, waits for the slower Mill-2 path exactly as it should, and finishes the following Tuesday. The engine never had to be told which path was slower; the maximum-of-predecessors rule discovered it.
+
+## Why this matters for your plan
+
+The dependency graph is quiet infrastructure, but it decides three things you feel every day. It decides that a step cannot jump ahead of its prerequisites, which is the difference between a plan and a wish. It decides that a join waits for its slowest arm, which is where hidden lead time lives. And it decides that your routing's correctness lives in the links, so a routing that schedules oddly is almost always a link problem, not an engine problem.
+
+When a step starts later than you expect, the diagnosis is short. Check that every predecessor points at it, check that the links use step ids where a work center repeats, and check that no accidental loop is sending part of the routing to the appended tail. Each of those is a data fix, and each is far cheaper than fighting the schedule.
+
+This ordering layer sits at the front of the [full scheduling engine pipeline](/blog/edgebic-scheduling-engine-guide), ahead of the machinery that actually places hours on shifts. Once steps are ordered and each start time is known, the engine hands each operation to [multi-shift allocation](/blog/how-multi-shift-allocation-fills-capacity) to find real capacity, and the timing between steps is filled in by [queue, move, and transit time](/blog/lead-time-as-the-sum-of-its-parts). If a routing branches into parallel machines rather than a simple join, [dependent and independent parallel work centers](/blog/dependent-vs-independent-parallel-when-to-use-each) handle that case. The broader question of how any finite scheduler respects real limits is covered in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+To see your own routings ordered and timed against your real shifts, [bring your data to a demo](/contact-us) and watch the first run place your steps in precedence order.
+
+<Accordion title="How does a scheduler decide the order of operations in a routing?">
+EDGEBIC builds a dependency graph from the successor links on each routing step, then runs a topological sort so every step is placed after all of its predecessors. The order is driven by the links, not by the row order in the grid, so a routing whose steps are stored out of sequence still schedules in the correct order. Steps with no remaining predecessors are ready first.
+</Accordion>
+
+<Accordion title="What is a topological sort in production scheduling?">
+A topological sort orders the steps of a routing so that for every dependency, the earlier operation always comes before the later one. EDGEBIC uses it to convert a network of successor links into a single scheduling order. When two steps are both ready at the same moment, the routing's own list order breaks the tie, which keeps an already-correct routing byte-for-byte unchanged.
+</Accordion>
+
+<Accordion title="Why does an assembly step wait for the slower of two feeder paths?">
+Because a step's start time is the maximum end time of every predecessor that feeds it. If two preparation steps both point at assembly, EDGEBIC records each one's finish under the assembly key and keeps the later value. Assembly cannot begin until the slower feeder is done, so a 40-hour path and a 60-hour path feeding one join make assembly wait for the 60-hour path.
+</Accordion>

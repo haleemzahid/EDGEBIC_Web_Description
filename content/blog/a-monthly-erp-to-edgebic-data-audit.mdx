@@ -1,0 +1,152 @@
+---
+title: "A Monthly ERP to EDGEBIC Data Audit"
+description: "A 45 minute monthly audit that catches the slow drift a per-import check misses: phantom work centers, stale jobs, reverted instance counts, and standard times reality has moved past."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ERP data audit scheduling
+  - monthly scheduling data review
+  - master data drift manufacturing
+  - stale work orders schedule
+  - EDGEBIC data quality audit
+  - standard time accuracy review
+targetPhrase: "monthly ERP data audit for scheduling"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "Why do I need a monthly audit if I already reconcile every import?"
+    answer: "They catch different failures. The per-import check confirms this file landed correctly: counts add up, no orphans, one job's hours reconcile. The monthly audit catches slow drift that no single import reveals, such as instance counts that reverted through a mapped column, closed jobs still consuming capacity, standard times that reality has moved past, and a calendar that has run out of holidays. Drift is invisible per run and obvious per quarter."
+  - question: "How long should a monthly data audit take?"
+    answer: "About 45 minutes once the routine is established, and longer only in the first month or two while you clear a backlog. Each check is a list you scan rather than a calculation you perform. The first pass usually surfaces a handful of phantom work centers and a pile of jobs that shipped weeks ago, and clearing those is most of the initial time. After that the lists are short and the audit is mostly confirmation."
+  - question: "What is the single most valuable check in a monthly audit?"
+    answer: "Comparing planned hours to logged hours on a sample of finished jobs, because it tells you whether your imported standard times still describe the shop. A work center that consistently runs 30 percent over its standard is quietly pushing every promise date on every job that touches it. Fix the standards in the ERP where they are ERP-owned, and the correction flows into every future schedule through the routing import."
+qaQuestions:
+  - question: "Our first monthly audit turned up 31 jobs on the schedule that were closed in the ERP weeks ago. How much was that actually costing us?"
+    answer: "More than most planners expect, because phantom jobs occupy machines that are genuinely free. Every one of those 31 jobs was still holding hours on a work center, so capacity looked tighter than it was and every new job scheduled behind work that does not exist. The visible symptom is promise dates that drift outward with no explanation and a bottleneck report that names a machine the floor says is not busy. Clearing them once is the big win; keeping them clear costs a couple of minutes a week. Add a step to the weekly routine that lists jobs absent from this week's open work order export and closes them, because an import adds and updates but never deletes what fell out of the file."
+  - question: "We keep finding work centers in EDGEBIC that nobody created. Where do they come from and how do we stop it?"
+    answer: "The routing import auto-creates any work center or product a file names that does not already exist, which is genuinely useful on day one and a nuisance afterwards. Each phantom is normally a spelling variant of a real machine: DEBURR-1 against Deburr 1, or MILL2 against Mill-2. They are easy to spot because they have no shift assignment and no instance count, so sorting the work center list by shift assignment groups them together. Fix the spelling at the source in the ERP export or normalize it in the mask, re-import the routing, then delete the orphan. Doing it monthly keeps the list at zero or one, and it matters because an empty center still schedules against defaults and produces flattering dates."
+---
+
+**A monthly ERP to EDGEBIC audit catches what a per-import check cannot: values that reverted through a mapped column, jobs that closed in the ERP and stayed on the schedule, phantom work centers created by a routing file, and standard times the shop floor has quietly outgrown.** Each of those is invisible in any single import and obvious across a quarter. Budget 45 minutes, run it on the same day each month, and the integration stays trustworthy instead of slowly decaying.
+
+EDGEBIC by User Solutions has run ERP data through import masks since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the pattern is consistent: integrations rarely break. They erode. The audit is what turns erosion into a short list of fixes.
+
+## What this is not
+
+Two other checks already exist and this does not replace either.
+
+The [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist) runs after every import and answers "did this file land correctly". The [pre-migration data quality audit](/blog/a-data-quality-audit-before-migrating-to-edgebic) runs once before go-live and answers "is this data fit to start with". The monthly audit answers a third question: **has anything drifted since last month**.
+
+## Check 1: phantom work centers and products
+
+The routing import auto-creates any work center or product a file names that does not already exist. That behavior lets a routing file stand up a skeleton model on day one, and it is also the most common source of records nobody asked for.
+
+Open the work center list and sort by shift assignment. Centers with no shifts and no instance count are the auto-created ones, and each is usually a spelling variant of a real machine.
+
+Fix the spelling at the source, re-import the routing, then delete the orphan. This matters more than it looks: a center with no shifts and no instance count still schedules against defaults, so it produces optimistic dates on every job routed through it.
+
+**Target state: zero orphans.**
+
+## Check 2: jobs that closed in the ERP and stayed here
+
+An import adds and updates. It never deletes records that are absent from the file, which is a deliberate safety property, because a filter mistake in an export should never wipe your schedule.
+
+The consequence is that a work order closed in the ERP simply stops appearing, and its job stays in EDGEBIC consuming capacity. Compare the job list against this month's open work order export and close whatever is missing.
+
+Phantom jobs are worse than untidy. They hold hours on machines that are genuinely free, so capacity reads pessimistic, the bottleneck report names the wrong machine, and new promise dates drift outward for no real reason.
+
+**Target state: the stale list is under five and shrinking.**
+
+## Check 3: EDGEBIC-owned values that reverted
+
+This is the check that pays for the audit.
+
+Pick three work centers you know the shop runs as multi-machine cells and read their instance counts. If a four-machine cell says one, a mapped column is resetting it on every import, because most ERPs model a work center as one resource with a capacity figure.
+
+Do the same for efficiency, default setup, and bottleneck flags. The fix is not to re-enter the values: it is to remove the column from the mask, because an import writes only the fields you mapped. The full ownership map is in [choosing the system of record for each scheduling field](/blog/choosing-the-system-of-record-for-each-scheduling-field).
+
+**Target state: every value a planner set is still the value a planner set.**
+
+## Check 4: do the standards still describe the shop
+
+Take five jobs that finished last month and compare planned hours against logged hours per operation.
+
+| Pattern in the variance | What it usually means |
+|---|---|
+| One work center consistently over by 20 to 40 percent | The standard is stale, or efficiency is not modeled |
+| Small jobs over, large jobs under | Setup is folded into run time somewhere |
+| A gap near a factor of 60 or 100 | A unit conversion is missing on a column |
+| Scattered noise with no pattern | Normal variation, leave it alone |
+
+Patterns are actionable, noise is not. Where standards are ERP-owned, correct them in the ERP and let the routing import carry the fix into every future schedule. The unit cases are in [mapping your ERP's units of measure](/blog/mapping-your-erps-units-of-measure-for-scheduling) and the setup split is in [handling combined setup and run time](/blog/handling-combined-setup-and-run-time-from-your-erp).
+
+**Target state: no work center consistently off by more than about 15 percent.**
+
+## Check 5: has the export changed shape
+
+Cloud and on-premise ERPs both get upgraded, and a renamed or inserted column is the one thing that genuinely breaks a file-based integration. The fix is small, re-mapping one row in a mask, but only if you notice.
+
+Open this month's export beside last month's and compare the heading row. Then confirm each saved mask still runs without a mandatory field warning, since an unmapped mandatory field aborts the run before a single row is read.
+
+**Target state: heading rows identical, or the difference is known and mapped.**
+
+## Check 6: the calendar has runway
+
+Every scheduled date is computed against your shifts and plant holidays, and both are EDGEBIC-owned because no ERP models a plant calendar at the grain a scheduler needs.
+
+Confirm the holiday list covers at least the next two quarters and that any shift pattern change agreed with operations has actually been entered. A missing holiday two months out is harmless today and produces a whole week of wrong dates the moment your horizon reaches it.
+
+**Target state: at least six months of calendar ahead of the longest job on the board.**
+
+## Check 7: identifier hygiene, read from the counts
+
+You do not need a separate test for this. Look back at the result dialogs from the last month of routine imports.
+
+On a repeat import of stable master data, most rows should come back **Reused**. A weekly product refresh reporting 34 Created and 240 Reused is healthy. The same refresh reporting 274 Created means the matching key stopped matching, which is identifier drift: a leading apostrophe from a spreadsheet, a trailing space, a changed prefix, or a column that shifted one position. The discipline is covered in [keeping product masters in sync](/blog/keeping-product-masters-in-sync-erp-edgebic).
+
+**Target state: Created stays low on repeat runs of unchanged data.**
+
+## Check 8: does the model still match the floor
+
+The last check is a conversation rather than a query. Ask whoever runs the floor whether anything changed that the model does not know about: a machine added or retired, a work center group that no longer has the same members, an operator who left the skill roster, a cell that moved to two shifts.
+
+None of this arrives in an ERP export, because none of it exists there. It reaches the schedule only when somebody tells it.
+
+**Target state: no surprises, and any that surface get entered the same day.**
+
+## The audit on one page
+
+| # | Check | Where to look | Time |
+|---|---|---|---|
+| 1 | Phantom work centers and products | Work center list, sorted by shift assignment | 5 min |
+| 2 | Jobs closed in the ERP but still here | Job list against this month's export | 10 min |
+| 3 | Reverted instance counts, setups, flags | Three known multi-machine cells | 5 min |
+| 4 | Planned versus logged hours | Five finished jobs | 10 min |
+| 5 | Export shape and mask health | Heading rows, mandatory field warnings | 5 min |
+| 6 | Calendar runway | Shift and holiday lists | 5 min |
+| 7 | Created versus Reused trend | Last month's result dialogs | 2 min |
+| 8 | Model against reality | A short conversation | 5 min |
+
+## What a clean audit protects
+
+With the data holding steady, the engine can be trusted to do the rest: finite capacity across shifts and machine instances, work center groups that re-shop the machine pool on every reschedule, sequence-dependent setups, lot streaming with transfer batches, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows the import layer every ERP shares. The faster loops around this one are the [weekly sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine) and the [nightly export routine](/blog/scheduling-a-nightly-erp-export-import-routine).
+
+## Run your first one with help
+
+Bring a month of exports and your current job list to [a demo](/contact-us) and run the audit live. The first pass nearly always finds a stale job list and at least one reverted value, and both are fixed in the same session.
+
+<Accordion title="Why do I need a monthly audit if I already reconcile every import?">
+They catch different failures. The per-import check confirms this file landed correctly: counts add up, no orphans, one job's hours reconcile. The monthly audit catches slow drift that no single import reveals, such as instance counts that reverted through a mapped column, closed jobs still consuming capacity, standard times that reality has moved past, and a calendar that has run out of holidays. Drift is invisible per run and obvious per quarter.
+</Accordion>
+
+<Accordion title="How long should a monthly data audit take?">
+About 45 minutes once the routine is established, and longer only in the first month or two while you clear a backlog. Each check is a list you scan rather than a calculation you perform. The first pass usually surfaces a handful of phantom work centers and a pile of jobs that shipped weeks ago, and clearing those is most of the initial time. After that the lists are short and the audit is mostly confirmation.
+</Accordion>
+
+<Accordion title="What is the single most valuable check in a monthly audit?">
+Comparing planned hours to logged hours on a sample of finished jobs, because it tells you whether your imported standard times still describe the shop. A work center that consistently runs 30 percent over its standard is quietly pushing every promise date on every job that touches it. Fix the standards in the ERP where they are ERP-owned, and the correction flows into every future schedule through the routing import.
+</Accordion>

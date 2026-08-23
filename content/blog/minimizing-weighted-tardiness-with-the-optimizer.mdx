@@ -1,0 +1,80 @@
+---
+title: "Minimizing Weighted Tardiness With the Optimizer"
+description: "Weighted tardiness is the optimizer's core delivery measure: total lateness scaled by job priority. Here is how it is computed, why it leads most goals, and how to read it."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - weighted tardiness scheduling
+  - minimize tardiness optimization
+  - due date priority scheduling
+  - late job penalty
+  - production schedule optimization
+  - job priority weighting
+targetPhrase: "minimizing weighted tardiness"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "What is weighted tardiness in production scheduling?"
+    answer: "Weighted tardiness is the total lateness across all jobs, with each job's lateness scaled by its priority. For one job it is the hours it finishes past its due date, floored at zero so early finishes earn no credit, multiplied by a weight derived from priority (top priority full weight, second priority half, and so on with a small floor). Summed across all jobs, it captures both how many jobs are late and how much each late job matters."
+  - question: "Why does the optimizer minimize weighted tardiness first in most goals?"
+    answer: "Because protecting delivery dates is what matters most on a typical planning day, and weighted tardiness is the single measure that captures it best. It combines how many jobs are late, how badly, and how important each one is, into one number. The default On-time first goal ranks weighted tardiness above late job count, stability, and makespan, so the optimizer will accept a slower or busier plan to drive weighted tardiness toward zero."
+  - question: "Does weighted tardiness reward finishing jobs early?"
+    answer: "No. Tardiness is floored at zero, so a job finishing before its due date contributes nothing to the measure, whether it is one hour early or one week early. Weighted tardiness only counts lateness. This keeps the optimizer focused on the jobs at risk of missing their dates rather than rushing jobs that are already safe, which is usually the right behavior for a delivery-driven shop."
+qaQuestions:
+  - question: "Two late jobs, same lateness, but one is my key customer. Will the optimizer treat them differently?"
+    answer: "Yes, if you set their priorities to reflect that. Weighted tardiness scales each job's lateness by its priority, so a priority-1 job's two hours of lateness counts fully while a priority-3 job's two hours counts less. The optimizer will favor an ordering that keeps your key customer on time even if the lower-priority job absorbs a small slip. The measure only knows what your priorities tell it, so set them honestly."
+  - question: "The optimizer removed 4 hours of weighted tardiness but the plant finishes later. Is that a good trade?"
+    answer: "Under On-time first, yes, because weighted tardiness ranks above makespan. The goal accepted a later plant-wide finish to get jobs in on time, which is the point on a delivery-driven day. If a later overall finish bothers you and no job is at risk, switch to Fastest overall finish, which ranks makespan first. The two genuinely trade off and the goal you pick decides which wins."
+---
+
+**Weighted tardiness is the optimizer's core delivery measure: the total lateness across all jobs, with each job's lateness scaled by its priority so a high-priority late job counts more than a low-priority one.** For a single job it is the hours past its due date, floored at zero, times a weight from its priority. Summed across every job, it captures in one number how many jobs are late, how badly, and how much each matters. That is why most goals rank it first: driving it toward zero is the most direct way to protect delivery promises. The optimizer will accept a slower or busier plan to shrink it.
+
+EDGEBIC by User Solutions computes weighted tardiness in the same shared calculator that produces every other optimizer number, so the value that ranks candidates is the one you read in the comparison. This post explains the calculation, why it leads goals, and how to act on it. For how all the measures combine, see [how the optimizer scores a schedule](/blog/how-the-optimizer-scores-a-schedule), and for the delivery-first goal built on it, [the On-time first preset](/blog/the-ontimefirst-optimizer-preset-explained).
+
+## The calculation, step by step
+
+Weighted tardiness is built from two pieces per job, then summed.
+
+First, tardiness. For a job, take the hours it finishes past its due date. If it finishes early or on time, its tardiness is zero. There is no credit for finishing early: a job one week ahead scores the same zero as one that lands exactly on its date. This floor keeps the measure focused on jobs at risk.
+
+Second, the weight. Each job's tardiness is scaled by a weight derived from its priority. A top-priority job counts at full weight, a second-priority job at half, a third at a third, and so on, following one over the priority number, with a small floor so no job ever counts as literally nothing. This means a late important job hurts the score far more than a late minor one.
+
+Multiply each job's tardiness by its weight, sum across all jobs, and you have the plan's weighted tardiness. A perfect plan on delivery has zero.
+
+## A worked example
+
+Three jobs on a shared shift, hours including setup, with priorities:
+
+| Job | Finishes | Due | Hours late | Priority | Weight | Weighted lateness |
+|---|---|---|---|---|---|---|
+| 0121 | Tue 10:00 | Fri | 0 | 1 | 1.0 | 0.0 |
+| 0122 | Wed 14:00 | Wed 12:00 | 2 | 2 | 0.5 | 1.0 |
+| 0123 | Thu 09:00 | Wed 16:00 | 8 | 3 | 0.33 | 2.6 |
+
+The plan's weighted tardiness is 3.6 hours. Notice how the weighting shapes the picture: job 0123 is eight raw hours late but its low priority pulls its contribution down to 2.6, while job 0122's two raw hours at higher priority still register a full hour. If you could rescue only one job, the measure points you at the trade with the biggest score impact, guided by your priorities rather than raw hours alone.
+
+## Why it leads most goals
+
+The default On-time first goal ranks weighted tardiness first, ahead of late job count, stability, and makespan. The reason is that weighted tardiness is the most complete single view of delivery health. Late job count tells you how many jobs miss, but not by how much or how important they are. Raw total tardiness tells you the hours, but treats a minor job's slip the same as a key customer's. Weighted tardiness folds all three concerns into one number, so ranking it first is the most direct way to protect the dates that matter.
+
+Because it ranks first, the optimizer will accept costs on the lower measures to reduce it. A plan that finishes the plant a little later but gets one more important job in on time wins, because the makespan increase sits below weighted tardiness in the ranking and never enters the decision once the top measure separates the plans. This is the goal doing exactly what a delivery-driven planner would do by hand, only faster and across more orderings than a person could test. Read the ranking mechanics in [how the optimizer scores a schedule](/blog/how-the-optimizer-scores-a-schedule).
+
+## Set priorities honestly, then trust the measure
+
+The whole value of weighting depends on your priorities being real. The measure only knows what you tell it. If every job is priority 1, weighting collapses and weighted tardiness behaves like raw total tardiness, treating all lateness equally. If you set priorities to reflect genuine customer and contract importance, the optimizer will protect the right jobs first, letting minor jobs absorb small slips to keep major jobs on time. The discipline of honest priorities is what turns the measure from a formula into a tool that ranks plans the way your business actually weighs them. Where the priority number stops deciding and the optimizer starts is drawn out in [job priorities versus the schedule optimizer](/blog/job-priorities-versus-the-schedule-optimizer).
+
+## How to read it in the comparison
+
+After a run, the comparison table shows weighted tardiness for the baseline and the proposal side by side, with the delta. Because it is the top measure under On-time first, the verdict usually leads with the weighted lateness the optimizer removed and the extra jobs it made on time. A drop toward zero is the headline of a delivery-protecting run. If the number does not move, the optimizer found no ordering that beat your current plan on delivery, and the never-worse clamp returned your baseline unchanged. See [what the never-worse guarantee means](/blog/what-the-never-worse-guarantee-means-for-planners).
+
+## When to rank something else first
+
+Weighted tardiness leads by default, but it is a trade-off like every measure. When the week's priority is different, another goal fits better: [Fastest overall finish](/blog/the-minmakespan-optimizer-preset-explained) ranks makespan first to clear a backlog, [Least setup time](/blog/the-minsetup-optimizer-preset-explained) ranks setup first in a changeover-heavy shop, and [Fewest changes](/blog/the-moststable-optimizer-preset-explained) ranks stability first on a committed mid-week floor. Every goal carries the same never-worse guarantee, so switching costs nothing but a rerun. For the full menu, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## The bottom line
+
+Weighted tardiness is total lateness scaled by priority, floored at zero so early finishes earn no credit, and it is the measure most goals rank first because it is the most complete single view of delivery health. Set your priorities honestly and it protects your important jobs first, accepting costs on makespan and setup to do so. Read it at the top of the comparison after a run, and switch goals when the week calls for speed, setup savings, or stability instead. Explore the platform at [EDGEBIC](/edgebic).

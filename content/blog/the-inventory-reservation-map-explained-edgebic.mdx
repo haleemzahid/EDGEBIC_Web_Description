@@ -1,0 +1,103 @@
+---
+title: "The Inventory Reservation Map Explained in EDGEBIC"
+description: "When two orders want the same stock in one scheduling run, a reservation map stops them both claiming it. Here is how EDGEBIC reserves stock as it nets."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - inventory reservation map
+  - within run double allocation
+  - stock reservation scheduling
+  - supply before consumer sort
+  - netting reservation
+  - consume from stock engine
+targetPhrase: "inventory reservation map"
+wordCount: 1580
+readingTime: 8
+faqQuestions:
+  - question: "What is the inventory reservation map in EDGEBIC?"
+    answer: "The inventory reservation map is a run-scoped record of how much stock is still available for each product as the scheduler works through a run. It is seeded from on-hand at the start of the run and decremented the instant an order nets against stock. Because the decrement happens before the next order is evaluated, two orders in the same run can never both claim the same units. The map exists only for the duration of the run and is rebuilt fresh each time."
+  - question: "Why does the reservation map decrement immediately instead of at the end?"
+    answer: "Because a batch run schedules many orders in sequence, and if the available figure only updated at the end, every order in the batch would see the full opening stock and over-allocate. Decrementing the moment an order is netted means the second order sees the true remaining balance, not the starting one. This immediate decrement is the single mechanism that prevents within-run double allocation of the same stock."
+  - question: "How does the reservation map relate to the inventory ledger?"
+    answer: "They are separate but consistent. The reservation map is a temporary in-memory tally used during a scheduling run to decide netting. The ledger is the permanent record: an actual consume issue posts to it only at the persist step, after the run has decided. The map prevents double allocation while the run is deciding; the ledger records the committed result once it has decided. The map is discarded after the run; the ledger is forever."
+qaQuestions:
+  - question: "Two customer orders for the same bracket, 60 and 50, schedule in one run against 80 on hand. What happens?"
+    answer: "The first order to be evaluated sees 80 available, nets its 60, and the map immediately drops to 20. The second order then sees only 20, which is short of its 50, so it builds a shortfall of 30 and consumes the remaining 20. Without the immediate decrement both orders would have seen 80 and both fully consumed, over-allocating by 30 units of stock that does not exist. The map is what forces the second order to see reality."
+  - question: "We build a part and consume it in the same run. Does the reservation map handle the ordering?"
+    answer: "The map plus a supply-before-consumer sort handle it. Build-to-stock producers are scheduled before their consumers, so a producer registers its output before any consumer inspects the map. Whether the consumer can net against that same-run production depends on forward netting; the reservation map's job is narrower: it ensures no two consumers double-claim whatever stock the map currently holds. The sort sets up the supply; the map rations it."
+---
+
+**The inventory reservation map is a run-scoped tally of how much stock is still free for each product, decremented the instant an order nets against it, so that two orders in the same scheduling run can never both claim the same units.** In EDGEBIC by User Solutions, a batch run can schedule dozens of orders in sequence, and without a reservation map each would see the same opening stock and over-allocate. The map is the small, quiet mechanism that keeps a single stock pool from being promised twice inside one run.
+
+This post explains what the map is, why it decrements immediately, and how it works with the supply-before-consumer sort. It sits under the [EDGEBIC planning guide](/blog/edgebic-planning-guide) and complements [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock).
+
+## The problem: many orders, one stock pool
+
+Scheduling is rarely one order at a time. A run might net thirty demands against inventory in a single pass. Suppose two of them want the same bracket, and there are 80 in stock. If each order independently reads on-hand, both see 80, both decide the stock covers them, and both post a consume issue. The plant just promised 80 units to two orders that between them wanted more than 80. On paper the stock covered both; in the warehouse it covered one.
+
+This is within-run double allocation, and it is invisible until someone goes to pick the second order and the shelf is empty. The reservation map exists to make it impossible.
+
+## The map: seed, then decrement on net
+
+At the start of every scheduling run, the engine seeds a reservation map from current on-hand: for each stocked product, the map holds the available quantity. Then, as the run works through orders, it consults and updates the map rather than re-reading raw on-hand.
+
+The rule is one line: **the moment an order nets against stock, the map decrements by what that order consumed, before the next order is evaluated.** So the second order that wants the same bracket sees the balance the first one left behind, not the starting figure. If the first consumed 60, the second sees 20.
+
+Because the decrement is immediate and in-order, no two orders in the run can claim the same units. The map is the authoritative available figure for the duration of the run.
+
+## A worked run: two orders, 80 in stock
+
+Take a bracket with 80 on hand. Two customer orders schedule in one run: order X needs 60, order Y needs 50.
+
+**Order X evaluated first.** Map shows 80 available. Need is 60. Covered, so X nets 60 and is satisfied from stock. Map decrements to 20.
+
+**Order Y evaluated next.** Map now shows 20 available. Need is 50. Only 20 is covered, so Y builds a shortfall of 30 and consumes the remaining 20. Map decrements to 0.
+
+| Step | Order | Need | Map before | Consumes | Builds | Map after |
+|---|---|---|---|---|---|---|
+| 1 | X | 60 | 80 | 60 | 0 | 20 |
+| 2 | Y | 50 | 20 | 20 | 30 | 0 |
+
+Total consumed: 80, exactly what existed. Total built: 30, exactly the true shortfall. Without the map, both would have seen 80 and both fully consumed, over-allocating 30 units of stock that does not exist. The map forces order Y to face the real remaining balance.
+
+## The supply-before-consumer sort
+
+The map handles rationing among consumers. A companion rule handles the ordering of producers and consumers: build-to-stock producers are scheduled before their consumers in the run. This supply-before-consumer sort means a producer registers its output before any consumer inspects the map, so same-run supply is in place before same-run demand looks for it.
+
+Whether a consumer can actually net against a same-run producer's future output is a separate feature, forward netting, covered in [how forward netting connects a producer to a consumer](/blog/how-forward-netting-connects-a-producer-to-a-consumer-in-edgebic). The reservation map's job is narrower and always on: no two consumers double-claim whatever the map currently holds.
+
+## Map versus ledger: two records, one truth
+
+It helps to keep the map and the ledger distinct.
+
+The **reservation map** is temporary and in-memory. It lives only for the run, tracks available stock as the engine decides netting, and is discarded when the run ends. It never persists.
+
+The **inventory ledger** is permanent. An actual consume issue posts to it only at the persist step, after the run has decided who consumes what. The map prevents double allocation while deciding; the ledger records the committed result once decided. The two stay consistent because the ledger only ever records what the map allowed. For the ledger side, see the [inventory ledger explained](/blog/edgebic-inventory-ledger-explained).
+
+## Why a fresh map every run
+
+The map is rebuilt from current on-hand at the start of each run, never carried over. This is what keeps it honest across reschedules. Because a rescheduled order first reverses its prior consumption before re-netting, the on-hand the new map seeds from already reflects the restored stock. So the map never inherits a stale reservation from a previous run; it always starts from the true current position. That interaction is covered in [how a reschedule keeps inventory consistent](/blog/how-a-reschedule-keeps-inventory-consistent-in-edgebic).
+
+## Why this matters to a planner
+
+You will rarely see the reservation map directly; it does its work inside the engine. But its effect shows up every time you schedule a batch: the second and third orders for a hot part net against the stock the earlier orders actually left, not a phantom full balance. That is why a run of orders for one stocked item produces a sensible mix of satisfied-from-stock and partial-build outcomes rather than a cascade of over-promises.
+
+For a planner, the reservation map is one more reason the netting result can be trusted without hand-checking. Combined with the append-only ledger and the reverse-then-repost reschedule design, it is part of what makes EDGEBIC's [inventory management for manufacturers](/blog/inventory-management-manufacturers) hold up under real batch scheduling, where a naive on-hand check would quietly oversell the shelf.
+
+<Accordion title="What is the inventory reservation map in EDGEBIC?">
+The inventory reservation map is a run-scoped record of how much stock is still available for each product as the scheduler works through a run. It is seeded from on-hand at the start of the run and decremented the instant an order nets against stock. Because the decrement happens before the next order is evaluated, two orders in the same run can never both claim the same units. The map exists only for the duration of the run and is rebuilt fresh each time.
+</Accordion>
+
+<Accordion title="Why does the reservation map decrement immediately instead of at the end?">
+Because a batch run schedules many orders in sequence, and if the available figure only updated at the end, every order in the batch would see the full opening stock and over-allocate. Decrementing the moment an order is netted means the second order sees the true remaining balance, not the starting one. This immediate decrement is the single mechanism that prevents within-run double allocation of the same stock.
+</Accordion>
+
+<Accordion title="How does the reservation map relate to the inventory ledger?">
+They are separate but consistent. The reservation map is a temporary in-memory tally used during a scheduling run to decide netting. The ledger is the permanent record: an actual consume issue posts to it only at the persist step, after the run has decided. The map prevents double allocation while the run is deciding; the ledger records the committed result once it has decided. The map is discarded after the run; the ledger is forever.
+</Accordion>
+
+See netting and reservation run against your parts in the [EDGEBIC platform overview](/edgebic), or [contact US for a demo](/contact-us).

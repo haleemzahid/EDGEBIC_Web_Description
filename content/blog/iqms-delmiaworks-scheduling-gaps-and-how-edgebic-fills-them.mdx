@@ -1,0 +1,118 @@
+---
+title: "IQMS / DELMIAworks Scheduling Gaps (And How EDGEBIC Fills Them)"
+description: "DELMIAworks finite capacity scheduling gaps that plants report: infinite-capacity dates, flat press capacity, color and material changeovers, and slow what-if answers."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - DELMIAworks finite capacity scheduling
+  - IQMS scheduling gaps
+  - DELMIAworks scheduling add-on
+  - IQMS DELMIAworks production scheduling integration
+  - sequence dependent setup molding
+  - injection molding bottleneck scheduling
+targetPhrase: "DELMIAworks finite capacity scheduling"
+wordCount: 1830
+readingTime: 9
+faqQuestions:
+  - question: "Why do DELMIAworks plants still fine-tune the sequence by hand?"
+    answer: "Because real-time MES tells you what is running now, not the best order to run things next. DELMIAworks is built to be right about production data, quality, and inventory; sequencing is a constraint problem about which press runs what, in what order, on which shift, with which color changeover. When that decision is made by hand, a spreadsheet becomes the real schedule and the committed dates drift away from it. That is a category gap rather than a product flaw."
+  - question: "Do we have to replace DELMIAworks to get finite capacity scheduling?"
+    answer: "No. The standard pattern is a scheduling layer beside the ERP rather than instead of it. DELMIAworks stays the system of record for MES, quality, inventory, and financials. A finite capacity tool reads the items, work centers, routings, and open orders DELMIAworks already holds, builds an executable schedule, and hands dates back. No floor process has to be redesigned."
+  - question: "How does EDGEBIC get data out of DELMIAworks?"
+    answer: "Through reusable import masks fed by the Excel or CSV exports your DELMIAworks environment already produces. You map an export's columns to EDGEBIC fields once; every later run is two clicks, and each row reports back as Created, Updated, Reused, or Failed with a per-run log. There is no certified connector, no middleware, and nothing installed inside the ERP, so an upgrade has nothing to break."
+  - question: "What changes first when a molding plant adds finite capacity scheduling?"
+    answer: "Changeover visibility, usually in the first scheduling run. Sequencing color and material families together instead of scattering them returns press hours you are currently paying for as scrap and purge. The second change is bottleneck visibility: loading every open order against real shift hours and real press counts turns an overloaded week from a surprise into a number you can see today."
+qaQuestions:
+  - question: "Our molding plant loses real press time to color and material changeovers, and going white to black costs far more than black to white. DELMIAworks records one setup time per operation. How does EDGEBIC handle the difference?"
+    answer: "The changeover cost lives in a sequence-dependent setup matrix inside EDGEBIC, because no ERP field can express that the cost depends on what ran immediately before. You group parts into setup families by color and by material, then set the changeover time between families once, so a light-to-dark move carries its real cost and the reverse carries its own. The optimizer sequences compatible runs together and orders families to reduce total changeover, using mathematical optimization with a proven optimality gap plus a multi-run layer guaranteed never worse than the baseline. The DELMIAworks export supplies parts, presses, and routings; the changeover intelligence is set up once and applies to every imported order afterward. Recovered purge and scrap time is capacity you already own."
+  - question: "We run banks of identical presses and DELMIAworks treats each bank as a work center with a capacity number. Two identical presses in a bank, does modeling that separately really change the schedule?"
+    answer: "It changes it by a factor, and on a constrained bank it changes everything. A work center modeled as one resource with a doubled capacity number can look right in a weekly total while being wrong every single day, because it will plan one run that occupies the whole bank when two runs could happen side by side. Set the instance count to the number of identical presses and the engine plans that many simultaneous runs, either load balancing across them or dedicating one press per job per day when a tooling change makes that the right rule. A work center group treats the bank as a pool the engine re-shops on every reschedule, choosing the press that finishes first while a started run keeps the press it started on."
+---
+
+**DELMIAworks (formerly IQMS EnterpriseIQ) is a strong system of record for real-time MES, quality, and inventory, but many plants report that the fine-grained sequencing decision still happens in a spreadsheet, because the questions a planner answers each morning are finite capacity questions: which orders fit this week, how to order color and material changeovers, and when the constraint press actually runs out of hours.** The fix is not replacing DELMIAworks. It is adding a finite capacity layer beside it that reads the data DELMIAworks already holds and hands executable dates back.
+
+EDGEBIC by User Solutions is that layer. This post walks the gaps plants report, why they exist in any MES-first ERP, and how each one is filled with a specific mechanism rather than a brochure claim. For the data-flow mechanics, the companion post is the [complete IQMS / DELMIAworks integration guide](/blog/edgebic-iqms-delmiaworks-integration-guide).
+
+## Why the gaps exist at all
+
+An ERP's job is to be right about what happened and what it cost: production counts, quality records, inventory, and financials. A scheduler's job is to be right about what should happen next: what runs where, when, in what order, on which press, with which changeover. Those are different computational problems, and the second one grows hard fast. Sequencing hundreds of open orders across banks of presses and lines with shifts, color and material changeovers, and shared tooling is a constraint problem a real-time data model was never designed to solve.
+
+So the gap is structural rather than a defect. Real-time monitoring is excellent at "now," but "next" is a planning decision, and it usually ends up in a spreadsheet the MES cannot see. The distinction between execution and detailed scheduling is standard in the operations management body of knowledge maintained by [ASCM](https://www.ascm.org), and the general version of the story is in [where ERP falls short on scheduling](/blog/where-erp-falls-short-scheduling). Here is the DELMIAworks version, gap by gap.
+
+## Gap 1: dates that assume capacity exists
+
+The first question, [finite versus infinite capacity](/blog/finite-vs-infinite-capacity-scheduling), decides whether a date means anything. Infinite-capacity logic stacks work into a week without asking whether the press hours exist. Finite-capacity logic refuses to plan 60 hours onto a press with 40 available and pushes the overflow to when capacity is real.
+
+**How EDGEBIC fills it:** every schedule is finite capacity by construction. Work centers carry instance counts, shift calendars, efficiency, utilization caps, holidays, and downtime, and the engine resolves available hours day by day before it allocates anything. A run that does not fit this week lands where it fits, and the date it produces is one the floor can hit. When you want the just-in-time answer from the due date, [backward scheduling](/blog/forward-vs-backward-scheduling) is a per-job choice.
+
+## Gap 2: color and material changeovers with no sequencing logic
+
+This is the gap that costs a molding plant the most, and the one an ERP cannot express. One setup time per operation cannot say that white to black costs four hours of purge while black to white costs one. Changeover cost depends on what ran immediately before, and no single column captures it.
+
+**How EDGEBIC fills it:** a sequence-dependent setup matrix per work center, organized by setup families. You group parts by color and by material, set the changeover time between families once, and maintain dozens of entries rather than thousands of part-to-part pairs. The optimizer then sequences compatible runs together and orders families light to dark to cut total changeover, using mathematical optimization with a proven optimality gap plus a multi-run layer guaranteed never worse than the baseline. Recovered purge and scrap time is capacity you already own. The concept post is [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+## Gap 3: press banks flattened into one number
+
+Most ERP data models describe a press bank as a capacity figure. Two identical presses become one resource with a bigger number, which is right in a weekly total and wrong every day, because it will plan one run that occupies the whole bank where two could run side by side.
+
+**How EDGEBIC fills it:** machine instances are first-class. A bank holding two presses means two simultaneous runs, and the engine chooses between load balancing across instances and dedicating one press per job per day when a tooling change makes that the correct rule. Work center groups go further: a named pool of interchangeable presses that the engine re-shops on every reschedule, with a per-member efficiency factor so a slower press takes proportionally longer. The mechanics are in [how EDGEBIC picks the best machine in a pool](/blog/how-edgebic-picks-the-best-machine-in-a-pool).
+
+## Gap 4: the constraint is invisible until it is late
+
+Every plant has a constraint resource, whether it is a press size, a specific line, or a secondary cell. Without finite loading, its overload appears only as a wave of late orders weeks later, by which point the decision window has closed. Finding and protecting the constraint is the highest-return move in scheduling, and the method is in [production bottleneck identification](/blog/production-bottleneck-identification).
+
+**How EDGEBIC fills it:** flag the work center as a bottleneck and the engine anchors schedules around it, scheduling backward into the constraint and forward out of it with protective buffers, which is the Theory of Constraints pattern applied to a real routing. Capacity views then show the constraint's load by day, so an overloaded Tuesday is visible while there is still time to move something.
+
+## Gap 5: reschedule churn nobody trusts
+
+The complaint that quietly kills adoption is churn: a re-run that moves runs already set up, restarts work that is halfway done, or produces a plan the floor recognizes as fiction. Once that happens twice, supervisors stop reading it.
+
+**How EDGEBIC fills it:** two guarantees, both structural. Completed work is never moved by a reschedule, because an operation with logged actual start and end is historical fact and no mode or setting will shift it. And every scheduled job runs from a frozen snapshot of the routing it was planned with, so a mid-stream change never silently rewires work in progress. On top of both, [scheduling modes](/blog/edgebic-scheduling-modes-explained) let you re-plan only new jobs and leave everything else untouched.
+
+## Gap 6: what-if answers that take an afternoon
+
+Inserting one rush order displaces others, which displaces others. A person cannot recompute several hundred downstream operations, so the honest answer to "what slips?" is a guess, and the guess is usually optimistic.
+
+**How EDGEBIC fills it:** rescheduling is a computed operation, and quote simulation lets you test a promise date before you make it. Insert the candidate order, run the scheduler, and read the displaced dates. The whole what-if loop is minutes, which changes who gets to ask the question: sales can ask it during the call rather than after it.
+
+## The integration question, answered honestly
+
+The objection to any layer beside the ERP is the data bridge. This product line answered that decades ago, and the answer is deliberately unglamorous: reusable import masks that read the Excel, CSV, and database exports DELMIAworks already produces. You map columns once, and every later run is two clicks. Routings import in two passes so operation sequences wire themselves. Unit conversion (cycle seconds to hours at `0.000278`, minutes to hours at `0.016667`) lives inside the mask. Every row reports Created, Updated, Reused, or Failed with a per-run log.
+
+There is no certified connector, no middleware server, and nothing installed inside DELMIAworks, which means there is nothing to re-certify at upgrade. The full architecture is on the [ERP integration page](/edgebic-erp-integration), and the same method applied to other platforms is covered in the [Plex](/blog/plex-scheduling-gaps-and-how-edgebic-fills-them) and [E2 Shoptech](/blog/e2-shoptech-scheduling-gaps-and-how-edgebic-fills-them) versions of this post.
+
+This is not a new bet. User Solutions has integrated scheduling with ERPs this way since 1991, and the lineage includes a Fourth Shift integration at Plastilite Corporation, a plastics manufacturer, that ran Monday to Friday with the ERP vendor itself recommending the add-on, plus Cummins across 33 locations and BAE Systems.
+
+## Three checks that predict how fast this pays off
+
+Each takes minutes and none requires buying anything.
+
+**Routing coverage.** Pull routings for your ten highest-volume items. Do they carry an operation sequence, a work center, hours or cycle time per unit, and a setup time? If yes, you can schedule on day one. Missing setup times become visible in the results.
+
+**Press truth.** Count real presses per bank and compare with what DELMIAworks records as a work center. Every bank where the counts disagree is capacity you are currently misrepresenting in both directions.
+
+**Changeover honesty.** List your color and material families and the changeover time between the worst pairs. That table is the setup matrix you will build, and the purge hours it hides are the payback you can measure.
+
+## A 30-minute test
+
+Export three files: work centers, routings for your five highest-volume items, and this week's open orders. [Bring them to a demo](/contact-us). Mapping the columns live takes minutes, and the first finite capacity schedule from your own data, changeover families included, answers the only question that matters: do these dates look like your plant? The [EDGEBIC product overview](/edgebic) and the [ERP scheduling add-on page](/erp-scheduling-add-on) cover the rest.
+
+<Accordion title="Why do DELMIAworks plants still fine-tune the sequence by hand?">
+Because real-time MES tells you what is running now, not the best order to run things next. DELMIAworks is built to be right about production data, quality, and inventory; sequencing is a constraint problem about which press runs what, in what order, on which shift, with which color changeover. When that decision is made by hand, a spreadsheet becomes the real schedule and the committed dates drift away from it. That is a category gap rather than a product flaw.
+</Accordion>
+
+<Accordion title="Do we have to replace DELMIAworks to get finite capacity scheduling?">
+No. The standard pattern is a scheduling layer beside the ERP rather than instead of it. DELMIAworks stays the system of record for MES, quality, inventory, and financials. A finite capacity tool reads the items, work centers, routings, and open orders DELMIAworks already holds, builds an executable schedule, and hands dates back. No floor process has to be redesigned.
+</Accordion>
+
+<Accordion title="How does EDGEBIC get data out of DELMIAworks?">
+Through reusable import masks fed by the Excel or CSV exports your DELMIAworks environment already produces. You map an export's columns to EDGEBIC fields once; every later run is two clicks, and each row reports back as Created, Updated, Reused, or Failed with a per-run log. There is no certified connector, no middleware, and nothing installed inside the ERP, so an upgrade has nothing to break.
+</Accordion>
+
+<Accordion title="What changes first when a molding plant adds finite capacity scheduling?">
+Changeover visibility, usually in the first scheduling run. Sequencing color and material families together instead of scattering them returns press hours you are currently paying for as scrap and purge. The second change is bottleneck visibility: loading every open order against real shift hours and real press counts turns an overloaded week from a surprise into a number you can see today.
+</Accordion>

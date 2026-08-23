@@ -1,0 +1,134 @@
+---
+title: "8 Parallel Work Center Configuration Mistakes in EDGEBIC"
+description: "Parallel work center configuration mistakes that break multi machine scheduling: duplicate shifts, the wrong category, an unread factor, and five more."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - parallel work center configuration mistakes
+  - no simultaneous capacity found
+  - dependent parallel over booking
+  - alternate work center not chosen
+  - parallel scheduling troubleshooting
+  - mirrored schedule problems
+targetPhrase: "parallel work center configuration mistakes"
+wordCount: 1555
+readingTime: 8
+faqQuestions:
+  - question: "Why does EDGEBIC report that no simultaneous capacity was found?"
+    answer: "Most often because the machines in the group do not share a shift record. Common shifts are matched by the shift itself, not by the hours printed on it, so two separately created rows both reading 08:00 to 16:00 leave the group with nothing in common. The other frequent causes are a member already booked solid for many days forward, and a holiday or downtime on any member, which removes that date for the entire group."
+  - question: "Why is a machine showing more than 100 percent load?"
+    answer: "If it is configured as a dependent mirror, that is intended. Mirrored machines bypass the capacity check because they are physically committed to the lead machine's operation, so a copied allocation can exceed the shift's nominal capacity. If the machine is not meant to be a mirror, the finite capacity setting on its entry is probably unchecked, which turns an intended independent machine into a mirror that consumes no capacity."
+  - question: "Why did the scheduler ignore the factor I set on my alternate machine?"
+    answer: "Because the factor is not used for true alternates at all. A true alternate carries its own run hours and its own setup time, and the resolver uses those directly when projecting completion. The factor applies only to parallel entries, where it scales the hours a mirrored machine is credited with. Setting a factor on a true alternate has no effect and misleads the next person to read the routing."
+  - question: "I added a second parallel machine but nothing changed. What is wrong?"
+    answer: "Check the max parallel work centers setting on the step's parallel processing options. It defaults to one, which caps the group at a single machine regardless of how many entries you added. Also confirm the entry is active and that its category is parallel rather than true alternative, since a true alternative replaces the primary rather than running alongside it."
+  - question: "Should machines that just happen to run together be configured as dependent parallel?"
+    answer: "No. The dependent category bypasses the capacity check on the mirrored machines, which is a deliberate promise that they are physically joined to the lead machine. Applying it to machines that merely tend to run at the same time will over-book them, because their hours are copied whether or not their shifts have room. Use independent parallel for machines that can be placed separately in time."
+qaQuestions:
+  - question: "Our backup CNC never gets chosen even when the primary is booked for a week. Why?"
+    answer: "Look at the backup's per-alternative setup time and runtime. If both are blank, the alternate inherits the primary's numbers, so its projected completion may be unrealistically close to the primary's rather than reflecting its real speed. Enter the backup's own values and the projection becomes honest. Also confirm the entry's category is true alternative rather than parallel: a parallel entry runs alongside the primary, so it never replaces it no matter how booked the primary is."
+  - question: "We bound a routing step to a machine pool and also kept our old alternate list on it. Now the old list has vanished. Is that a bug?"
+    answer: "No, it is the rule. A step is bound to a pool or carries a hand-built alternate list, never both, because the pool is the alternate list. When the pool expands into candidates at schedule time, any hand-added alternate entries on that step are removed so two competing sources cannot fight over the same decision. If you need machines outside the pool, add them to the pool rather than to the step."
+---
+
+**Multi-machine scheduling fails in a small number of very specific ways, and the two most common are so consistent that they are worth checking before anything else: duplicate shift records, and the wrong category on the entry.** Each mistake below is paired with its symptom and its fix, for [EDGEBIC by User Solutions](/edgebic).
+
+For the three categories and when to use each, read [parallel and alternate work centers explained](/blog/edgebic-parallel-work-centers-explained). For the fields themselves, read [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic).
+
+## 1. Two Identical Shift Records Instead of One Shared Row
+
+**Symptom:** A parallel group never schedules, or scheduling reports that no simultaneous window could be found, on machines that visibly run the same hours.
+
+**Cause:** Common shifts across a group are found by matching the shift record itself, not the hours printed on it. Two rows created separately that both read 08:00 to 16:00 are two different shifts, so the intersection across the group is empty on every date and the capacity gates are never reached.
+
+**Fix:** Open each machine's associated shifts list and confirm the same row appears on all of them. Delete the duplicate and assign the shared row. Check the use-global-shifts flag too, since it bypasses per-machine assignments and is a common way duplicates get created in the first place.
+
+This is the single most frequent cause of a group that will not schedule, and it costs two minutes to rule out.
+
+## 2. Leaving the Category as Parallel When You Wanted a Fallback
+
+**Symptom:** You added a backup machine expecting it to take over when the primary is booked, and instead both machines appear on the job.
+
+**Cause:** The parallel category is the default on existing data. A parallel entry runs alongside the primary; a true alternative replaces it.
+
+**Fix:** Set the category to true alternative on the entry. The resolver then projects a completion time on the primary and every active candidate before scheduling begins and switches the operation to whichever finishes soonest.
+
+## 3. The Finite Capacity Setting Turning an Independent Machine into a Mirror
+
+**Symptom:** A second machine appears on the operation with the same timestamps as the primary, does not consume any capacity, and shows load above 100 percent.
+
+**Cause:** The finite capacity setting on the entry is what separates independent from dependent. Checked means the machine's capacity is genuinely checked and consumed. Unchecked means the machine is mirrored: it receives a copy of the primary's schedule with no capacity gate at all.
+
+**Fix:** Check the setting for machines that should be independent. Leave it unchecked only for machines that are physically joined to the lead, where the bypass is a promise about hardware rather than an accident.
+
+## 4. Using the Dependent Category for Machines That Are Not Joined
+
+**Symptom:** Machines are over-booked. A load view shows a mirror-configured machine well over 100 percent while other jobs are also planned on it.
+
+**Cause:** Mirrored machines bypass the capacity check on purpose, because a machine bolted to the same motion as the lead is committed regardless of what its own calendar says. Apply that to machines that merely tend to run together and their capacity stops being respected.
+
+**Fix:** Reserve the dependent category for genuine synchronized hardware: ganged drill heads, twin robots on one frame, slaved stations on one line. The [synchronized multi-spindle walkthrough](/blog/synchronized-multi-spindle-scheduling-example-edgebic) shows what a correct dependent setup produces. Everything else that runs at the same time and can be placed separately belongs in the independent category.
+
+## 5. Max Parallel Work Centers Left at One
+
+**Symptom:** You added a second and third machine to a group and the schedule looks exactly as it did before.
+
+**Cause:** The max parallel work centers setting on the step's parallel processing options caps how many machines run together, and it defaults to one.
+
+**Fix:** Raise it to the number of machines you actually want running at once. While you are on that screen, note that load balancing also lives there rather than on the individual machine entries, and defaults are used when the parallel processing record does not exist for the step.
+
+## 6. Setting a Factor on a True Alternate
+
+**Symptom:** A backup machine's projected times ignore the factor you carefully entered, and the next person reading the routing draws the wrong conclusion about how fast the machine is.
+
+**Cause:** The factor is not used for true alternates. A true alternate carries its own run hours and its own setup time, and those are what the resolver uses when it projects completion.
+
+**Fix:** Leave the factor alone on true alternate entries and enter the real per-alternative setup and runtime instead. This matters for the same reason in reverse: a true alternate with blank setup and runtime inherits the primary's numbers, so a slower backup can look artificially attractive and a machine with a long setup can be chosen when it should not be. Enter real values on every alternate you rely on.
+
+## 7. Adding Hand-Built Alternates to a Pool-Bound Step
+
+**Symptom:** Alternate entries you added to a routing step disappear on the next scheduling run.
+
+**Cause:** A step is bound to a machine pool or carries a hand-built alternate list, never both, because the pool is the alternate list. When the pool expands into candidates at schedule time, hand-added alternate entries on that step are removed so two competing sources cannot fight over the same decision.
+
+**Fix:** Add the machine to the pool rather than to the step. If you find yourself maintaining the same alternate list across many routing steps, that is the signal to switch to a pool anyway: members carry their own efficiency and setup, and one binding replaces dozens of hand-built lists. [What a work center group is](/blog/what-is-a-work-center-group-machine-pool) covers the trade-off.
+
+## 8. Deleting an Entry to Take a Machine Out Temporarily
+
+**Symptom:** A machine comes back from maintenance and its parallel configuration has to be rebuilt from scratch, often with a different factor than it had before.
+
+**Cause:** Deleting the entry removes the configuration along with the machine.
+
+**Fix:** Set the entry inactive instead. Inactive entries are skipped when the candidate list is built, scheduling proceeds with the remaining active machines, and re-enabling restores the original settings exactly. Note the difference from marking downtime on the work center itself: downtime blocks the machine for every routing, while an inactive entry removes it from this one operation.
+
+## The Five-Minute Audit
+
+Run this on every routing step that names more than one machine. It catches all eight mistakes above.
+
+1. **Shift records.** Does the same shift row appear on every machine in the group? Match the record, not the hours.
+2. **Category.** Is each entry parallel or true alternative, and is that what you meant? Parallel is the default, so check the fallback machines specifically.
+3. **Finite capacity.** Checked on machines that should consume their own capacity, unchecked only on machines physically joined to the lead.
+4. **Max parallel work centers.** Raised above the default of one wherever a group has more than one secondary machine.
+5. **Per-alternative numbers.** Real setup time and runtime entered on every true alternate you rely on, rather than left blank.
+6. **Factor.** Set on parallel mirrors, left alone on true alternates.
+7. **Pool bindings.** No hand-built alternate entries on steps that are bound to a machine pool.
+
+Two of these deserve to be checked more often than the rest. Shift records because they are the most common failure and the least visible, and category because it is the field most likely to be left at its default while the person setting it up believes they configured something else.
+
+If you would rather check the output, two signatures are diagnostic. A group that never schedules almost always means no shared shift record. A machine reading above 100 percent load that is not deliberately configured as a synchronized mirror almost always means the finite capacity setting is unchecked where it should be checked.
+
+## Three Results That Are Not Mistakes
+
+**A group is delayed rather than starting partially.** Independent parallel machines are placed all together or not at all. If one member is down Monday and Tuesday, the group starts Wednesday rather than running the healthy machines alone. A schedule showing two of three machines running would be a plan nobody can execute.
+
+**Adding a fourth machine made things worse.** Every additional member adds another calendar that has to agree at the same instant, so simultaneous windows get rarer as groups grow. When the goal is more capacity rather than more machines on one operation, a pool or a higher instance count on one work center is the right structure.
+
+**An in-progress job stays on a slower machine.** On a reschedule, machines carrying actual dates for that job are locked, and the resolver will not move the work even if another machine now looks faster. That is correct: the part is physically on that machine. Completed work is never moved by a reschedule.
+
+## Where to Go Next
+
+For the gate-by-gate logic behind every accepted or rejected window, including what rollback does when a placement fails partway through, read [how EDGEBIC validates simultaneous capacity](/blog/how-edgebic-validates-simultaneous-capacity). For the shift setup that most of these mistakes depend on, read [how to schedule jobs across shifts](/blog/how-to-make-jobs-span-shifts-in-edgebic). The [complete guide to EDGEBIC](/blog/edgebic-complete-guide) maps the rest of the platform.

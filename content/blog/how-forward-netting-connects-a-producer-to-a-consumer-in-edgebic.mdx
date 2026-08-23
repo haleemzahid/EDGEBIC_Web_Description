@@ -1,0 +1,100 @@
+---
+title: "How Forward Netting Connects a Producer to a Consumer in EDGEBIC"
+description: "When one order builds a part and another consumes it in the same run, forward netting lets the consumer see the incoming supply. Here is how it prevents a double-build."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - forward netting
+  - same run double build
+  - time phased receipts
+  - producer consumer netting
+  - projected supply netting
+  - build to stock producer
+targetPhrase: "forward netting"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "What is forward netting in EDGEBIC?"
+    answer: "Forward netting lets a consuming order net against the projected receipt of a build-to-stock producer scheduled in the same run, not just against static on-hand. The engine records each producer's output as a dated supply event, and a consumer whose need date falls on or after that date can draw from it. This prevents the double-build that happens when a run contains both a producer and a consumer of the same part and the consumer cannot see the supply the run is itself creating."
+  - question: "What does the engine do without forward netting?"
+    answer: "Without it, each order in a run sees only the point-in-time on-hand at the start of the run. A producer's same-run output is invisible to a consumer scheduled after it, so the consumer builds its own units and the plant produces more than it needs. This over-build is intentional and visible rather than hidden: a diagnostic shows how many units the same-run producer would have supplied. Forward netting is the setting that closes the gap."
+  - question: "Does forward netting change the ledger or just the schedule decision?"
+    answer: "It changes the schedule decision, and the ledger follows honestly. Forward netting decides that a consumer nets against a same-run producer's projected receipt, so the consumer is satisfied from stock and builds nothing. At the persist step the consumer's consume issue posts and the producer's receipt posts on completion, so the ledger records one build and one consumption rather than two builds. The netting logic changes what gets built; the ledger records the real result."
+qaQuestions:
+  - question: "One order builds 100 brackets completing on the tenth, another needs 60 starting on the twelfth, and we keep building both. Can the second see the first?"
+    answer: "With forward netting on, yes. The producer's 100-unit output is registered as a supply event dated the tenth. The consumer's need date is the twelfth, which is on or after the tenth, so it draws 60 from that supply, is satisfied from stock, and builds nothing. The producer builds exactly 100, the consumer builds 0, and after both complete on-hand is 40. Without forward netting both would build, producing 160 when 100 was enough."
+  - question: "We enabled forward netting. How do we confirm a consumer actually netted against same-run supply rather than building?"
+    answer: "Read the netting diagnostic and the ledger. The diagnostic line for the consumer shows its need, the available supply as of its need date, the quantity used from inventory, and a satisfied-from-stock flag; a satisfied-from-stock true line with a non-zero used figure confirms it netted. In the ledger, the consumer posts a consume issue and no work-center operations, while the producer posts its build receipt on completion. Two orders, one build, one consumption."
+---
+
+**Forward netting lets a consuming order net against the projected receipt of a build-to-stock producer scheduled in the same run, so the consumer sees the incoming supply the run is itself creating and does not build a second time.** In EDGEBIC by User Solutions, this closes a specific gap: when one run contains both an order that builds a part and an order that needs it, forward netting stops the plant from producing twice as much as it needs. It is a time-phased extension of the ordinary consume-from-stock decision.
+
+This post explains the double-build problem, how forward netting solves it with dated supply events, and how to confirm it worked. It sits under the [EDGEBIC planning guide](/blog/edgebic-planning-guide) and extends [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock).
+
+## The double-build problem
+
+Ordinary netting compares a demand to the stock on hand at the start of the run. That works when supply already exists. It breaks when the supply is being created in the same run.
+
+Picture a run with two orders for the same bracket. One is a build-to-stock order for 100 units, completing on the tenth. The other is a customer order for 60 units, starting on the twelfth. At the start of the run, on-hand is zero. The consumer looks at zero stock, decides it must build, and produces its own 60. The producer builds its 100. The plant makes 160 brackets when 100 would have covered both. Nobody set out to over-build; the consumer simply could not see the supply arriving two days before it needed it.
+
+## What forward netting adds: dated supply events
+
+Forward netting gives the run a memory of incoming supply. Instead of tracking only a single point-in-time on-hand figure, the engine keeps a time-phased list of supply events for each product. Opening on-hand is one such event, dated at the start. Then, as each build-to-stock producer is scheduled, its projected output is registered as another supply event dated at the producer's completion.
+
+A consumer no longer asks "how much is on hand now." It asks "how much supply is available as of my need date," summing every supply event dated on or before that date. A producer completing on the tenth is visible to a consumer that needs stock on the twelfth. The supply is drawn down oldest-first, so the projection stays honest across several consumers.
+
+This works alongside the supply-before-consumer sort, which schedules producers before their consumers so the supply events are registered before any consumer inspects them. That ordering plus the dated events is what lets the consumer see what the run is building. The rationing among consumers is handled by the [inventory reservation map](/blog/the-inventory-reservation-map-explained-edgebic).
+
+## A worked run: 100 built, 60 consumed, same run
+
+Take a bracket with zero opening on-hand. Two orders in one run:
+
+- Producer: build 100 brackets, completing on the tenth.
+- Consumer: need 60 brackets, starting on the twelfth.
+
+**Producer scheduled first** (supply-before-consumer sort). It builds 100 and registers a supply event: 100 units available as of the tenth.
+
+**Consumer evaluated next.** Its need date is the twelfth. Available supply as of the twelfth = the tenth's event = 100. Since 100 covers 60, the consumer nets 60, is satisfied from stock, and builds nothing. The supply event draws down to 40 remaining.
+
+| Order | Role | Need date | Supply as of need | Consumes | Builds |
+|---|---|---|---|---|---|
+| Producer | Build 100 | n/a | n/a | 0 | 100 |
+| Consumer | Need 60 | 12th | 100 | 60 | 0 |
+
+The producer builds exactly 100, the consumer builds 0, and after both complete on-hand is 100 − 60 = 40. Compare that to the no-forward-netting outcome, where both build and the plant produces 160. Same orders, same dates; the difference is whether the consumer could see the incoming supply.
+
+## Timing matters: the need date must fall on or after the receipt
+
+Forward netting respects dates, so it does not conjure supply from thin air. If the consumer needed the brackets on the ninth, one day before the producer completes, the tenth's supply event would not yet be available, and the consumer would build its own units. That is correct: you cannot consume stock that has not been produced yet. Forward netting only lets a consumer draw from supply that lands on or before its need date, which is exactly what a real transfer of finished goods requires.
+
+## Confirming it worked
+
+Two places tell you a consumer netted against same-run supply.
+
+The **netting diagnostic** logs each decision: the order, the product, the need, the available supply as of the need date, the quantity used from inventory, whether the order was built, and a satisfied-from-stock flag. A satisfied-from-stock true line with a non-zero used figure confirms the consumer drew from stock rather than building.
+
+The **ledger** shows the honest result: the consumer posts a consume issue and creates no work-center operations, while the producer posts its build receipt on completion. Two orders, one build, one consumption. This is the same append-only ledger that records every movement, described in [why inventory transactions are append-only](/blog/why-inventory-transactions-are-append-only-in-edgebic).
+
+## When the over-build is intentional
+
+Without forward netting, the over-build is not a hidden bug; it is a visible, documented behavior. The netting diagnostic even reports how many units a same-run producer would have supplied if forward netting were on, so a planner can see the cost of leaving it off. Some plants prefer the simpler point-in-time behavior; others want the tighter same-run netting. Forward netting is the setting that chooses between them, and when a run mixes a build-to-stock producer with a consumer of the same part, it is what keeps the plan from building supply it is already building.
+
+For a planner, the value is concrete. Forward netting is what lets a single planning run contain both "build 100 to stock" and "ship 60 to a customer" and resolve them correctly, producing 100 and consuming 60, rather than producing 160 and leaving 100 aging on the shelf. It is the same connect-the-plan-to-the-floor discipline behind [production scheduling in EDGEBIC](/blog/what-is-production-scheduling): the plan should account for the supply it creates, not ignore it. That is also a core lesson of sound [material requirements planning](/blog/what-is-mrp), where supply and demand must be netted against each other rather than planned in isolation.
+
+<Accordion title="What is forward netting in EDGEBIC?">
+Forward netting lets a consuming order net against the projected receipt of a build-to-stock producer scheduled in the same run, not just against static on-hand. The engine records each producer's output as a dated supply event, and a consumer whose need date falls on or after that date can draw from it. This prevents the double-build that happens when a run contains both a producer and a consumer of the same part and the consumer cannot see the supply the run is itself creating.
+</Accordion>
+
+<Accordion title="What does the engine do without forward netting?">
+Without it, each order in a run sees only the point-in-time on-hand at the start of the run. A producer's same-run output is invisible to a consumer scheduled after it, so the consumer builds its own units and the plant produces more than it needs. This over-build is intentional and visible rather than hidden: a diagnostic shows how many units the same-run producer would have supplied. Forward netting is the setting that closes the gap.
+</Accordion>
+
+<Accordion title="Does forward netting change the ledger or just the schedule decision?">
+It changes the schedule decision, and the ledger follows honestly. Forward netting decides that a consumer nets against a same-run producer's projected receipt, so the consumer is satisfied from stock and builds nothing. At the persist step the consumer's consume issue posts and the producer's receipt posts on completion, so the ledger records one build and one consumption rather than two builds. The netting logic changes what gets built; the ledger records the real result.
+</Accordion>
+
+See forward netting resolve a producer and consumer in one run in the [EDGEBIC platform overview](/edgebic), or [contact US for a demo](/contact-us).

@@ -1,0 +1,114 @@
+---
+title: "Li-Ion Battery: Scheduling Coating and Other Continuous Lines"
+description: "Li-ion battery continuous process scheduling: mark coating and drying lines as continuous, use a start-to-start lag so downstream overlaps, and compress electrode makespan."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - li-ion battery continuous process scheduling
+  - electrode coating line scheduling
+  - continuous process work center
+  - start to start lag scheduling
+  - battery manufacturing scheduling software
+  - lot streaming continuous process
+targetPhrase: "li-ion battery continuous process scheduling"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "How do you schedule a continuous coating line where 'pieces' has no meaning?"
+    answer: "You mark the work center as a continuous-process station and use a start-to-start lag instead of a piece count. On an electrode coating line the output is a moving web, not discrete parts, so a downstream drying or calendering step should begin a set number of hours after coating starts, not after it finishes. EDGEBIC lets you set that lag in hours on the routing step, and the engine allows the downstream step to overlap the upstream one, which compresses the electrode line's total time."
+  - question: "What does marking a work center as continuous process actually change?"
+    answer: "It tells the engine that piece-count lot streaming does not apply to steps routed through that station, so the engine uses the hours-based start-to-start lag instead. Coating, drying, extrusion and chemical baths are continuous by nature, and a transfer-batch count of physical pieces is meaningless for them. The flag makes the engine ignore any piece-count setting on those steps and fall back to the lag model, and a report flags any piece-count value entered on a continuous station so you know it has no effect."
+  - question: "How much time does overlapping continuous steps actually save?"
+    answer: "It depends on the lag, but the compression is real. In the documented example a spray line runs four hours and the downstream curing step is set to begin one hour after the line starts, so curing overlaps three of the four hours instead of waiting for the line to finish. That is three hours of makespan removed from one handoff. Across an electrode line with several continuous steps in series, the overlaps stack, and the whole line finishes materially sooner than a strictly serial plan."
+qaQuestions:
+  - question: "Our electrode line is coat, then dry, then calender, all continuous web processes. The plan schedules each one to wait for the previous to finish the whole batch, which is nonsense for a moving web. How do we fix it?"
+    answer: "Mark each of those stations as continuous process and put a start-to-start lag on each handoff in hours. Coating does not have to finish the whole run before drying starts; drying can begin once the leading web has traveled far enough, which you express as a lag of, say, one hour after coating starts. The engine then overlaps the steps rather than serializing them. Set the lag from how the line physically threads: the gap between when the web enters the first process and when it reaches the second. The result is a plan that matches the continuous reality and finishes the electrode line hours sooner than the wait-for-full-batch version."
+  - question: "We set a transfer-batch piece count on our coating step and nothing changed. Why?"
+    answer: "Because the coating station is marked continuous process, and the engine deliberately ignores piece counts there. A moving web has no discrete pieces to accumulate, so the piece-count model does not fire and the engine uses the hours-based start-to-start lag instead. A report surfaces exactly this situation: a piece-count value set on a continuous-process station, flagged so you know it has no effect. Clear the piece count and set the lag in hours instead, and the downstream overlap you wanted will appear."
+---
+
+**Li-ion battery continuous process scheduling starts by telling the plan that a coating line has no discrete pieces, then letting downstream steps overlap by a set number of hours.** An electrode line coats a moving web, dries it, and calenders it, and none of those steps should wait for the one before it to finish the whole batch. [EDGEBIC by User Solutions](/edgebic) marks such stations as continuous process and uses a start-to-start lag in hours, so the downstream step overlaps the upstream one and the line's total time compresses.
+
+For the continuous-process capability at the category level, see [scheduling ovens, baths and other continuous-process equipment](/blog/continuous-process-work-centers-edgebic). For the overlap models in full, see [lot streaming explained](/blog/edgebic-lot-streaming-explained). For the sector view, see [li-ion battery production scheduling](/blog/li-ion-battery-scheduling), and pair this with [battery yield and scrap](/blog/edgebic-for-li-ion-battery-yield-and-scrap). The full map is at [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## Why the piece-count model does not fit a coating line
+
+Battery electrode manufacturing runs continuous web processes. Slurry is coated onto foil, the web is dried, then it is calendered to density, all as a moving strip rather than a stack of discrete parts. Downstream of the electrode line, cell assembly and formation behave more like discrete operations, but the front of the line does not.
+
+A scheduler built only for discrete parts gets this wrong in a specific way. It either waits for the whole coating run to finish before drying can start, which serializes steps that physically overlap, or it tries to reason about "pieces" that do not exist on a continuous web. Both produce a plan longer than reality and disconnected from how the line actually threads.
+
+The reality is that a downstream continuous step begins once the leading edge of the web has traveled far enough, which is a matter of hours after the upstream step starts, not after it ends. The scheduler needs a model that expresses exactly that.
+
+## Two overlap models, and which one continuous lines use
+
+EDGEBIC supports two ways for a downstream step to begin before the upstream step finishes. Knowing which is which is the whole configuration.
+
+The first is a **piece-count transfer batch**: the downstream step waits until a set number of physical pieces has accumulated upstream. This is the right model for discrete machining, where you can count parts coming off a lathe. It has no meaning on a moving web.
+
+The second is a **start-to-start lag in hours**: the downstream step may begin a fixed number of hours after the upstream step starts, independent of quantity, run time or setup. A lag of one hour on a coating step means drying can begin one hour after coating starts. This is the model for continuous processes, where there are no pieces to count, only a web in motion.
+
+You steer the engine to the right model by marking the station. When a work center is flagged as continuous process, the engine ignores any piece-count setting on steps routed there and uses the hours-based lag. That flag is the single most important setting for an electrode line.
+
+## Marking a station continuous process
+
+Setting the continuous-process flag on a work center does two things. It disables the piece-count model for every routing step that runs on that station, and it tells the engine to use the start-to-start lag instead. Coating, drying, calendering, chemical baths and extruders all belong in this category, because their output is a continuous stream.
+
+The flag also protects you from a silent misconfiguration. If someone enters a piece count on a step that runs on a continuous station, that value has no effect, and a report flags exactly that case so you are not misled into thinking piece-count streaming is active. The engine tells you the setting is being ignored rather than quietly doing nothing.
+
+## A worked electrode-line overlap
+
+Consider a simplified electrode line: coat, then dry, both continuous.
+
+- The coating station is marked continuous process. The run takes four hours for the batch.
+- The drying step is set with a start-to-start lag of one hour, because drying can begin once the web has been coated for one hour.
+
+With the lag, drying may start one hour after coating starts, overlapping three of coating's four hours. Without any overlap model, drying would wait until coating finishes at hour four. That is three hours of makespan removed from a single handoff.
+
+Now extend the line to calendering, also continuous, with its own lag after drying starts. The overlaps stack: calendering begins its lag after drying begins, which itself began an hour into coating. The whole electrode line finishes materially sooner than a plan that serialized each step, because the engine is scheduling the line the way it physically runs, as overlapping continuous processes rather than a relay of discrete batches.
+
+One detail worth knowing: when the start-to-start lag fires, it sets the downstream start directly and replaces any queue buffer on that step. If you need a physical handling delay on top of the overlap, such as a cooling gap before the next process, you add that as a separate transfer delay in hours rather than a queue buffer, so it composes with the lag instead of being discarded.
+
+## Where discrete steps re-enter
+
+Battery manufacturing is not continuous end to end. Once electrodes are slit, stacked or wound into cells, the process becomes discrete again, and the piece-count transfer-batch model becomes the right tool for those handoffs, letting cell assembly overlap by piece count the way discrete machining does. The line's schedule then uses continuous-process lags at the front and piece-count transfer batches further downstream, each where it fits.
+
+This mixed picture is common in battery plants, and it is why the model is chosen per station and per step rather than set once for the whole plant. The front of the line is continuous; the back is discrete; the schedule reflects both. For the discrete side and how transfer batches work, see [what a transfer batch is](/blog/what-is-a-transfer-batch).
+
+The practical guidance is to classify each station by what it produces before you touch a routing. If the output is a moving web or a stream that you measure in hours of run, it is continuous, and it gets the hours-based lag. If the output is a count of electrodes, cells or modules that you can tally, it is discrete, and it gets a piece-count transfer batch. The handoff between the two worlds, where slit electrodes become countable pieces, is where the model changes, and getting that boundary right is most of the configuration work on an electrode-to-cell line.
+
+## Common mistakes with continuous-line scheduling
+
+**A continuous station left unmarked.** If a coating line is not flagged as continuous process, the engine may try to apply a piece count, or default to waiting for the full batch. Mark every continuous station so the lag model is used.
+
+**A piece count set on a continuous station.** It has no effect and only creates confusion. The engine ignores it and a report flags it. Clear the piece count and set the hours-based lag instead.
+
+**A queue buffer expected to survive the lag.** When the lag fires it replaces the queue-adjusted end for that step, so a cooling queue set alongside a lag is discarded. Use a transfer delay in hours for a physical gap on top of the overlap.
+
+**Treating the whole line as continuous.** Cell assembly and downstream discrete steps should use the piece-count model, not a continuous lag. Choose the model per station based on whether the output is a web or discrete parts.
+
+## Rolling it out
+
+1. **List your continuous stations:** coating, drying, calendering, any bath or extruder where the output is a moving stream.
+2. **Mark each as continuous process** so the engine uses the start-to-start lag and ignores piece counts there.
+3. **Set the lag in hours** on each continuous handoff, from how the line physically threads: the gap between a process starting and the next process being able to start.
+4. **Add transfer delays** where a physical cooling or handling gap sits on top of the overlap.
+5. **Use piece-count transfer batches** for the discrete steps downstream of the electrode line.
+6. **Run the schedule and read the electrode line:** confirm the continuous steps overlap by their lags rather than waiting for full batches, and check the report for any piece count sitting on a continuous station.
+
+Bring one electrode-line routing and its process timings to a demo of [li-ion battery production scheduling](/li-ion-battery-production-scheduling-software), and we will build the continuous-and-discrete plan with you.
+
+<Accordion title="How do you schedule a continuous coating line where 'pieces' has no meaning?">
+You mark the work center as a continuous-process station and use a start-to-start lag instead of a piece count. On an electrode coating line the output is a moving web, not discrete parts, so a downstream drying or calendering step should begin a set number of hours after coating starts, not after it finishes. EDGEBIC lets you set that lag in hours on the routing step, and the engine allows the downstream step to overlap the upstream one, which compresses the electrode line's total time.
+</Accordion>
+
+<Accordion title="What does marking a work center as continuous process actually change?">
+It tells the engine that piece-count lot streaming does not apply to steps routed through that station, so the engine uses the hours-based start-to-start lag instead. Coating, drying, extrusion and chemical baths are continuous by nature, and a transfer-batch count of physical pieces is meaningless for them. The flag makes the engine ignore any piece-count setting on those steps and fall back to the lag model, and a report flags any piece-count value entered on a continuous station so you know it has no effect.
+</Accordion>
+
+<Accordion title="How much time does overlapping continuous steps actually save?">
+It depends on the lag, but the compression is real. In the documented example a spray line runs four hours and the downstream curing step is set to begin one hour after the line starts, so curing overlaps three of the four hours instead of waiting for the line to finish. That is three hours of makespan removed from one handoff. Across an electrode line with several continuous steps in series, the overlaps stack, and the whole line finishes materially sooner than a strictly serial plan.
+</Accordion>

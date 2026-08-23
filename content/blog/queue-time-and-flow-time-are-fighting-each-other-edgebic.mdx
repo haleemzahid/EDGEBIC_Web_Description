@@ -1,0 +1,95 @@
+---
+title: "Queue Time and Flow Time Are Fighting Each Other: Causes and Fixes"
+description: "When a step has both queue time and a flow step, the flow gate replaces the queue buffer and the downstream step can start too early. Why it happens and how to set them so they cooperate."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - queue time and flow time conflict
+  - flow step overrides queue time
+  - queue buffer discarded
+  - downstream starts too early
+  - transfer delay handling lag
+  - queue flow transit composition
+targetPhrase: "queue time and flow time"
+wordCount: 1282
+readingTime: 6
+faqQuestions:
+  - question: "Why does my queue time disappear when I also set a flow step on the same routing step?"
+    answer: "When both are set, the engine applies queue time first, then replaces the result with the flow-step gate, so the queue buffer is discarded. A flow step is a start-to-start lag in hours that becomes the successor's start gate, and it replaces whatever the queue time produced. The anomaly report flags any step where both a flow step and queue time are set, because the queue buffer you configured has no effect once the flow step fires."
+  - question: "How do I keep a handling delay on top of a flow step?"
+    answer: "Use transfer delay, not queue time. Both lot-streaming models replace the queue-adjusted end, so queue time never composes with a flow step or a transfer batch. Transfer delay is a flat hour offset added on top of the lot-streaming gate for physical material handling, such as cooling or forklift travel. Set the flow step for the overlap and the transfer delay for the lag, and clear the queue time so nothing is silently discarded."
+  - question: "Is a step with both queue time and a flow step a scheduling error?"
+    answer: "No. The anomaly report flags it as a warning, not a failure, because the engine produced a valid schedule by choosing one behavior. The flag exists because the config is ambiguous: the queue buffer was discarded and a planner who intended both to apply will see the downstream step start earlier than expected. Decide which you meant, clear the other, and use transfer delay if you need a handling lag on top of the flow step."
+qaQuestions:
+  - question: "I set a two-hour cooling queue and a flow step to overlap the next operation, but the cooling seems to vanish. What is happening?"
+    answer: "The flow step replaced the queue-adjusted end, so the two-hour cooling queue was discarded, and the downstream step starts at the flow gate instead. Both lot-streaming models override queue time by design. To keep the cooling, set it as a transfer delay rather than a queue time: the transfer delay is added on top of the flow gate, so the successor starts the flow lag plus the two-hour delay after the upstream start. Then clear the queue time so nothing is left to be discarded."
+  - question: "The anomaly report flags a step for both flow and queue time, but the schedule looks fine. Do I need to fix it?"
+    answer: "Fix it only if the downstream timing is not what you intended. The flag is a warning that the queue buffer was overridden, not that the schedule is wrong. If you meant the flow step to gate the successor and the queue time was left over from an earlier configuration, clear the queue time so the config matches the behavior. If you actually wanted the queue buffer, clear the flow step instead. Either way, aligning the fields to your intent clears the flag and prevents confusion later."
+---
+
+**When a routing step carries both queue time and a flow step, the flow gate replaces the queue buffer, so the queue time is discarded and the downstream step can start earlier than you expected.** [EDGEBIC by User Solutions](/edgebic) composes inter-step timing in a fixed order, and a flow step overrides the queue-adjusted end by design, so a step with both set will silently drop one of them.
+
+The control you use to diagnose this is the anomaly report, which flags any step with both fields set. This post is the detailed version of the queue-versus-flow symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanism, [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained) covers each buffer, and [how to set queue, flow, and transit times](/blog/how-to-set-queue-flow-and-transit-times-in-edgebic) shows the fields.
+
+## The Composition Order Is the Whole Story
+
+Between two steps, the engine builds the downstream start time in a fixed sequence. First it adds the queue time, a shift-aware buffer, to the upstream end. Then, if a flow step or a transfer batch is set, it replaces that queue-adjusted end with the lot-streaming gate. Finally it adds any transit days on top. The middle step is the conflict: lot streaming replaces rather than adds to the queue result, so whenever a flow step fires, the queue buffer computed just before it is thrown away.
+
+This is deliberate. The point of a flow step is to let the downstream step start early, and a queue buffer added on top would fight that. But it surprises planners who set both expecting them to stack.
+
+## Why the Queue Buffer Vanishes
+
+A flow step is a start-to-start lag in hours: the downstream step may begin that many hours after the upstream step starts. Because it is the successor's start gate, it stands in for whatever the queue calculation produced. A concrete case: a step ends at noon, a queue time of two hours would push the successor to 2 p.m., but a flow step of one hour on an operation that started at 8 a.m. returns 9 a.m., and the engine uses 9 a.m. The two-hour queue is gone. [Lot streaming explained](/blog/edgebic-lot-streaming-explained) covers the replacement behavior in detail.
+
+The same replacement happens with a transfer batch, because the piece-count model is also a start gate that overrides the queue-adjusted end. So the conflict is not unique to flow steps; it applies to either lot-streaming model against queue time.
+
+## How to Tell It Is Happening
+
+The anomaly report flags a step where both a flow step and queue time are set. It is a warning, not a failure: the engine produced a valid schedule by picking one behavior. The flag exists because the config is ambiguous and the queue buffer had no effect, so a planner reading the fields would expect a buffer that is not there.
+
+The visible symptom is a downstream step that starts earlier than the queue time alone would allow. If you set a cooling or drying queue and a flow step, and the successor starts before the cooling window elapses, the flow step overrode the queue.
+
+## The Fix: Decide Which You Meant
+
+Resolving the conflict is a matter of matching the fields to your intent.
+
+If you want the overlap, keep the flow step and clear the queue time. The successor starts at the flow gate, and there is no discarded buffer to confuse anyone later.
+
+If you want the buffer, keep the queue time and clear the flow step. The successor waits the full queue after the upstream end, with no overlap.
+
+If you want both an overlap and a handling delay on top of it, keep the flow step and add a transfer delay for the lag, not a queue time. The transfer delay is a flat hour offset added on top of the lot-streaming gate, meant for physical handling such as cooling or forklift travel, and it composes with the flow step where queue time does not. [Queue and transit mistakes](/blog/queue-and-transit-mistakes-edgebic) covers the common mix-ups.
+
+## Where Transit Days Fit
+
+Transit days are the one buffer that always composes, because the engine adds them after the lot-streaming gate. So a step can carry a flow step and transit days together and both apply: the flow gate sets the early start, then transit days push the downstream start later by the travel time. Only queue time is the one that loses to lot streaming. If your downstream timing needs a calendar or working-day transit, transit days are safe to combine.
+
+## How to Diagnose the Conflict, in Order
+
+1. **Run the anomaly report on a full scan.** The both-fields-set flag is at the routing level, so it fires without a job filter.
+2. **Open the flagged step** and confirm both a queue time and a flow step carry values.
+3. **Check the downstream start.** A successor starting before the queue window elapses confirms the flow step won.
+4. **Decide your intent:** overlap, buffer, or overlap plus a handling lag.
+5. **Clear the losing field** and, for a handling lag, use transfer delay rather than queue time. Re-run scheduling and re-check the flag.
+
+## Prevention
+
+- **Set one gate per step.** A flow step and a queue time on the same step always leaves one discarded; pick the behavior you want.
+- **Use transfer delay for handling lags on top of streaming.** It is the field that composes with a flow step or a transfer batch; queue time is not.
+- **Reach for transit days when the delay is travel.** Transit days add after the streaming gate, so they combine cleanly where queue time does not.
+- **Audit the routing with the anomaly report after edits.** The both-fields-set warning fires on a save, so you catch a discarded buffer before a job runs and starts early on the floor. If the downstream step shows an unexpected idle gap rather than starting early, [schedule has idle gaps](/blog/schedule-has-idle-gaps-edgebic) covers that symptom, and if it is out of sequence, [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic) covers that one.
+
+<Accordion title="Why does my queue time disappear when I also set a flow step on the same routing step?">
+When both are set, the engine applies queue time first, then replaces the result with the flow-step gate, so the queue buffer is discarded. A flow step is a start-to-start lag in hours that becomes the successor's start gate, and it replaces whatever the queue time produced. The anomaly report flags any step where both a flow step and queue time are set, because the queue buffer you configured has no effect once the flow step fires.
+</Accordion>
+
+<Accordion title="How do I keep a handling delay on top of a flow step?">
+Use transfer delay, not queue time. Both lot-streaming models replace the queue-adjusted end, so queue time never composes with a flow step or a transfer batch. Transfer delay is a flat hour offset added on top of the lot-streaming gate for physical material handling, such as cooling or forklift travel. Set the flow step for the overlap and the transfer delay for the lag, and clear the queue time so nothing is silently discarded.
+</Accordion>
+
+<Accordion title="Is a step with both queue time and a flow step a scheduling error?">
+No. The anomaly report flags it as a warning, not a failure, because the engine produced a valid schedule by choosing one behavior. The flag exists because the config is ambiguous: the queue buffer was discarded and a planner who intended both to apply will see the downstream step start earlier than expected. Decide which you meant, clear the other, and use transfer delay if you need a handling lag on top of the flow step.
+</Accordion>

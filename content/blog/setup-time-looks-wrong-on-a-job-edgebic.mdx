@@ -1,0 +1,111 @@
+---
+title: "Setup Time Looks Wrong on a Job: Reading the Changeover Trail"
+description: "A setup time that seems off usually traces to which resolver level fired. How to read the setup source, tell a matrix hit from a fallback, and fix a matrix that is not being applied."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - setup time wrong scheduling
+  - setup matrix not applied
+  - sequence dependent setup time
+  - changeover time production schedule
+  - setup source column
+  - setup matrix troubleshooting
+targetPhrase: "setup time wrong scheduling"
+wordCount: 1410
+readingTime: 7
+faqQuestions:
+  - question: "Why is the setup time on a job not the changeover time I entered in the matrix?"
+    answer: "Because the engine only reaches your matrix cell if the conditions for a matrix hit are met: a previous product ran on that machine, both products are in the lookup the matrix needs, and a cell exists for that exact pair. When any of those is missing, the resolver falls back to the routing step's plain setup time. The setup source on the job row tells you which level actually fired, which is the fastest way to see whether the matrix was consulted or bypassed."
+  - question: "What does the setup source on a scheduled operation mean?"
+    answer: "The setup source is a short code the engine records on every operation explaining where it took the setup time from: a cold start (nothing ran before), same product (zero changeover), a product-level matrix cell, a family-level matrix cell, or a plain routing or work-center default. It is the audit trail for changeover time. A matrix source means the sequence-dependent logic fired; a default source means the flat value was used instead."
+  - question: "Does a matrix setup time of zero for the same product mean I need a matrix cell?"
+    answer: "No. When the previous product on a machine is the same as the current one, the engine returns zero setup before it ever looks at the matrix, because there is no changeover. Entering a same-product cell in the matrix is dead data that never applies. You only need matrix cells for changeovers between different products or different families."
+qaQuestions:
+  - question: "We built a family matrix, but half the jobs still show a plain default setup. The families look right. What is missing?"
+    answer: "Almost certainly a product on one side of the changeover has no family assigned. The family lookup needs both the previous and the current product to belong to families; if only one does, it silently falls back to the plain default. Open the two products the job transitions between and confirm both have a family set. This is the single most common reason a family matrix appears to work for some transitions and not others, and there is no error, just a fallback."
+  - question: "The first job on a machine each day shows a large setup even though nothing changed over. Is that a bug?"
+    answer: "No, that is a cold start, and a cold start is not zero setup. When nothing ran on the machine before this job, there is no changeover to look up, so the engine uses the routing step's own setup time for the initial preparation. The machine still needs setting up for its first job of the run. If you expected zero there, the expectation is the error: only a same-product transition returns zero, and a cold start has no previous product to compare against."
+---
+
+**A setup time that looks wrong is almost always the engine correctly reporting which resolver level it landed on, and the setup source recorded on the operation tells you which one in a single glance.** Before assuming the number is a bug, read the source: it separates "the matrix fired" from "the matrix was bypassed and the flat default was used," and those point at completely different fixes.
+
+[EDGEBIC by User Solutions](/edgebic) resolves changeover time through an ordered chain and records where it landed on every scheduled operation. This post sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and is the diagnostic companion to [building a setup matrix](/blog/how-to-build-a-setup-matrix-in-edgebic), which covers the configuration; here the concern is why a configured matrix does not seem to apply.
+
+## First, Read the Setup Source
+
+Add the setup source column to the Job View. Every scheduled operation carries a short code and a human-readable reason sentence explaining where the setup time came from. The codes:
+
+| Source | Meaning |
+|---|---|
+| Cold start | Nothing ran on this machine before this job; the routing step's own setup was used |
+| Same product | The previous job was the same product; zero changeover |
+| Product matrix | A product-to-product matrix cell matched; that value was used |
+| Family matrix | A family-to-family matrix cell matched; that value was used |
+| Routing or work-center default | No cell matched; the flat routing or work-center setup was used |
+
+The Job View even brightens the matrix sources and mutes the fallbacks, so a screen full of muted sources tells you at a glance the matrix is not being consulted. That is the whole diagnosis: a matrix source means sequence-dependent logic fired; a default source means it did not. [Sequence-dependent changeover, defined](/blog/what-is-a-setup-family-sequence-dependent-changeover) explains why the two differ.
+
+## The Resolver Chain, in Order
+
+The engine walks these checks and stops at the first hit:
+
+1. **Cold start.** No previous product on the machine: use the routing or work-center default. This is preparation, not changeover, so it is not zero.
+2. **Same product.** Previous product equals current: return zero. This fires before the matrix is even consulted.
+3. **Product-level cell** for the exact from-product to to-product pair on this machine.
+4. **Family-level cell** for the from-family to to-family pair, which requires both products to have families assigned.
+5. **No cell found:** fall back to the routing or work-center default.
+
+Every returned value is in hours. The matrix itself is entered in minutes, the planner's natural unit, and converted on the way out. Confusing the two is a sixty-fold error, so if a changeover reads sixty times too long, a minutes value reached an hours field somewhere upstream of the matrix.
+
+## Cause 1: The Matrix Was Bypassed (Fallback Source)
+
+The most common "wrong setup" is a job showing a default source when you expected a matrix hit. Three sub-causes:
+
+- **No previous product to compare against.** A cold start uses the flat default by definition. The first job on a machine each run has no predecessor.
+- **The cell does not exist.** No product-level and no family-level cell matched that exact transition. The resolver falls through silently; there is no error.
+- **One product has no family.** The family lookup needs both the previous and the current product assigned to families. If only one is, the family level is skipped and the flat default wins. This is the single most common reason a family matrix works for some transitions and not others.
+
+**Fix:** for a missing cell, add the product-level or family-level entry for that transition. For the family gap, assign both products to families. The [self-explaining reports](/blog/edgebic-self-explaining-reports-explained) and the reason sentence spell out which pair was looked up, so you know exactly which cell to add.
+
+## Cause 2: The Matrix Never Loaded
+
+If every operation across every machine shows a default or cold-start source even though a matrix is configured, the matrix data may not have reached the engine at all, or it may be genuinely empty. The resolver treats an empty matrix as "always fall through."
+
+**How to tell:** no operation anywhere shows a matrix source. This is broader than one bad transition.
+
+**Fix:** confirm the matrix has rows for the machine in question, then re-run scheduling. The session log records the resolver's decision per operation, including the resolved source, which confirms whether the matrix was consulted. If the matrix is populated and still never fires, the exported detail belongs on a support ticket.
+
+## Cause 3: A Bad Cell Is Being Applied
+
+The opposite complaint: a changeover charged too much or too little because the matrix cell itself is wrong. The anomaly report has a family of checks specifically for matrix integrity: negative minutes (which the engine clamps to zero, so the config is silently wrong), duplicate cells for the same transition (whose resolution is non-deterministic), self-pair cells that can never apply, and cells pointing at deleted machines, products, or families.
+
+**How to tell:** run the anomaly report on a full scan (matrix checks are plant-wide, so do not scope to one job) and read the matrix-integrity rows.
+
+**Fix:** the matrix checks name the exact cell. A duplicate cell means two rows exist where one should; delete the stale one. A self-pair cell is dead data; remove it. A negative value came from a direct data edit that bypassed the editor's guard; correct it. [Running and reading the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) covers scoping and export.
+
+## A Note on Mirrored and Started Operations
+
+Two setup sources are deliberate and not to be second-guessed. A dependent-parallel mirror inherits its parent's changeover and is marked as mirrored-from-parent; it does not re-run the resolver, because it is the same physical event. And on a reschedule, an operation with recorded actuals keeps the setup it already had, because actuals are never recomputed. If a "wrong" setup appears only on mirrors or only on started operations, this is why, and it is the same immutability principle behind [actual dates that look wrong](/blog/actual-dates-look-wrong-edgebic).
+
+## Prevention
+
+- **Assign every product a family before relying on a family matrix.** The family level is only as complete as the assignments behind it.
+- **Verify with the setup source after building a matrix.** Schedule once, add the source column, and confirm real transitions show matrix sources. A screen of muted fallbacks is the signal that assignments or cells are missing.
+- **Audit the matrix after any bulk import.** The matrix-integrity checks catch the negatives, duplicates, and stale references a spreadsheet import can introduce, before they charge a wrong changeover on the floor.
+- **Do not enter same-product cells.** They never apply and only clutter the matrix.
+
+<Accordion title="Why is the setup time on a job not the changeover time I entered in the matrix?">
+Because the engine only reaches your matrix cell if the conditions for a matrix hit are met: a previous product ran on that machine, both products are in the lookup the matrix needs, and a cell exists for that exact pair. When any of those is missing, the resolver falls back to the routing step's plain setup time. The setup source on the job row tells you which level actually fired, which is the fastest way to see whether the matrix was consulted or bypassed.
+</Accordion>
+
+<Accordion title="What does the setup source on a scheduled operation mean?">
+The setup source is a short code the engine records on every operation explaining where it took the setup time from: a cold start (nothing ran before), same product (zero changeover), a product-level matrix cell, a family-level matrix cell, or a plain routing or work-center default. It is the audit trail for changeover time. A matrix source means the sequence-dependent logic fired; a default source means the flat value was used instead.
+</Accordion>
+
+<Accordion title="Does a matrix setup time of zero for the same product mean I need a matrix cell?">
+No. When the previous product on a machine is the same as the current one, the engine returns zero setup before it ever looks at the matrix, because there is no changeover. Entering a same-product cell in the matrix is dead data that never applies. You only need matrix cells for changeovers between different products or different families.
+</Accordion>

@@ -1,0 +1,112 @@
+---
+title: "A Job Got Scheduled on a Holiday: Here's Why"
+description: "A job scheduled on a holiday almost always means the calendar changed after the scheduling run. The four holiday layers, how to confirm, and the one-step fix."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job scheduled on holiday scheduling software
+  - production scheduled on plant shutdown
+  - holiday calendar production scheduling
+  - work center holiday booking
+  - downtime scheduling conflict
+  - shop calendar scheduling error
+targetPhrase: "job scheduled on holiday scheduling software"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "Why did my scheduling software put a job on a holiday?"
+    answer: "In almost every case, the holiday was entered after the schedule was generated. Finite capacity engines skip holidays at scheduling time, so an existing booking on a holiday means the calendar changed underneath a plan that was legal when it was made. The fix is to re-run scheduling, which re-plans the affected work around the new calendar."
+  - question: "What is the difference between a plant holiday, a work center holiday, and a shift holiday?"
+    answer: "Those are four kinds of closed time the scheduling engine understands, but only the first is one you can enter. A plant holiday closes the whole facility for the day, whole-day or a partial window, and it has its own screen. Work center holidays, shift holidays, and downtime events are honored by the engine if present but have no configuration screen in the current release. To close one machine or cell for a maintenance day, use a per-day capacity override on that work center, shift, and date, set to zero or to reduced hours."
+  - question: "Will completed work on a holiday date be moved when I fix the calendar?"
+    answer: "No. Completed operations are historical fact and never move. If work was genuinely performed on a date later declared a holiday, the actual dates stay exactly as logged. Only future, not-yet-started work re-plans around the corrected calendar when you reschedule."
+  - question: "How do I add a holiday without breaking the current schedule?"
+    answer: "Enter the holiday first, then reschedule. The order matters: updating the calendar record and then running a reschedule lets the engine flow all remaining work around the new closed day in one pass. Doing it the other way round leaves bookings stranded on the closed day until the next run, and the built-in anomaly report will flag every one of them."
+qaQuestions:
+  - question: "We declared a two-day shutdown for maintenance next month and now a dozen jobs show bookings inside it. Do I fix each job by hand?"
+    answer: "No hand-editing needed. Those dozen jobs were scheduled before the shutdown existed, so their bookings on the closed days are stale, not wrong decisions. Run a reschedule: every unstarted operation flows around the two closed days automatically, respecting job priorities and downstream links. Then open the anomaly report and confirm the holiday-booking findings dropped to zero. Hand-moving twelve jobs invites sequencing errors the engine avoids in one pass."
+  - question: "One machine shows a booking during its Friday preventive-maintenance window every few weeks. How should that window be modeled?"
+    answer: "Not as a recurring downtime record, because there is no screen to create one and no weekly recurrence anywhere in the calendar: the plant holiday recurrence matches the same month and day each year, not a weekday. So a Friday PM window is one of two things. If the hour is lost every single week, put it in the shift: give that machine its own calendar with a shorter Friday and it stops being schedulable permanently, with nothing to maintain. If Fridays vary, enter a per-day capacity override on each affected Friday with the reduced hours and a reason. A booking sitting inside the window almost always means the block was never entered anywhere, because the person looking for a recurring-downtime screen did not find one."
+---
+
+**When a job lands on a holiday, the scheduling engine almost never chose that day: in nearly every real case, the holiday was entered after the schedule was generated, leaving a booking that was legal when it was made stranded on a day that is now closed.** The engine checks every holiday layer at scheduling time, so the diagnosis is really about which calendar record changed and when, and the fix is nearly always a single reschedule.
+
+[EDGEBIC by User Solutions](/edgebic) recognizes four distinct kinds of closed time, and its built-in anomaly report checks bookings against every one of them after each run. Knowing the layers, and knowing which of them you can actually enter, turns "why is there work on Labor Day?" from a mystery into a two-minute check. This post is part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## The Four Calendar Layers, and the One You Enter
+
+A booking can conflict with four different kinds of closed time. The engine understands all four and the anomaly report tests all four, but they are not equally reachable:
+
+| Layer | Scope | Can you configure it today? |
+|---|---|---|
+| Plant holiday | Whole facility, whole day or a partial window | Yes, on the plant holidays screen |
+| Work center holiday | One machine or cell | No screen in this release |
+| Shift holiday | One shift, a date range | No screen in this release |
+| Downtime event | One-off or recurring window | No screen in this release |
+
+That second column is the part worth internalizing, because it changes the diagnosis. The plant holiday is the only closure record you create. Everything narrower than the whole plant is modeled with a **per-day capacity override**: pick the work center, the shift, and the date, then type the reduced hours or zero and add a reason. A machine's annual teardown, a half-day PM, a cell that is down for certification: all overrides, not holidays.
+
+So if you have only ever checked the plant calendar, you have been checking the only calendar there is. The machine-level equivalent lives in the per-day capacity view, and a day that was supposed to be closed but shows no overridden flag is a day nobody actually closed.
+
+## Cause 1: The Holiday Was Added After Scheduling Ran
+
+This is the cause in the overwhelming majority of cases. The engine's holiday check runs when the schedule is generated: closed days contribute zero capacity, and the allocator flows work around them. A booking sitting on a holiday therefore means the sequence went the wrong way round: schedule first, holiday second.
+
+**How to confirm:** compare the closure's entry date against the last scheduling run. EDGEBIC's anomaly report lists every booking that lands on a closed day, with the record's name and the affected job and date, so you do not have to hunt.
+
+**The fix:** re-run scheduling. Remaining work re-plans around the now-closed day. Completed work stays put, as it should: if people genuinely worked that day before it was declared closed, that history is preserved.
+
+**Prevention:** make "calendar first, then schedule" a standing rule. Load next year's holidays before the annual planning pass, and treat any mid-year closure as a two-step action: enter it, then reschedule.
+
+## Cause 2: A Plant Holiday Was Used for a One-Machine Problem
+
+The plant is open, one machine is down for maintenance, and someone reached for the only closure screen they could find and entered a plant holiday. The whole plant now loses a day it should have worked, and every other machine's jobs slide for no reason.
+
+**How to confirm:** open the plant holidays list for the date. If a closure is sitting there for something that was only ever about one machine, this is your cause. The giveaway is that jobs moved on machines nobody touched.
+
+**The fix:** remove the plant holiday, then take that one machine out with a per-day capacity override set to zero on the affected work center, shift, and date. Reschedule. Capacity comes back everywhere it should exist and disappears only where it should not.
+
+## Cause 3: The Machine Block Was Never Entered, or Landed on the Wrong Target
+
+This is the most common machine-level cause and it has two shapes.
+
+The first is that nothing was entered at all. Someone went looking for a per-machine holiday or a recurring downtime window, found no such screen, and the maintenance day never reached the system. Nothing fires and nothing moves, because as far as the engine is concerned the machine was open all day.
+
+The second is a misaimed override. A per-day capacity override is keyed to work center, shift, and date together, so getting any one of the three wrong reduces capacity on a day or a shift you were not looking at while the booked machine keeps its full hours.
+
+**How to confirm:** open the machine's per-day capacity view for the date. If the day carries no overridden flag, the block does not exist. If it does but the job is still there, check that the override is on the shift the operation was actually allocated to.
+
+**The fix:** enter or correct the override, then reschedule the affected jobs. For a block that repeats every week, do not keep retyping it: put the hours into that machine's own shift calendar instead, since there is no weekly recurrence to lean on anywhere in the calendar.
+
+## Cause 4: It Only Looks Like a Holiday Booking
+
+Two look-alikes are worth ruling out before touching anything:
+
+- **Overnight shifts.** A shift running 22:00 to 06:00 legitimately produces bookings whose clock time crosses into the next calendar day. Work starting the evening before a holiday can display against the holiday's date without violating it.
+- **Completed work.** Actual dates never move. If a completed operation shows a holiday date, that is a record of what really happened, not a scheduling decision to fix.
+
+If neither applies and the bookings are on genuinely closed days, you are back to causes 1 through 3.
+
+## Why This Matters More Than It Looks
+
+A single stranded booking is a nuisance. A calendar that drifts from reality is a systemic problem: every promise date computed against phantom capacity is optimistic by exactly the closed time the system does not know about. Shops that keep calendars honest get the compounding benefit that [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) exists to deliver: dates you can commit to. The discipline is identical to keeping actuals fresh before a reschedule; both are cases of telling the system the truth before asking it for a plan. If a calendar change also made a job's dates move unexpectedly, see [why a job jumps after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic), and for the full recovery drill after an unplanned outage, the [machine breakdown reschedule walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic) shows every step with real numbers.
+
+<Accordion title="Why did my scheduling software put a job on a holiday?">
+In almost every case, the holiday was entered after the schedule was generated. Finite capacity engines skip holidays at scheduling time, so an existing booking on a holiday means the calendar changed underneath a plan that was legal when it was made. The fix is to re-run scheduling, which re-plans the affected work around the new calendar.
+</Accordion>
+
+<Accordion title="What is the difference between a plant holiday, a work center holiday, and a shift holiday?">
+Those are four kinds of closed time the scheduling engine understands, but only the first is one you can enter. A plant holiday closes the whole facility for the day, whole-day or a partial window, and it has its own screen. Work center holidays, shift holidays, and downtime events are honored by the engine if present but have no configuration screen in the current release. To close one machine or cell for a maintenance day, use a per-day capacity override on that work center, shift, and date, set to zero or to reduced hours.
+</Accordion>
+
+<Accordion title="Will completed work on a holiday date be moved when I fix the calendar?">
+No. Completed operations are historical fact and never move. If work was genuinely performed on a date later declared a holiday, the actual dates stay exactly as logged. Only future, not-yet-started work re-plans around the corrected calendar when you reschedule.
+</Accordion>
+
+<Accordion title="How do I add a holiday without breaking the current schedule?">
+Enter the holiday first, then reschedule. The order matters: updating the calendar record and then running a reschedule lets the engine flow all remaining work around the new closed day in one pass. Doing it the other way round leaves bookings stranded on the closed day until the next run, and the built-in anomaly report will flag every one of them.
+</Accordion>

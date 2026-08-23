@@ -1,0 +1,164 @@
+---
+title: "Routing Version Control for Manufacturing: Snapshot vs Live Routing"
+description: "Routing version control in manufacturing: how a job's frozen copy is chosen over the live routing, the three authorized writes, and the hybrid merge rules."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - routing version control manufacturing
+  - snapshot vs live routing
+  - hybrid routing merge
+  - engineering change in flight order
+  - routing audit trail
+  - per job routing integrity
+targetPhrase: "routing version control manufacturing"
+wordCount: 1878
+readingTime: 9
+faqQuestions:
+  - question: "How does routing version control work for jobs already in production?"
+    answer: "Each scheduled job carries its own frozen copy of the routing, and the scheduling engine decides at run time whether to read that copy or the live master. In EDGEBIC by User Solutions the default is the copy, so a job in production plans against the routing it was committed to. Reading the master is an explicit per-job opt-in, and choosing it also refreshes the copy so the job stays consistent from that run onward."
+  - question: "What stops a reschedule from quietly rewriting a job's routing copy?"
+    answer: "The copy is written in only three situations: the first time the job is scheduled, a run where the planner explicitly opted to follow the master routing, and a direct edit through the job's routing view. Every other reschedule carries the existing copy forward untouched. Even the steps the engine works with during a run are clones, so in-run decisions such as picking an alternate work center cannot bleed back into the saved copy."
+  - question: "What is a hybrid routing merge?"
+    answer: "A hybrid merge keeps the job's frozen structure while adopting selected timing changes from the live master routing. Work center assignments come from the master when they differ, because a rerouting is an engineering decision. Run times and setup times are adopted only when the difference clears a materiality threshold, so genuine improvements propagate while noise-level edits leave a live job undisturbed."
+  - question: "What happens if a job's routing copy is corrupt or empty?"
+    answer: "The engine falls back to the live master routing rather than failing the run, and records the deviation. That keeps the job schedulable, which is the right default, but it means a silently damaged copy produces routing drift that only the log reveals. An integrity check runs when copies are loaded and flags empty step lists, invalid product references, negative hours, and steps with neither a work center nor a product."
+qaQuestions:
+  - question: "Our quality system asks what routing a shipped job was built to. The master routing has been revised twice since. What can we actually produce?"
+    answer: "The job's frozen copy, and that is the record that answers the question. It holds the steps, work centers, setup and run times, queue times, yields, and alternates that were in force when the job was scheduled, plus the scheduling context: when it was scheduled, the order quantity, the mode, and the original due date.\n\nRun the comparison against today's master and you get the second half of the answer: which fields changed between what the job was built to and what the standard says now. Between the copy, the comparison, and the schedule audit trail showing every reschedule and completion, you can reconstruct the job without asking anyone to remember anything, which is the standard set in [audit-ready scheduling](/blog/audit-ready-scheduling)."
+  - question: "We want cycle-time improvements to reach open jobs automatically but we do not want steps rerouted mid-order. Is that possible?"
+    answer: "That is precisely what the hybrid mode does. It keeps the job's structure and adopts timing values from the master when the difference is material.\n\nThe thresholds are fixed rather than tuned per job. A run time difference has to exceed 0.1 hours and represent either a reduction of more than 10 percent or an increase under 5 percent before it is adopted. So a step going from 10.0 to 4.8 hours is taken; a step creeping from 2.0 to 2.08 is also taken as a minor correction; a step jumping from 2.0 to 2.12 is rejected as too large an unreviewed increase. Setup times use a tighter band. The effect is that validated gains flow through and questionable inflation does not."
+---
+
+**Routing version control in manufacturing comes down to one question asked at run time: does this job plan against its own frozen copy of the routing, or against the live master?** In EDGEBIC by User Solutions the answer defaults to the copy, and every mechanism around that default exists to make the copy trustworthy: it can only be written in three situations, it is cloned before the engine touches it, and it is checked for integrity when it loads.
+
+This post is the mechanism. For the concept, read [production routing snapshots](/blog/edgebic-routing-snapshots-explained). For the procedure, [working with frozen routings](/blog/how-to-work-with-frozen-routings-in-edgebic).
+
+## The Decision, Made Once Per Job Per Run
+
+When a scheduling run reaches a job, it resolves the routing source before it plans anything.
+
+| Condition | Source used |
+|---|---|
+| The job has no prior schedule | The live master routing |
+| The job has a copy and the follow-master flag is off | The job's frozen copy |
+| The job has a copy and the follow-master flag is on | The live master routing, and the copy refreshes |
+| The copy exists but is empty or unusable | The live master routing, with the deviation logged |
+
+The first row explains something people trip over. A brand new order has no copy, so its very first run reads the master. An engineering change made before that first run reaches the job automatically. The freeze applies from the first schedule onward, not from order entry.
+
+The last row is the safety valve. A job with a damaged copy still gets scheduled rather than blocking the run, at the cost of routing drift that only the log reveals. That trade is deliberate: a plant cannot stop scheduling because one record is malformed.
+
+## The Clone Rule
+
+Here is the detail that turns a good idea into a reliable one, and it is not obvious.
+
+When the engine reads a job's frozen copy, it does not work on the copy directly. It clones the steps first and schedules the clones.
+
+The reason is alternate work center resolution. During a run the engine may pick an alternate for a step, and it records that pick on the step it is working with. If the engine were working on the copy's own steps, that pick would become part of the saved copy at the end of the run.
+
+The consequence would be subtle and permanent. A reschedule that happened to select an alternate work center once would rewrite the job's saved routing to name that alternate as the primary, forever. The next reschedule would read a copy that no longer described what the planner committed to, and nobody would ever see the moment it changed. Cloning before scheduling closes that path entirely.
+
+The same principle applies wherever a run makes in-flight decisions. The copy is an input, never a scratchpad.
+
+## Three Authorized Writes, and Nothing Else
+
+The copy may only be written in three situations.
+
+1. **First-time seed.** The job had no copy; one is created from the routing the run actually used.
+2. **Explicit follow-master reschedule.** The planner ticked the flag, so the job read the master and the copy refreshes to match.
+3. **A direct edit** through the job's own routing view.
+
+Every other run takes the carry-forward branch: the existing copy is written back unchanged. That branch is the entire guarantee. If a fourth write path existed, the copy would be a suggestion rather than a record.
+
+There is one failure mode worth knowing. If the copy cannot be serialized for some reason during a run, the engine carries the *previous* copy forward rather than losing it. The job runs correctly against what it read in memory, but the stored copy is not updated, so the next run re-reads the older version. That is the conservative choice and it is why an unexpected routing on a second consecutive run is worth investigating rather than dismissing.
+
+## Integrity Checks on Load
+
+When copies are loaded, each is validated. The checks are blunt and useful.
+
+| Check | What it catches |
+|---|---|
+| Missing routing name | A partially written or truncated record |
+| Product reference invalid | A copy that cannot be matched to what it was built for |
+| Empty step list | Corruption, usually from a failed write |
+| Step with neither a work center nor a product | A step that cannot be planned or consumed |
+| Negative run hours | Bad data upstream, usually an import |
+| Work center present without a name | A broken reference to a station |
+
+None of these halt the run. Each is recorded, and an empty step list in particular causes the fallback to the master routing described above. That combination is the one to watch for: the job schedules, the dates look plausible, and the routing quietly is not the one the copy was supposed to hold.
+
+Monitoring for those entries is cheap and it is the only signal that separates "the copy was used" from "the copy failed and the master was used instead".
+
+## The Hybrid Merge, With Numbers
+
+Hybrid mode is the middle path: keep the job's structure, adopt validated timing improvements. Four rules govern it, applied per step.
+
+**Rule 1: work center changes always come from the master.** If the master routes a step to a different station than the copy does, the master wins. A rerouting is an engineering decision and the hybrid mode is not the place to second-guess it.
+
+**Rule 2: run time is adopted when the change is material.** The difference must exceed 0.1 hours and be either a reduction greater than 10 percent, or an increase under 5 percent.
+
+**Rule 3: setup time uses a tighter band.** The difference must exceed 0.05 hours and be either a reduction greater than 5 percent, or an increase under 10 percent.
+
+**Rule 4: sequence numbers update when the master has restructured the routing.**
+
+Steps that exist in the master but not in the copy are appended and tagged as new, then the whole list is re-sorted by sequence.
+
+Work two steps through it.
+
+A press operation sits at 10.0 hours in the copy. Engineers halved the cycle and the master now says 4.8 hours, same station, same 0.5 hour setup.
+
+| Attribute | Copy | Master | Decision |
+|---|---|---|---|
+| Work center | Press-2 | Press-2 | Same, rule 1 does not fire |
+| Run time | 10.0 | 4.8 | Difference 5.2 hours, a 52 percent reduction, well over the 10 percent bar. Adopted |
+| Setup time | 0.5 | 0.5 | Same, rule 3 does not fire |
+
+Result: Press-2 at 4.8 hours with a 0.5 hour setup. The routing is preserved, the validated gain is taken.
+
+Now a second step where somebody nudged the run time from 2.0 to 2.08 hours, a 4 percent increase.
+
+That is under the 5 percent small-increase cap, so it is adopted as a minor correction. The reasoning is that refusing every tiny increase would let a job's copy drift steadily below reality until its dates were systematically optimistic. Had the increase been 6 percent, it would have been rejected as too large to absorb without review.
+
+The band is doing real work in both directions: it keeps improvements flowing and it keeps unreviewed inflation out.
+
+## What the Copy Gives You for Audit
+
+Three artifacts, and together they answer most reconstruction questions without asking anyone to remember anything.
+
+**The copy itself.** Steps, work centers, setup and run times, queue times, yields, parallel configuration, and alternates with their multipliers and priorities, exactly as they stood when the job was scheduled. Alongside them, the scheduling context: the date and time of scheduling, the order quantity, the mode, the original due date, and the work center utilization, instance count, and efficiency in force.
+
+**The reschedule counter.** Each copy accumulates a count and a timestamped preservation context, so a job rescheduled four times shows four, with the moment of the most recent one. That is how you tell a copy that has been carried forward untouched from one that has been refreshed.
+
+**The comparison report.** Run the copy against the current master and get a field-level difference list per step. This is the artifact for the "what changed since we committed" question, and it is the one to run before any refresh.
+
+One limitation to plan around: there is no automatic version history behind the copy. Each refresh overwrites the previous state. If a refresh might be wrong, capture the current state first. The comparison report before the refresh is usually enough.
+
+## The Trap Worth Knowing
+
+A subtle one, and it generalizes.
+
+A job's copy is stored as a self-contained record with no round trip through the master routing tables. That is what makes it independent, and it also means any field left at its default when the copy is written stays at that default permanently.
+
+The documented instance: a step added to a job's copy through the graphical designer could be saved without its end product association, because the canvas conversion only filled that field for steps loaded from the master. The engine filters a job's steps by end product, so the new step was silently dropped from the plan. The symptom was "my new step did not schedule", which does not point at anything obvious.
+
+It is fixed at both ends now: the field is stamped when the copy is saved, and existing copies are healed when they load. But the lesson stands for anyone extending the model. A per-job copy has no database to fall back on, so whatever the save path does not fill, nothing ever will.
+
+Practical consequence for planners: after adding a step to a job's copy in the designer, reschedule and confirm the step appears in the plan. Five seconds of verification against a class of failure that is otherwise invisible. [Steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic) covers the neighboring symptoms.
+
+## Why This Shape
+
+Every design choice here points the same direction: make the copy boring and reliable rather than clever.
+
+Three write paths instead of an open door. Clones instead of in-place work. A fallback that keeps scheduling instead of failing. Fixed hybrid thresholds instead of per-job tuning. Integrity checks that log rather than halt.
+
+The result is a record a planner can trust without inspecting it, which is the only kind of routing version control that survives contact with a busy shop. The alternative, a system where the saved routing might have been rewritten by any run, is one nobody checks and everybody eventually distrusts. The same reasoning underpins [completed work never moving on a reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule): a guarantee you have to verify is not a guarantee.
+
+## Where to Go Next
+
+[Production routing snapshots](/blog/edgebic-routing-snapshots-explained) is the concept. [Working with frozen routings](/blog/how-to-work-with-frozen-routings-in-edgebic) is the procedure. [Routing snapshot mistakes](/blog/routing-snapshot-mistakes-edgebic) covers the ways this gets misused.
+
+For the editing workflow on one live job, see [editing a live job's routing](/blog/editing-a-live-jobs-routing-in-edgebic), and for routing structure generally, [production routing](/blog/production-routing). The platform overview is the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). Bring a revised routing and an open order to a demo of [EDGEBIC](/edgebic) and we will run the comparison live.

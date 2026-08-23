@@ -1,0 +1,149 @@
+---
+title: "EDGEBIC + Sage: The Complete Scheduling Integration Guide"
+description: "Sage production scheduling integration with EDGEBIC: export items, work centers, routings and work orders, map the columns once, schedule at finite capacity."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Sage production scheduling integration
+  - Sage finite capacity scheduling
+  - Sage scheduling add-on
+  - EDGEBIC Sage integration
+  - Sage 100 scheduling software
+  - Sage routing export scheduling
+  - small manufacturer scheduling software
+targetPhrase: "Sage production scheduling integration"
+wordCount: 2056
+readingTime: 10
+faqQuestions:
+  - question: "Which Sage products can EDGEBIC integrate with?"
+    answer: "All of them, because the interface is a file rather than a product-specific connector. If your Sage installation can export items, work centers, routings, and open work orders to Excel or CSV, EDGEBIC can import them through reusable masks. That covers the Sage manufacturing lines and any Sage installation where a report or query saves to a spreadsheet, without a different integration for each edition."
+  - question: "Do we need IT or a Sage partner to set this up?"
+    answer: "Involve them once, then no. The one task worth handing to IT or your Sage partner is turning the four exports into saved reports that land in a known folder with stable file names. After that the planner owns the routine: pick the mask, press Do It, run the scheduler. Nothing is installed inside Sage and no database credentials are needed for the file path."
+  - question: "Is a finite capacity scheduler overkill for a 30-person shop?"
+    answer: "No, because a small shop has less slack to absorb a bad sequence. With 8 to 20 machines, one changeover mistake or one overloaded bottleneck week consumes a visible share of total capacity. EDGEBIC models real machine counts, shift hours, and sequence-dependent setups, so the answer to which jobs fit this week is computed rather than estimated. The setup cost is days, not a project."
+  - question: "Does adding EDGEBIC change how we use Sage?"
+    answer: "No. Sage stays the system of record for orders, inventory, purchasing, costing, and accounting. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machines, and hands dates and dispatch lists back as Excel files. Nothing is installed in Sage, no schema is extended, and no process inside the ERP has to be redesigned."
+qaQuestions:
+  - question: "We run Sage with about 45 open jobs, 11 work centers, and a planner who builds Monday's plan in a spreadsheet from three Sage reports. What actually changes?"
+    answer: "Monday becomes an import run instead of a rebuild. You export open jobs, run the saved mask, and the result dialog reports something like Created 12, Reused 33, Failed 0 in under a minute, because the 33 jobs EDGEBIC already knows come back Reused and untouched. Then you run the scheduler and the 12 new jobs slot around everything already committed on the 11 work centers, with the confirmation dialog telling you the scope before anything is planned. The spreadsheet disappears, and the half day it consumed turns into about twenty minutes of reviewing a schedule that was computed rather than assembled by hand."
+  - question: "Our Sage routings hold a single setup time per operation, but our powder coat line changes over in 15 minutes between similar colors and nearly 3 hours going back to white. Can that be modeled from Sage data?"
+    answer: "Not from the Sage export alone, because one setup column cannot express sequence dependence. You import the routings with their base setup times through the mask, then define a sequence-dependent setup matrix inside EDGEBIC: setup families grouped by color, with a changeover time from each family to each other family on that work center (0.25 hours light to light, 2.75 hours dark to white). The optimizer then sequences jobs to reduce total changeover, and the recovered hours are real capacity on the exact machine where you are short. Maintenance stays small because families collapse hundreds of part-to-part pairs into a handful of entries."
+---
+
+**Integrating Sage with EDGEBIC means exporting the items, work centers, routings, and open work orders Sage already holds to Excel or CSV, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Dates the shop can hit then export back as Excel. There is no connector to certify, no middleware, and nothing installed inside your ERP.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the Sage case: what to export, how the masks work, and what a realistic first week looks like for a shop where the planner, not an IT department, owns the routine.
+
+## One method across every Sage edition
+
+Sage is not one product. A manufacturer might be on Sage 100, Sage 300, Sage X3, or a Sage financial platform with manufacturing records maintained alongside it, and each of those has a different technical surface. An integration built against one of them is a project that has to be rebuilt when you move to another.
+
+A file-based integration sidesteps that entirely. The interface is the export, so the same four masks work regardless of which edition produced the file. When a shop upgrades from one Sage product to the next, the scheduling layer keeps running as long as the new system can still produce an item, work center, routing, and order export. This is the practical argument for the [EDGEBIC ERP integration architecture](/edgebic-erp-integration) being deliberately universal rather than per-ERP.
+
+## Where Sage stops and scheduling starts
+
+Sage handles the business side well: orders, inventory, purchasing, costing, and financials. What Sage manufacturers consistently report is that day-to-day sequencing still happens on a whiteboard or in a spreadsheet, because the planner's morning questions are finite capacity questions:
+
+- Which of these 45 open jobs actually fits on the press this week?
+- If the rush order jumps the queue, which promise dates slip?
+- Is the weld cell loaded to 90 percent or 140 percent next Tuesday?
+
+Answering those means modeling shifts, machine counts, changeover sequences, and operator availability against every open job at once. That is a sequencing problem rather than a record-keeping problem, which is why a scheduling layer beside the ERP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), the ERP-specific version is in [Sage scheduling gaps and how EDGEBIC fills them](/blog/sage-scheduling-gaps-and-how-edgebic-fills-them), and the older category overview covering other integration approaches is [Sage scheduling integration](/blog/sage-scheduling-integration).
+
+## The integration in one table
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Sage → EDGEBIC | Items | Excel or CSV export → Product import mask |
+| Sage → EDGEBIC | Work centers | Export → Workcenter import mask |
+| Sage → EDGEBIC | Routings / operations | Export → BOR (bill of routing) import mask, two-pass |
+| Sage → EDGEBIC | Open work orders | Export → SalesOrder import mask |
+| Sage → EDGEBIC | Labor hours (optional) | Export → Actuals import mask |
+| EDGEBIC → Sage | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row is headings, and how each column of your file maps onto an EDGEBIC field. Build it once by dragging your export's column headings onto EDGEBIC's target fields; every run after that is two clicks.
+
+Every row produces exactly one outcome: **Created**, **Updated**, **Reused** (matched and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log records every row, which is what makes an unattended weekly routine auditable.
+
+## Step 1: the four exports
+
+1. **Items.** The item identifier, description, unit of measure, and any cost or lead-time columns worth showing. The identifier is the natural key, matched case-insensitively, so `SHAFT-12` finds `Shaft-12`.
+2. **Work centers.** Identifier, how many identical machines the center really holds, default setup hours, efficiency, and an hourly rate for cost rollups.
+3. **Routings.** One row per operation: end product, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open work orders.** Product, quantity, order reference, and dates.
+
+Any Sage report or grid that saves to Excel or CSV works. You are not writing queries against the ERP or touching its schema unless you want to; the file is the interface, which is why nothing here enters your upgrade path.
+
+The one column most Sage exports do not carry is the real machine count per work center. ERPs typically model a work center as a single capacity number rather than a count of identical machines, and the gap matters: a "Milling" center that is really three mills on two shifts is six machine-shifts of capacity. Fill that column by hand once. The mechanism is covered in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## Step 2: map the columns once
+
+Build one mask per file and name it after the routine rather than the file. Mandatory fields are flagged in the mask editor, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a row instead of half-way through.
+
+Two features do most of the work:
+
+**Unit conversion.** Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`, seconds to hours `0.000278`, and a standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in one file can carry different factors, so a routing export that mixes per-piece run times with setup minutes lands correctly in a single run.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value rather than wiping it. A file carrying only item number and price refreshes prices and touches nothing else. A zero, though, is a value: leave a column out rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move between systems because operations reference each other: step 10 feeds step 20 feeds step 30. A row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet (on by default, so a first load needs no pre-work), and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product, so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Three conventions:
+
+- **Number sequences in gaps of 10** so a later insert becomes 25 and nothing renumbers.
+- **Keep all of one product's steps in one file.** A routing import wipes and recreates that product's steps once per run; splitting one product across two runs means the second run's wipe deletes the first run's steps.
+- **Re-importing is safe for running jobs**, because every scheduled job carries a frozen snapshot of the routing it was planned with.
+
+## Step 4: jobs in, then run the scheduler
+
+The order import maps product, quantity, reference, and dates. When your export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as `{Ref}-{line}`, which keeps a multi-line order together.
+
+**Imports never schedule anything.** New jobs sit as unscheduled demand until you run the scheduler, which states how many jobs are new and how many existing jobs are being rescheduled before it plans. That separation is what makes a weekly import safe to hand to one person.
+
+From there the full engine applies to your Sage work: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: dates back to Sage and to the floor
+
+The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet. The work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved, so a dispatch list becomes a saved report rather than a document somebody rebuilds each morning. Revised dates go back into Sage through the date-maintenance path your order process already uses. There is no automated write-back, which keeps the ERP's data under your team's control. The category framing is on the [ERP scheduling add-on page](/erp-scheduling-add-on).
+
+## A realistic first week
+
+The method has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days.
+
+| Day | Work |
+|---|---|
+| 1 | Export items and work centers; build and run those two masks; fill in real machine counts |
+| 2 | Export routings; build the routing mask with unit conversions; review the routing designer |
+| 3 | Export open jobs; import; run the first full finite capacity schedule |
+| 4 | Compare EDGEBIC dates to current promises; correct shifts, instances, and setups where reality disagrees |
+| 5 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+The [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the from-empty sequence, and the [Sage to EDGEBIC data mapping reference](/blog/sage-to-edgebic-data-mapping-reference) is the field-level lookup to keep open while you build masks.
+
+## Try it with your own export
+
+Export this week's open jobs and a routing file from Sage, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity. If you are comparing platforms, the [SAP](/blog/edgebic-sap-integration-guide) and [NetSuite](/blog/edgebic-netsuite-integration-guide) versions of this guide describe the same method, which is exactly the point.
+
+<Accordion title="Which Sage products can EDGEBIC integrate with?">
+All of them, because the interface is a file rather than a product-specific connector. If your Sage installation can export items, work centers, routings, and open work orders to Excel or CSV, EDGEBIC can import them through reusable masks. That covers the Sage manufacturing lines and any Sage installation where a report or query saves to a spreadsheet, without a different integration for each edition.
+</Accordion>
+
+<Accordion title="Do we need IT or a Sage partner to set this up?">
+Involve them once, then no. The one task worth handing to IT or your Sage partner is turning the four exports into saved reports that land in a known folder with stable file names. After that the planner owns the routine: pick the mask, press Do It, run the scheduler. Nothing is installed inside Sage and no database credentials are needed for the file path.
+</Accordion>
+
+<Accordion title="Is a finite capacity scheduler overkill for a 30-person shop?">
+No, because a small shop has less slack to absorb a bad sequence. With 8 to 20 machines, one changeover mistake or one overloaded bottleneck week consumes a visible share of total capacity. EDGEBIC models real machine counts, shift hours, and sequence-dependent setups, so the answer to which jobs fit this week is computed rather than estimated. The setup cost is days, not a project.
+</Accordion>
+
+<Accordion title="Does adding EDGEBIC change how we use Sage?">
+No. Sage stays the system of record for orders, inventory, purchasing, costing, and accounting. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machines, and hands dates and dispatch lists back as Excel files. Nothing is installed in Sage, no schema is extended, and no process inside the ERP has to be redesigned.
+</Accordion>

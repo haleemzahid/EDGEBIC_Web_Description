@@ -1,0 +1,177 @@
+---
+title: "Forward Scheduling in EDGEBIC: How the Default Direction Works"
+description: "Forward scheduling in manufacturing places every operation as early as capacity allows. Here is how EDGEBIC chains steps, handles joins, and adds waiting time."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - forward scheduling manufacturing
+  - forward scheduling explained
+  - operation start time rule
+  - routing dependencies
+  - queue time transit days
+  - material lead time scheduling
+targetPhrase: "forward scheduling manufacturing"
+wordCount: 2150
+readingTime: 11
+faqQuestions:
+  - question: "What is forward scheduling in manufacturing?"
+    answer: "Forward scheduling places every operation as early as capacity allows, starting from the job's start date and pushing work forward until the routing is complete. It answers the question: if we begin now, when can we finish? Slack accumulates at the end of the job, which protects the delivery date against disruption at the cost of earlier material spend and work in progress sitting longer."
+  - question: "How does EDGEBIC decide when an operation can start?"
+    answer: "An operation starts at the latest finish among all of its predecessors, and never before the job's own start date. If two branches of a routing feed one assembly step, the assembly waits for whichever branch finishes last. That single rule handles linear chains, branches, joins and sub-assemblies without any special cases."
+  - question: "Does forward scheduling ignore the due date?"
+    answer: "It does not use the due date to place work, and it never changes a due date you set. The due date becomes a comparison: once the plan exists, the delivery-ready end is measured against the promise and the difference appears as Days Late, projected before the date passes. Backward scheduling is the mode that uses the due date as the placement target instead."
+  - question: "What adds waiting time between two operations?"
+    answer: "Three mechanisms, applied after an operation's work finishes. Queue time is a shift-aware buffer that only ticks during working hours. Lot streaming lets a downstream step start before the upstream batch is complete. Transit days add a calendar or working day move delay between operations or plants. The composed result is the moment the next step is allowed to begin."
+  - question: "Do material steps consume machine capacity?"
+    answer: "No. A material step represents a purchased or sub-assembled item rather than machine hours, so it claims no work center capacity. Its bar is drawn backward from the point of need by the material's lead time, which shows visually when the item has to be ordered, and its end time gates any operation that depends on it."
+qaQuestions:
+  - question: "Two prep operations feed one assembly. One takes 40 hours and one takes 60. When does assembly start?"
+    answer: "After the 60 hour path finishes, not after the 40. Both prep steps write their finish time against the assembly step, and the later time wins, so assembly waits for the slower branch. This is the correct behaviour and it is also the most common source of a puzzled planner: the fast branch sits finished for two and a half working days while the slow one catches up. If that idle window costs you, the fix is capacity or routing on the slow branch, not the assembly step."
+  - question: "Why is my job finishing a week later than the total operation hours suggest?"
+    answer: "Because hours are not days. A 100 hour operation on a single machine running one eight hour shift needs 12.5 working days, and weekends and holidays are not working days. Add utilization below 100 percent, queue time between steps, transit days, and contention with higher priority jobs claiming the same machine, and the elapsed span stretches further. Add the operation hours, divide by the real daily capacity of the work center, then check the calendar and the queue ahead of you."
+---
+
+**Forward scheduling places every operation as early as capacity allows: work starts at the job's start date and is pushed forward until the routing is finished.** It answers the planner's most common question, which is not "when must this start" but "if we begin now, when will this be ready?" Forward is the default direction in EDGEBIC by User Solutions, and every other direction reuses the same machinery underneath it.
+
+This post explains the mechanism in planner terms: the one rule that decides when a step can start, how branches and joins behave, what adds waiting time, and where the trade-offs sit. For the push versus pull comparison in general terms, [forward versus backward scheduling](/blog/forward-vs-backward-scheduling) covers the category; for what happens when the due date is the commitment instead, see [EDGEBIC backward scheduling explained](/blog/edgebic-backward-scheduling-explained).
+
+## The One Rule Everything Rests On
+
+A routing is not a list, it is a graph. Each operation names the operation that follows it, routings can branch (one cut feeds two machining paths) and join (both machining paths feed one assembly), and sub-assemblies bring their own chains.
+
+Whatever the shape, one rule decides every start time:
+
+> **An operation starts at the latest finish among all of its predecessors, and never before the job's own start date.**
+
+Everything else falls out of that:
+
+- **A linear routing** chains end to start. Cut finishes, drill begins.
+- **A branch** lets both legs start as soon as their shared predecessor finishes, and they run in parallel if capacity allows.
+- **A join** waits for its slowest input. If leg A finishes Tuesday noon and leg B finishes Wednesday at 09:00, assembly starts Wednesday at 09:00.
+- **A work center used twice** in one routing keeps its two visits distinct, so the second visit waits for its own predecessor rather than for the first visit.
+
+The second half of the rule matters as much as the first. A step can never be placed before the job started, so a job start time of 09:30 forbids the 08:00 to 09:30 window on day one even when the machine is idle.
+
+## What Forward Scheduling Optimizes For
+
+Forward scheduling front-loads the work and accumulates slack at the end:
+
+```
+FORWARD:  start ──►[S1][S2][S3]· · · · · · · · ·│ due date
+                   work early, slack at the end
+```
+
+The advantage is risk absorption. Every disruption after the plan is made still has runway before the promise. A machine down for six hours eats slack rather than the delivery date, and the plan degrades gracefully.
+
+The cost is inventory. Material is bought earlier, work in progress ages longer, and finished goods sit waiting for a ship date that has not arrived. That is precisely the trade that pull-based methods invert, and it is why the direction is a per-order decision rather than a plant-wide philosophy.
+
+Forward is also the safe fallback. When a job cannot honour a just-in-time plan, the whole order reverts to forward from its earliest allowed start rather than failing. Forward scheduling never errors out where a plan is physically possible.
+
+## From Routing to Dates: What Happens per Step
+
+For each operation, in dependency order, the engine does four things:
+
+1. **Determine the start**, using the rule above.
+2. **Place the work**, searching the calendar day by day and shift by shift for free capacity on the assigned work center, splitting across shifts and days as needed, and spreading across machine instances where the work center has more than one.
+3. **Add the handoff time**, composing queue time, any lot streaming overlap, and transit days.
+4. **Record the result** so every dependent operation can read it.
+
+Step 2 is where finite capacity becomes real: hours are claimed on a specific machine on a specific date, and nothing else can claim them. Step 3 is where most unexplained gaps come from.
+
+## The Three Handoff Mechanisms
+
+| Mechanism | What it models | How it behaves |
+|---|---|---|
+| **Queue time** | The buffer a part waits before the next operation picks it up | Shift-aware: it ticks only during working shifts and pauses over nights, weekends and holidays |
+| **Lot streaming** | Overlap, where the next step starts before the batch is finished | Either a start-to-start offset in hours, or a piece-count transfer batch on discrete work centers |
+| **Transit days** | Physical movement between operations, cells or plants | Calendar days or working days, applied after the other two |
+
+The shift-aware property of queue time is worth an example. A four hour queue starting at 14:00 on a Friday, with an 08:00 to 16:00 shift, consumes two hours that afternoon and finishes the remaining two on Monday at 10:00. It does not silently expire over the weekend, which is the behaviour a wall-clock buffer would produce and the reason plans built on wall-clock buffers drift.
+
+Lot streaming is the mechanism that turns a long sequential routing into an overlapped one, and it is the single biggest lever on elapsed time when operations are long and batches are large. Configuration and worked numbers are in the [lot streaming overlap walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic).
+
+## Material Steps: Bars That Claim No Capacity
+
+Not every routing step is machine time. A material step represents a purchased or sub-assembled item, and it behaves differently in three ways:
+
+- It **consumes no work center capacity**, so it never competes for machine hours.
+- Its bar is drawn **backward from the point of need** by the material's lead time, which makes the ordering deadline visible on the Gantt.
+- Its **end time still gates the operations that depend on it**, so downstream work waits for the material to be available.
+
+Say a job starts Monday at 08:00 and its first step is a stainless rod with three days of procurement lead time. The material bar is drawn from the previous Thursday to Monday 08:00, and the turning operation begins Monday at 08:00. The bar tells the buyer when the purchase order needed to be placed. It is a planning signal rather than a hard supply gate, which is why the material's lead time should reflect reality rather than optimism.
+
+## A Worked Forward Pass
+
+Three operations, 50 units, one machine each, eight hour day shifts, no contention:
+
+| Step | Work center | Hours per unit | Setup | Total hours | Working days |
+|---|---|---|---|---|---|
+| Cut | Saw | 2.0 | 0.5 | 100.5 | 12.6 |
+| Drill | Drill | 3.0 | 0.5 | 150.5 | 18.8 |
+| Inspect | Inspect | 1.0 | 0 | 50.0 | 6.3 |
+
+The job starts Monday at 08:00. Cut runs 100.5 hours, which at eight hours a day is roughly 12.5 working days. Drill cannot begin until cut finishes, then runs its own 18.8 days. Inspect follows with 6.3. Total elapsed span: about 37.5 working days, or roughly seven and a half calendar weeks once weekends are counted.
+
+Two lessons live in that table. First, elapsed time is dominated by capacity, not by the number of steps: 300 hours of work on single-instance machines is 37 days whatever the routing looks like. Second, this is exactly the job where lot streaming pays: if drill can begin after the first transfer batch of cut parts rather than after the last, weeks come out of the span without adding a single machine.
+
+## Forward Scheduling on a Job Already in Progress
+
+Forward is also what a reschedule uses, and the mechanism is worth understanding because it explains most surprising moves.
+
+When a job is replanned with work already recorded, three things happen. Completed operations seed the plan with their **actual** finish times, so successors read reality rather than the old plan. Partially completed operations get their **remaining** hours placed rather than their full duration: four hours logged against a twelve hour operation leaves eight hours to schedule. And the job's own floor moves to the resume point, so remaining work starts from where the shop floor actually is, never from the original start date.
+
+The visible consequence is a job that appears to jump. A step that finished two days late pushes everything behind it by at least two days, and often more, because the next free slot on a contested machine may be further out than the delay itself. Nothing moved backward and nothing was rewritten: the plan simply re-derived from a later starting point. The causes are cataloged in [why a job jumped after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic).
+
+## Where Forward Scheduling Costs You
+
+Forward is the safe default, not a free one. Three costs are worth naming so the choice stays deliberate:
+
+- **Inventory carry.** Finished work waits for a ship date. On long-lead products that can be weeks of cash sitting on a rack.
+- **Early material commitment.** Buying to the earliest possible start rather than the latest feasible one moves spend forward and locks it in before demand can change.
+- **Work in process age.** Parts sitting between operations are exposed to damage, rework from design changes, and simple loss.
+
+Those three costs are exactly what pull-based scheduling attacks, which is why the direction is a per-order field rather than a plant-wide setting. Run forward where duration uncertainty is high, and right-align the jobs whose promised dates are the real commitment.
+
+## Forward Is the Foundation, Not the Whole Story
+
+Two other directions build on the same graph, the same ordering, and the same allocator:
+
+- **The constraint path.** When a job's bottleneck operation is pinned to a target date, upstream work is scheduled backward to feed that date and downstream work forward from it. The [anchor scheduling example](/blog/toc-bottleneck-anchor-scheduling-example-edgebic) traces a full case.
+- **The backward pass.** A whole order can be right-aligned so its last operation finishes just in time for the due date. It reuses the same dependency ordering, simply walked in reverse.
+
+Because they share the allocator, capacity behaves identically in every direction: shifts, holidays, downtime, utilization, machine instances and one-job-per-day rules all apply the same way. Only the search direction changes.
+
+## Where to Go Next
+
+- To wire the links that make dependencies work, see [how to sequence operations with dependencies](/blog/how-to-sequence-operations-with-dependencies-in-edgebic).
+- For the graph mechanics and worked join arithmetic, see [how EDGEBIC orders operations](/blog/how-edgebic-orders-operations-dependency-graphs).
+- For the configuration errors that break sequencing, see [dependency and sequencing mistakes](/blog/dependency-and-sequencing-mistakes-edgebic).
+- For the placement machinery underneath every direction, see the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+User Solutions has been shipping finite capacity schedulers since 1991, and forward scheduling is the path most of those plants run every day: at GE Railcar, structured scheduling took on-time delivery from 30 percent to 90 percent without new machines. The mechanism above is what produced those dates.
+
+Bring a routing with a branch and a join to a demo and we will schedule it forward with your real hours on screen. [Contact US to arrange it](/contact-us), or start at the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="What is forward scheduling in manufacturing?">
+Forward scheduling places every operation as early as capacity allows, starting from the job's start date and pushing work forward until the routing is complete. It answers the question: if we begin now, when can we finish? Slack accumulates at the end of the job, which protects the delivery date against disruption at the cost of earlier material spend and work in progress sitting longer.
+</Accordion>
+
+<Accordion title="How does EDGEBIC decide when an operation can start?">
+An operation starts at the latest finish among all of its predecessors, and never before the job's own start date. If two branches of a routing feed one assembly step, the assembly waits for whichever branch finishes last. That single rule handles linear chains, branches, joins and sub-assemblies without any special cases.
+</Accordion>
+
+<Accordion title="Does forward scheduling ignore the due date?">
+It does not use the due date to place work, and it never changes a due date you set. The due date becomes a comparison: once the plan exists, the delivery-ready end is measured against the promise and the difference appears as Days Late, projected before the date passes. Backward scheduling is the mode that uses the due date as the placement target instead.
+</Accordion>
+
+<Accordion title="What adds waiting time between two operations?">
+Three mechanisms, applied after an operation's work finishes. Queue time is a shift-aware buffer that only ticks during working hours. Lot streaming lets a downstream step start before the upstream batch is complete. Transit days add a calendar or working day move delay between operations or plants. The composed result is the moment the next step is allowed to begin.
+</Accordion>
+
+<Accordion title="Do material steps consume machine capacity?">
+No. A material step represents a purchased or sub-assembled item rather than machine hours, so it claims no work center capacity. Its bar is drawn backward from the point of need by the material's lead time, which shows visually when the item has to be ordered, and its end time gates any operation that depends on it.
+</Accordion>

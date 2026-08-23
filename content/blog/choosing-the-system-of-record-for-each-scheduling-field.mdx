@@ -1,0 +1,137 @@
+---
+title: "Choosing the System of Record for Each Scheduling Field"
+description: "Decide which fields your ERP owns and which EDGEBIC owns before the second import: the mapping rule that stops a nightly export from overwriting your machine counts and setups."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - system of record scheduling fields
+  - ERP field ownership scheduling
+  - import mask field mapping
+  - overwriting scheduling data on import
+  - EDGEBIC data ownership
+  - master data governance manufacturing
+targetPhrase: "system of record for scheduling fields"
+wordCount: 1620
+readingTime: 8
+faqQuestions:
+  - question: "How do I stop an ERP import from overwriting a value I set inside EDGEBIC?"
+    answer: "Leave that column out of the mask. An import writes only the fields you mapped, so an unmapped field is never touched no matter how many times you run the import. Blank-cell preservation gives a second layer of safety on update runs, because a blank keeps the existing value, but relying on blanks is fragile: a zero is a value, not a blank. Unmapping is the durable answer."
+  - question: "Which scheduling fields should the ERP own?"
+    answer: "The ones the ERP genuinely maintains and changes: product identifiers and descriptions, routing structure and standard times, work order product, quantity, reference and dates. These change in the ERP as a matter of daily business, so importing them keeps the two systems aligned with no manual effort. Anything the ERP does not model, or models at the wrong grain for capacity, belongs to EDGEBIC instead."
+  - question: "Which fields should EDGEBIC own outright?"
+    answer: "The machine instance count, the shift and holiday calendar, sequence-dependent setup matrices, work center groups, operator skills and rosters, bottleneck flags, and transfer batch settings. No ERP export carries these at the grain a finite capacity engine needs. They are configured once inside EDGEBIC, left out of every mask, and then apply automatically to every work order imported afterwards."
+qaQuestions:
+  - question: "We set our four-machine mill cell to four instances, and a week later the plan was four times too long again. The instance count was back to one. What happened?"
+    answer: "Your work center mask maps a capacity column from the ERP onto the instances field, and the ERP models that cell as one resource, so every import resets your four back to one. It is not a bug and it never warns, because the import did exactly what the mask told it to. Remove that column from the mask, set the instance counts again, and the next import will leave them alone permanently. Then check the other fields in the same category: efficiency, default setup, and the bottleneck flag are all values a planner sets from shop knowledge and most ERPs either do not hold or hold at the wrong grain. Each one that stays mapped is another value that quietly reverts on a schedule nobody watches."
+  - question: "Our engineering team sometimes edits a routing directly in EDGEBIC because it is faster than raising a change in the ERP. Is that a problem?"
+    answer: "It is a problem specifically because routings are an ERP-owned field in almost every shop. A hand edit creates a divergence that nobody documents, and the next routing import silently replaces it, because a routing import wipes and recreates that product's steps once per run. The edit disappears and the person who made it usually does not notice for weeks. Two workable answers exist. Either keep routings ERP-owned and make the change there, accepting the slower path, or declare a named set of products EDGEBIC-owned and exclude them from the routing export entirely. What does not work is leaving the ownership ambiguous, because then every import is a coin toss on whose version survives."
+---
+
+**Before your second ERP import, decide which system owns each scheduling field and write it down: fields the ERP owns are mapped in the mask and never edited by hand in EDGEBIC, and fields EDGEBIC owns are left out of the mask entirely so no import can touch them.** The rule sounds administrative. It is the difference between a set of machine counts and setups that hold for years and a set that silently reverts every time somebody runs the nightly file.
+
+EDGEBIC by User Solutions has integrated with ERPs through import masks since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, ownership drift is the failure that costs the most trust. It never announces itself. A value a planner set deliberately is simply not there next month, and the dates that follow from it are wrong in a way that looks like the scheduler's fault.
+
+## The mechanism you are governing
+
+An import writes only the fields you mapped. Everything else on the record is untouched, however many times the mask runs. That single behavior is what makes ownership enforceable, because unmapping a column is a permanent decision rather than a habit somebody has to remember.
+
+There is a second, softer layer. On an update run, a blank cell keeps the existing value rather than wiping it, so a partial refresh file is safe. Useful, but do not build ownership on it: a **zero** is a value, not a blank, and an ERP that emits 0 in a column you meant to ignore will happily write that zero. Blank-cell preservation protects you from gaps in a file. Unmapping protects you from the file.
+
+## The three categories
+
+Every field a schedule needs falls into one of three buckets.
+
+**ERP-owned.** The ERP maintains it as a matter of daily business, so importing it keeps the two systems aligned for free.
+
+**EDGEBIC-owned.** The ERP does not hold it, or holds it at a grain that cannot drive capacity. It is configured once and excluded from every mask.
+
+**Negotiated.** Both systems have an opinion and you have to pick, per shop.
+
+## Category 1: fields the ERP should own
+
+| Field | Why the ERP owns it |
+|---|---|
+| Product identifier and description | The natural key everything else references, maintained in the ERP daily |
+| Unit of measure on the product | Planners should read the same word the ERP shows |
+| Routing structure and step order | Engineering changes originate in the ERP for most shops |
+| Standard run and setup times per operation | Maintained against costing and quoting |
+| Work order product, quantity, reference | The demand itself, created and closed in the ERP |
+| Due dates on work orders | Owned by the order process, not by the plan |
+
+Map these and leave them alone inside EDGEBIC. The corollary matters: if a routing is ERP-owned, do not hand-edit it locally. A routing import wipes and recreates that product's steps once per run, so a local edit disappears at the next import with no message. The change workflow is in [handling engineering changes with an ERP routing re-import](/blog/handling-engineering-changes-via-erp-re-import).
+
+## Category 2: fields EDGEBIC should own outright
+
+These have no export column anywhere, in any ERP, at the grain a finite capacity engine needs.
+
+- **Machine instance count.** How many identical machines a work center really holds. Most ERPs model a work center as one resource with a capacity figure, which is why this is the highest-value field on the whole load and the most dangerous one to leave mapped.
+- **Shifts and plant holidays.** The calendar every scheduled date is computed against.
+- **Sequence-dependent setup matrix.** The changeover cost that depends on what ran before. No ERP carries a from-product-to-product matrix. See [the setup matrix explained](/blog/edgebic-setup-matrix-explained).
+- **Work center groups.** A named pool of interchangeable machines, re-shopped on every reschedule, with per-member efficiency factors.
+- **Operator skills and rosters.** No routing export models a certification.
+- **Bottleneck flags, transfer batches, and queue policy.** Planner judgment about how the plan should be built.
+
+The full tiering of what an ERP can and cannot supply is in [which ERP fields EDGEBIC needs to schedule](/blog/which-erp-fields-edgebic-needs-to-schedule).
+
+## The instance count, in numbers
+
+This is the field worth being pedantic about, because the failure is invisible and expensive.
+
+A cell of four identical mills, imported as one machine, produces a plan roughly four times too long:
+
+| Instances on the work center | Hours available per 8 hour shift | A 32 hour job finishes in |
+|---|---|---|
+| 1 (as the ERP exports it) | 8 | 4 shifts |
+| 4 (as the shop really runs) | 32 | 1 shift |
+
+Nothing errors. The dates are simply pessimistic, and the planner who fixed them last month has no reason to check whether they are still fixed. Unmapping the column is a thirty-second job that holds forever.
+
+## Category 3: the negotiated fields
+
+Three fields genuinely depend on how your shop works.
+
+**Priority.** If your ERP carries a meaningful order priority that customer service maintains, import it. If priority is really a conversation the planner has each morning, keep it local and set it in EDGEBIC.
+
+**Efficiency and default setup on a work center.** Some ERPs hold real numbers here; many hold a default nobody has revisited since implementation. Import them only if you trust them, and unmap them the moment a planner starts correcting them by hand.
+
+**Progress.** Exactly one system nets completed work: either actual hours reach EDGEBIC and the order import carries the original quantity, or the ERP nets the quantity and no actuals arrive. Doing both subtracts twice. The full case is in [reconciling ERP work order quantities after partial completion](/blog/reconciling-erp-work-order-quantities-after-partial-completion).
+
+## Write the decision down where the mask lives
+
+Name your masks after the routine and the ownership rather than the file: `Weekly Work Centers (ERP-owned columns only)` outlives `wc-final-v3.csv`. Then keep a one-page table beside the masks listing each entity, the fields mapped, and the fields deliberately excluded with a short reason.
+
+That page is what makes the decision survive the person who made it. A year later, somebody looking at a work center mask with no capacity column mapped needs to know that was on purpose.
+
+## Signs the ownership has drifted
+
+Three symptoms show up before anything looks obviously broken:
+
+- **A value you set has reverted.** Almost always a mapped column you meant to exclude.
+- **A high Created count on a routine import of stable master data.** Usually identifier drift rather than ownership, and covered in [keeping product masters in sync](/blog/keeping-product-masters-in-sync-erp-edgebic).
+- **Two people describe the same field differently.** The planner says setups are maintained in EDGEBIC, the ERP team says they come from the routing. One of them is about to be surprised.
+
+Catch these on a cadence rather than by accident. The per-import pass is in the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist), and the slower drift check is in [a monthly ERP to EDGEBIC data audit](/blog/a-monthly-erp-to-edgebic-data-audit).
+
+## What ownership buys you
+
+A settled ownership map is what lets the recurring routine stay short. Export, pick the mask, run, read the counts, schedule. Nobody re-checks instance counts, nobody re-enters setups, and the values that encode your shop's real knowledge accumulate instead of eroding. On top of that stable base the engine does its work: finite capacity across shifts and machine instances, work center groups, sequence-dependent setups, lot streaming with transfer batches, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows the import layer every ERP shares.
+
+## Draw your own map
+
+Bring one product export, one work center export, and one routing export to [a demo](/contact-us) and mark each column ERP-owned, EDGEBIC-owned, or negotiated. It usually takes twenty minutes and it is the cheapest hour of integration design you will spend.
+
+<Accordion title="How do I stop an ERP import from overwriting a value I set inside EDGEBIC?">
+Leave that column out of the mask. An import writes only the fields you mapped, so an unmapped field is never touched no matter how many times you run the import. Blank-cell preservation gives a second layer of safety on update runs, because a blank keeps the existing value, but relying on blanks is fragile: a zero is a value, not a blank. Unmapping is the durable answer.
+</Accordion>
+
+<Accordion title="Which scheduling fields should the ERP own?">
+The ones the ERP genuinely maintains and changes: product identifiers and descriptions, routing structure and standard times, work order product, quantity, reference and dates. These change in the ERP as a matter of daily business, so importing them keeps the two systems aligned with no manual effort. Anything the ERP does not model, or models at the wrong grain for capacity, belongs to EDGEBIC instead.
+</Accordion>
+
+<Accordion title="Which fields should EDGEBIC own outright?">
+The machine instance count, the shift and holiday calendar, sequence-dependent setup matrices, work center groups, operator skills and rosters, bottleneck flags, and transfer batch settings. No ERP export carries these at the grain a finite capacity engine needs. They are configured once inside EDGEBIC, left out of every mask, and then apply automatically to every work order imported afterwards.
+</Accordion>

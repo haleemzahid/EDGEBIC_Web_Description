@@ -1,0 +1,174 @@
+---
+title: "Epicor to EDGEBIC: The Data Mapping Reference"
+description: "Epicor data export scheduling field by field: map parts, resources, methods of manufacture, and jobs into EDGEBIC import masks, with conversions and outcomes."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Epicor data export scheduling
+  - Epicor field mapping scheduling
+  - Epicor routing export
+  - Epicor resource group mapping
+  - import mask field reference
+  - Epicor Kinetic scheduling data
+targetPhrase: "Epicor data export scheduling"
+wordCount: 1958
+readingTime: 10
+faqQuestions:
+  - question: "How does an Epicor resource group map into EDGEBIC?"
+    answer: "Import the individual resources as work centers, then group them inside EDGEBIC as a work center group. The import file carries one row per machine with its own instance count, efficiency, and calendar. The pool membership is configured in EDGEBIC afterwards, which is deliberate: a work center group re-shops the whole pool on every reschedule and applies per-member efficiency factors, and those settings have no column in a standard ERP export."
+  - question: "Do operation rows and material rows go in the same Epicor routing export?"
+    answer: "Yes, and one column tells them apart. The operation flag is true for a step that runs on a work center and false for a component consumed at that point in the routing. Both row types belong in the same file for a given end product, in sequence order. Getting the flag wrong turns components into work centers, which is visible immediately in the graphical routing designer."
+  - question: "Can EDGEBIC import an Epicor export that has no header row?"
+    answer: "Yes. Turn off the header-present option on the mask and map each field by column position instead of by heading. This matters for scheduled or automated extracts that emit raw delimited data. The mask stores the positions permanently, so the routine does not change: pick the mask, run it, read the counts."
+  - question: "What happens to an Epicor export column EDGEBIC has no field for?"
+    answer: "Nothing. Unmapped columns are ignored, and a wide export is no problem. You map the columns EDGEBIC schedules against and leave the rest alone. That is why exports rarely need reshaping before import: the mask reads what it was told to read and skips everything else, run after run."
+qaQuestions:
+  - question: "Our Epicor operations carry both a setup time and a production standard expressed as pieces per hour, not hours per piece. How do we get that into an import mask?"
+    answer: "Two different fields handle it. Setup goes into the routing step's setup column, converted with a factor if your export is in minutes (0.016667 turns 30 minutes into 0.5 hours). The production standard is trickier because the routing step wants hours required per unit. If your export gives pieces per hour, add one calculated column in the spreadsheet before saving it (1 divided by the rate) and map that. Alternatively carry pieces per hour on the work center record itself, which is a supported work center field, and let the operation supply the run hours. The calculated column is usually simpler because it survives every future export unchanged once the formula is in the report."
+  - question: "We run three plants in one Epicor instance. Should everything import into a single EDGEBIC database?"
+    answer: "Start with one plant. A single-plant scope proves your masks, your capacity data, and your dates in a week rather than a quarter, and the work is not wasted: the same masks run against the second plant's export with only the file changed. Work centers carry a department field, so multi-site data can coexist once you are confident, and transit days between routing steps model the movement between locations. What you want to avoid on day one is debugging a mapping problem and a cross-site routing question at the same time."
+---
+
+**Mapping Epicor data into EDGEBIC means exporting the parts, resources, methods of manufacture, and open jobs Epicor already holds to Excel or CSV, then mapping each column once into a saved import mask that runs in two clicks from then on.** This reference covers what maps to which field, which columns are mandatory, how Epicor concepts like resource groups land on the EDGEBIC side, and what happens on the second and hundredth run.
+
+EDGEBIC by User Solutions connects to Epicor through those import masks rather than a certified connector, which is a design decision rather than a limitation: nothing has to be re-certified when either system upgrades. The end-to-end version of this story is the [complete Epicor integration guide](/blog/edgebic-epicor-integration-guide). This post is the field reference you keep open while building masks.
+
+## The load order
+
+| # | Epicor export | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Parts | Product | Nothing |
+| 2 | Resources | Workcenter | Nothing |
+| 3 | Methods of manufacture / routings | BOR (bill of routing) | Parts and work centers |
+| 4 | Jobs / orders | SalesOrder | Parts |
+| 5 | Labor detail (optional) | Actuals | Scheduled jobs |
+
+Two entity types have no Epicor origin and are built from a spreadsheet you write: **Shift** (one row per shift, with a start and end pair per weekday, and a blank pair meaning the day is off) and **PlantHoliday** (closures by name and date). These two carry the calendar the whole schedule is planned against, so they are worth ten careful minutes.
+
+Auto-create is on by default, so a routing file naming a resource that has not been imported yet creates it on the fly. Useful as a safety net, poor as a strategy: an auto-created work center has a name and nothing else, which means one machine, no shift assignment, and no efficiency. Load resources properly first.
+
+## Parts to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id` | Yes | Part number. Natural key, matched case-insensitively |
+| `Product_Name`, `Description` | | Descriptive text |
+| `UOM` | | Unit of measure |
+| `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Only the part number is required. Everything else can arrive later through a second, narrower refresh file, because blank cells preserve existing values on an update.
+
+## Resources to Workcenter
+
+Epicor exports resources with a good deal of capacity detail, and this is the file where that detail earns its keep.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. Routing steps match on it |
+| `Workcenter Name` | | Label on the Gantt and in reports |
+| `Number_Of_Instances` | | How many identical machines the center holds. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per routing step where present |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint for anchor scheduling |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts`, `Shift_Names` | | Calendar assignment |
+| `Pieces_Per_Hour` | | Rate-based capacity where the center is measured in output |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+The single highest-value column here is `Number_Of_Instances`. A cell of four identical machines scheduled as one work center with one instance produces a plan four times too long, and it is a quiet failure: nothing errors, the dates are simply wrong. Fill it deliberately for every multi-machine center.
+
+## Resource groups to work center groups
+
+Epicor planners think in pools of interchangeable machines. EDGEBIC models the same idea as a **work center group**, and there is one deliberate difference: the pool is not a static assignment. A routing step bound to a group re-evaluates every member on each reschedule, picks by strategy (earliest completion, primary first, or earliest start), and applies a per-member efficiency factor so a slower machine is chosen only when it still finishes first. Operations already started keep their machine, because recorded work is never moved.
+
+None of that fits in an export column. So: import the members as ordinary work centers, then create the group inside EDGEBIC and add them. It is a one-time configuration per pool, and it is one of the settings that most changes what the schedule looks like.
+
+## Methods of manufacture to BOR
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Part number this method builds |
+| `Sub_Prod` | Yes | Work center id (operation row) or component part (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; chaining happens automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and transport time |
+| `Parallel_Op` | | Parent step's work center name for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent`, `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Applicable machine instances for this step |
+| `Fam_Dept` | | Department for auto-created work centers |
+
+### The two passes, and why they exist
+
+A routing import cannot be written row by row, because step 10 must point at step 20 and step 20 does not exist yet. So the import runs in two passes. Pass one validates each row, resolves or creates the parts and work centers it names, and buffers the row. Pass two groups the buffer by end product, sorts by sequence number, writes the steps, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished part so the whole routing renders connected in the graphical designer. The visual result is worth checking after the first import: a routing missing its final link draws as a chain floating free of the part it builds.
+
+Subcontract operations, where they exist in your method, map cleanly enough as an operation row on a work center that represents the vendor, with the turnaround expressed as transit days. That keeps the outside time visible on the Gantt instead of hidden inside a single long step.
+
+## Jobs to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Part being built |
+| `Qty` | Yes | Order quantity |
+| `Job_Date` | Yes | Release date |
+| `Sales_Order(Ref#)` | | Order reference: shared references group into one sales order, jobs auto-number `{Ref}-{line}` |
+| `Job_Number` | | Your Epicor job number carried across |
+| `Due_Date`, `Order_Date`, `Priority` | | Promise, entry, and ranking |
+| `Customer_Name` | | Auto-created when missing |
+| `Unit_Price`, `User_Notes` | | Optional |
+
+Two options control the date logic when your export carries only one date: one treats the job date as the due date, the other derives the job date backwards from the due date. Pick the one that matches how your export is built, once, on the mask.
+
+## Actuals
+
+Job number, work center id, and actual date are mandatory; hours and pieces are optional and either one can be derived from the other using the operation's rate. A `Complete` column marks the operation finished. The import always overwrites the days the file carries, so re-running a corrected extract fixes numbers rather than doubling them. Days the file does not mention are preserved unless you explicitly ask for them to be cleared.
+
+Actuals import last because each row has to find an operation on a job that is already scheduled.
+
+## Conversions, blanks, and zeros
+
+| Situation | Behavior |
+|---|---|
+| Minutes in the export | Conversion factor `0.016667` on that mask column |
+| Seconds in the export | Conversion factor `0.000278` |
+| Blank cell on an update | Existing value preserved |
+| Zero in a cell on an update | Zero is written: it is a value, not a blank |
+| Unmapped column | Ignored entirely |
+| Mandatory field unmapped | Run aborts before reading any row |
+| One bad row | Fails alone and the run continues, unless you choose strict mode |
+
+## What the outcomes tell you
+
+Every row resolves to Created, Updated, Reused, or Failed. Reused is the default for a record that already exists, which means a weekly parts file of 4,000 rows reports something like Created 12, Reused 3,988 and touches nothing else. That is the desired result, not a failure. When counts look wrong, the per-run log file has one line per row with the exact reason for every failure.
+
+## What import cannot bring, and why it matters
+
+The settings that most differentiate the schedule have no column in any ERP export: the sequence-dependent setup matrix, operator skills and certifications, work center group strategies, bottleneck anchoring, and lot streaming transfer batches. Those are configured once in EDGEBIC and then apply to every imported job forever. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) explains why the same mask design serves every ERP.
+
+For the week-to-week rhythm once the masks exist, see [the daily Epicor and EDGEBIC scheduling workflow](/blog/the-daily-epicor-edgebic-scheduling-workflow). For the questions that come up before a project starts, the [Epicor integration FAQ](/blog/edgebic-epicor-integration-faq) collects them, and the [JobBOSS mapping reference](/blog/jobboss-to-edgebic-data-mapping-reference) shows how little the method changes from one ERP to the next.
+
+<Accordion title="How does an Epicor resource group map into EDGEBIC?">
+Import the individual resources as work centers, then group them inside EDGEBIC as a work center group. The import file carries one row per machine with its own instance count, efficiency, and calendar. The pool membership is configured in EDGEBIC afterwards, which is deliberate: a work center group re-shops the whole pool on every reschedule and applies per-member efficiency factors, and those settings have no column in a standard ERP export.
+</Accordion>
+
+<Accordion title="Do operation rows and material rows go in the same Epicor routing export?">
+Yes, and one column tells them apart. The operation flag is true for a step that runs on a work center and false for a component consumed at that point in the routing. Both row types belong in the same file for a given end product, in sequence order. Getting the flag wrong turns components into work centers, which is visible immediately in the graphical routing designer.
+</Accordion>
+
+<Accordion title="Can EDGEBIC import an Epicor export that has no header row?">
+Yes. Turn off the header-present option on the mask and map each field by column position instead of by heading. This matters for scheduled or automated extracts that emit raw delimited data. The mask stores the positions permanently, so the routine does not change: pick the mask, run it, read the counts.
+</Accordion>
+
+<Accordion title="What happens to an Epicor export column EDGEBIC has no field for?">
+Nothing. Unmapped columns are ignored, and a wide export is no problem. You map the columns EDGEBIC schedules against and leave the rest alone. That is why exports rarely need reshaping before import: the mask reads what it was told to read and skips everything else, run after run.
+</Accordion>

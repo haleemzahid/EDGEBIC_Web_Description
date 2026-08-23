@@ -1,0 +1,70 @@
+---
+title: "What Is Consume-from-Stock Netting in Scheduling?"
+description: "Consume-from-stock netting satisfies demand from existing on-hand instead of building it, so the scheduler only produces the shortfall. Here is how netting works."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - consume-from-stock netting
+  - inventory netting
+  - satisfied from stock
+  - net requirements
+  - build shortfall
+  - stock reservation
+targetPhrase: "consume-from-stock netting"
+wordCount: 1200
+readingTime: 6
+faqQuestions:
+  - question: "What is consume-from-stock netting?"
+    answer: "Consume-from-stock netting is the scheduling step that satisfies a demand from existing on-hand inventory instead of building it, so the plant only produces the shortfall. When an order needs a quantity of a part that already has stock, the engine draws down the stock, posts an issue to the inventory ledger, and either builds the remaining shortfall or, if stock fully covers the demand, schedules no work at all. Netting is what turns gross demand into the net quantity that actually has to be made."
+  - question: "What is a satisfied-from-stock order?"
+    answer: "A satisfied-from-stock order is one whose entire demand was met from existing inventory, so no work-center operations were scheduled for it. The engine draws the units from stock, posts a single issue to the ledger, and marks the order as satisfied from stock. It emits one material-shaped placeholder row rather than any machine work, because the demand was covered entirely by the shelf. It is the netting outcome when on-hand meets or exceeds the full requirement."
+  - question: "Does netting change the order quantity?"
+    answer: "No, netting never mutates the order's ordered quantity. Instead the engine uses a run-scoped internal build quantity that reflects how many pieces actually have to be produced after stock is applied. If an order is for 100 and 40 are in stock, the engine schedules a build of 60 while the order still records 100. That override lives only for the duration of the run and is never saved, so the ordered quantity stays intact for reporting and the netting decision is recomputed fresh every time."
+qaQuestions:
+  - question: "Two orders for the same part ran in one scheduling pass and I expected both to consume the same 50 units. Only one did. Why?"
+    answer: "Because netting decrements the available stock the instant the first order claims it, so the second order sees the reduced balance and cannot claim the same units. This within-run reservation is deliberate: without it, two orders in one pass would both net against the same 50 and the plant would ship 50 it never had. The first order consumes 50 and the reservation drops to zero, so the second order sees no stock and builds normally. Each unit of stock is promised exactly once per run."
+  - question: "An order was satisfied from stock, then I rescheduled it three times. Did I over-consume inventory?"
+    answer: "No, because each reschedule reverses the order's prior stock issue before netting again, so there is only ever one live consumption for it. On the first pass the engine posts a minus-50 issue and marks the order satisfied from stock. On reschedule, it first posts a plus-50 reversal that restores the balance, reads the restored on-hand, and posts a fresh minus-50 issue. The ledger grows with each cycle for audit, but the net effect on stock is stable and the order is never double-charged."
+---
+
+**Consume-from-stock netting is the scheduling step that satisfies a demand from existing on-hand inventory instead of building it, so the plant produces only the shortfall.** When an order needs a part that already has stock on the shelf, the engine draws the stock down, posts an issue to the inventory ledger, and schedules a build only for whatever the stock could not cover. If stock covers the whole demand, no work is scheduled at all. Netting is what converts gross demand into the net quantity that must actually be made.
+
+This entry defines netting and shows how it behaves inside [EDGEBIC by User Solutions](/edgebic). For the wider index of planning terms, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the policy that governs which products hold stock to net against, see [make-to-stock vs make-to-order](/blog/what-is-make-to-stock-vs-make-to-order).
+
+## How it works
+
+The idea is the one every shop already lives by. A press shop has 50 brackets sitting in finished goods and receives an order for 50 brackets. It does not run the press; it ships the 50 off the shelf. Consume-from-stock netting is that instinct made into a scheduling rule: check the shelf before you build, and only build what the shelf cannot supply.
+
+The engine performs netting at the point where the schedule is persisted, not when the order is created, so it nets against the freshest on-hand. For each order it asks a short series of questions:
+
+- Is the product stocked, and is this order a consumer rather than a build-to-stock producer? If not, it builds normally.
+- Does the order already have actuals? If so, it is never retroactively satisfied from stock, because completed work is immutable.
+- Is enough stock available to cover the need? If yes, consume it. If not, consume what there is and build the rest.
+
+When stock fully covers the demand, the order is marked satisfied from stock and the engine emits a single material-shaped placeholder row instead of machine operations. When stock covers only part, the engine uses a run-scoped internal build quantity to schedule just the shortfall, leaving the ordered quantity untouched.
+
+Two safeguards keep netting honest. The available stock is decremented the moment an order claims it, so two orders in one run can never both claim the same units. And on reschedule, the engine reverses an order's prior stock issue before netting again, so repeated reschedules never double-charge inventory.
+
+## A concrete example
+
+A shop holds 70 units of Widget B on hand. An order for 50 comes in as a make-to-order customer order.
+
+At the persist step, the engine seeds the run's available stock at 70. For this order it finds 70 available against a need of 50, consumes 50, and drops the reservation to 20. The order is marked satisfied from stock, and a single issue posts to the ledger:
+
+| Entry | Quantity | Type | Comment | Balance |
+|---|---|---|---|---|
+| 1 | -50 | Issue | Schedule Transaction | 20 |
+
+No press time is scheduled. Now suppose a second order for 30 of the same widget runs in the same pass. It sees only the 20 that remain after the first order's claim, which is short of 30, so it builds. It might consume the 20 and schedule a build for 10, again touching the ledger only for the amount taken from stock. The reservation logic guarantees the first 50 and the next 20 are each promised once, never twice.
+
+## How EDGEBIC uses it
+
+In EDGEBIC, consume-from-stock netting runs inside the scheduling engine at the persist boundary, after completed steps are preserved and before the schedule is saved. It nets a consumer order's demand against on-hand from the inventory ledger, posts a single net issue marked "Schedule Transaction," and, when stock fully covers the order, flips it to satisfied-from-stock with one placeholder row and no work-center operations.
+
+The netting decision is auditable end to end. Every order's netting result is recorded in the scheduling diagnostic log, showing the need, the available stock, how much inventory was used, the net build quantity, and whether the order was satisfied from stock. Reschedule safety is built in: the engine reverses the prior consume issue before re-netting, so an order can be rescheduled any number of times without ever consuming stock twice. An optional forward-netting mode extends this so that a build-to-stock order completing later in the same run can supply a consumer whose need date falls after that completion, preventing a same-run double-build.
+
+For the full pipeline with worked ledger entries and the reschedule round-trip, read the [consume-from-stock netting walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic). To understand the ledger the issues post to, see [the inventory ledger](/blog/what-is-an-inventory-ledger), and to see the balance netting protects, see [projected available balance](/blog/what-is-projected-available-balance).

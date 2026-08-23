@@ -1,0 +1,104 @@
+---
+title: "When to Use a Machine Pool vs an Alternate Work Center"
+description: "Machine pool vs alternate work center: when a reusable work center group beats a per-step alternate list, how each picks a machine, and worked numbers."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - machine pool vs alternate work center
+  - work center group scheduling
+  - alternate routing manufacturing
+  - resource group capacity
+  - interchangeable machine scheduling
+  - member selection strategy
+targetPhrase: "machine pool vs alternate work center"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between a machine pool and an alternate work center?"
+    answer: "A machine pool, called a work center group, is a named set of interchangeable machines that you define once and bind to any routing step. An alternate work center is a fallback machine listed by hand on a single routing step. The pool is centrally maintained, so adding a fourth machine updates every step bound to it at once. Alternate lists are per-step and must be edited on every routing that uses them, which is where they drift."
+  - question: "When should I use a work center group instead of listing alternates?"
+    answer: "Use a work center group when the same set of interchangeable machines serves many routings, because the pool is defined once and reused everywhere. Reach for a per-step alternate list only for a one-off fallback that applies to a single routing and nowhere else. The rule of thumb: if you would copy the same alternate list onto more than two or three steps, make it a group so it cannot drift when a machine is added or retired."
+  - question: "Can a routing step use both a machine pool and a manual alternate list?"
+    answer: "No, a group binding and manual alternates are mutually exclusive on a step, because the group is the alternate list. When you bind a step to a work center group, any manual alternates on that step are removed, and the engine picks the member using the group's selection strategy. This keeps selection unambiguous: there is exactly one source of candidate machines, not two competing lists that could disagree."
+qaQuestions:
+  - question: "I have three mills of different ages that all cut the same parts. Should I model them as one work center with three instances or as a group?"
+    answer: "As a group. Instances model identical units that share one shift calendar, one utilization percentage, and one speed, so three different-vintage mills do not fit that model. A work center group lets each mill keep its own calendar and its own relative speed through a per-member efficiency factor. A fast 2024 mill can carry a factor of 0.5, meaning it runs the work in half the base hours, while a 1998 mill carries 1.5. The group shops all three on every run against real capacity."
+  - question: "Every routing that mills a part lists the same three machines as alternates, and I just added a fourth mill. Do I really have to edit every routing?"
+    answer: "With per-step alternate lists, yes, you edit each routing, and that manual maintenance is exactly why they drift. If instead those steps were bound to a MILLING group, you add the fourth mill to the group once and every bound step considers it on the next scheduling run with no routing edits at all. This is the single strongest reason to prefer a pool over hand-maintained alternates: one change, everywhere, no drift."
+---
+
+**A machine pool, called a work center group, is a reusable set of interchangeable machines you define once and bind to any routing step, while an alternate work center is a fallback machine listed by hand on a single step.** Both give the engine more than one place to run an operation, so both cut queue time on a busy machine. The difference is maintenance and reuse. A pool is central and shared; an alternate list is local and manual. EDGEBIC by User Solutions supports both, and choosing the right one keeps your routings from drifting the first time a machine is added or retired.
+
+## Two ways to say "run this anywhere in the group"
+
+Most shops have clusters of machines that are different but interchangeable for a class of work: three mills of different vintages, two nearly identical welding cells, a fast laser and a slow backup. The scheduler needs to know it may run a step on any of them. There are two ways to tell it.
+
+The first is a per-step alternate list. On one routing step you name the primary machine and add fallback machines by hand. The engine picks the candidate that finishes soonest. This is fine for a one-off fallback, but the same three-machine list copied onto dozens of routings drifts the moment someone adds a fourth machine and forgets a routing.
+
+The second is a work center group. You define the pool once, give it a name like MILLING, add members, and bind routing steps to the group instead of to a single machine. At schedule time the engine explodes the group into candidate machines and shops the pool. Add a member to the group and every bound step considers it immediately, with no routing edits.
+
+## The maintenance trade-off
+
+| | Machine pool (group) | Alternate work center |
+|---|---|---|
+| Where defined | Once, centrally | Per routing step, by hand |
+| Reuse | Bound to any number of steps | Copied onto each step |
+| Adding a machine | Update the group once | Edit every routing |
+| Best for | A cluster used across many routings | A one-off fallback on a single step |
+| Per-machine speed | Efficiency factor per member | Manual on the step |
+
+The pool wins whenever the same cluster serves more than a couple of routings, which describes most machining, welding, and finishing cells. The alternate list earns its place for a genuine one-off: this single routing may spill to that one machine, and nothing else does.
+
+## How each picks the machine
+
+Both mechanisms run the same underlying resolver: build the candidate list, evaluate each against live capacity, pick the winner. A group adds a per-group selection strategy on top.
+
+| Strategy | The engine picks the member that | Use when |
+|---|---|---|
+| Earliest completion (default) | Finishes the operation soonest, counting both member speed and current queue | Minimizing this job's lead time |
+| Primary first | Is your designated primary, spilling to others only when it is full | You want predictable, consistent routing |
+| Earliest start | Can start soonest, day granular, so a same-day start beats a faster machine that can only start tomorrow | Getting work moving today matters most |
+
+The efficiency factor is what makes a pool honest about a mixed cluster. A member factor of 0.5 means the machine runs the work in half the base hours; 1.5 means it takes 50 percent longer. Setup is a separate per-member override and is never scaled by the factor, because a machine can run fast and still set up slow. A factor only penalizes a member in the comparison, though; it never removes one, so [keeping a slow machine out of a pool](/blog/how-a-parallel-group-screens-out-a-slow-machine) comes down to the member list, the Active flag, and the selection strategy instead.
+
+## A worked example
+
+A MILLING group has three members, all on the same day shift, one machine each:
+
+| Member | Efficiency factor | Base 0.04 h per unit, qty 100, plus setup | Total |
+|---|---|---|---|
+| Mill-1 (2015, primary) | 1.0 | 0.04 x 100 + 0.5 h setup | 4.5 h |
+| Mill-2 (2024) | 0.5 (twice as fast) | 0.02 x 100 + 0.5 h | 2.5 h |
+| Mill-3 (1998) | 1.5 (slower) | 0.06 x 100 + 0.25 h | 6.25 h |
+
+**All mills free Monday, earliest completion strategy.** The engine projects finishes: Mill-1 at 12:30, Mill-2 at 10:30, Mill-3 at 14:15. Mill-2 wins and the job books 08:00 to 10:30. The Job View shows Mill-2, and the step still stores its group binding so a later reschedule can re-shop the pool.
+
+**Mill-2 booked solid until Wednesday.** Now the projected finishes are Mill-1 at 12:30 Monday, Mill-2 not until Wednesday, Mill-3 at 14:15 Monday. Mill-1 wins. The fastest machine loses to the available one, which is the entire point of capacity-aware pooling.
+
+That second case is what a hand-maintained alternate list gives you too, but only if you remembered to put all three machines on this exact routing. The group gives it to every bound routing at once.
+
+## The rule that keeps it clean
+
+A group binding and manual alternates cannot coexist on one step. When you bind a step to a group, any manual alternates are stripped, because the group is the alternate list. This is deliberate: two competing sources of candidate machines would have undefined selection. One step, one source.
+
+Groups are also not the same as instances. Instances model identical units inside a single work center, sharing one calendar and one speed. A pool models different-but-interchangeable machines, each keeping its own calendar and its own relative speed. If your machines are truly identical, instances plus [load balancing](/blog/load-balancing-vs-dedicated-instance-scheduling) is simpler; if they differ, a group is the right tool. And a pool is a machine question only, never a skill question: model qualified operators separately, not as group members.
+
+## Which to reach for
+
+Bind steps to a work center group when the cluster is shared across routings and you want one place to add or retire a machine. Keep a per-step alternate for a genuine one-off fallback. For the definition and the full member model, see [what a work center group is](/blog/what-is-a-work-center-group-machine-pool); to configure one, see [how to bind a routing step to a machine pool](/blog/how-to-bind-a-routing-step-to-a-machine-pool-in-edgebic); and for the broader picture of how the engine resolves candidate machines, the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) traces the whole path. When the machines must run at the same time rather than as alternatives, that is [dependent vs independent parallel scheduling](/blog/dependent-vs-independent-parallel-when-to-use-each), a different mechanism entirely. See how the pool behaves live in [EDGEBIC](/edgebic).
+
+<Accordion title="What is the difference between a machine pool and an alternate work center?">
+A machine pool, called a work center group, is a named set of interchangeable machines that you define once and bind to any routing step. An alternate work center is a fallback machine listed by hand on a single routing step. The pool is centrally maintained, so adding a fourth machine updates every step bound to it at once. Alternate lists are per-step and must be edited on every routing that uses them, which is where they drift.
+</Accordion>
+
+<Accordion title="When should I use a work center group instead of listing alternates?">
+Use a work center group when the same set of interchangeable machines serves many routings, because the pool is defined once and reused everywhere. Reach for a per-step alternate list only for a one-off fallback that applies to a single routing and nowhere else. The rule of thumb: if you would copy the same alternate list onto more than two or three steps, make it a group so it cannot drift when a machine is added or retired.
+</Accordion>
+
+<Accordion title="Can a routing step use both a machine pool and a manual alternate list?">
+No, a group binding and manual alternates are mutually exclusive on a step, because the group is the alternate list. When you bind a step to a work center group, any manual alternates on that step are removed, and the engine picks the member using the group's selection strategy. This keeps selection unambiguous: there is exactly one source of candidate machines, not two competing lists that could disagree.
+</Accordion>

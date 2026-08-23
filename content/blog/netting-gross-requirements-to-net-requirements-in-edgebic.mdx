@@ -1,0 +1,90 @@
+---
+title: "Netting Gross Requirements to Net Requirements in EDGEBIC"
+description: "The netting equation that turns gross demand into a real build quantity in EDGEBIC: subtract on-hand and scheduled receipts, add the safety buffer, and size the shortfall."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - net requirements
+  - gross to net netting
+  - scheduled receipts
+  - projected available balance
+  - inventory netting
+  - safety stock buffer
+targetPhrase: "net requirements"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "What is the netting equation in EDGEBIC?"
+    answer: "Net requirements equal gross requirements minus on-hand inventory minus scheduled receipts, with the safety-stock buffer added back so stock is protected. In the inventory calendar this plays out bucket by bucket as the projected available balance rolls forward: each bucket's balance is the prior balance plus scheduled receipts minus gross requirements. When that balance falls below the reorder trigger, the net requirement is the gap up to the target, and that gap becomes the suggested build quantity."
+  - question: "What counts as a scheduled receipt when netting?"
+    answer: "A scheduled receipt is confirmed future supply that has not yet arrived. In EDGEBIC today that means open build-to-stock manufacturing orders, placed in the bucket where they are expected to complete. They reduce net requirements because you do not need to build what is already on its way. Purchased-part receipts from a purchasing module are not yet a supply source, so netting against open purchase orders is on the roadmap, not shipped."
+  - question: "Does netting run across a whole bill of materials?"
+    answer: "Not today. EDGEBIC nets one product at a time in the inventory calendar, which is exactly right for planning a single stocked item against its own demand and supply. A multi-level run that explodes a bill of materials, nets each component, and cascades requirements down the tree is on the MRP roadmap. There is no shipped plant-wide regenerative run. The single-item netting math is here and correct; the cascade across a product structure is future work."
+qaQuestions:
+  - question: "We have 250 on hand, a bucket of 400 gross demand, no incoming supply, and 50 safety stock. What is the net requirement?"
+    answer: "Net requirements equal gross minus on-hand minus scheduled receipts plus safety stock, so 400 minus 250 minus 0 plus 50 is 200 units. In the inventory calendar you would see the projected balance roll from 250 down to a shortfall in that bucket, drop below the reorder trigger, and produce a suggestion sized to restore stock to the target. The 200 is the raw shortfall before lot-sizing and any yield allowance round it into a buildable quantity."
+  - question: "An open build-to-stock order for 150 units completes in the same bucket as a demand spike. How does that change netting?"
+    answer: "The open build-to-stock order is a scheduled receipt, so it lands in that bucket as supply and lifts the projected balance before the demand is subtracted. If the bucket had 40 on hand entering it, plus the 150 receipt, minus 80 gross demand, the balance leaves the bucket at 110, comfortably above a 50 trigger, and no suggestion fires. The scheduled receipt did the netting for you. Remove that order and the same bucket would drop to a shortfall and prompt a build."
+---
+
+**Net requirements are what is left of gross demand after you subtract what you already have and what is already coming.** The equation is gross requirements minus on-hand minus scheduled receipts, plus the safety-stock buffer you want to protect. EDGEBIC by User Solutions runs this netting for each stocked product in the inventory calendar, rolling a projected balance forward bucket by bucket until it can tell you exactly how many units you actually need to build. This post walks the equation, shows how the calendar expresses it, and is honest about where single-item netting ends and the multi-level roadmap begins.
+
+For the wider planning picture, see the [inventory and planning pillar](/blog/edgebic-planning-guide). For how a resulting shortfall becomes a suggestion, see [how a forecast becomes a replenishment suggestion](/blog/how-a-forecast-becomes-a-replenishment-suggestion-in-edgebic).
+
+## The Netting Equation
+
+Material planning has always run on one idea: do not build what you do not need. The formula that captures it is:
+
+```
+net requirements = gross requirements
+                 − on-hand inventory
+                 − scheduled receipts
+                 + safety-stock buffer
+```
+
+Gross requirements are the total demand a bucket must absorb. On-hand is the stock you already have. Scheduled receipts are confirmed supply on its way. Safety stock is the cushion you add back so netting protects a floor rather than planning to zero. Whatever remains is the net requirement, the quantity that genuinely has to be produced.
+
+## How the Calendar Expresses It
+
+EDGEBIC does not compute one lump net number; it runs the same idea across time so you can see when the shortfall lands. The inventory calendar rolls a projected available balance forward one bucket at a time:
+
+```
+balance[i] = balance[i-1] + scheduled receipts[i] − gross requirements[i]
+```
+
+Each bucket starts from the prior bucket's balance, adds any receipts landing in it, and subtracts that bucket's gross requirements. The result is the projected balance carried into the next bucket. Reading that balance across the horizon is covered in [reading projected available balance across the horizon](/blog/reading-projected-available-balance-across-the-horizon-in-edgebic).
+
+When a bucket's balance drops below the reorder trigger, the net requirement surfaces as the gap from the projected balance up to the target level. That gap is the raw shortfall, and it is what the suggestion engine sizes into a build.
+
+## A Worked Netting
+
+Take a product with 250 on-hand, a 50-unit safety stock, and a reorder trigger of 80. Weekly buckets, no incoming supply:
+
+| Week | Opening | Scheduled receipts | Gross req | Projected balance | Below trigger? |
+|---|---|---|---|---|---|
+| Wk 1 | 250 | 0 | 120 | 130 | No |
+| Wk 2 | 130 | 0 | 120 | 10 | Yes |
+
+The balance rolls from 250 to 130 to 10. Week 2 drops below the 80 trigger, so a net requirement exists. Sized against the classic equation for that bucket, gross of 120 minus on-hand of 10 plus the safety buffer restores stock to the target. Expressed the calendar's way, the suggestion sizes the gap from the projected 10 up to the target, which for a reorder-point item is the trigger plus the reorder quantity.
+
+The raw shortfall is the net requirement. Lot-sizing rules then round it into a buildable batch, and a yield allowance covers scrap, both covered in [how lot sizing and yield inflation shape order quantities](/blog/how-lot-sizing-and-yield-inflation-shape-order-quantities-in-edgebic).
+
+## Scheduled Receipts Do the Netting for You
+
+The most valuable term in the equation is scheduled receipts, because confirmed incoming supply cancels demand before you plan a thing. An open build-to-stock order is a scheduled receipt, placed in the bucket where it is expected to complete. If a 150-unit build lands in a bucket with 40 on-hand and 80 of demand, the balance leaves that bucket at 110, and no suggestion fires. The receipt netted the demand for you. How a build-to-stock job acts as that supply event is covered in [how a build-to-stock job replenishes inventory](/blog/how-a-build-to-stock-job-replenishes-inventory).
+
+Today, scheduled receipts means open build-to-stock manufacturing orders. Netting against open purchase orders needs a purchasing module, which is roadmap, so a purchased part's incoming supply is not yet a netting term.
+
+## Safety Stock Adds a Floor, Not Just a Subtraction
+
+The safety-stock term is why netting protects a cushion instead of planning stock to zero. By default it acts as the trigger that fires the suggestion when the projected balance dips below it, so the net requirement is sized to keep a buffer on hand. It does not, by default, block the scheduler from consuming into that buffer if demand truly needs it. The distinction between safety stock as a trigger and safety stock as a hard floor is covered in [when safety stock becomes a hard floor](/blog/when-safety-stock-becomes-a-hard-floor-in-edgebic).
+
+## Single Item Today, Multi-Level on the Roadmap
+
+Everything above nets one product against its own demand and supply, which is exactly what you want when planning a single stocked item. What EDGEBIC does not yet do is explode a bill of materials, net each component, and cascade requirements down the product tree in one plant-wide run. That multi-level netting is on the MRP roadmap; there is no shipped regenerative run. The single-item math is here and correct, and it is the same equation a multi-level run would apply at each level. For the honest map of shipped versus planned, see [what EDGEBIC does today vs the MRP roadmap](/blog/what-edgebic-does-today-vs-the-mrp-roadmap).
+
+Netting is the quiet engine under every replenishment. Get the four terms right, gross, on-hand, scheduled receipts, and the safety buffer, and the number you build is the number you actually need. Everything else in the calendar is presentation on top of this one subtraction.

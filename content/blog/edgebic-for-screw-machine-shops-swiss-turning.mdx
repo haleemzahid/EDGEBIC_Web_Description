@@ -1,0 +1,102 @@
+---
+title: "Scheduling Screw Machine and Swiss Turning Shops"
+description: "Screw machine scheduling that pools interchangeable spindles, sequences collet and bar changeovers, and runs Swiss cells unattended across shifts and weekends."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - screw machine scheduling
+  - Swiss turning scheduling
+  - CNC lathe machine pool
+  - bar changeover sequencing
+  - lights-out turning
+  - high volume turned parts scheduling
+  - collet setup sequencing
+targetPhrase: "screw machine scheduling"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "How does the scheduler choose which Swiss lathe a turned part runs on?"
+    answer: "Bind the interchangeable lathes into a machine pool and the scheduler resolves the winner before allocation by comparing each machine's projected finish against the live load. The part carries its own cycle time onto whichever spindle wins, so a job queued four days deep on the named machine can move to a free one and finish earlier. Started jobs stay locked on the machine already running them."
+  - question: "Can screw machine setup order be optimized to cut bar and collet changeovers?"
+    answer: "Yes. A per-machine setup matrix carries the changeover hours from one part family to the next, so going from a small collet to a large bar can cost more than the reverse. The sequence optimizer groups compatible jobs to shrink total changeover time on the constraint spindle rather than accepting whatever order the due-date sort produces."
+  - question: "Does the schedule account for unattended running overnight and on weekends?"
+    answer: "Yes. Each machine follows its own shift calendar, so a Swiss cell running lights-out can carry a longer daily window than the attended day shift. A twelve-hour bar load that starts at 18:00 keeps consuming the unattended window into the next morning instead of stopping at the end of the operator's shift."
+qaQuestions:
+  - question: "We run 22 turning centers with a lot of capability overlap, but every routing names one machine, so three spindles queue deep while others sit. What is the fastest fix?"
+    answer: "Define one machine pool for each family of interchangeable spindles and bind the routing steps to it instead of naming a single machine. The pool is maintained once centrally, so adding a machine is one edit rather than dozens across routings. At schedule time the resolver compares projected finish across every pool member using live shift allocations and places each job on the earliest-finishing spindle, including the tentative reservations from jobs resolved earlier in the same run so two jobs never both win the same free machine. The queue-deep spindles stop being a bottleneck because the load spreads by finish time, not by whatever the routing recorded when the part was first proved."
+  - question: "Our long turned parts run twelve to sixteen hours unattended, but the day-shift capacity model keeps splitting them at 16:00. How do we model lights-out?"
+    answer: "Give the unattended cells their own shift calendar with the real overnight window rather than the attended eight-hour day. A part that needs fourteen hours and starts at 17:00 then consumes the calendar's continuous overnight capacity and finishes the next morning as one operation, instead of being chopped at the end of the manned shift and pushed to the following day. Capacity is available hours times instances times utilization on each machine's own calendar, so a lights-out spindle contributes far more nightly capacity than a manned one, and the schedule reflects the throughput you actually get from a Swiss shop that runs while nobody is standing there."
+---
+
+**A screw machine or Swiss turning shop wins on throughput per spindle-hour, and it loses that advantage the moment the schedule pins parts to named machines and stops at the end of the day shift.** EDGEBIC by User Solutions pools interchangeable turning centers and resolves each job onto the earliest-finishing spindle, sequences collet and bar changeovers with a per-machine setup matrix, and follows a separate calendar per cell so lights-out running counts as the capacity it really is. The result is a schedule that matches how a high-volume turned-parts floor actually behaves.
+
+This is a scheduling problem, not a machining one. The parts are proved, the cycle times are known, and the constraint is almost never the cut. It is which spindle runs which job in which order, and whether the plan admits how much of that happens unattended.
+
+## The Pool Is Where Turning Capacity Hides
+
+Most turning shops have more capability overlap than their routings admit. A routing records where a part was first proved, not every machine it can run on today. When one CNC lathe queues four days deep while two identical spindles sit idle, the schedule is enforcing a decision nobody actually made.
+
+A machine pool fixes that. Bind the interchangeable spindles into one pool, bind the routing step to the pool, and the scheduler resolves the winner before any capacity is allocated. It compares each candidate's projected finish against the live load, including the reservations already made by jobs resolved earlier in the same run, and places the job on the spindle that finishes soonest. The comparison is on finish time, not availability alone, so a machine that frees up sooner but runs the part slower can still lose, which is the correct answer when a downstream operation is waiting.
+
+The pool is maintained in one place. Add a twenty-third machine and every bound step follows it with a single edit, instead of hunting through dozens of routings that would drift the first time somebody missed one. For the mechanics across families of shops, [machine pool scheduling for machine shops](/blog/edgebic-for-machine-shops-machine-pools) walks the full behavior.
+
+## Sequencing Bar and Collet Changeovers
+
+On a screw machine floor the setup is the enemy. Going from a small collet and a thin bar to a large collet and heavy stock is not a trivial swap, and the cost is not symmetric: the return trip can be cheaper. A single average setup number buried on the routing hides all of that.
+
+A per-machine setup matrix carries the real changeover hours from one part family to the next. Because it is sequence-dependent, running a campaign of same-diameter parts back to back before jumping to a different bar size costs far less total setup than alternating. The sequence optimizer uses that matrix to group compatible jobs on the constraint spindle, minimizing total changeover rather than accepting whatever order a plain due-date sort falls into.
+
+Consider a spindle with six jobs queued for the day. Sorted only by due date, the order alternates between three bar sizes and racks up roughly four hours of collet and stock changes. Grouped by the matrix, light to heavy, the same six jobs incur closer to one hour, and the freed time is another job or two out the door. The [setup sequencing approach for CNC shops](/blog/edgebic-for-cnc-shops-setup-sequencing) covers how the matrix is built and read.
+
+## Lights-Out Is Real Capacity, So Model It
+
+A Swiss shop earns its margin at night. A bar-fed cell with a parts catcher runs for hours after the operator goes home, and a schedule that stops at 16:00 throws away the number that justifies the machine.
+
+Each machine follows its own shift calendar. The unattended cells carry the real overnight window, longer than the attended day shift, and capacity on any machine is available hours times instances times utilization on that machine's own calendar. A fourteen-hour bar load that starts at 17:00 then keeps consuming the continuous overnight window and finishes the next morning as one operation, instead of being cut at the end of the manned shift and pushed to the next day.
+
+This changes the plan's honesty, not just its optimism. The lights-out cells show the higher nightly capacity they actually deliver, the manned cells show the lower attended capacity, and the load balances between them correctly. For the labor-versus-machine side of unattended running, [lights-out CNC scheduling](/blog/edgebic-for-cnc-shops-lights-out-scheduling) covers the model in depth.
+
+## A Worked Day on the Floor
+
+Take a shop with a pool of five capable Swiss lathes and a wave of turned-part orders due Friday.
+
+| Decision | What the scheduler does |
+|---|---|
+| Machine choice | Resolves each job onto the earliest-finishing pool member by projected finish, spreading load off the three queue-deep spindles |
+| Setup order | Groups same-bar-size jobs on each spindle using the setup matrix, cutting total collet and stock changes |
+| Overnight run | Lets long bar loads consume each cell's unattended calendar rather than splitting at the day-shift boundary |
+| Reschedule | Locks started jobs on their current spindle and re-evaluates only not-yet-started work against tonight's load |
+
+Nothing here is exotic. It is the difference between a schedule that describes the floor and one that describes a routing document written years ago.
+
+## When the Constraint Is Downstream
+
+Sometimes the turning is not the bottleneck. Second operations, plating, or an inspection queue can be the real constraint, and pooling the lathes just fills a buffer faster in front of it. That is worth knowing rather than guessing.
+
+Run the schedule and read where the queue actually forms. If the spindles keep winning their own primary assignments and the backlog sits after turning, the constraint moved and the [production bottleneck identification](/blog/production-bottleneck-identification) read is the right next step. A schedule that surfaces the real constraint is more valuable than one that optimizes the wrong station.
+
+## Heritage That Fits High-Volume Work
+
+User Solutions has built finite capacity scheduling since 1991, more than 35 years, for operations that live on throughput: US Navy, GE, BAE Systems, and Cummins across 33 locations. The lineage behind EDGEBIC, including the RMDB heritage, was proven where machine hours are the product, such as the GE Railcar work that moved on-time delivery from 30 percent to 90 percent. A turned-parts shop that measures success in parts per spindle-hour is exactly the environment this engine was shaped in.
+
+## Where to Start
+
+Pick your three most-queued turning centers and the parts that overlap across them. Define one pool, bind those routing steps to it, add a setup matrix for the two or three bar sizes that dominate, and give the unattended cells their real overnight calendar. Then reschedule and read the result.
+
+For the category background, [CNC machine scheduling](/blog/cnc-machine-scheduling) covers the fundamentals and [job shop scheduling challenges](/blog/job-shop-scheduling-challenges) covers why routing rigidity hurts. The [industry fit guide](/blog/edgebic-by-industry) maps neighboring sectors, and [EDGEBIC](/edgebic) is the product hub. Ready to see where your spare spindle time actually is? [Contact US for a demo](/contact-us) and bring the routing with the four-day queue.
+
+<Accordion title="How does the scheduler choose which Swiss lathe a turned part runs on?">
+Bind the interchangeable lathes into a machine pool and the scheduler resolves the winner before allocation by comparing each machine's projected finish against the live load. The part carries its own cycle time onto whichever spindle wins, so a job queued four days deep on the named machine can move to a free one and finish earlier. Started jobs stay locked on the machine already running them.
+</Accordion>
+
+<Accordion title="Can screw machine setup order be optimized to cut bar and collet changeovers?">
+Yes. A per-machine setup matrix carries the changeover hours from one part family to the next, so going from a small collet to a large bar can cost more than the reverse. The sequence optimizer groups compatible jobs to shrink total changeover time on the constraint spindle rather than accepting whatever order the due-date sort produces.
+</Accordion>
+
+<Accordion title="Does the schedule account for unattended running overnight and on weekends?">
+Yes. Each machine follows its own shift calendar, so a Swiss cell running lights-out can carry a longer daily window than the attended day shift. A twelve-hour bar load that starts at 18:00 keeps consuming the unattended window into the next morning instead of stopping at the end of the operator's shift.
+</Accordion>

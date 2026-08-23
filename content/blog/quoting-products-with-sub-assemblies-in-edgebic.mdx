@@ -1,0 +1,78 @@
+---
+title: "Quoting Products With Sub-Assemblies in EDGEBIC"
+description: "A product whose work lives in sub-assemblies must not price as zero hours. See how EDGEBIC rolls child routings up recursively into a quote's hours, labor, and material."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Quoting & Promising
+author: user-solutions
+cluster: edgebic-quoting
+pillarSlug: edgebic-quoting-guide
+keywords:
+  - quoting sub-assemblies
+  - sub-assembly cost rollup
+  - multi-level product quote
+  - recursive routing rollup
+  - quantity multiplier quote
+  - EDGEBIC sub-assembly
+targetPhrase: "quoting products with sub-assemblies"
+wordCount: 1510
+readingTime: 8
+faqQuestions:
+  - question: "How does EDGEBIC quote a product built from sub-assemblies?"
+    answer: "EDGEBIC by User Solutions rolls each sub-assembly's own routing up into the parent quote, recursively. When a routing step references a sub-assembly, that child's work hours, labor, and material are added to the parent's totals, respecting the quantity multiplier on the step. Nested sub-assemblies count too, level by level. The result is that a product whose real work lives in its children prices correctly instead of reading as nearly zero hours on the end item's own routing."
+  - question: "Why did a multi-level product used to price as almost zero hours?"
+    answer: "Because an estimate that sums only the parent product's own routing steps misses the work inside its sub-assemblies. If the end item's routing is mostly assembly of pre-built components, its direct hours are small, and a sub-assembly reference would contribute only material without its labor and hours. EDGEBIC's rollup fixes this by pulling hours, labor, and material up from every child routing, so the quote reflects the full manufacturing effort of the whole product, not just the final assembly step."
+  - question: "Does the quantity of a sub-assembly affect the rollup?"
+    answer: "Yes. Each sub-assembly reference on a routing step carries a quantity multiplier, and the rollup respects it. If one parent needs two of a sub-assembly, that child's per-unit hours, labor, and material are doubled before being added to the parent. The multiplier compounds through the levels, so a sub-assembly that itself needs three of a lower-level part multiplies correctly. This is what keeps the estimate honest for a product with several of the same component."
+qaQuestions:
+  - question: "Our welded frame assembly quotes at almost no hours, but it takes days to build. Where are the hours going?"
+    answer: "They are hiding in the sub-assemblies. If the frame's own routing is mostly a final weld-and-inspect step while the real work lives in the plates, brackets, and sub-weldments it consumes, then an estimate that reads only the frame's direct steps will report almost nothing. EDGEBIC's rollup pulls each sub-assembly's routing hours, labor, and material up into the frame quote, recursively and with the quantity multiplier, so a frame that consumes two bracket assemblies counts both brackets and everything inside them. The fix on your side is to make sure every sub-assembly actually has its own routing; a child referenced without a routing contributes nothing to roll up, and the hours vanish again."
+  - question: "We quote assemblies with the same sub-part used in several places. Does the rollup double-count or miss it?"
+    answer: "It counts each use correctly, and it will not spin forever on a data error. The rollup walks the product structure per path with the quantity multiplier, so a sub-part used in three places on the parent contributes its hours and cost three times, which is right because you build it three times. Nested references compound properly through the levels. A guard prevents a cyclic data error, where a structure accidentally references itself, from recursing endlessly. The documented test topology, a product that resolves through a bracket assembly to a base plate, rolls up to 22.5 hours per unit, or 225 hours at a quantity of 10, which is exactly the compounding behavior you want."
+---
+
+**EDGEBIC quotes a multi-level product by rolling each sub-assembly's routing up into the parent, recursively, so hours, labor, and material from the children all count.** In EDGEBIC by User Solutions, a routing step that references a sub-assembly does not just add that part's material cost; it pulls the sub-assembly's own work hours, labor, and material into the quote, level by level, respecting the quantity of the sub-assembly on the step. That is why a product whose real effort lives in its components prices correctly instead of reading as almost zero hours on the end item's final assembly step alone.
+
+## The problem the rollup solves
+
+Many real products are mostly assembly at the top. The end item's own routing might be a single weld-and-inspect step, or a short final assembly, while the bulk of the manufacturing effort lives one or two levels down in brackets, plates, sub-weldments, and machined components.
+
+An estimate that sums only the parent's direct routing steps will badly under-report such a product. Its own hours are small, so the quote reads as nearly zero labor, and the price comes out far too low. The customer gets a cheap number, the shop wins the job, and the real build burns days the quote never counted. The rollup exists precisely to prevent this: it makes the quote reflect the whole product's effort, not just its last operation.
+
+## How the rollup works, level by level
+
+When the quote engine encounters a routing step that references another product, it checks whether that referenced product has its own routing. If it does, the step is treated as a sub-assembly, and the engine rolls that child's routing up into the parent totals. It does this for hours, for labor, and for material, and it does it recursively, so a sub-assembly that itself references lower-level parts contributes those too, all the way down.
+
+Three properties make the rollup trustworthy:
+
+- **It is recursive.** Nested sub-assemblies count at every level, not just the first.
+- **It respects the quantity multiplier.** Each sub-assembly reference carries a quantity, and the child's per-unit hours and cost are scaled by it before being added. If a parent needs two of a bracket, both brackets count, and the multiplier compounds through the levels.
+- **It is safe against data errors.** A guard prevents a cyclic structure, where a product accidentally references itself through its children, from recursing forever. A repeated reference counts each time it is genuinely used, but a loop cannot run away.
+
+The engine detects a sub-assembly the same way a [real scheduling run](/blog/what-is-production-scheduling) does, so the estimate and the schedule agree on what counts as a child. The full cost mechanics that these rolled-up numbers feed are in [pricing a quote from the schedule](/blog/pricing-a-quote-from-the-schedule-in-edgebic).
+
+## A worked example of the rollup
+
+Consider a product that resolves through a bracket assembly to a base plate. The end item's own routing is light, but each level adds real work. Rolled up, the documented test topology comes to 22.5 hours per unit. Quote 10 of them, and the rollup scales cleanly to 225 hours, because the per-unit rollup is multiplied by the order quantity.
+
+That 225 hours is the number the quote should price against. An estimate that read only the top-level assembly step would have reported a small fraction of it, and the resulting price would have been wrong by that same margin. The rollup makes the difference between a quote that covers the build and one that quietly loses money on every unit.
+
+The same logic drives cost. Each level's labor (its work hours times each work center's rate) and material (its material-type steps) roll up alongside the hours, so the effective cost the margin is measured against includes the full multi-level content.
+
+## Where the rollup surfaces
+
+The rollup appears in two places on a quote, and they agree by design.
+
+Before you ever simulate, the quote dialog fills its estimate fields (hours, labor, and material) from the routing, and that routing-based estimate already rolls sub-assemblies in. It is a sanity check that a multi-level product reads as substantial, not empty.
+
+When you simulate, the capacity-aware run also includes the sub-assembly work, so the schedule it builds and the cost it prices both reflect the full product. The two surfaces report the same rolled-up numbers, so the estimate you see before simulating is consistent with the one you get after.
+
+## The one thing to get right: route your sub-assemblies
+
+The rollup can only count work that exists. A sub-assembly referenced on a parent routing but lacking its own routing contributes nothing to roll up, and the hours vanish again, right back to the almost-zero problem the rollup was built to solve.
+
+So the discipline for multi-level products is simple: every sub-assembly needs its own routing. Route the brackets, the plates, and the sub-weldments, and the parent quote inherits their effort automatically. Skip a child's routing and that child prices as material only, understating the quote. If your product data lives in an ERP, the import masks can bring the multi-level structure and its routings across together; see the [ERP integration approach](/edgebic-erp-integration). And if a child truly has no routing yet, treat it the same way as any [product with no routing](/blog/quoting-a-product-with-no-routing-in-edgebic) and build at least a rough one.
+
+## The takeaway
+
+Quoting a product with sub-assemblies works because EDGEBIC rolls each child routing's hours, labor, and material up into the parent, recursively, with the quantity multiplier, and with a guard against cyclic data. A product whose work lives in its components prices for the whole build instead of just the final step, so a bracket assembly resolving to a base plate rolls up to 22.5 hours per unit and 225 at a quantity of 10. The one requirement on your side is that every sub-assembly carries its own routing. Get that right and the estimate is complete before you even simulate. See how the numbers become a price in [pricing a quote from the schedule](/blog/pricing-a-quote-from-the-schedule-in-edgebic), walk the full workflow in the [EDGEBIC quoting guide](/blog/edgebic-quoting-guide), and see the platform in full on the [EDGEBIC overview](/edgebic).

@@ -1,0 +1,125 @@
+---
+title: "Running a Month-End Capacity Review in EDGEBIC"
+description: "A capacity review walkthrough: read the Work Center Utilization report end to end, find the overloaded and idle machines, and turn the numbers into a plan."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - capacity review
+  - work center utilization report
+  - production capacity planning
+  - bottleneck utilization
+  - idle capacity
+  - manufacturing KPI review
+targetPhrase: "work center utilization report"
+wordCount: 2050
+readingTime: 10
+qaQuestions:
+  - question: "My mill shows 130% utilization on the report. Does that mean the schedule is physically impossible?"
+    answer: "Not necessarily. A CRITICAL rating means scheduled hours exceed the capacity the report knows about, and the most common cause is a work center whose instance count is wrong. If three physical machines are configured as one, the report divides all the load onto a single machine and shows 130% when the real load is 43%. Check NumberOfInstances first. If the instance count is right and it still reads over 100%, the mill is genuinely overbooked and you need overtime, an alternate routing, or fewer jobs in the window."
+  - question: "Two machines read IDLE at under 20%. Should I be worried, or is that just slack?"
+    answer: "Read them together with the bottleneck row. Idle capacity upstream or downstream of a healthy constraint is normal and even desirable, because a bottleneck should be protected by slack around it. Idle capacity that is not feeding a constraint is a candidate for consolidation or for taking on more work. The report's IdleGapHrs and CapacityWasteHrs columns quantify the waste per machine, and the Top Jobs view shows whether those idle machines are simply out of the current job mix rather than genuinely underused."
+faqQuestions:
+  - question: "What does a month-end capacity review actually tell you?"
+    answer: "It tells you which work centers are overbooked, which are starved, and whether your bottleneck is being fed at target load, all from one report. The Work Center Utilization report opens with a plant KPI strip (total scheduled, actual, and available hours, plus counts of overloaded and underloaded machines), then a per-work-center table rated from CRITICAL down to IDLE. Reading it monthly turns capacity from a gut feeling into a number you can act on."
+  - question: "How does EDGEBIC rate a work center's load?"
+    answer: "By utilization percentage against documented thresholds: CRITICAL is over 100%, HIGH is 85 to 100%, GOOD is 60 to 85%, LOW is 30 to 60%, and IDLE is under 30%. A separate NO-CAPACITY rating means the machine has no shift configured. Bottleneck machines get their own status column: HEALTHY at 85% or more, AT-RISK from 70 to 85%, and IDLE or STARVED below 70%, so you can see at a glance whether your constraint is being fed."
+  - question: "What is the difference between overloaded and idle capacity on the report?"
+    answer: "Overloaded means scheduled hours exceed available hours (utilization over 100%), which threatens due dates and signals you need more capacity or fewer jobs in the window. Idle means utilization is under 30% with real available hours, which signals wasted machine time you could consolidate or sell. The report counts both as leading indicators in its KPI strip, and the idle-gap columns quantify recoverable waste from poor sequencing versus simply unused capacity."
+---
+
+**A month-end capacity review in EDGEBIC by User Solutions is one report read in order: the Work Center Utilization report opens with a plant-wide KPI strip, rates every machine from CRITICAL to IDLE, flags your bottleneck's health, and quantifies wasted capacity, so you finish with a ranked list of what to fix.** This walkthrough runs that review end to end for a small shop and turns each screen into a decision. It is part of our [worked examples series](/blog/edgebic-worked-examples), and it pairs naturally with the concept primer on [finding your bottleneck](/blog/production-bottleneck-identification).
+
+## The Setup: Six Machines, One Month of Schedule
+
+Ridgeline Manufacturing runs six work centers across a day shift and, on two machines, a night shift. At the end of June the operations manager, Priya, wants the truth about last month and the next two: where is the plant tight, where is it slack, and is the heat-treat furnace (the marked bottleneck) being fed. The load numbers below are illustrative, but the report structure, ratings, and thresholds are the documented ones.
+
+## Step 1: Open the Report and Read the KPI Strip
+
+Priya goes to the Reports hub and clicks the **Work Center Utilization** card. She accepts the default date range (roughly today minus 30 to today plus 60) and clicks OK. The service pulls work centers, schedules, daily breakdowns, resources, routings, and orders, then computes authoritative daily capacity from the shift calendars, holidays, and downtime.
+
+At the top of the dialog, the **plant utilization KPI strip** shows the whole picture in one row: total scheduled hours, total actual hours, total available hours, active work centers, bottleneck count, overloaded work centers, underloaded work centers, days in range, and an overall utilization percentage. Priya reads it first because it frames everything else. Say it shows 1 overloaded machine and 2 underloaded, at 71% plant utilization. That is a plant with a hot spot and some slack, not a plant in crisis, and it tells her where to look next.
+
+## Step 2: Read the Per-Work-Center Ratings
+
+Below the strip is a per-machine table, sorted by utilization descending. Each row carries a **Rating** and a plain-language **LoadProfile** sentence. The ratings map to documented thresholds:
+
+| Rating | Condition |
+|---|---|
+| NO-CAPACITY | No available hours (no shift, all holidays) |
+| CRITICAL | Over 100% (overbooked) |
+| HIGH | 85 to 100% |
+| GOOD | 60 to 85% |
+| LOW | 30 to 60% |
+| IDLE | Under 30% |
+
+Priya's table reads: the mill at CRITICAL, the furnace at HIGH, the press and saw at GOOD, and two finishing machines at IDLE. The LoadProfile column turns the mill's row into a sentence like "OVERBOOKED, booked 128 h versus capacity 100 h (28 h over). Check NumberOfInstances and alt-WC routing."
+
+That sentence is the first action. A CRITICAL rating does not mean the schedule is physically impossible; it most often means a machine with several physical units is configured with an instance count of one, so all the load piles onto a single modeled machine. Priya checks the mill's **Number Of Instances**. If it says 1 but the floor has two mills, that is the fix: correct the instance count and reschedule, and the 128 hours spread across two machines drop the rating from CRITICAL to a healthy load.
+
+## Step 3: Check the Bottleneck's Health
+
+The furnace is flagged as the plant's Theory of Constraints bottleneck, so it carries a dedicated **BottleneckStatus** column that non-bottleneck rows leave blank. The statuses are HEALTHY at 85% or more, AT-RISK from 70 to under 85%, and IDLE or STARVED below 70%.
+
+Priya's furnace reads HEALTHY at 91%. That is exactly what she wants from a constraint: it is the busiest resource and it is being kept fed. If it had read AT-RISK or STARVED, the constraint would be under-fed, which usually means an upstream step is blocking it, and she would open the BOR Optimization Suggestions report to find the upstream blocker. A [finite capacity](/blog/finite-vs-infinite-capacity-scheduling) plant lives or dies by whether its constraint is loaded, so this single column is the most important one on the page.
+
+## Step 4: Read the Forward Heatmap
+
+Priya switches to the **Daily Heatmap** section, which covers today through the next 14 days per machine. Each cell shows scheduled hours, daily capacity, utilization percent, jobs on that day, and a HOLIDAY note where capacity is zero. Cells over 100% render red in the grid theme.
+
+This is the forward-looking half of the review. The month-to-date ratings tell her what happened; the heatmap tells her which specific days next week are already red on the mill. She sees two red mill days midweek, which lines up with the CRITICAL rating and confirms the instance-count fix (or overtime) needs to happen before those days arrive.
+
+## Step 5: Quantify the Waste and the Heaviest Jobs
+
+Two more sections turn slack into numbers. The main grid's **IdleGapHrs** column sums the gaps over half an hour between different jobs on the same machine, instance, and day: recoverable waste from poor sequencing. **CapacityWasteHrs** is the total unused capacity (available minus scheduled). For the two IDLE finishing machines, Priya reads large CapacityWasteHrs values, which confirms they are simply out of the current job mix rather than badly sequenced.
+
+The **Variance** tab shows planned versus actual hours per machine, ranked by the biggest gap, so she can see where the floor consistently ran longer or shorter than plan. The **Top Jobs** section lists the 15 heaviest jobs plant-wide by scheduled hours, which tells her which few orders are driving the mill's overload. Often two or three big jobs explain most of a hot machine, and moving one of them changes the month.
+
+## What This Review Produces
+
+By the end Priya has a ranked, checkable action list built from the report, not from opinion:
+
+1. **Fix the mill's instance count** (CRITICAL rating, LoadProfile sentence). Reschedule and re-read.
+2. **Protect the furnace** (HEALTHY now, watch for AT-RISK) so the constraint stays fed.
+3. **Clear the two red mill days next week** (Daily Heatmap) with overtime or the instance fix.
+4. **Decide on the two IDLE finishers** (CapacityWasteHrs): consolidate, or take on more work.
+5. **Watch the two heaviest jobs** (Top Jobs) that are driving the mill load.
+
+## What This Review Proves
+
+1. **Capacity is a report, not a feeling.** One screen shows scheduled, actual, and available hours plant-wide, then rates every machine.
+2. **CRITICAL usually means misconfiguration first.** The instance count is the most common cause of a machine reading over 100%, and the LoadProfile sentence points you there.
+3. **The bottleneck gets its own signal.** A HEALTHY constraint is a well-run plant; an AT-RISK or STARVED constraint is the first thing to fix.
+4. **Idle and overloaded are both leading indicators.** The KPI strip counts both, and the idle-gap columns separate wasted time from unused time.
+5. **A few jobs drive most of the load.** The Top Jobs view finds them so you move the right ones.
+
+## Variations Worth Trying
+
+**Filter to one customer's window.** Narrow the date range to a specific delivery month and re-read the constraint's status, so you can promise or push back on a big order with a real load number.
+
+**Run it before and after a change.** Read the report, add a shift or an instance, reschedule, and read again. The delta in the mill's rating and the furnace's status is the measured value of the change, which is exactly the discipline in the [two-scenario capacity-decision walkthrough](/blog/comparing-two-what-if-scenarios-for-a-capacity-decision-edgebic).
+
+**Cross-check with the anomaly scan.** If a machine reads CRITICAL and the instance count is right, run the Scheduler Anomalies report to see whether an over-utilization or instance-collision check is firing, which points at a specific structural fault rather than genuine overload. That scan has its own [pre-publish walkthrough](/blog/clearing-scheduler-anomalies-before-publishing-edgebic).
+
+## The Bigger Point: A Monthly Read Keeps Capacity Honest
+
+Capacity planning fails when it lives in a spreadsheet that nobody reconciles against the real schedule. A [production scheduling system](/blog/what-is-production-scheduling) that computes capacity from the same shifts, holidays, and downtime the scheduler uses gives you a review that is true by construction: the numbers on the report are the numbers the engine planned against. Reading it once a month turns capacity from an argument into a checklist.
+
+User Solutions has built that discipline into scheduling tools since 1991, for operations where capacity is under constant pressure: the US Navy, GE, BAE Systems, and Cummins among them, the last running across 33 locations. [EDGEBIC](/edgebic) brings that reporting depth into a modern engine, and the [results guide](/blog/edgebic-results-guide) turns these reports into a business case.
+
+Bring a month of your own schedule to a review. [Contact us](/contact-us) and we will read your utilization report with you, or start with the [five-job-week walkthrough](/blog/scheduling-a-five-job-week-with-mixed-priorities-edgebic) to see how the load on that report got there in the first place. When the review turns up a backlog rather than a single overloaded station, [clearing 22 late jobs in three weeks](/blog/a-quarter-end-backlog-push-in-edgebic) runs the triage, resequence, and buy-capacity sequence in that order.
+
+<Accordion title="What does a month-end capacity review actually tell you?">
+It tells you which work centers are overbooked, which are starved, and whether your bottleneck is being fed at target load, all from one report. The Work Center Utilization report opens with a plant KPI strip (total scheduled, actual, and available hours, plus counts of overloaded and underloaded machines), then a per-work-center table rated from CRITICAL down to IDLE. Reading it monthly turns capacity from a gut feeling into a number you can act on.
+</Accordion>
+
+<Accordion title="How does EDGEBIC rate a work center's load?">
+By utilization percentage against documented thresholds: CRITICAL is over 100%, HIGH is 85 to 100%, GOOD is 60 to 85%, LOW is 30 to 60%, and IDLE is under 30%. A separate NO-CAPACITY rating means the machine has no shift configured. Bottleneck machines get their own status column: HEALTHY at 85% or more, AT-RISK from 70 to 85%, and IDLE or STARVED below 70%, so you can see at a glance whether your constraint is being fed.
+</Accordion>
+
+<Accordion title="What is the difference between overloaded and idle capacity on the report?">
+Overloaded means scheduled hours exceed available hours (utilization over 100%), which threatens due dates and signals you need more capacity or fewer jobs in the window. Idle means utilization is under 30% with real available hours, which signals wasted machine time you could consolidate or sell. The report counts both as leading indicators in its KPI strip, and the idle-gap columns quantify recoverable waste from poor sequencing versus simply unused capacity.
+</Accordion>

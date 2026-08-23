@@ -1,0 +1,142 @@
+---
+title: "Deciding Which ERP Work Orders to Import"
+description: "How to filter an ERP work order export for scheduling: which statuses belong in the plan, why MRP planned orders usually do not, and why a status filter beats a date window."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - which work orders to import scheduling
+  - open work order export filter
+  - MRP planned orders scheduling
+  - work order status finite capacity
+  - EDGEBIC work order import
+  - firm planned versus released
+targetPhrase: "which ERP work orders to import"
+wordCount: 1620
+readingTime: 8
+faqQuestions:
+  - question: "Which work order statuses should I export for scheduling?"
+    answer: "Released and in-process orders always, firm planned orders in most cases, and closed or canceled orders never. Released work is the commitment the floor is executing, and firm planned work is authorized demand that should be visible as load even though nobody has started it. MRP suggestions are a different category and usually belong outside the live plan, because they are regenerated on every MRP run."
+  - question: "Should MRP planned orders go into the schedule?"
+    answer: "Usually not, because they churn. A planned order is a suggestion that MRP recreates, renumbers, or withdraws on its next run, so importing them means your schedule is rewritten by a calculation nobody reviewed. Keep the live plan to authorized demand, then use quote simulation and what-if runs when you want to see what a batch of proposed orders would do to capacity before anyone commits."
+  - question: "Is it better to filter the export by status or by date?"
+    answer: "By status, almost always. A status filter means a job leaves the file for a reason you can name and reconcile, while a rolling date window makes jobs disappear because they aged out, which looks identical to a job that closed. Since an import never deletes records absent from a file, a date window quietly leaves old jobs consuming capacity in the plan with nothing to point at."
+qaQuestions:
+  - question: "Our export uses a 90 day window on the due date. Long lead jobs keep vanishing from the plan and then reappearing. What is going on?"
+    answer: "They are aging in and out of your window, and because an import adds and updates but never deletes, the picture on any given day is a mix of what the window included this week and whatever it included previously. A job whose due date sits at day 95 is absent from today's file, so it keeps whatever it had, then reappears next month as an update. Switch the filter to status: export everything released, in process, and firm planned regardless of date. Two things improve immediately. Long lead jobs stay continuously visible, which matters most for exactly the work that needs the longest runway, and your stale-job reconciliation becomes meaningful, because a job missing from the file is now a job that closed rather than a job that drifted past a boundary."
+  - question: "We make subassemblies on their own work orders and the parent routing also lists those operations. Are we double counting?"
+    answer: "Yes, if both reach the schedule, and the symptom is a work center that reads far busier than the floor experiences. Pick one model per product family and hold it. Either the parent routing contains the subassembly steps and you exclude the child work orders from the export, or the child work orders carry the subassembly work and the parent routing starts at the point the subassembly arrives. The second model is usually better when the subassembly is stocked or shared across parents, because its demand is genuinely independent. Whichever you pick, check one busy work center after the change by adding up the operations queued on it and comparing that against what the supervisor says is waiting."
+---
+
+**A work order export for scheduling should carry the demand somebody has authorized, filtered by status rather than by a date window: released and in-process orders always, firm planned orders in most shops, and nothing that is closed, canceled, or still only an MRP suggestion.** The filter decision is worth ten minutes at the start, because an import adds and updates but never deletes what is absent from a file, so a sloppy filter leaves work in the plan that nobody can account for.
+
+EDGEBIC by User Solutions has consumed ERP work order exports since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the export filter is the setting that most often gets built once, by whoever was available, and never revisited.
+
+## What an imported work order becomes
+
+An imported work order is demand, not a plan. It arrives as unscheduled work and stays there until a planner runs the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. Data movement and planning are separate acts on purpose, so an import can never silently rearrange the floor.
+
+That separation is also why an over-inclusive export is not immediately obvious. The extra jobs sit quietly until the next schedule run, then consume capacity exactly as if they were real.
+
+## Status by status
+
+Names vary, so match on meaning:
+
+| Status in the ERP | Import it? | Why |
+|---|---|---|
+| In process, started | Yes | The floor is executing it now |
+| Released, not started | Yes | Committed work waiting on capacity |
+| Firm planned, authorized | Usually | Real demand that should show as load |
+| MRP planned suggestion | No | Regenerated every MRP run |
+| On hold | With care, see below | Invisible work makes capacity look free |
+| Closed, completed | No | Finished, and it should leave the plan |
+| Canceled | No | Not going to happen |
+
+The most consequential row is the MRP suggestion.
+
+## Why MRP planned orders usually stay out
+
+A planned order is a calculation, not a commitment. MRP recreates, renumbers, and withdraws planned orders on every run, so importing them means an overnight calculation rewrites your production schedule before anybody has looked at it.
+
+Three practical problems follow:
+
+- **Churn.** Identifiers that change between runs create rather than update, so the job list grows and the Created count on a routine import climbs for no real reason.
+- **False load.** Machines look busy with work nobody agreed to make, which pushes genuine promise dates outward.
+- **Lost trust.** A planner who finds yesterday's plan rearranged by a suggestion stops relying on the plan.
+
+The useful version of the same question is a deliberate one: when you want to know what a batch of proposed orders would do to capacity, run it as a what-if and read the effect on the constraint before anyone commits. Quote simulation exists precisely for the promise-date version of that question.
+
+## Firm planned orders: usually yes
+
+Firm planned work is authorized: somebody decided it is happening even though the paperwork has not released. Including it makes the load picture honest several weeks out, which is where a finite capacity plan earns its keep.
+
+Two conditions make it work:
+
+1. **The identifiers are stable.** A firm planned order that keeps its number when it releases updates cleanly. One that gets a new number on release creates a duplicate, and you will see it in the Created count.
+2. **They are distinguishable.** Carry the status through into the export so a planner can tell released work from authorized-but-unreleased work on the board.
+
+If firm planned orders in your ERP are really MRP suggestions with a flag flipped, treat them as suggestions.
+
+## On hold: the trap in the middle
+
+Excluding held orders makes them invisible, so the capacity they will need looks free and every other job schedules into it. When the hold lifts, the work arrives with nowhere to go.
+
+Including them without any marking is not much better, because held work occupies machines that could be doing something real.
+
+Two workable approaches:
+
+- **Include them with a visible status** and let the planner decide, which is the honest option in most shops.
+- **Exclude them and keep a short list** of what is held and roughly how many hours it represents, reviewed weekly.
+
+What does not work is excluding them silently and rediscovering them later.
+
+## Status filter beats a date window
+
+A rolling date window on the due date is a tempting way to keep the file small. It causes a specific, confusing failure.
+
+An import never deletes records absent from a file. So a job whose due date slips past the window boundary simply stops appearing, keeps whatever it had, and stays in the plan. Later it drifts back into the window and updates. Meanwhile, a job that genuinely closed also stops appearing, and you cannot tell the two apart.
+
+Filtering on status fixes both. A job leaves the file because its status changed, which is a reason you can reconcile, and the check becomes meaningful: anything in the plan that was not in this week's export is a candidate for closing. The reconciliation habit is in [reconciling ERP work order quantities after partial completion](/blog/reconciling-erp-work-order-quantities-after-partial-completion).
+
+## Rows to drop even when the status is right
+
+Three more filters are worth building into the export:
+
+**Zero quantity rows.** A zero is a value, not a blank, so an order exported with zero open quantity sets that job's quantity to zero and it schedules as setup only. Filter the row out rather than exporting a zero you do not mean.
+
+**Orders for products with no routing.** These import cleanly and schedule as nothing, because there are no operations to place. They are worth knowing about rather than hiding, and the fix is covered in [scheduling when your ERP has no routing data](/blog/scheduling-when-your-erp-has-no-routing-data).
+
+**Double-counted subassemblies.** If a parent routing already contains the subassembly operations and you also import child work orders for that subassembly, the same work is planned twice. Pick one model per product family. The alternatives are set out in [importing subassembly routings from your ERP](/blog/importing-subassembly-routings-from-your-erp).
+
+## Keep the order reference
+
+One column pays for itself. When the export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as `{Ref}-{line}`, so a multi-line order stays together on the board instead of arriving as unrelated jobs. Confirming that grouping actually happened is on the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist), and the naming conventions are in [keeping job numbers aligned between ERP and EDGEBIC](/blog/keeping-job-numbers-aligned-between-erp-and-edgebic).
+
+## Write the filter down beside the mask
+
+Name the saved export and the mask after the rule they implement, such as `Open Work Orders (released, in process, firm planned)`. Then anyone looking at an unexpected job list can check the filter before they start hunting through data.
+
+Review the filter whenever the ERP is upgraded or the status codes change, and once a quarter regardless, as part of [a monthly ERP to EDGEBIC data audit](/blog/a-monthly-erp-to-edgebic-data-audit).
+
+## What a clean demand list buys
+
+With only authorized work in the plan, the capacity picture is real, and the engine can do the rest: finite capacity across shifts and machine instances, work center groups that re-shop the machine pool on every reschedule, sequence-dependent setups, lot streaming with transfer batches, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, the import layer every ERP shares sits under the [ERP integration architecture](/edgebic-erp-integration), and the recurring rhythm is in the [weekly ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine).
+
+## Bring your current export
+
+Bring this week's work order export and the query behind it to [a demo](/contact-us). Reading the filter out loud takes five minutes and often explains a discrepancy the planning team has been living with for months.
+
+<Accordion title="Which work order statuses should I export for scheduling?">
+Released and in-process orders always, firm planned orders in most cases, and closed or canceled orders never. Released work is the commitment the floor is executing, and firm planned work is authorized demand that should be visible as load even though nobody has started it. MRP suggestions are a different category and usually belong outside the live plan, because they are regenerated on every MRP run.
+</Accordion>
+
+<Accordion title="Should MRP planned orders go into the schedule?">
+Usually not, because they churn. A planned order is a suggestion that MRP recreates, renumbers, or withdraws on its next run, so importing them means your schedule is rewritten by a calculation nobody reviewed. Keep the live plan to authorized demand, then use quote simulation and what-if runs when you want to see what a batch of proposed orders would do to capacity before anyone commits.
+</Accordion>
+
+<Accordion title="Is it better to filter the export by status or by date?">
+By status, almost always. A status filter means a job leaves the file for a reason you can name and reconcile, while a rolling date window makes jobs disappear because they aged out, which looks identical to a job that closed. Since an import never deletes records absent from a file, a date window quietly leaves old jobs consuming capacity in the plan with nothing to point at.
+</Accordion>

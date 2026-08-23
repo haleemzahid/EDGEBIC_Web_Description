@@ -1,0 +1,93 @@
+---
+title: "How Independent Parallel Splits a Job Across Machines"
+description: "How EDGEBIC runs several machines on one operation at once, finding a moment when all can start together and consuming each machine's capacity independently to finish faster."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - independent parallel scheduling
+  - parallel work centers
+  - simultaneous capacity
+  - job splitting
+  - throughput scheduling
+  - finite capacity scheduling
+targetPhrase: "independent parallel scheduling"
+wordCount: 1540
+readingTime: 8
+faqQuestions:
+  - question: "What is independent-parallel scheduling?"
+    answer: "Independent-parallel scheduling runs two or more machines on the same operation at the same time, with each machine consuming its own real capacity. EDGEBIC finds a window where all the machines can start together, then schedules each one independently against its own shift. The operation finishes faster because the work is shared, and every machine's capacity is properly checked and consumed rather than mirrored."
+  - question: "How does the engine find a moment when all machines can start together?"
+    answer: "EDGEBIC searches forward day by day for a date and shift where every machine in the group is available at the same start time. On each candidate it runs four checks: each machine has spare capacity, the start moment fits inside every machine's shift, no instance conflicts exist, and the capacity is continuous with no gaps. Only when all four pass for all machines is the shared start accepted; otherwise it moves to the next shift or day."
+  - question: "Why does the group wait rather than let one machine start alone?"
+    answer: "Independent parallel is all-or-nothing on the start: the engine will not begin part of the group and leave a machine behind, because the point is a synchronized shared start that splits the work cleanly. If one machine is down for maintenance for two days, the whole group waits until every machine is free together, then all start at once. That guarantees the split is even and the finish is predictable rather than staggered."
+qaQuestions:
+  - question: "I have a 16-hour assembly step and two identical assembly lines. How fast does it finish?"
+    answer: "With independent parallel and both lines available, EDGEBIC finds a shared start, say Monday 08:00, then schedules each line for its own share of the work against its own capacity. Two lines split roughly 16 hours of work into 8 hours each, both running Monday 08:00 to 16:00, so the operation completes at the end of Monday's day shift instead of stretching across two days on a single line. Each line's 8 hours is checked and consumed from its own capacity bucket, so nothing is double-booked. Throughput on that step effectively doubles for the cost of coordinating a shared start."
+  - question: "One of the two parallel machines is booked all week. Does my job just wait?"
+    answer: "If both machines are configured as independent parallel and required together, yes, the group waits until both are free at the same start, because the shared-start rule is strict. If instead you want the job to run on whichever machine is available, that is a different configuration: an alternate work center, where the engine picks the best single machine and does not require simultaneity. Independent parallel is for deliberately splitting one operation across machines to go faster; an alternate is for flexibility on which one machine runs it. Choose based on whether you want speed through splitting or resilience through substitution."
+---
+
+**Independent-parallel scheduling is how EDGEBIC by User Solutions runs several machines on one operation at the same time to finish it faster. The engine searches for a window where every machine in the group can start together, then schedules each machine independently against its own capacity, splitting the work so the operation completes in a fraction of the single-machine time.** Unlike mirroring, where partner machines copy a parent's timing and skip the capacity check, independent parallel treats each machine as a real, finite resource: the work is shared, but every hour is genuinely reserved.
+
+This is the tool for the situation "I have three assembly lines and one big job, and I want them all on it." It is about throughput, and it comes with one firm rule: the machines start together or not at all.
+
+## Sharing an operation across real machines
+
+A routing step configured as independent parallel lists a primary work center and one or more partners, each marked as consuming finite capacity. That marking is the whole distinction: it tells the engine these machines each do separate, real work, so each one must pass a capacity check and consume the hours it uses.
+
+Because the machines share one operation, they should also share a start. The engine does not let one machine begin the work while another lags behind; a staggered start would make the split uneven and the finish unpredictable. Instead it looks for a single moment when all the machines can begin together, commits every machine to that moment, and lets each one run its share against its own shift.
+
+The payoff is elapsed time. An operation that would take a long single-machine span is divided across the group and completes when the machines finish their shares, which, on evenly matched machines, is roughly the single-machine time divided by the number of machines.
+
+## Finding a moment they can all start
+
+The heart of independent parallel is the search for a shared start. The engine walks the calendar forward from the operation's earliest start, and on each day it looks for a shift that all the machines have in common. A date where the machines share no common shift is skipped, because there is no moment when they could all be running.
+
+For each candidate date and shift, the engine applies four checks, and all four must pass for every machine before the shared start is accepted:
+
+- **Individual capacity.** Each machine has spare hours available from the proposed start time.
+- **Simultaneous start.** The proposed start falls inside every machine's shift window, with no existing booking blocking that exact moment.
+- **Instance conflicts.** Each machine has enough physical instances, and no instance is double-booked across the group.
+- **Continuous capacity.** There are no gaps between the shared start and the projected finish that would fragment the run.
+
+If any check fails for any machine, the whole candidate is rejected and the search advances to the next shift or the next day. This is the all-or-nothing rule made concrete: the group only starts when every machine can honestly start together.
+
+## A worked example: two lines on one operation
+
+Take an assembly step configured as independent parallel, with two identical lines, each on an 8-hour day shift. The operation needs 16 hours of work and can start Monday.
+
+The engine searches for a shared start. Monday's day shift is common to both lines, both have their full 8 hours free, the start at 08:00 fits both shifts, there are no instance conflicts, and the capacity is continuous. All four checks pass, so Monday 08:00 is the shared start.
+
+Now each line is scheduled independently for its share. Sixteen hours of work split across two lines is 8 hours each, and each line runs Monday 08:00 to 16:00. Both lines' 8 hours are checked against and consumed from their own capacity buckets, so nothing is double-booked. The operation completes at the end of Monday's day shift, instead of stretching two days on a single line. Throughput on that step effectively doubled.
+
+Now change one thing: one line is down for maintenance Monday and Tuesday. The engine tests Monday and fails the capacity check for the down line, tests Tuesday and fails again, and only on Wednesday, when both lines are free, does it find a shared start. All the work then runs Wednesday. The group waited rather than letting one line start alone, because a synchronized shared start is the guarantee independent parallel exists to provide.
+
+## Independent parallel versus the alternatives
+
+The decision that trips people up is independent parallel versus an alternate work center. They look similar because both involve more than one machine, but they answer different questions.
+
+Independent parallel means "run this operation on all these machines at once to go faster." It requires the machines together and consumes each one's capacity. Use it when splitting the work is the goal and coordinating a shared start is acceptable.
+
+An [alternate work center](/blog/how-a-scheduler-chooses-between-alternate-machines) means "run this operation on whichever of these machines can do it soonest." The engine picks a single winner before scheduling and does not require simultaneity. Use it for flexibility and resilience, when you want the job to route to an open machine rather than wait for a whole group.
+
+And [dependent parallel](/blog/how-dependent-parallel-mirroring-locks-machines-together) is the third relative: machines physically coupled in one setup, where partners mirror the parent's timing and skip the capacity check. The full comparison lives in [dependent versus independent parallel](/blog/dependent-vs-independent-parallel-when-to-use-each).
+
+All of these sit inside the broader pipeline described in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). Each machine in an independent-parallel group is placed by the same [multi-shift allocation](/blog/how-multi-shift-allocation-fills-capacity) that handles single machines, and the whole idea only works because the engine treats capacity as [genuinely finite](/blog/finite-vs-infinite-capacity-scheduling).
+
+To see how splitting an operation across your machines shortens its span, [bring your data to a demo](/contact-us) and watch the shared-start search on your real shifts.
+
+<Accordion title="What is independent-parallel scheduling?">
+Independent-parallel scheduling runs two or more machines on the same operation at the same time, with each machine consuming its own real capacity. EDGEBIC finds a window where all the machines can start together, then schedules each one independently against its own shift. The operation finishes faster because the work is shared, and every machine's capacity is properly checked and consumed rather than mirrored.
+</Accordion>
+
+<Accordion title="How does the engine find a moment when all machines can start together?">
+EDGEBIC searches forward day by day for a date and shift where every machine in the group is available at the same start time. On each candidate it runs four checks: each machine has spare capacity, the start moment fits inside every machine's shift, no instance conflicts exist, and the capacity is continuous with no gaps. Only when all four pass for all machines is the shared start accepted; otherwise it moves to the next shift or day.
+</Accordion>
+
+<Accordion title="Why does the group wait rather than let one machine start alone?">
+Independent parallel is all-or-nothing on the start: the engine will not begin part of the group and leave a machine behind, because the point is a synchronized shared start that splits the work cleanly. If one machine is down for maintenance for two days, the whole group waits until every machine is free together, then all start at once. That guarantees the split is even and the finish is predictable rather than staggered.
+</Accordion>

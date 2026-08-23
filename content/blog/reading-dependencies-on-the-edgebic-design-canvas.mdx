@@ -1,0 +1,86 @@
+---
+title: "Reading Dependencies on the EDGEBIC Design Canvas"
+description: "Learn to read routing dependencies on the EDGEBIC canvas: connector arrows carry next-in-sequence, branches merge, and a warning icon flags a broken chain."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Visual Scheduling
+author: user-solutions
+cluster: edgebic-visual-scheduling
+pillarSlug: edgebic-visual-scheduling-guide
+keywords:
+  - routing dependencies
+  - production dependency graph
+  - next in sequence routing
+  - graphical routing designer
+  - operation sequencing visualization
+  - routing branch and merge
+targetPhrase: "reading routing dependencies"
+wordCount: 1780
+readingTime: 9
+faqQuestions:
+  - question: "What does a connector arrow mean on the EDGEBIC routing canvas?"
+    answer: "A connector arrow is the next-in-sequence link between two routing steps: it says the downstream step follows the upstream one. It is the same next-in-sequence value the data grid holds, drawn instead of typed. The scheduler follows these arrows, not the display sequence numbers, to decide the order operations run in."
+  - question: "How do I read a branch or merge in a routing?"
+    answer: "A branch is one node with two arrows leaving it; a merge is one node with two arrows arriving. A merge is where a sub-assembly path joins the main path, so both feed a single downstream step. On the canvas you read it directly: follow the arrows into a node to see everything that must be ready before that step can start."
+  - question: "What is the warning icon on a routing node?"
+    answer: "The warning icon marks a step whose dependency chain is broken. EDGEBIC flags three kinds: a step with no next-in-sequence set, a link that points at a step that was deleted, and a circular chain where A feeds B and B feeds A. The icon appears on the affected node so you can fix the connector before the routing is scheduled."
+  - question: "Does the display sequence number decide the order operations run?"
+    answer: "No. The sequence number is a display-order hint only. The scheduler follows the next-in-sequence links, drawn as connector arrows, to build the actual dependency order. Two steps can share a low sequence number and still run in a strict order because the connectors, not the numbers, drive the plan. This is why the canvas is the reliable place to read sequence."
+qaQuestions:
+  - question: "A step in one of my routings scheduled way too early, before its predecessor. How do I find the cause on the canvas?"
+    answer: "Open the routing in the designer and follow the arrows into that step. If no arrow arrives at it, the step has no predecessor as far as the scheduler is concerned, so it starts at the job's start time instead of waiting. That usually means the upstream step's next-in-sequence value points somewhere else, or was never set. Look for a node carrying the warning icon nearby: an empty or dangling next-in-sequence link is exactly the shape that lets a step float free. Draw the missing connector, save, and the step falls back into its proper place in the chain."
+  - question: "Our routing has a sub-assembly and I can never tell where it rejoins the main flow. What am I looking for?"
+    answer: "You are looking for the node where two arrows arrive: one from the main path and one from the sub-assembly. That merge node is the operation that consumes the sub-assembly, for example an assembly step fed by both the machined body and a welded frame. On the canvas the sub-assembly node also carries a star marker because it has a routing of its own. Trace its single arrow forward and it lands on the assembly step, which is the merge. The scheduler times the sub-assembly so its output is ready when that step starts."
+---
+
+**On the EDGEBIC design canvas, dependencies are the arrows.** Every connector between two nodes says the same thing: the step the arrow points at cannot start until the step the arrow leaves has finished. Read the arrows and you have read the routing's logic, because those arrows are the exact next-in-sequence links the scheduler follows to order the work. [EDGEBIC by User Solutions](/edgebic) draws the routing as a flow chart precisely so this logic is something you see rather than something you reconstruct from a grid.
+
+This post is a reading guide: how to trace a chain, spot a branch and a merge, and recognize the three shapes of a broken dependency before they reach the schedule. For the wider tour of the designer, see the [visual scheduling guide](/blog/edgebic-visual-scheduling-guide).
+
+## The Arrow Is the Dependency
+
+Each step in a routing is a node on the canvas. Each next-in-sequence link is a connector, an arrow drawn from the upstream node to the downstream one. That arrow is not a stylistic choice. It holds the same value the data grid stores in its next-in-sequence column, and the scheduling engine follows it to decide execution order.
+
+This matters because a routing also carries a display sequence number on each step, and it is tempting to assume that number controls the order. It does not. The sequence number is a display-order hint. The connectors drive the real order. Two steps can share the same low number and still run one strictly after the other, because the arrow between them, not the digits on the row, is what the engine reads. When you want to know what actually runs when, the canvas is the reliable surface.
+
+## Tracing a Linear Chain
+
+Start with the simplest routing: a straight run. Saw feeds drill, drill feeds deburr, deburr feeds the finished bracket. Four nodes, three arrows, one path.
+
+To read it, put your eye on the first node and follow the arrows to the terminal end-product node. Every routing must arrive there. The end-product node is the one node with arrows coming in and none going out, and it is created with the routing itself. If your finger runs off a node with nowhere to go before you reach the finished product, that node is a dead-end, and the routing is broken.
+
+EDGEBIC quietly assigns each step a depth from this chain, a level counting how far the step sits from the finished product. The step just before the end product is level 0; each step further upstream is one higher. You rarely need the number, because a left-to-right layout turns depth into position. But it is worth knowing the engine computes it from the arrows, not from the sequence column, which is one more reason the connectors are the source of truth.
+
+## Reading Branches and Merges
+
+Real routings are not always straight. Two shapes show up constantly, and both are obvious once you know what to look for.
+
+A **branch** is one node with two or more arrows leaving it. The step splits into parallel downstream paths. A **merge** is one node with two or more arrows arriving. Several upstream paths converge on one step.
+
+The most common merge is a sub-assembly joining the main flow. A frame is welded and painted on its own short chain, then its final node connects into the assembly step of the main product. On the canvas that assembly step is a merge: an arrow from the machined body arrives, and an arrow from the finished frame arrives. Read the arrows into any node and you have the complete list of what must be ready before that step can start. EDGEBIC uses exactly that list to time the branches, so the frame finishes just as assembly needs it. Sub-assembly nodes also wear a star marker because the component has a routing of its own, which is your cue that the branch behind it explodes into more steps at schedule time. That behavior is covered in [how the designer shows sub-assembly branches](/blog/how-the-designer-shows-sub-assembly-branches).
+
+## The Three Shapes of a Broken Dependency
+
+A dependency you meant to draw is only half the story. The canvas is also where you catch the ones that broke. EDGEBIC recognizes three failure shapes and marks the affected node with a warning icon:
+
+1. **No link set.** The step has no next-in-sequence value. Nothing follows it, so on the canvas no arrow leaves the node. If the step is not the finished product, it is a dead-end.
+2. **Dangling link.** The step points at another step that has since been deleted. The arrow references a node that is no longer there. The engine cannot resolve it.
+3. **Cycle.** A chain loops: A feeds B and B feeds A. The routing has no clear upstream and downstream, so both steps get pinned to the same depth and flagged. The schedule can still run, but the order is ambiguous, which is precisely the confusion the warning is telling you to fix.
+
+The value of the icon is that these are the failures a spreadsheet routing hides. A dangling next-in-sequence value looks fine as a cell. On the canvas it is a node whose arrow points into empty space, and the warning removes any doubt.
+
+## A Worked Example: Finding the Early Step
+
+Widget-A's routing is meant to run body machining, then a merge with a welded frame, then assembly, then paint. A planner reports that paint scheduled on day one, before assembly even started.
+
+Open the routing in the designer and trace the arrows into the paint node. There is only one, and it arrives from assembly, which is correct. So the fault is upstream. Follow arrows backward: assembly should be fed by both body machining and the frame. On the canvas, only the body machining arrow arrives. The frame node sits to the side carrying a warning icon, and its next-in-sequence value is empty, so no arrow leaves it. The frame connects to nothing.
+
+Because assembly's only satisfied predecessor is body machining, the engine can start assembly as soon as machining is done, and paint follows. The frame, disconnected, schedules on its own at the job's start time, which is why paint appeared to be racing ahead of its inputs. Turn on the connector tool, draw one arrow from the frame node into assembly, and the merge is restored. Save, and the warning clears. On the next reschedule, assembly waits for both inputs and paint falls back to its proper slot.
+
+This is the everyday payoff of reading dependencies on the canvas: a scheduling symptom (a step too early) becomes a visible cause (an arrow that was never drawn). The same instinct applies once the work is scheduled, where an upstream edit lights up [downstream operations that may now be out of sequence](/blog/how-drag-drop-shows-the-downstream-ripple).
+
+## Reading Dependencies Is the Habit
+
+Manufacturers have reasoned about routings as flows for as long as there have been routings, and User Solutions has been putting that flow on a screen since 1991. The discipline is small and pays every day: before you trust a routing, follow its arrows from first step to finished product and confirm every merge has its inputs and every node has a way out. Check the type of each arrow while you are there, because [parallel and alternate branches on the canvas](/blog/reading-parallel-and-alternate-branches-on-the-edgebic-canvas) schedule nothing like a plain next-in-sequence link. A [dependency violation](/blog/what-is-a-dependency-violation-in-scheduling) that would have surfaced as a strange schedule three days from now surfaces instead as an arrow that is missing today.
+
+Bring a routing you are unsure about to a demo, and read it together. Give US the messy one.

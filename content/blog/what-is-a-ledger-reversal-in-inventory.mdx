@@ -1,0 +1,65 @@
+---
+title: "What Is a Ledger Reversal in Inventory?"
+description: "A ledger reversal is an inverse entry that cancels a prior receipt or issue without deleting it, so the original and its reversal both stay and net to zero."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - ledger reversal
+  - inventory reversal
+  - reverse a receipt
+  - reverse an issue
+  - append-only ledger
+  - reschedule idempotency
+targetPhrase: "ledger reversal in inventory"
+wordCount: 1040
+readingTime: 5
+faqQuestions:
+  - question: "What is a ledger reversal in inventory?"
+    answer: "A ledger reversal is an inverse entry that cancels a prior inventory movement without deleting it. Both the original entry, now marked as reversed, and the new reversal entry stay in the append-only ledger, and the two net to zero. If a receipt of plus 50 was posted in error, a reversal of minus 50 that links back to it undoes the effect while preserving the full history of what happened and when it was corrected."
+  - question: "Why reverse an entry instead of deleting it?"
+    answer: "Reversing preserves the audit trail; deleting destroys it. An inventory ledger is the authoritative on-hand record, and its value comes from being append-only, so no entry is ever removed. A reversal cancels a movement's effect on the balance while leaving both the original and its cancellation visible, dated, and linked. Anyone reviewing the product later can see the mistake and its correction, which is exactly what an auditable record must show."
+  - question: "When does the system post a reversal automatically?"
+    answer: "The system posts a reversal when a manufacturing order is deleted, reopened, or rescheduled. Deleting or reopening an order reverses both its receipts and its issues, restoring the balance as if the order had not posted. Rescheduling reverses the order's existing consume issue before the engine reads on-hand again, so the fresh run posts a clean single issue. In each case the original and the reversal remain in the ledger and net to zero."
+qaQuestions:
+  - question: "I reopened a completed build and now the ledger shows a plus 50 and a minus 50 for it. Is that a double posting?"
+    answer: "No, that is the reversal working as designed, and the two lines net to zero. The completed build had posted a receipt of plus 50 into finished goods. When you reopened the order, the system marked that receipt as reversed and appended an inverse entry of minus 50 that links back to it, so the stock those 50 units added is removed while the history stays intact. The build receipt and its reversal both remain visible; the balance is simply back to where it was before the build completed."
+  - question: "After three reschedules of the same from-stock job, my ledger has several issues and reversals. How do I read the true consumption?"
+    answer: "Read it as pairs that cancel, leaving exactly one live issue. Each reschedule reverses the order's prior consume issue, then posts a fresh one for the current quantity, so you will see an issue, a reversal, and a new issue repeating. Match every reversal to the original it links back to; those pairs net to zero. Whatever single issue is left unreversed is the true consumption. This reversal-first pattern is what keeps rescheduling the same job from draining stock more than once."
+---
+
+**A ledger reversal is an inverse entry that cancels a prior inventory receipt or issue without deleting it, so the original and its reversal both remain in the ledger and net to zero.** It is how an append-only record corrects itself: never by erasing a line, always by adding an offsetting one.
+
+This entry defines the ledger reversal and shows how it reads inside [EDGEBIC by User Solutions](/edgebic). For the wider index of terms, see the [manufacturing glossary](/blog/manufacturing-glossary); for the record it operates on, see [what is an inventory ledger](/blog/what-is-an-inventory-ledger); and for the count correction it is often confused with, see [inventory adjustment](/blog/what-is-an-inventory-adjustment).
+
+## How it works
+
+An inventory ledger is append-only, which means no entry is ever changed or removed once written. That rule is what makes the ledger trustworthy as the authoritative on-hand: the balance is the sum of every signed entry, and history cannot be quietly rewritten. But mistakes and cancellations still happen, so the ledger needs a way to undo a movement without breaking the rule.
+
+The reversal is that way. It appends an inverse entry: a receipt of plus 50 is cancelled by a reversal of minus 50, an issue of minus 80 is cancelled by a reversal of plus 80. The original is stamped as reversed, and the reversal entry links back to it by reference. Both lines stay forever, and together they net to zero, so the balance ends where it would have been if the original had never posted.
+
+A reversal differs from an adjustment. An adjustment corrects a count to match the shelf and pegs to no order. A reversal cancels a specific prior movement and links directly to it. One says the shelf differs from the record; the other says this exact transaction should not have counted.
+
+## A concrete example
+
+A from-stock job posts an issue of minus 50 to satisfy an order, dropping the balance from 70 to 20. Later, the job is deleted. The system finds that issue, marks it reversed, and appends an inverse entry of plus 50 that links back to it, restoring the balance to 70.
+
+| Entry | Quantity | Type | Comment | Balance after |
+|---|---|---|---|---|
+| 3 | -50 | Issue | Schedule Transaction | 20 |
+| 4 | +50 | Issue reversal | Reversal of #3 | 70 |
+
+Both lines survive. Entry 3 is the original consumption, now marked reversed; entry 4 is its cancellation, pointing back at entry 3. The ledger tells the whole story: 50 units were consumed, then that consumption was undone, and the stock is back on the shelf. Nothing was erased.
+
+The same pattern makes reschedules safe. On each run, the engine reverses the order's existing consume issue first, then reads on-hand, then posts one fresh issue for the current build quantity. Reschedule three times and you get issues and reversals in pairs, but only a single live consumption ever stands.
+
+## How EDGEBIC uses it
+
+In EDGEBIC, reversals are posted through the inventory service whenever a manufacturing order is deleted, reopened, or rescheduled. Delete or reopen triggers a full reversal of both the order's receipts and its issues; reschedule reverses the order's consume issue before the engine reads on-hand, which is what keeps rescheduling idempotent. The link from a ledger entry back to its order is preserved even if the order is later hard-deleted, so the ledger rows never orphan.
+
+Both the original and the reversal survive as a complete audit trail. Because the authoritative on-hand is the ledger sum, a diagnostic watches for a negative authoritative balance on a stocked product, which would mean more issues than receipts posted, so a missing reversal cannot silently push stock below zero.
+
+To see the receipts and issues reversals cancel, read [EDGEBIC inventory ledger explained](/blog/edgebic-inventory-ledger-explained) and [inventory issue transaction](/blog/what-is-an-inventory-issue-transaction). To understand the reschedule cycle that drives automatic reversals, continue with [EDGEBIC rescheduling explained](/blog/edgebic-rescheduling-explained).

@@ -1,0 +1,108 @@
+---
+title: "How a Step-Level One-Per-Day Rule Overrides the Machine"
+description: "One job per day can be set on the machine or on the individual routing step. How the step-level rule wins, when to use it, and what it does to capacity on a shared machine."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - one job per day scheduling
+  - dedicated machine scheduling
+  - routing step override
+  - batch process scheduling
+  - machine instance allocation
+  - finite capacity scheduling
+targetPhrase: "step-level one per day"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "Can one job per day be set on a single routing step instead of the whole machine?"
+    answer: "Yes. EDGEBIC carries the one-per-day flag in two places: on the work center, where it applies to everything that machine runs, and on the individual routing step. When the flag is set on the step it enforces the one-job-per-instance-per-day constraint for that operation regardless of how the work center itself is configured. That lets a shared machine run normal load-balanced work for most products and give a full day to the one product that needs it."
+  - question: "Why would a single product need a dedicated day on a shared machine?"
+    answer: "Because the constraint usually belongs to the product, not the equipment. A booth that handles ten colors fine may need a full uninterrupted day for one special coating. A furnace that runs mixed loads may need a dedicated cycle for one alloy. Setting the flag on the machine would force every product into dedicated days and throw away most of the machine's capacity, so the step-level flag lets you pay that price only where the process actually demands it."
+  - question: "What does the rule cost in capacity?"
+    answer: "A day of an instance, for that job, whether or not the job fills it. If the operation needs three hours and the machine has one instance, the other five hours of the shift are not available to any other job that day. On a machine with three instances the cost is one instance-day rather than the whole machine, which is why multi-instance work centers absorb the rule far more gracefully than single-machine ones."
+qaQuestions:
+  - question: "My paint booth runs fine for most jobs but one coating keeps getting interrupted by other work. What is the cleanest fix?"
+    answer: "Set the one-per-day flag on that coating's routing step rather than on the booth. The booth keeps its normal behavior for every other product, sharing capacity across jobs the way it does today, and the coating operation gets an instance to itself for the whole day it runs. Setting the flag on the booth would solve the problem too, but at the cost of every other product being given a dedicated day it does not need, which would collapse the booth's effective throughput. The step-level flag is the surgical version of the same rule."
+  - question: "I set the flag on the step and the job now schedules a week later. Is that a bug?"
+    answer: "It is the constraint working. With the flag on, the engine must find a machine instance that has no other job assigned that day, so it will skip every day where each instance is already carrying work, even if there are free hours on those days. On a busy single-instance machine, the first genuinely free day can easily be a week out. If that date is unacceptable, the real options are adding an instance, moving the operation to a machine with more instances, or accepting that the operation does not truly need a dedicated day. Turning the flag off to make the date look better simply moves the conflict onto the floor."
+---
+
+**The one-job-per-day rule exists in two places in EDGEBIC by User Solutions: on the work center, where it governs everything the machine runs, and on the individual routing step, where it governs a single operation. When the flag is set on the step it enforces the one-job-per-instance-per-day constraint for that operation regardless of the machine's own setting.** That is the difference between saying "this booth always gives a whole day to one job" and saying "this one coating needs a whole day, and the booth is otherwise normal."
+
+The distinction is small in configuration and large in capacity, because the machine-level version applies the cost to every product that touches the machine.
+
+## Two ways to say the same thing, with different scope
+
+The machine-level flag is the familiar one. Turn it on for a furnace or a booth and each instance of that work center serves one job per day. The engine finds a free instance, gives the entire job that instance for the day, and no other job shares it. The behavior is described in [how one-per-day dedicates a machine for a full day](/blog/how-oneperday-dedicates-a-machine-for-a-full-day).
+
+The step-level flag says the same thing about one operation. When it is set on a routing step, that operation is placed under the dedicated-instance rule even if the work center it routes to is running ordinary load-balanced allocation for everything else.
+
+The reason both exist is that the physical constraint sometimes belongs to the equipment and sometimes belongs to the product. A vacuum furnace whose cycle cannot be shared is an equipment constraint. A single high-purity alloy that cannot follow anything else through an otherwise flexible furnace is a product constraint. Modeling a product constraint on the equipment is what causes a plant to lose most of a machine's capacity for the sake of one part number.
+
+## What changes in the placement
+
+Under normal allocation, the engine picks an instance by balancing load: the operation's hours are distributed across available instances, or filled sequentially, and several jobs can share a machine within the same day. The details of that choice are in [load balancing versus dedicated instance scheduling](/blog/load-balancing-vs-dedicated-instance-scheduling).
+
+Under the one-per-day rule, instance selection changes shape. The engine looks for an instance that carries no other job on the target date, assigns the whole operation to that instance, and blocks the rest of the day on it from other work. If no instance is free that day, the search moves to the next day and repeats.
+
+Two consequences follow.
+
+The operation cannot be spread across instances to shorten it. Whatever compression you would have gained from running on three machines at once is not available, because dedication and splitting are opposite instructions.
+
+The date can move significantly. The engine is no longer asking whether there are free hours; it is asking whether there is a free instance-day. Those are very different questions on a busy machine, and the second one is much harder to satisfy.
+
+## A worked example: one booth, three products
+
+A paint booth has two instances and runs an eight-hour day shift, giving 16 instance-hours a day. Three jobs are waiting.
+
+- Job 1: standard gray, 4 hours
+- Job 2: standard gray, 3 hours
+- Job 3: a specialty coating, 3 hours, which cannot follow another product through the booth on the same day without a full purge
+
+With no dedication anywhere, all three jobs land on the same day. The booth uses 10 of its 16 instance-hours and everything ships. On paper this is efficient. In reality Job 3 comes out contaminated, and the plan was fiction.
+
+Now set the one-per-day flag on the booth itself. Every job gets a dedicated instance-day, so two jobs run today, one runs tomorrow, and the booth's effective throughput collapses from 16 instance-hours to two jobs a day regardless of size. Two three-hour jobs now consume a full day of a resource that could have done 16 hours of work. The specialty problem is solved by making every product expensive.
+
+Now instead set the flag on Job 3's routing step and leave the booth alone. Jobs 1 and 2 share instance 1 normally, consuming seven of its eight hours. Job 3 takes instance 2 for the whole day. The booth uses 10 instance-hours of work, ships all three jobs on the same day, and the specialty coating still had the booth instance to itself.
+
+That is the case for the step-level flag in one comparison: same protection, roughly a third of the capacity cost.
+
+## When to reach for it
+
+Use the step-level flag when the reason for dedication is the product or the process rather than the machine. Contamination-sensitive coatings, cure cycles that must not be disturbed, high-purity or high-value loads, and validation runs that must be traceable to a single day of a single machine are the common cases.
+
+Use the machine-level flag when the equipment itself cannot be shared within a day at any time, for any product. A batch oven whose door cannot be opened mid-cycle is a machine-level truth, and putting the flag on every routing step that touches it would be error-prone bookkeeping for the same outcome.
+
+Do not use either one to express "this job is important." Priority and sequencing are separate mechanisms, covered in [how a scheduler decides which job runs first](/blog/how-a-scheduler-decides-which-job-runs-first). A dedication flag does not make a job run sooner. It usually makes it run later, because the constraint is harder to satisfy.
+
+## The capacity arithmetic to expect
+
+On a single-instance machine, a step-level dedication is expensive: one operation takes the machine's entire day. If that operation is two hours long, six hours of the day are gone.
+
+On a multi-instance machine, the cost is proportional. A work center with four instances gives up a quarter of its day per dedicated operation, and the other three instances continue serving normal work.
+
+This is why shops that need product-level dedication often benefit more from adding an instance than from any scheduling change. The rule's cost is measured in instance-days, so the cheapest way to make it affordable is to have more instances to spend. The general trade-off between one large resource and several smaller ones is explored in [one big machine versus several small machines](/blog/one-big-machine-vs-several-small-machines), and it applies here with unusual force.
+
+## Reading the result
+
+When an operation under the step-level rule is placed, the resulting schedule looks ordinary: one operation, one machine instance, a start and an end. What is not visible on the bar is that the rest of that instance's day is reserved. If you are reconciling why a machine shows idle time that nothing else could take, a step-level dedication on an operation earlier in the day is a common explanation, and it is a deliberate one rather than a gap.
+
+The wider instance and capacity mechanics are described in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the underlying reason a dedicated day costs what it costs is the same reason [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) is worth doing at all: the hours are real, and spending them on exclusivity is a choice you should be able to see.
+
+To model where product-level dedication would actually pay for itself in your plant, [bring your routings to a demo](/edgebic).
+
+<Accordion title="Can one job per day be set on a single routing step instead of the whole machine?">
+Yes. EDGEBIC carries the one-per-day flag in two places: on the work center, where it applies to everything that machine runs, and on the individual routing step. When the flag is set on the step it enforces the one-job-per-instance-per-day constraint for that operation regardless of how the work center itself is configured. That lets a shared machine run normal load-balanced work for most products and give a full day to the one product that needs it.
+</Accordion>
+
+<Accordion title="Why would a single product need a dedicated day on a shared machine?">
+Because the constraint usually belongs to the product, not the equipment. A booth that handles ten colors fine may need a full uninterrupted day for one special coating. A furnace that runs mixed loads may need a dedicated cycle for one alloy. Setting the flag on the machine would force every product into dedicated days and throw away most of the machine's capacity, so the step-level flag lets you pay that price only where the process actually demands it.
+</Accordion>
+
+<Accordion title="What does the rule cost in capacity?">
+A day of an instance, for that job, whether or not the job fills it. If the operation needs three hours and the machine has one instance, the other five hours of the shift are not available to any other job that day. On a machine with three instances the cost is one instance-day rather than the whole machine, which is why multi-instance work centers absorb the rule far more gracefully than single-machine ones.
+</Accordion>

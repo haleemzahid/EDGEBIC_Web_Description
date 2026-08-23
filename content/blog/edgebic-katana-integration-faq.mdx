@@ -1,0 +1,104 @@
+---
+title: "EDGEBIC + Katana Integration FAQ: The Questions Manufacturers Ask First"
+description: "Answers to the Katana scheduling integration questions manufacturers ask first: exports, no API, cloud policy, running orders, unit conversion, and dates back."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Katana scheduling integration questions
+  - Katana EDGEBIC FAQ
+  - Katana MRP scheduling add-on questions
+  - cloud MRP scheduling FAQ
+  - Katana finite capacity scheduling
+  - Katana production scheduling integration
+targetPhrase: "Katana scheduling integration questions"
+wordCount: 1620
+readingTime: 8
+faqQuestions:
+  - question: "Does EDGEBIC use the Katana API?"
+    answer: "No. EDGEBIC reads the CSV or Excel exports Katana already produces through reusable import masks. There is no API integration to build, no app deployed in the account, and no integration credential to create or rotate. You map an export's columns onto EDGEBIC fields once and save the mask, and every run after that is two clicks with a per-run log recording each row."
+  - question: "Does EDGEBIC replace Katana?"
+    answer: "No. Katana stays the cloud system of record for inventory, material availability, and order tracking. EDGEBIC reads exports, builds a finite capacity schedule against real shift hours and real machine counts, and hands back dates and dispatch lists as Excel files. Nothing about how your team uses Katana changes, and the two systems answer different questions."
+  - question: "Can an import disturb manufacturing orders already running?"
+    answer: "No, for two independent reasons. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing re-import affects future jobs and leaves work in progress alone. And recorded work is never moved by any run: an operation with an actual start and an actual end is historical fact, and no reschedule, mode, or setting will shift it."
+qaQuestions:
+  - question: "We run lean, one planner, no IT team. Is a file-based integration going to become a second job for her?"
+    answer: "It becomes about twenty minutes on a Monday and less on other days. The setup cost lands once: four masks, built by dragging column headings onto fields, typically in a single session. After that the recurring work is export, pick the mask, press Do It, read the counts. A normal weekly run reports something like Created 30, Reused 210, Failed 0 in a couple of minutes, because master data that already matches comes back Reused and untouched rather than being rewritten. The part that actually takes her time is the useful part: looking at the schedule and deciding what to do about the work centers that are over capacity."
+  - question: "Our Katana exports quote text fields and use a local date format that has broken other tools. Will imports fail?"
+    answer: "Both are handled on the mask rather than by editing files. The mask has a text-enclosed-in-quotes setting for RFC-4180 style quoting, so a description containing a comma parses as one value instead of splitting into phantom columns. Dates are parsed against the invariant format first and your machine's regional format second, so a locale-specific export lands correctly without a pre-processing step. If a specific row still fails, it fails alone: the default behavior marks that row Failed with the exact reason in the log and continues through the rest, so one bad date never blocks 500 good ones."
+---
+
+**These are the questions Katana manufacturers ask in the first conversation, answered without hedging: there is no API integration, the interface is your existing CSV or Excel exports, nothing is installed in the account, and nothing you import can disturb an order already running.** Each answer stands on its own, so skip to whichever one you came for.
+
+EDGEBIC by User Solutions is a finite capacity scheduling platform that sits beside your MRP. The full walkthrough is the [complete Katana integration guide](/blog/edgebic-katana-integration-guide), and the field-level detail is in the [Katana to EDGEBIC mapping reference](/blog/katana-to-edgebic-data-mapping-reference).
+
+## Does EDGEBIC connect through the Katana API?
+
+No, and that is deliberate. EDGEBIC integrates through reusable import masks that read Excel, CSV, delimited text, or a database source. You map your export's columns onto EDGEBIC's fields once and save the mask, and every later run is two clicks. Because there is no API integration, there is no app in the account, no integration credential, no rate limit to design around, and nothing to version-match when the platform updates on its own schedule. A connector is a dependency. A file is not.
+
+## Does EDGEBIC replace Katana?
+
+No. Katana stays the cloud system of record for inventory, material availability, purchasing, and order tracking. EDGEBIC reads exports, builds a finite capacity schedule against real shift hours and real machine counts, and hands back dates and dispatch lists as Excel files. Nothing about how your team uses Katana changes. The general case for the split is in [why ERP needs a scheduling add-on](/erp-scheduling-add-on).
+
+## What exactly has to come out of Katana?
+
+Four exports carry a complete scheduling model, and a fifth is optional. Products (an identifier is the only mandatory column). Resources or work centers (an identifier, plus a real machine count and capacity detail). Operations (end product, work center, an operation flag, and hours per unit). Open manufacturing orders (product, quantity, and a date). Optionally, logged labor (job number, work center, date, and hours or pieces). Any list that saves to CSV or Excel is a valid source.
+
+## Our resources are one row per machine type. Is that a problem?
+
+It is the single most common first-load issue on a cloud MRP, and it is one column to fix. If a work center is really four identical machines but the export carries no count, EDGEBIC imports it as one instance and the plan comes out roughly four times too long. Map a machine-count column onto the instances field, or set the count for each multi-machine center once inside EDGEBIC after the first import. It is set once and preserved on every later import, so the correction never repeats. The arithmetic is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## How long until the first real schedule?
+
+Most shops see a first finite capacity schedule from their own data in the first working session, and a tuned one within the week. The documented benchmark in the User Solutions lineage is the Plastilite integration on Fourth Shift: 5 days, Monday to Friday, from first export to a complete optimized schedule with dates synchronized back to the ERP. That figure belongs to that case rather than being a promise, but the method is what repeats: export, map, import, schedule, tune.
+
+## Do we have to clean our routings first?
+
+No, and the attempt usually costs a month. Import what Katana holds today, schedule it, and compare the dates with what your planner believes. The disagreements are your defect list and they arrive specific: a wrong hours-per-unit shows up as a job finishing implausibly early, a missing setup time shows up as a machine that changes over for free. Because a routing re-import wipes and recreates that product's steps, each corrected file replaces the last cleanly.
+
+## Our operation times are in minutes. Do we convert them by hand?
+
+No. Set a conversion factor of `0.016667` on the operation column in the routing mask and a 30-minute cell lands as 0.5 hours. Seconds use `0.000278`, and a time quoted per 100 pieces uses `0.01`. The factor is stored on the mask, so every future import converts identically without anyone remembering to do it, and the per-run log records every row if you want to audit the math.
+
+## Do imported manufacturing orders schedule themselves?
+
+No, and the separation is deliberate. An import changes data, the scheduler changes the plan. Imported manufacturing orders appear as unscheduled demand until you run the scheduler, and before the run starts a confirmation states the scope in plain numbers: how many jobs are new and how many existing jobs are being rescheduled. You always know the blast radius before anything moves.
+
+## Can an import disturb orders already running?
+
+No, for two independent reasons. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing re-import affects future jobs and leaves work in progress alone. And recorded work is never moved by any run: an operation with an actual start and an actual end is historical fact, and no reschedule, mode, or setting will shift it.
+
+## What if the same file is imported twice?
+
+Nothing bad happens, on any entity type. Master data comes back Reused (matched and deliberately left untouched) unless you enabled updates for that run. Routing imports wipe and recreate a product's steps rather than appending, so steps never accumulate. Logged labor always overwrites the days a file carries, so a double import never double-counts and a corrected file simply fixes the earlier numbers.
+
+## Can we automate the export and the import?
+
+Partly, and it is worth being precise about which half. The export side automates well: a scheduled extract that lands a file in a known folder with a stable name removes the only manual step that ever gets forgotten. The import side stays a deliberate act, because the result dialog exists to be read. A run that reports 40 unexpected Failed rows is information a person needs to see before the schedule is built on top of it. Most shops settle on automated exports plus a two-minute human import.
+
+## What can import never bring across?
+
+The settings that most change what a schedule looks like, because no MRP export has a column for them. Work center groups (machine pools re-shopped on every reschedule, with per-member efficiency factors). The sequence-dependent setup matrix that lets the optimizer sequence work to cut changeover. Operator skills and rosters. Bottleneck anchoring. Lot streaming with transfer batches. Each is configured once inside EDGEBIC and then applies to every imported manufacturing order afterwards. The [EDGEBIC product overview](/edgebic) maps them and the [ERP integration architecture](/edgebic-erp-integration) explains where the import boundary sits.
+
+## Who runs this day to day?
+
+The planner, in about twenty minutes each morning, without IT. Involve IT or a partner exactly once, to make the four exports saved reports with stable columns landing in a known folder. After that the routine is export, run the saved masks, run the scheduler, publish the dispatch lists. The same questions for other platforms are answered in the [MRPeasy](/blog/edgebic-mrpeasy-integration-faq) and [Fishbowl](/blog/edgebic-fishbowl-integration-faq) FAQs.
+
+## Still deciding?
+
+The fastest way to settle any of this is your own export. Pull this week's open manufacturing orders and an operations file, then [bring them to a demo](/contact-us): mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity.
+
+<Accordion title="Does EDGEBIC use the Katana API?">
+No. EDGEBIC reads the CSV or Excel exports Katana already produces through reusable import masks. There is no API integration to build, no app deployed in the account, and no integration credential to create or rotate. You map an export's columns onto EDGEBIC fields once and save the mask, and every run after that is two clicks with a per-run log recording each row.
+</Accordion>
+
+<Accordion title="Does EDGEBIC replace Katana?">
+No. Katana stays the cloud system of record for inventory, material availability, and order tracking. EDGEBIC reads exports, builds a finite capacity schedule against real shift hours and real machine counts, and hands back dates and dispatch lists as Excel files. Nothing about how your team uses Katana changes, and the two systems answer different questions.
+</Accordion>
+
+<Accordion title="Can an import disturb manufacturing orders already running?">
+No, for two independent reasons. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing re-import affects future jobs and leaves work in progress alone. And recorded work is never moved by any run: an operation with an actual start and an actual end is historical fact, and no reschedule, mode, or setting will shift it.
+</Accordion>

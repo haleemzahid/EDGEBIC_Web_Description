@@ -1,0 +1,118 @@
+---
+title: "Quoting Three Routing Options for a Customer in EDGEBIC"
+description: "A quote simulation walkthrough: run three routing options for one order, compare promise date, cost, and margin, and give the customer a real choice."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - quote simulation
+  - routing options
+  - lead time quoting
+  - what-if scenario
+  - production quote cost
+  - promise date estimate
+targetPhrase: "quote simulation"
+wordCount: 2150
+readingTime: 11
+faqQuestions:
+  - question: "How do you quote a faster delivery option without guessing the date?"
+    answer: "You run the quote simulation against the faster routing and read the promise date it returns. The simulation runs the same scheduling engine as the live plan against real committed capacity without writing anything, so its date is a genuine finite-capacity estimate, not a rule of thumb. Configure the faster option, for example splitting a step across two machines, simulate it, and compare the returned start and end dates to the standard routing's. The date reflects your actual load, so it holds when the order is real."
+  - question: "Where do the cost and margin numbers on a quote come from?"
+    answer: "From the simulation's work center allocations. Each allocated hour is priced from the routing step's labor rate, or the work center's rate when the step has none, and material-type steps roll into material cost. The simulation sums estimated labor and estimated material into a total cost, and a markup percent produces the price and margin. Because a faster routing may use more expensive capacity, its cost can be higher even when its lead time is shorter, which is exactly the trade the three-option comparison makes visible."
+  - question: "Does the quoted date hold up after the customer accepts the order?"
+    answer: "Yes, as long as your capacity picture has not changed. The quote simulation and the live scheduler are the same engine reading the same committed capacity, so when the accepted quote converts to a manufacturing order and you schedule it, the dates reproduce. The promise only moves if your load moved first, for example another order claimed the capacity between quoting and accepting, which is why quoting close to acceptance and reserving capacity for hot deals both help."
+qaQuestions:
+  - question: "A customer asked if there is anything faster than our standard 12-day quote. How do I answer with real numbers instead of a guess?"
+    answer: "Simulate two more routing options and compare. Keep the standard routing as option A, build option B that splits the bottleneck step across two machines (parallel), and build option C that outsources one step to a vendor work center. Run the base simulation on each and read the returned promise dates, costs, and margins into one table. You might find A is 12 days at 35% margin, B is 9 days at a slightly lower margin because parallel milling costs more capacity, and C is 6 days but at 18% margin because the vendor is expensive. Now the customer chooses, and every number came from the same engine that will run the real job."
+  - question: "If I quote the fast option and we win it, will the shorter date actually happen or was it just a simulation?"
+    answer: "It happens, because the simulation is the live engine. When you convert the accepted quote to a manufacturing order and schedule it with the same routing you simulated, the engine reproduces the simulated dates as long as the capacity it read is still there. The one caveat is time: if two weeks pass between quoting and acceptance and other orders eat the capacity, re-simulate before you commit. For hot deals, quoting close to acceptance keeps the promised date honest."
+---
+
+**Quoting several routing options in EDGEBIC by User Solutions means running the same scheduling engine three times against real capacity: one simulation per routing, each returning a genuine promise date, cost, and margin, so the customer chooses from real numbers instead of a salesperson's guess.** This walkthrough quotes one custom order three ways: standard, faster-by-parallel, and fastest-by-outsourcing. It is part of our [worked examples series](/blog/edgebic-worked-examples), and it extends the single-path [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic) into a side-by-side comparison. The numbers below are illustrative; the simulation behavior is documented behavior.
+
+## The Setup: One Order, a Customer Who Wants It Sooner
+
+Beacon Machining gets a request for 200 custom brackets. The standard routing is saw, mill, inspect, and the mill is the pacing step. The customer asks the question every shop hears: "Anything faster than your standard lead time?" Instead of guessing, the estimator, Marcus, will quote three routing options and let the numbers answer.
+
+The key fact that makes this trustworthy: the quote simulation runs the identical scheduling engine as the live plan, against real committed capacity, without writing anything to the schedule. So each option's promise date is a real [finite-capacity](/blog/finite-vs-infinite-capacity-scheduling) result, and its cost is priced from the same work center rates the live job would use.
+
+## Step 1: Create and Simulate the Standard Option (A)
+
+Marcus creates a quote for the bracket, quantity 200, with the customer's requested date. He runs the simulation on it. The engine schedules the three steps against current capacity and returns:
+
+- A promise date (estimated start and end).
+- **Work center allocations**: each step's assigned hours, its rate, and its cost. The rate comes from the routing step's labor rate, or the work center's rate when the step has none.
+- **Estimated labor cost** and **estimated material cost**, which sum to total cost.
+
+Marcus applies the shop's standard markup, and the quote shows a price and a margin. Call option A **12 days, 35% margin**. This is the baseline every other option is measured against.
+
+## Step 2: Build and Simulate the Parallel Option (B)
+
+To go faster, Marcus targets the mill, the pacing step. He builds a variant routing where the milling step is set to independent parallel across two mills, so the engine splits the milling hours across both machines and the step finishes in roughly half the wall-clock time. He simulates this variant.
+
+The result: a shorter promise date, because milling no longer runs on one machine end to end. But the cost may tick up, because running two mills consumes more of the plant's scarce mill capacity, and the simulation prices whatever capacity the job actually used. Call option B **9 days, 31% margin**. Faster, slightly less profitable.
+
+To keep the master routing clean while exploring this, Marcus works from a cloned variant routing or records the configuration as a scenario card for the quote, so the standard routing is never disturbed. The comparison itself comes from running the base simulation on each configuration.
+
+## Step 3: Build and Simulate the Outsourced Option (C)
+
+For the fastest option, Marcus outsources the milling step to a vendor work center that has open capacity and a faster turn, modeled with its own setup and runtime. He simulates this third variant. The engine routes the milling hours to the vendor resource, which is quicker but priced higher, and adds any transit days for parts to travel out and back.
+
+The result: the shortest promise date, at the lowest margin, because the vendor is expensive. Call option C **6 days, 18% margin**. This is the "we can do it, but it costs" option.
+
+## The Comparison the Customer Sees
+
+Marcus reads the three simulations into one table:
+
+| Option | Routing change | Lead time | Cost | Margin |
+|---|---|---|---|---|
+| A. Standard | Single mill | 12 days | baseline | 35% |
+| B. Parallel mill | Split across 2 mills | 9 days | +modest | 31% |
+| C. Outsourced mill | Vendor work center | 6 days | +high | 18% |
+
+Every row came from the same engine against the same capacity, so the comparison is apples to apples. The customer now makes an informed trade: pay standard price for 12 days, a little more for 9, or a premium for 6. Marcus is not inventing the middle number; he simulated it.
+
+## Step 4: Win the Order and Convert Without Re-Estimating
+
+Say the customer picks option B. Marcus marks the quote accepted and converts it to a manufacturing order using the same parallel routing he simulated. When he schedules the order, the live engine reproduces the simulated dates, because simulation and live scheduling are the same engine reading the same committed capacity. Nothing about the calculation changed between the quote and the job.
+
+The one thing to watch is time. The promised date assumes the capacity the simulation read is still free. If weeks pass and other orders claim the mill, the date can move, so for a hot deal Marcus re-simulates just before committing. Quoting close to acceptance keeps the promise honest.
+
+## What This Quoting Run Proves
+
+1. **Each option is a real simulation, not a guess.** The quote engine is the scheduling engine, so every promise date is a finite-capacity result.
+2. **Cost follows the capacity used.** Faster routings can cost more because they consume scarcer or pricier capacity, and the simulation prices exactly what the job used.
+3. **The comparison is apples to apples.** Three options, one engine, one capacity picture, so the trade-offs are honest.
+4. **Accepted quotes reproduce their dates.** Convert to an order with the simulated routing and the live schedule matches, as long as capacity has not shifted.
+5. **The customer chooses on real numbers.** Lead time, cost, and margin for each path, side by side.
+
+## Variations Worth Trying
+
+**A weekend scenario.** Model an option that runs Saturday and Sunday to compress the standard routing without changing machines. Record it as a scenario with weekend production enabled, and simulate the corresponding configuration to see how much the extra days buy.
+
+**A custom start date.** If material for one option only arrives in two weeks, model that option with a fixed custom start date so its promise date reflects the real earliest start, not today.
+
+**Reserve the fast option.** For a hot deal, quote close to acceptance and hold the capacity so another order does not claim the mill between the quote and the yes. Quoting language here is a what-if promise date, not a guaranteed reservation, so treat the hold as a short window.
+
+## The Bigger Point: Quoting Is Scheduling in Advance
+
+A quote is a promise about the future of your shop floor, and the only honest way to make it is to schedule the work in advance against real capacity. That is why the [quote simulation](/blog/what-is-production-scheduling) and the live scheduler are the same engine: the estimate a salesperson gives is the schedule the floor will run. Quoting three routing options is just running that engine three times, which turns "how fast can you go?" from a sweaty guess into a table.
+
+User Solutions has built that discipline into scheduling tools since 1991, for operations where a wrong promise date is expensive: the US Navy, GE, BAE Systems, and Cummins among them. [EDGEBIC](/edgebic) carries that lineage forward, and the [results guide](/blog/edgebic-results-guide) turns quoting accuracy into the business case.
+
+Bring a real customer request and let us quote it three ways. [Contact us](/contact-us) and we will simulate the options against your own routing data, or read the [comparing-two-what-if-scenarios walkthrough](/blog/comparing-two-what-if-scenarios-for-a-capacity-decision-edgebic) to see the same simulate-and-compare discipline applied to a capacity decision.
+
+<Accordion title="How do you quote a faster delivery option without guessing the date?">
+You run the quote simulation against the faster routing and read the promise date it returns. The simulation runs the same scheduling engine as the live plan against real committed capacity without writing anything, so its date is a genuine finite-capacity estimate, not a rule of thumb. Configure the faster option, for example splitting a step across two machines, simulate it, and compare the returned start and end dates to the standard routing's. The date reflects your actual load, so it holds when the order is real.
+</Accordion>
+
+<Accordion title="Where do the cost and margin numbers on a quote come from?">
+From the simulation's work center allocations. Each allocated hour is priced from the routing step's labor rate, or the work center's rate when the step has none, and material-type steps roll into material cost. The simulation sums estimated labor and estimated material into a total cost, and a markup percent produces the price and margin. Because a faster routing may use more expensive capacity, its cost can be higher even when its lead time is shorter, which is exactly the trade the three-option comparison makes visible.
+</Accordion>
+
+<Accordion title="Does the quoted date hold up after the customer accepts the order?">
+Yes, as long as your capacity picture has not changed. The quote simulation and the live scheduler are the same engine reading the same committed capacity, so when the accepted quote converts to a manufacturing order and you schedule it, the dates reproduce. The promise only moves if your load moved first, for example another order claimed the capacity between quoting and accepting, which is why quoting close to acceptance and reserving capacity for hot deals both help.
+</Accordion>

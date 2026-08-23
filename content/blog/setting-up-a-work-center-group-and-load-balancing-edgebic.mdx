@@ -1,0 +1,149 @@
+---
+title: "Setting Up a Work Center Group and Watching It Load-Balance in EDGEBIC"
+description: "Build a MILLING work center group of three interchangeable machines, route steps to the pool, and watch EDGEBIC shop the group by capacity, with the factor math shown."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - work center group setup
+  - resource group load balancing
+  - interchangeable machines scheduling
+  - efficiency factor scheduling
+  - capacity-aware machine selection
+  - pool scheduling walkthrough
+targetPhrase: "work center group setup"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "What is a work center group in EDGEBIC?"
+    answer: "A work center group is a named pool of interchangeable machines that a routing step can target instead of one specific machine. You route a step to the MILLING group, and at schedule time the engine picks the best member, capacity-aware, by the group's selection strategy. A group has no capacity of its own; it explodes into the member machines at schedule time and the proven alternative-work-center resolver picks the winner on every run."
+  - question: "How does EDGEBIC choose which machine in a group runs a job?"
+    answer: "By the group's selection strategy. Earliest Completion, the default, picks the member that finishes the operation soonest given both its speed and its current queue, so the fastest free machine wins. Primary First always tries a designated machine and spills only when it is full. Earliest Start picks whichever member can begin first, at day granularity. The engine re-shops the pool on every reschedule, so an unstarted step can move to a different member as capacity changes."
+  - question: "How does the efficiency factor on a group member change the hours?"
+    answer: "The member efficiency factor multiplies run time only, always from the routing's base hours, never setup. A step with 0.04 hours per unit on a member with factor 0.5 runs at 0.02 hours per unit, so a 100-piece job needs 2.0 run hours instead of 4.0. Setup is a per-changeover cost and is never scaled by the factor; a member can carry its own setup override instead. Because the factor always starts from base hours, it never compounds across reschedules."
+qaQuestions:
+  - question: "I have three mills of different ages that can all run the same parts. Should I model them as one work center with three instances or as a group?"
+    answer: "A group, because the machines are different. Instances model identical units inside one work center that share one shift calendar, one utilization, and one speed. Three mills of different vintages each keep their own calendar, utilization, and speed, and the member efficiency factor captures that a 2024 machine runs a part in half the time of a 2015 one. In this walkthrough Mill-2 at factor 0.5 finishes a 100-piece job in 2.5 hours while Mill-1 at factor 1.0 needs 4.5, and the engine picks accordingly. Use instances only when the units are truly identical."
+  - question: "If the fastest machine in my group is busy, will EDGEBIC still force the job onto it?"
+    answer: "No, and that is the whole point of capacity-aware pooling. With Earliest Completion, a job goes to the member that finishes it soonest counting queue time. In this walkthrough, when Mill-2 (the fast machine) is booked solid until Wednesday, the engine sends the next job to Mill-1, which is free Monday and finishes at 12:30, even though Mill-2 is intrinsically faster. The fastest machine loses to the available one, so the pool self-balances instead of piling every job on the newest mill."
+---
+
+**A work center group in [EDGEBIC by User Solutions](/edgebic) is a named pool of interchangeable machines that a routing step targets instead of one fixed machine, and the engine shops the pool by capacity on every scheduling run.** This walkthrough builds a three-mill MILLING group, routes a step to it, and schedules three jobs so you can watch them spread across the machines by availability, with the exact factor math shown. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so the behavior is visible in numbers, not adjectives.
+
+If you are still deciding whether you need a group at all, [work center groups explained](/blog/edgebic-work-center-groups-explained) covers the concept, and [EDGEBIC for furniture: work center groups](/blog/edgebic-for-furniture-work-center-groups) shows an industry fit.
+
+## The Cast: Three Mills, Different Vintages
+
+Northgate Precision has three milling machines that can all run the same class of parts, but they are not equal:
+
+| Machine | Age | Relative speed | Setup |
+|---|---|---|---|
+| Mill-1 (Haas) | 2015 | baseline | routing default |
+| Mill-2 (DMG) | 2024 | twice as fast | routing default |
+| Mill-3 (Bridgeport) | 1998 | fifty percent slower | simpler fixturing |
+
+Before groups, a planner had three bad options: pin every job to one mill and let the others idle, hand-copy a three-machine alternate list onto every routing, or model the cluster as one machine with three instances (wrong, because instances must be identical). A work center group is the reusable answer: define the pool once, bind any step to it, and the scheduler shops it on every run.
+
+## Step 1: Create the Group
+
+Open the Work Center tab and switch to the Work Center Groups inner tab. Click New. Give the group a unique name, MILLING, and pick a Selection Strategy. Leave it at the default, Earliest Completion, which picks the member that finishes the operation soonest. Save, then add the three members through the member picker.
+
+Set the per-member knobs. The efficiency factor multiplies run time only, always from the routing's base hours:
+
+| Member | Efficiency Factor | Setup Override | Primary | Priority |
+|---|---|---|---|---|
+| Mill-1 | 1.0 (baseline) | inherit | yes | 1 |
+| Mill-2 | 0.5 (twice as fast) | inherit | no | 2 |
+| Mill-3 | 1.5 (fifty percent slower) | 0.25 h | no | 3 |
+
+All three share one Day Shift, Monday to Friday, 08:00 to 16:00, one instance each, 100 percent utilization. The group itself carries no capacity; every pool number you see later on the group Resource Calendar is a live sum of the member cells.
+
+## Step 2: Route a Step to the Group
+
+Open the routing editor for the milled part and open the step's work center selection popup. Alongside the usual Work Center and Product choices sits a third radio: Work Center Group. Select it, pick MILLING, and confirm.
+
+The step now shows a badge, MILLING (3), instead of a machine name. Under the hood the step stores the group binding but leaves the machine name empty until scheduling resolves it. Binding to a group strips any manual alternate list, because the group is the alternate list; the two are mutually exclusive by design.
+
+The milling step's routing numbers: 0.04 hours per unit of base run time, 0.5 hours base setup.
+
+## Step 3: Schedule One Job and Read the Explosion
+
+Create MO-7001, quantity 100, earliest start Monday 08:00, and run Drive Schedule.
+
+Immediately before the engine's alternative resolver runs, a pre-pass explodes the group step into a primary machine plus one candidate per remaining member, computing each member's effective hours from base:
+
+| Candidate | Effective run/unit | Setup | Total for 100 pcs |
+|---|---|---|---|
+| Mill-1 (primary) | 0.04 x 1.0 = 0.04 h | 0.50 h | 0.04 x 100 + 0.50 = 4.5 h |
+| Mill-2 | 0.04 x 0.5 = 0.02 h | 0.50 h | 0.02 x 100 + 0.50 = 2.5 h |
+| Mill-3 | 0.04 x 1.5 = 0.06 h | 0.25 h | 0.06 x 100 + 0.25 = 6.25 h |
+
+Notice setup is never scaled by the factor. Mill-3 runs slower but sets up faster, because its setup override is independent of its speed.
+
+With all three mills free Monday, Earliest Completion projects the finishes:
+
+| Candidate | Completion |
+|---|---|
+| Mill-1 | Mon 12:30 |
+| Mill-2 | **Mon 10:30** (wins) |
+| Mill-3 | Mon 14:15 |
+
+Mill-2 wins. The engine swaps the step onto Mill-2 with 0.02 hours per unit and 0.5 hours setup, books 2.5 hours Monday 08:00 to 10:30, and every screen from here on shows Mill-2, not the group badge. The step still stores the group binding so the next reschedule can re-shop the pool.
+
+## Step 4: Watch It Load-Balance Across Three Jobs
+
+Now the interesting part. Add two more identical jobs, MO-7002 and MO-7003, each 100 pieces of the same part, both earliest start Monday, and reschedule the batch.
+
+The engine schedules them in turn, and because each placement consumes real capacity, later jobs see a different picture:
+
+- **MO-7001** lands on Mill-2 (fastest, free), Monday 08:00 to 10:30.
+- **MO-7002** re-explodes. Mill-2 is now busy until 10:30, so its projected completion is Monday 13:00 (queued, then 2.5 h). Mill-1 is free and finishes at 12:30. Mill-1 wins.
+- **MO-7003** re-explodes again. Mill-2 frees at 10:30 and finishes at 13:00; Mill-1 frees at 12:30 and finishes at 17:00 (spilling past the shift); Mill-3 is free from 08:00 and finishes at 14:15. Earliest Completion sends MO-7003 to Mill-2.
+
+Three jobs, three placements, spread across the pool by availability rather than piled onto the newest machine. That is the load-balancing behavior, and it happened without a single manual pin. The group Resource Calendar now shows each member carrying its share for the day.
+
+The lesson that surprises new users: the fastest machine loses to the available one. When Mill-2 is booked, the next job goes to a slower but free mill, because a job in the queue behind the fast machine finishes later than the same job on a free slower one. This is exactly the constraint-aware behavior you want from a pool.
+
+## Choosing a Strategy
+
+Earliest Completion is the default and the right choice most of the time. Two alternatives change the behavior:
+
+- **Primary First** always tries the designated primary (Mill-1 here) and spills to the others only when it is full. Choose it when you want predictable, consistent routing to one machine and treat the others as overflow.
+- **Earliest Start** picks whichever member can begin first, at day granularity: a member that can start today beats a faster member that can only start tomorrow. Choose it when getting work moving today matters more than raw cycle time.
+
+You set the strategy once on the group, and every step bound to that group inherits it.
+
+## Reschedule Keeps Started Work Put
+
+When an operator starts MO-7001 on Mill-2 and a hot order later forces a full reschedule, the started step stays on Mill-2. The preserved routing snapshot still carries the group binding and the base hours, so re-explosion produces the same three candidates from base (no compounding: Mill-2's hours are recomputed as 0.04 x 0.5, never 0.02 x 0.5). Because Mill-2 now has actuals, the resolver matches it among the candidates and keeps the step there. Only not-yet-started group steps re-shop the pool. This is the same actuals-are-immutable contract that governs every EDGEBIC reschedule, covered in the [partial completion reschedule walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic).
+
+## What This Walkthrough Proves
+
+1. **A group is a pool, not a machine.** It carries no capacity and never enters the scheduler's machine list; it explodes into its members at run time.
+2. **The factor scales run time from base, never setup.** Mill-2 at 0.5 halves run hours; Mill-3's setup override is independent of its speed.
+3. **Selection is capacity-aware.** Earliest Completion sends each job to the member that finishes soonest, so the pool self-balances.
+4. **The binding survives.** Every screen shows the resolved machine, but the step keeps its group link so reschedules re-shop.
+5. **Actuals lock a member.** A started group step keeps its machine; only unstarted steps move.
+
+If a group step lands on a machine you did not expect, or does not explode at all, the two most common causes are covered in [a work center group scheduled the wrong machine](/blog/a-work-center-group-scheduled-the-wrong-machine-edgebic) and [a work center group step did not explode](/blog/a-work-center-group-step-did-not-explode-edgebic).
+
+## From One Pool to a Balanced Plant
+
+Groups turn a cluster of interchangeable machines into a self-balancing resource, which is often the fastest capacity win in a shop that pins everything to favorites. For the machine side of that decision, [onboarding a new work center and rebalancing](/blog/onboarding-a-new-work-center-and-rebalancing-edgebic) shows the sibling move of adding capacity. When you want the engine to actively hunt the best plan across a whole schedule, [running the optimizer end to end](/blog/running-the-optimizer-end-to-end-in-edgebic) is the next step up.
+
+User Solutions has scheduled work for the US Navy, GE, BAE Systems, and Cummins since 1991. Bring one machine cluster and [contact us for a demo](/contact-us): we will build your first group with you.
+
+<Accordion title="What is a work center group in EDGEBIC?">
+A work center group is a named pool of interchangeable machines that a routing step can target instead of one specific machine. You route a step to the MILLING group, and at schedule time the engine picks the best member, capacity-aware, by the group's selection strategy. A group has no capacity of its own; it explodes into the member machines at schedule time and the proven alternative-work-center resolver picks the winner on every run.
+</Accordion>
+
+<Accordion title="How does EDGEBIC choose which machine in a group runs a job?">
+By the group's selection strategy. Earliest Completion, the default, picks the member that finishes the operation soonest given both its speed and its current queue, so the fastest free machine wins. Primary First always tries a designated machine and spills only when it is full. Earliest Start picks whichever member can begin first, at day granularity. The engine re-shops the pool on every reschedule, so an unstarted step can move to a different member as capacity changes.
+</Accordion>
+
+<Accordion title="How does the efficiency factor on a group member change the hours?">
+The member efficiency factor multiplies run time only, always from the routing's base hours, never setup. A step with 0.04 hours per unit on a member with factor 0.5 runs at 0.02 hours per unit, so a 100-piece job needs 2.0 run hours instead of 4.0. Setup is a per-changeover cost and is never scaled by the factor; a member can carry its own setup override instead. Because the factor always starts from base hours, it never compounds across reschedules.
+</Accordion>

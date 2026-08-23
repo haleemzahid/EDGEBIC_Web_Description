@@ -35,8 +35,14 @@ const nextConfig = {
         }
       }
     },
-    staticGenerationMaxConcurrency: 4,
-    staticGenerationMinPagesPerWorker: 1
+    staticGenerationMaxConcurrency: 8,
+    // Pages each build worker handles before another is spawned. This was 1,
+    // which spawns a worker per page: fine at ~140 prerendered pages, fatal at
+    // 2,400+. Node on Windows trips a libuv assertion in uv_set_process_title
+    // once enough workers have been created, and the build dies with
+    // 0xC0000409 rather than a readable error. A few hundred pages per worker
+    // keeps the process count small and the build fast.
+    staticGenerationMinPagesPerWorker: 250
   },
   images: {
     remotePatterns: [

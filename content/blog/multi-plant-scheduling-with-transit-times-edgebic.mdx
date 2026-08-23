@@ -1,0 +1,165 @@
+---
+title: "Scheduling Work That Moves Between Plants"
+description: "Multi plant production scheduling transit in EDGEBIC: departments, per-machine calendars and routing transit days schedule work that travels between sites."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - multi plant production scheduling transit
+  - inter plant transit days
+  - outside vendor operation scheduling
+  - working days vs calendar days transit
+  - multi site capacity planning
+  - subcontract operation routing
+targetPhrase: "multi plant production scheduling transit"
+wordCount: 2050
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC need a separate module to schedule across two plants?"
+    answer: "No. Three mechanisms that already exist combine to cover it. Departments group work centers and carry a location that serves as the ship-from address. Each work center carries its own shift calendar and holidays, so each site keeps its own working pattern. And each routing operation can carry transit days, which delay the next operation by the travel time. A second site is a set of work centers in a second department, connected by transit days on the operations that hand off."
+  - question: "Should transit be counted in calendar days or working days?"
+    answer: "Calendar days when the clock runs regardless of your shifts, such as a courier or a vendor's turnaround that includes weekends. Working days when the transit only advances on days your plant actually operates. The difference matters most when the move crosses a weekend: three calendar days from a Thursday lands on Sunday, while three working days from a Thursday lands at the end of the following Tuesday."
+  - question: "Whose calendar does working-day transit count against?"
+    answer: "The sending operation's work center. If the origin plant runs Monday to Friday and the destination runs Monday to Saturday, a working-day transit counts the origin's days. The resulting arrival time can therefore land inside the destination's non-working period, which is harmless: the capacity allocator simply finds the first feasible slot at or after that moment."
+  - question: "What is the difference between transit days, queue time and transfer delay?"
+    answer: "Three different waits for three different physics. Transit days model travel between sites or to a vendor, in calendar or working days. Queue time is a shift-aware buffer that only ticks during working hours, for cooling or drying. Transfer delay is a flat hour count added on top of an overlap window, for material handling like a forklift move. Picking the wrong one gives an answer that is plausible and wrong."
+  - question: "Does the department a work center belongs to change how it is scheduled?"
+    answer: "No. Departments are organizational and reporting structure: they group machines, carry a location and a manager, and roll up capacity figures for reporting. The scheduling engine does not branch on department membership. Capacity, shifts, holidays and instances all live on the work center, which is why a second plant is modeled as its own work centers rather than as a department-level capacity number."
+qaQuestions:
+  - question: "We machine in Houston, heat treat in Monterrey, then inspect back in Houston. How do I model the round trip?"
+    answer: "Put transit days on the two operations that hand off. Set the Houston machining operation's transit to the outbound travel, set the Monterrey heat-treat operation's transit to the return travel, and give each site's machines their own shifts and holidays so the Mexican plant's calendar is respected on its own operations. The engine adds the outbound transit after machining, schedules heat treat on Monterrey capacity, then adds the return transit before inspection can start."
+  - question: "Our outside heat treater takes five working days. Is that different from an inter-plant move?"
+    answer: "Not mechanically. An outside vendor operation is modeled the same way: put the transit days on the operation that goes out, and set working days rather than calendar days if the vendor only moves parts on business days. The one thing to avoid is putting the wait on both the outbound operation and the operation that receives the parts back, which counts it twice and pushes everything downstream a week too far."
+---
+
+**[EDGEBIC by User Solutions](/edgebic) schedules work that moves between sites using three mechanisms that already exist rather than a separate multi-plant module: departments that group machines and carry a location, per-machine calendars that let each site keep its own working pattern, and transit days on the routing operations that hand off.** A second plant is a set of work centers with their own shifts, connected by travel time.
+
+That framing is worth stating plainly, because planners often go looking for a plant-level capacity object. There isn't one, and there is a good reason: capacity belongs to machines, not to buildings.
+
+## The Three Mechanisms
+
+| Mechanism | What it carries | What the scheduler does with it |
+|---|---|---|
+| Department | Grouping, location, manager, status, planner-set capacity figures | Nothing at scheduling time; it is reporting and organizational structure |
+| Work center calendar | Shifts, holidays, downtime, utilization, instance count | Everything: this is where real capacity is computed |
+| Routing transit days | Days of travel after an operation, calendar or working | Delays the next operation's earliest start by that much |
+
+The important line is the first one. A department groups machines, gives them a location that serves as a ship-from address, carries a manager and a status, and rolls up capacity numbers for reporting. The scheduling engine does not branch on department membership at all. That is why moving a machine between departments never changes a schedule, and why department capacity figures are planner-maintained rather than derived. [How to organize departments and plants](/blog/how-to-organize-departments-and-plants-in-edgebic) covers the setup, and [customers and departments explained](/blog/edgebic-customers-and-departments-explained) covers the entity.
+
+Everything the scheduler actually enforces lives on the work center: its shifts, its holidays, how many instances it has, what percentage of shift time it offers. A plant with different working hours is a set of machines attached to that plant's shift records rather than the global ones. [Shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained) covers the per-machine override.
+
+## Transit Days in Two Flavors
+
+Transit days are set on the operation the work leaves from, not on the operation that receives it. They mean "time after this operation before the next one can begin," and they come in two modes.
+
+**Calendar days** add flat days. Thursday at 12:00 plus three calendar days is Sunday at 12:00. The result may land on a weekend or a holiday, which is intentional: the parts are in a truck or at a vendor, and your shift pattern is irrelevant to their journey.
+
+**Working days** advance only on days the sending work center has at least one shift. The returned moment is specifically the end of the last shift on the final counted day, not midnight, so the receiving operation cannot begin before the plant re-opens after the move.
+
+The difference shows up most across weekends:
+
+| Mode | Three days from Thursday 12:00, Monday-Friday plant |
+|---|---|
+| Calendar | Sunday 12:00 |
+| Working | Friday counts as one, Monday as two, Tuesday as three; ends Tuesday at shift close |
+
+For a Monday-to-Friday plant those two often resolve to the same practical start, because the allocator finds Monday morning either way in the calendar case. The gap widens as the transit crosses more weekends. Use calendar days for a clock that runs regardless of your shifts, and working days when the count genuinely advances only on business days.
+
+## The Quirk Worth Knowing
+
+Working-day transit counts against the **sending** operation's work center calendar, not the receiving one.
+
+If the origin plant runs Monday to Friday and the destination runs Monday to Saturday, a working-day transit counts the origin's days. In the reverse case, a five-day working transit out of a six-day plant advances faster than a planner expecting the destination's calendar would predict.
+
+The consequence is mild rather than dangerous. The resolved arrival can land inside the destination's non-working period, and when that happens the capacity allocator simply searches forward from that moment and finds the first feasible slot. Nothing is lost and nothing double-counts; the arrival time is a floor, not a booking.
+
+Where it does matter is estimation accuracy on long inter-plant chains with dissimilar calendars. If the two sites' working patterns differ substantially, calendar days plus a realistic day count is often the more honest model than working days counted against the wrong plant.
+
+## A Round Trip, With Dates
+
+Take a valve body machined in Houston, heat treated in Monterrey, then inspected back in Houston.
+
+| Step | Site | Work | Transit set on this step |
+|---|---|---|---|
+| 10 Mill | Houston | 8 h | 0 |
+| 20 Drill | Houston | 4 h | 2 calendar days, outbound |
+| 30 Heat treat | Monterrey | 2 h | 4 calendar days, return |
+| 40 Inspect | Houston | 1 h | 0 |
+
+The engine places step 10 and step 20 on Houston capacity, adds two days after step 20 finishes, schedules step 30 on Monterrey capacity searching from that moment forward under Monterrey's own shift and holiday calendar, adds four days after step 30, then schedules step 40 on Houston capacity from that arrival.
+
+If Monterrey is closed for a national holiday the day the parts arrive, step 30 slides to the next Monterrey working day and everything downstream shifts with it. That is the correct outcome and it happens without any cross-plant coordination logic: the machines carry their own calendars, so the engine already knows.
+
+An outside vendor is mechanically identical. A five-working-day heat treat at a subcontractor is transit days on the operation that ships out. There is no separate subcontract object to configure.
+
+## Where Transit Sits in the Timing Chain
+
+Every operation's handoff is composed in a fixed order:
+
+1. The operation's own allocation ends.
+2. Queue time is added, counted only during working shifts.
+3. If an overlap model is configured, the overlap result **replaces** everything computed so far and becomes the successor's gate.
+4. Transit days are added on top of whatever stands.
+
+Two consequences follow from that order.
+
+**Transit composes with overlap.** A step that both streams pieces forward and ships to another site gets the overlap window first, then the transit on top. The downstream operation cannot start until the batch is ready *and* has traveled.
+
+**Queue time does not survive an overlap.** If an operation has both a queue buffer and an overlap model, the overlap result discards the queue-adjusted end. Express a wait that must survive as a transfer delay, which is added on top of the overlap, rather than as queue time. [How EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing) traces the whole chain.
+
+## Three Waits, Three Physics
+
+The most common multi-site configuration error is reaching for the wrong wait.
+
+| Use | When | Ticks during |
+|---|---|---|
+| Transit days | Travel to another site or a vendor | Calendar days, or the sending plant's working days |
+| Queue time | Cooling, drying, curing, a rack wait | Working shift hours only |
+| Transfer delay | Forklift move, load and unload after a transfer batch | Flat elapsed hours, including nights and weekends |
+
+Transfer delay in particular is not shift aware. Two hours of transfer delay applied at 15:00 on a Friday resolves to 17:00 on that Friday, past the shift end, even though the physical move will happen Monday. That is correct for a conveyor or robot cycle and wrong for anything that waits for people. Use queue time when the wait genuinely needs a working shift to elapse. [Queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained) covers all three in depth, and [how to set queue, flow and transit times](/blog/how-to-set-queue-flow-and-transit-times-in-edgebic) is the configuration walkthrough.
+
+## Pitfalls Specific to Multi-Site Routings
+
+**Do not double-count a move.** A material step absorbs its transit internally when its dates are built, so the engine deliberately skips the transit calculation for material steps. Setting transit on a material step and again on the operation that receives it pushes downstream work out by twice the move. The same mistake happens between an outbound operation and the operation that receives the parts back: put the transit on the operation the work leaves from, once.
+
+**Do not use transit days for a sub-hour handling lag.** Transit is expressed in days. A forty-five minute move between cells is a transfer delay, or a queue time if it needs a working shift.
+
+**Watch a long transit crossing a plant shutdown.** A calendar-day transit is indifferent to a shutdown at the destination, so the arrival lands during it, and the allocator pushes the receiving operation to the reopening. That is correct behavior, but it means the visible gap on the Gantt is longer than the transit you typed. Read the receiving operation's actual placed start rather than adding the transit in your head.
+
+**Keep departments honest even though the scheduler ignores them.** Department capacity and planned-hours fields are planner-maintained, so an out-of-date department card reports a utilization that no longer reflects the machines under it. It will never affect a schedule, and it will absolutely affect a conversation about where to add capacity.
+
+[Queue and transit mistakes](/blog/queue-and-transit-mistakes-edgebic) lists the symptoms with fixes, and [work center configuration mistakes](/blog/work-center-configuration-mistakes-edgebic) covers the calendar side.
+
+## What This Does and Does Not Give You
+
+Being precise about the boundary is worth more than a longer feature list.
+
+**It gives you:** independent capacity per site because capacity is per machine; independent calendars, holidays, downtime and utilization per site; travel time modeled in the routing where it belongs; outside-vendor operations using the same mechanism; and a location on each department that documents the ship-from address.
+
+**It does not give you:** a plant-level capacity constraint that binds independently of the machines under it, or a currency or time-zone dimension on the department record. Cost roll-ups use the machines' rates, and times are the plant's own working hours as configured on its shifts.
+
+For most multi-site shops that boundary is exactly right, because the questions that actually stop a schedule are "does the Monterrey furnace have room on Thursday" and "when do the parts land," and both are answered by mechanisms that already exist.
+
+## Two Sites, Two Sets of Master Data
+
+One organizational point decides how painful a multi-site setup is to maintain, and it is worth settling before the first routing is built.
+
+Machines, shifts, holidays and downtime are per site by construction, because they live on the work center. Products and routings are not: a routing names machines, so a routing that crosses sites names machines at both. That is what makes an inter-plant routing expressible in the first place, and it also means the routing is the shared artifact both sites depend on.
+
+Two practices follow. Name machines so the site is obvious at a glance, since a routing reading Mill-1, Heat-2, Inspect-1 tells a planner nothing about where the parts are, while HOU-Mill-1 and MTY-Heat-2 tells them everything. And keep the department assignment current on every machine, because although the scheduler ignores it, every capacity conversation and every report grouping depends on it.
+
+If a component is genuinely built at either site depending on load, that is a machine pool rather than two routings: put the equivalent machines from both sites in one pool, set each member's efficiency factor to reflect its real speed, and let the scheduler shop for capacity. Transit still belongs on the operations that hand off, so a routing that lands on the far-site member picks up the travel that member's work requires.
+
+## Checking a Multi-Site Plan
+
+After a run, three checks catch nearly everything.
+
+Confirm the receiving operation's placed start is at or after the sending operation's finish plus the transit, allowing for the allocator moving it forward to a feasible slot. Confirm each site's operations fall inside that site's own shifts rather than the global pattern, which is the fastest way to spot a machine that was never taken off global shifts. And confirm no operation carries transit on both sides of a handoff.
+
+The run log records each transit calculation with its input and result, so a gap that looks wrong can be traced to the exact day count rather than guessed at.
+
+For the full feature map, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

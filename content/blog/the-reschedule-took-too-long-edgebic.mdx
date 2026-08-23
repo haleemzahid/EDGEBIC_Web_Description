@@ -1,0 +1,94 @@
+---
+title: "The Reschedule Took Too Long"
+description: "When a scheduling run drags, the usual levers are the run mode, diagnostic logging left on, and parallel groups searching for a shared window. What to tune first."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - reschedule took too long
+  - scheduling run slow
+  - full reschedule vs incremental
+  - diagnostic logging performance
+  - parallel group search window
+  - speed up scheduling
+targetPhrase: "reschedule took too long"
+wordCount: 1330
+readingTime: 7
+faqQuestions:
+  - question: "Why does a scheduling run take a long time?"
+    answer: "The three usual levers are the run mode, diagnostic logging, and parallel groups. A full reschedule rebuilds every plan; incremental mode only schedules new orders and is much faster when that is all you need. Diagnostic session logging writes a detailed trace on every run and slows the hot path. Parallel groups search for a window where all partner machines are free at once, which is more intensive than a single machine's search."
+  - question: "What is the difference between a full reschedule and an incremental run?"
+    answer: "A full reschedule clears and rebuilds every schedule from scratch, which is the most expensive mode. An incremental run only schedules orders that do not yet have a plan, leaving existing schedules untouched, so it is far faster when you are just adding new work. Reach for a full reschedule when master data changed broadly, and incremental when you only need to place new orders."
+  - question: "Does diagnostic logging slow down scheduling?"
+    answer: "Yes. The session log writes a structured trace to a file on every scheduling run and performs string work on the hot path, which adds time to each run. It is a troubleshooting aid, not a production setting. For routine runs, leave diagnostic logging off, and turn it on only when you are actively tracing why the engine made a particular decision."
+qaQuestions:
+  - question: "Our nightly full reschedule is creeping up toward an hour. We only add a handful of new jobs most days. Can we speed it up?"
+    answer: "Yes, by matching the mode to the work. If most nights only add new orders and the existing plans are fine, run an incremental pass that schedules just the new jobs instead of a full reschedule that rebuilds every plan. That alone usually cuts the time dramatically. Reserve the full reschedule for when master data changed broadly, such as new shifts or a routing overhaul. Also confirm diagnostic logging is off for the nightly run, since the trace it writes adds real time on a large job set."
+  - question: "One reschedule ran far longer than usual and it was all parallel-heavy jobs. Is that related?"
+    answer: "Very likely. Jobs with synchronized parallel machines search for a window where all the partner machines are free at the same time, which is more intensive than placing a single machine, and it searches a tighter window. When many jobs need that shared window and the partners are loaded, the run works harder to find each slot. Reducing the number of parallel groups where you can, or adding instances so a common window appears sooner, shortens the search. The single-machine parts of the run are not the bottleneck; the simultaneous search is."
+---
+
+**A slow scheduling run usually comes down to three levers: the run mode, diagnostic logging left on, and parallel groups searching for a shared window.** Matching the mode to the work, turning off diagnostic logging for routine runs, and easing the load on synchronized parallel groups are the fastest wins. Most long runs shorten sharply once the right lever is found.
+
+[EDGEBIC by User Solutions](/edgebic) can run scheduling in different modes and with optional diagnostics, and the choices there drive most of the run time. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), covers what to tune first when a reschedule drags. For the run itself, see [how to run the scheduler](/blog/how-to-run-the-scheduler-in-edgebic).
+
+## Lever 1: Match the Mode to the Work
+
+The single biggest driver is the run mode. A full reschedule clears every existing plan and rebuilds it from scratch, which is the most expensive thing the engine can do. An incremental run schedules only orders that do not yet have a plan, leaving existing schedules alone.
+
+**When each fits:**
+
+- Use **incremental** when you are just adding new orders and the existing plans are still good. This is far faster because it touches only the new work.
+- Use **full reschedule** when master data changed broadly (new shifts, a routing overhaul, a capacity change) and every plan should be rebuilt against it.
+
+A nightly full reschedule that only ever adds a handful of jobs is the classic case of paying full-rebuild cost for incremental work. Switching those runs to incremental usually cuts the time dramatically.
+
+## Lever 2: Turn Off Diagnostic Logging for Routine Runs
+
+The session log writes a structured, detailed trace of the pipeline on every run and does string work on the hot path. It is invaluable when you are tracing why the engine made a particular decision, and it is dead weight on a routine production run.
+
+**How to tell:** diagnostic logging is enabled, and the slowdown scales with the size of the job set.
+
+**Fix:** leave diagnostic logging off for routine runs, and turn it on only when actively troubleshooting a specific decision. On a large job set, the trace alone can add noticeable time to each run.
+
+## Lever 3: Ease the Load on Parallel Groups
+
+Jobs with synchronized parallel machines are more expensive to schedule than single-machine work, because the engine has to find a window where all the partner machines are free at the same time. That simultaneous search runs a tighter window than a single machine's, and it works harder when the partners are loaded and a common slot is scarce.
+
+**How to tell:** the slow runs are heavy with parallel-group jobs, and the single-machine parts of the run are not the bottleneck.
+
+**Fix:** where the process allows, reduce the number of parallel groups, or add instances to the partner machines so a common free window appears sooner. The more readily a shared slot is found, the less the simultaneous search costs. See [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic) for the group setup.
+
+## A Note on the Search Window
+
+The engine searches forward for capacity, and where a machine has room early, the search exits quickly. A long run is rarely the plain forward search grinding through empty days; when a machine has capacity in the near term, the search stops as soon as it finds a slot. So resist the urge to shrink the search window as a speed fix: the simultaneous parallel search needs its window for correctness, and trimming the single-machine window can cause false capacity failures. The mode, the logging, and the parallel load are the right places to tune.
+
+This is a run-time concern, distinct from [a schedule that runs too far into the future](/blog/my-schedule-runs-too-far-into-the-future-edgebic), which is about where jobs land, not how long the run takes.
+
+## The Order to Tune
+
+1. **Mode.** Are you running a full reschedule when incremental would do? This is the biggest lever.
+2. **Logging.** Is diagnostic logging on for a routine run? Turn it off.
+3. **Parallel load.** Are parallel-group jobs dominating the run? Ease their simultaneous search.
+
+## Prevention
+
+- **Default to incremental.** Make incremental the routine mode and reserve full reschedules for genuine broad changes, so you only pay the rebuild cost when it is warranted.
+- **Keep diagnostics off in production.** Enable session logging deliberately for a troubleshooting session, then disable it again, so routine runs never carry the trace overhead.
+- **Right-size parallel groups.** Use synchronized parallel only where the process truly requires it, and give those groups enough instances that a shared window is easy to find.
+- **Schedule heavy runs off-peak.** When a full reschedule is necessary, run it when the plant and the system are quiet, so its cost does not compete with interactive work.
+
+<Accordion title="Why does a scheduling run take a long time?">
+The three usual levers are the run mode, diagnostic logging, and parallel groups. A full reschedule rebuilds every plan; incremental mode only schedules new orders and is much faster when that is all you need. Diagnostic session logging writes a detailed trace on every run and slows the hot path. Parallel groups search for a window where all partner machines are free at once, which is more intensive than a single machine's search.
+</Accordion>
+
+<Accordion title="What is the difference between a full reschedule and an incremental run?">
+A full reschedule clears and rebuilds every schedule from scratch, which is the most expensive mode. An incremental run only schedules orders that do not yet have a plan, leaving existing schedules untouched, so it is far faster when you are just adding new work. Reach for a full reschedule when master data changed broadly, and incremental when you only need to place new orders.
+</Accordion>
+
+<Accordion title="Does diagnostic logging slow down scheduling?">
+Yes. The session log writes a structured trace to a file on every scheduling run and performs string work on the hot path, which adds time to each run. It is a troubleshooting aid, not a production setting. For routine runs, leave diagnostic logging off, and turn it on only when you are actively tracing why the engine made a particular decision.
+</Accordion>

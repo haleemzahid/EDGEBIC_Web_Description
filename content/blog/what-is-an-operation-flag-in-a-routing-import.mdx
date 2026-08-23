@@ -1,0 +1,95 @@
+---
+title: "What Is an Operation Flag in a Routing Import?"
+description: "The operation flag is the mandatory routing-import column that says whether a row is an operation on a work center or a material line consuming a component. Learn how EDGEBIC uses it."
+published: 2026-08-16T12:00:00.000Z
+modified: 2026-08-16T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - operation flag
+  - Op_Flag routing import
+  - operation vs material row
+  - routing import mandatory column
+  - material line in a routing
+  - BOR import columns
+targetPhrase: "operation flag"
+wordCount: 1160
+readingTime: 6
+faqQuestions:
+  - question: "What is the operation flag in a routing import?"
+    answer: "It is a mandatory column on a bill-of-routing import file that says what kind of row you are loading. True means the row is an operation performed on a work center, so it consumes capacity and takes time. False means the row is a material or component line, so it records what the step consumes rather than work to be scheduled. The same column decides how the neighboring sub-product column is read."
+  - question: "How does the operation flag change the sub-product column?"
+    answer: "It decides what the sub-product column names. On an operation row, true, the sub-product is the work center that performs the step. On a material row, false, it is the component being consumed. One column carries two different meanings and the operation flag is what tells the import which one applies, which is why the flag is mandatory rather than optional."
+  - question: "What happens if the operation flag is wrong on a row?"
+    answer: "The row imports, because the value is valid either way, and the routing is then wrong in a way the file does not reveal. An operation marked false becomes a material line and disappears from the plan, taking its hours and its capacity demand with it. A component marked true becomes an operation on a work center that probably does not exist, which either fails or creates a placeholder station depending on the mask options."
+qaQuestions:
+  - question: "Our imported routing shows fewer operations than the file has rows, and the job schedules much shorter than it should. Where do we look first?"
+    answer: "Check the operation flag column before anything else, because this is its signature failure. Rows marked false are material lines: they are stored, they describe what the step consumes, and they contribute no time and no capacity demand to the plan. A routing whose operation rows were exported with the wrong flag value therefore imports cleanly, shows the right number of total rows in the log, and produces a job with a fraction of the work. Open the BOR Designer and compare the operation nodes against your process; the missing ones are your false rows. A frequent cause is an export where the source column holds text such as Y and N or 1 and 0 that the mask maps but does not interpret the way you assume, so confirm what the cells actually contain rather than what they are labeled. Correct the file and re-import, since a routing import replaces the product's live routing entirely."
+  - question: "We have a step that both runs on a machine and consumes a component. Does that need one row or two?"
+    answer: "Two rows, because the operation flag is a property of the row, not of the step, and a single row can only be one thing. Load the machining work as an operation row with the flag true, naming the work center in the sub-product column and carrying the hours per unit. Load the component as a separate material row with the flag false, naming the component in the sub-product column. Give them sequence numbers that place the material line where it is consumed in the routing. This is the normal shape for a routing that includes purchased or sub-assembled parts, and it keeps the two concerns separate: the operation row is what the scheduler plans against a work center's capacity, and the material row is what the step needs available in order to run. Trying to compress both into one row loses whichever of the two the flag did not select."
+---
+
+**The operation flag is the mandatory routing-import column that says whether a row is an operation performed on a work center or a material line consuming a component.** True means an operation, which takes time and consumes capacity. False means a material or component, which records what the step needs rather than work to be scheduled. It is small, it is required, and getting it wrong produces a routing that imports cleanly and plans incorrectly.
+
+[EDGEBIC by User Solutions](/edgebic) reads it on every row of a bill-of-routing import. This article defines what each value produces and why the flag governs the column beside it. For the row type it selects, see the sibling term [material step in a routing](/blog/what-is-a-material-step-in-a-routing).
+
+## How It Works
+
+A routing file carries two kinds of row that look almost identical in a spreadsheet. One says a work center performs work on the product. The other says the product consumes a component at that point. Both have a sequence number, both name something in the sub-product column, and only the operation flag distinguishes them.
+
+That is why the flag is mandatory rather than optional, and why it governs how its neighbor is read:
+
+- **True, an operation row.** The sub-product column names the **work center** performing the step. The row carries hours per unit and any setup, queue or transit values. The scheduler plans it against that work center's capacity.
+- **False, a material row.** The sub-product column names the **component** being consumed. The row records the material requirement at that point in the routing. It is not scheduled against a work center and contributes no hours.
+
+Both values are legitimate, so a wrong flag never fails the import. The row lands, and the routing is silently different from the one you meant to load.
+
+## A Concrete Example
+
+Think of a recipe card that mixes instructions and ingredients in one column. "Oven, 40 minutes" and "flour, 300g" both occupy a line, and only a small mark in the margin tells you which is a thing to do and which is a thing to have. Lose the marks and the recipe still reads, but the cook either has no ingredients or nothing to do with them.
+
+At Acme Industries the routing file for **Bracket-B** mixes both kinds of row:
+
+| Seq No | Sub-product | Operation flag | What it becomes |
+|---|---|---|---|
+| 10 | Saw-1 | true | operation on the saw, 0.2 h per unit |
+| 15 | Steel-Plate-6mm | false | material line, plate consumed before milling |
+| 20 | CNC-Mill-1 | true | operation on the mill, 0.5 h per unit |
+| 30 | Weld-1 | true | operation on the weld station |
+| 35 | Weld-Wire-A | false | material line, consumable at welding |
+
+Three operations carry the time and the capacity demand; two material lines record what the steps need. Flip the flag on the Weld-1 row and the routing quietly loses a whole station's worth of work while still looking complete.
+
+## How EDGEBIC Uses It
+
+The flag matters most because of what it does to the schedule. Operation rows are the only rows the engine plans against capacity, so the total work in a job is the sum of its operation rows and nothing else. A routing whose operation rows were exported with the wrong value produces a job that schedules short, and the shortfall is invisible in the row counts because the material rows imported perfectly well.
+
+The reverse mistake is louder and therefore easier to catch. A component marked as an operation looks for a work center by that name, and either fails with a message naming it or, if the auto-create option is on, creates a station with no shifts and no capacity. Either outcome shows up quickly.
+
+Because both values are valid, the practical check is visual rather than numeric. After the first import of any routing, open the BOR Designer and compare the operation nodes against how the part is really made. That takes a moment and catches the whole class of problem.
+
+A common source of trouble is what the cell actually contains. Exports frequently hold text such as Y, N, 1 or 0 rather than a plain true or false, so it is worth confirming the real cell values in the source file rather than trusting the column heading. Since a routing import replaces the product's live routing entirely, a corrected file re-imported rebuilds the routing cleanly.
+
+For running the import, see [how to import a routing from Excel](/blog/how-to-import-a-routing-from-excel-in-edgebic), and for what happens during the load see [how EDGEBIC imports routings in two passes](/blog/how-edgebic-imports-routings-in-two-passes). For the chain the rows sit in, see [what is a sequence number in a routing](/blog/what-is-a-sequence-number-in-a-routing). Browse more definitions in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+<Accordion title="What is the operation flag in a routing import?">
+It is a mandatory column on a bill-of-routing import file that says what kind of row you are loading. True means the row is an operation performed on a work center, so it consumes capacity and takes time. False means the row is a material or component line, so it records what the step consumes rather than work to be scheduled. The same column decides how the neighboring sub-product column is read.
+</Accordion>
+
+<Accordion title="How does the operation flag change the sub-product column?">
+It decides what the sub-product column names. On an operation row, true, the sub-product is the work center that performs the step. On a material row, false, it is the component being consumed. One column carries two different meanings and the operation flag is what tells the import which one applies, which is why the flag is mandatory rather than optional.
+</Accordion>
+
+<Accordion title="What happens if the operation flag is wrong on a row?">
+The row imports, because the value is valid either way, and the routing is then wrong in a way the file does not reveal. An operation marked false becomes a material line and disappears from the plan, taking its hours and its capacity demand with it. A component marked true becomes an operation on a work center that probably does not exist, which either fails or creates a placeholder station depending on the mask options.
+</Accordion>
+
+<Accordion title="Our imported routing shows fewer operations than the file has rows, and the job schedules much shorter than it should. Where do we look first?">
+Check the operation flag column before anything else, because this is its signature failure. Rows marked false are material lines: they are stored, they describe what the step consumes, and they contribute no time and no capacity demand to the plan. A routing whose operation rows were exported with the wrong flag value therefore imports cleanly, shows the right number of total rows in the log, and produces a job with a fraction of the work. Open the BOR Designer and compare the operation nodes against your process; the missing ones are your false rows. A frequent cause is an export where the source column holds text such as Y and N or 1 and 0 that the mask maps but does not interpret the way you assume, so confirm what the cells actually contain rather than what they are labeled. Correct the file and re-import, since a routing import replaces the product's live routing entirely.
+</Accordion>
+
+<Accordion title="We have a step that both runs on a machine and consumes a component. Does that need one row or two?">
+Two rows, because the operation flag is a property of the row, not of the step, and a single row can only be one thing. Load the machining work as an operation row with the flag true, naming the work center in the sub-product column and carrying the hours per unit. Load the component as a separate material row with the flag false, naming the component in the sub-product column. Give them sequence numbers that place the material line where it is consumed in the routing. This is the normal shape for a routing that includes purchased or sub-assembled parts, and it keeps the two concerns separate: the operation row is what the scheduler plans against a work center's capacity, and the material row is what the step needs available in order to run. Trying to compress both into one row loses whichever of the two the flag did not select.
+</Accordion>

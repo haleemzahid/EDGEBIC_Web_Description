@@ -1,0 +1,98 @@
+---
+title: "Migrating From Microsoft Project to EDGEBIC"
+description: "Project plans and production schedules answer different questions. Here is what maps across cleanly, the duplication you get to collapse, and how to reshape exported tasks into routings and orders."
+published: 2026-08-13T12:00:00.000Z
+modified: 2026-08-13T12:00:00.000Z
+category: Upgrade & Comparison
+author: user-solutions
+cluster: edgebic-migration
+pillarSlug: edgebic-migration-guide
+keywords:
+  - migrating from Microsoft Project to EDGEBIC
+  - project plan to production schedule
+  - tasks to routing steps
+  - one plan per job problem
+  - finite capacity versus project scheduling
+  - reshaping exported tasks
+targetPhrase: "migrating from Microsoft Project to EDGEBIC"
+wordCount: 1470
+readingTime: 8
+faqQuestions:
+  - question: "Why do shops outgrow Microsoft Project for production scheduling?"
+    answer: "Because a project scheduler is built for a task network that runs once, while a shop runs the same routing repeatedly against machines with finite daily capacity. In practice that shows up as duplication: each job becomes its own plan file with the task list copied, so a routing change means editing every open plan. It also shows up as capacity. EDGEBIC by User Solutions computes available hours per work center from shift hours, holidays and downtime, the number of identical instances, and what is already allocated, then refuses to plan beyond it. That is the question a project plan is not shaped to answer."
+  - question: "What maps cleanly from Microsoft Project to EDGEBIC?"
+    answer: "More than you would expect, because the underlying ideas line up. Tasks become routing steps, predecessor links become the step sequence, resources become work centers, task durations become setup and run hours, project calendars become shifts and plant holidays, and each plan file becomes one manufacturing order. What does not map is the file-per-job structure itself, since routings live once on the product in EDGEBIC and every order references the product rather than carrying its own copy of the steps."
+  - question: "How do I get Microsoft Project data into EDGEBIC?"
+    answer: "Through Excel, in two stages. Export the task data to a spreadsheet, then reshape it: one sheet of unique products, one sheet of routing steps grouped by end product, one sheet of open jobs, and one sheet of resources to load as work centers. Those map onto the Product, BOR, SalesOrder and Workcenter import masks. The reshaping is the real work and it is mostly de-duplication, because the same routing appears in every plan file that used it. Keep all steps for one end product in a single file, since a re-import replaces that product's routing per run."
+qaQuestions:
+  - question: "We have about sixty open plan files, one per job, and they all share maybe eight routings. What does the migration look like?"
+    answer: "It looks like collapsing sixty task lists into eight routings and sixty orders, and that collapse is the whole benefit rather than a chore. Start by exporting all sixty to Excel and sorting by task name and resource, which makes the repetition obvious: the same five or six step patterns appear again and again with different durations only where quantity differs. Identify the distinct routings, and for each one decide the per-unit hours rather than the per-job hours, since routing steps carry hours that scale with order quantity. Load the eight routings once through the BOR mask, load the products, then load the sixty jobs through the SalesOrder mask as product, quantity and date. Schedule, and compare the result against your current plan files. From then on a routing change is one edit rather than sixty, and a new job is one row rather than a new file, which is the maintenance difference people notice within the first fortnight."
+  - question: "Our project plans are leveled against resources already. Is that not the same as finite capacity scheduling?"
+    answer: "It is related but not the same, and the differences are the ones that bite in a shop. Three matter most. Machine instances: a work center in EDGEBIC can hold several identical units, so three mills means three jobs run in parallel and the daily hours roughly triple, computed rather than modeled by hand. Shift structure: capacity comes from shifts with per-weekday hours plus plant holidays and downtime, so a plan respects the working pattern rather than a generic calendar. And behavior flags that have no project equivalent, such as marking a machine one-job-per-day for a furnace where a changeover consumes the day, or flagging the constraint machine so the plan is built around it. Leveling spreads work to fit resources; finite capacity scheduling refuses to promise hours the plant does not have, then tells you which machine caused the date."
+---
+
+**Migrating from Microsoft Project to EDGEBIC is mostly an act of de-duplication: many plan files collapse into a few routings plus one order per job.** In EDGEBIC by User Solutions a routing lives once on the product, and every manufacturing order references it, so the file-per-job structure that project scheduling encourages disappears. The concepts map across more cleanly than people expect, and the reshaping happens in Excel before anything is imported.
+
+## Two tools, two questions
+
+A project scheduler answers "given this network of tasks and these dependencies, when does the work finish?" That is the right question for work that happens once, such as a construction phase or a new product introduction.
+
+A production scheduler answers a different question: "given these machines, these shifts, and everything already committed, when can this order run?" The difference is finite capacity. Available hours are computed from shift hours, minus holidays and downtime, times the number of identical machine instances, minus what is already allocated, and the plan does not exceed them.
+
+Shops usually notice the gap in one of two ways. Either a routing change means editing every open plan file, or the plan promises hours the plant does not have because two jobs were leveled in separate files that never saw each other.
+
+## What maps across
+
+| In your plan files | In EDGEBIC |
+| --- | --- |
+| Task | Routing step on the product |
+| Predecessor link | Step sequence, chained in order |
+| Resource | Work center |
+| Task duration | Setup hours plus run hours per unit |
+| Project calendar | Shifts with per-weekday hours, plus plant holidays |
+| One plan file | One manufacturing order referencing the product |
+| Copied task list | Nothing, the routing is stored once |
+
+The last two rows are the migration. Everything else is a column mapping.
+
+## The reshaping in Excel
+
+Export the task data to a spreadsheet and build four sheets from it. These correspond to four of the eight import masks.
+
+**1. Products.** The distinct end items your plans produce. One row each.
+
+**2. Routing steps, grouped by end product.** This is where the de-duplication happens. Sort the exported tasks by name and resource and the repetition becomes obvious: the same handful of step patterns recurring with different durations. Identify the distinct routings and write each one once.
+
+The important conversion here is hours. A plan file holds the duration for that job's quantity; a routing step holds hours that scale with order quantity, plus a setup time that does not. Divide deliberately rather than copying the totals, and if your source data is in minutes, the import mask has a conversion factor field so you do not have to convert the file by hand.
+
+**3. Open jobs.** One row per plan file: product, quantity, and date. Job number, customer, due date and priority are available too.
+
+**4. Resources as work centers.** Name and identifier, plus the capacity settings a plan file has no place for: how many identical instances the work center holds, and the behavior flags covered in [migrating capacity and utilization settings](/blog/migrating-capacity-and-utilization-settings-to-edgebic).
+
+One import rule to respect while preparing sheet two: all steps for a single end product must arrive in one file, because a re-import replaces that product's routing entirely per run. Group the export by end product and confirm each appears exactly once.
+
+## What has no project equivalent
+
+Three things you gain are worth configuring deliberately rather than looking for a source column to map.
+
+**Machine instances.** A work center can hold several identical units. Three mills means three jobs in parallel and roughly triple the daily hours, computed by the engine rather than modeled by hand as three separate resources.
+
+**One-job-per-day behavior.** For a furnace or an oven where a changeover consumes the day, a work center can be told to take one job per instance per day rather than backfilling the remaining hours. There is no natural way to express that in a task network.
+
+**The constraint machine.** Flagging the bottleneck lets the plan be built around the machine that actually governs your output, rather than treating every resource as equally interesting.
+
+Sequence-dependent changeover, machine pools and operator certifications are further layers, and all of them are deliberately post-cutover work as described in [what EDGEBIC cannot import](/blog/what-edgebic-cannot-import-and-how-to-handle-it).
+
+## What you deliberately leave behind
+
+Do not try to carry across your current computed dates. The new plan is produced by scheduling your migrated inputs against real capacity, which is the point of the move, so validation compares the two plans rather than copying one into the other. The same applies to task-level percent-complete estimates: recorded work in EDGEBIC is hours and pieces per operation per day, so open jobs come across through the Actuals mask as described in [migrating open jobs and actuals](/blog/migrating-open-jobs-and-actuals-to-edgebic).
+
+You also leave behind the plan files themselves. Keep them read-only for history, and resist maintaining them in parallel, which doubles the work and guarantees drift.
+
+## Validate on load, then on dates
+
+Once the four sheets are in, schedule a set of jobs you know well and check the work center load before you check any date. A machine showing impossible hours usually means an instance count defaulted to one, or per-job durations were imported as per-unit hours. Both are visible in load immediately and invisible in a date until much later. The discipline is the same one in [validating a migrated schedule](/blog/validating-a-migrated-schedule-against-rmdb).
+
+## The takeaway
+
+Migrating from Microsoft Project to EDGEBIC means exporting your task data to Excel and reshaping it into products, routings grouped by end product, open jobs and work centers, which collapses one-plan-file-per-job into one routing per product plus one order per job. Convert durations into setup plus per-unit hours, add the capacity settings a project plan has no field for, leave your old computed dates behind, and check load before dates. See the platform on the [EDGEBIC overview](/edgebic), the upgrade path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and pair this with [migrating from a spreadsheet scheduler](/blog/migrating-from-a-spreadsheet-scheduler-to-edgebic) and [the order to import your data into EDGEBIC](/blog/the-order-to-import-your-data-into-edgebic).

@@ -1,0 +1,94 @@
+---
+title: "My Transfer Batch Is Larger Than the Order Quantity"
+description: "When a transfer batch bigger than the order quantity produces no operation overlap, the engine capped it to the whole order, so there is no partial batch to hand off early. How to size it right."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - transfer batch larger than order quantity
+  - transfer batch capped to order
+  - lot streaming no overlap
+  - transfer batch size too large
+  - piece-count lot streaming
+  - overlapping operations
+targetPhrase: "transfer batch is larger than the order quantity"
+wordCount: 1180
+readingTime: 6
+faqQuestions:
+  - question: "Why did a transfer batch larger than the order quantity produce no overlap?"
+    answer: "Because the engine caps the transfer batch at the order quantity, so a batch bigger than the whole order becomes the whole order, and one batch that equals the entire order cannot be handed off before the operation finishes. Lot streaming overlaps operations by passing a partial batch downstream while the upstream step keeps working; if the batch is the full order, there is no partial to pass early, and the downstream step waits for the complete quantity. Set the transfer batch below the order quantity so a partial batch exists to move ahead."
+  - question: "Does setting a very large transfer batch cause an error?"
+    answer: "No, it does not error; it silently caps to the order quantity. The engine uses the smaller of the transfer batch and the order quantity when it sizes the first hand-off, so a transfer batch of two thousand on an order of five hundred is treated as five hundred. The setting is accepted, but the effect is the same as no lot streaming at all, because a single full-order batch offers nothing to overlap. This is worth flagging in the anomaly report so the intent is confirmed rather than assumed."
+  - question: "What transfer batch size actually creates overlap?"
+    answer: "Any transfer batch smaller than the order quantity creates overlap, and smaller batches create more of it. If an order is five hundred pieces and you set a transfer batch of one hundred, the downstream step can start once the first hundred are ready rather than waiting for all five hundred. The trade-off is more hand-offs and more setup exposure downstream, so choose a batch small enough to overlap meaningfully but large enough to keep hand-offs manageable."
+qaQuestions:
+  - question: "I set a transfer batch of one thousand to be safe, on an order of three hundred, and the two operations still run back to back with no overlap. Why?"
+    answer: "The transfer batch was capped to three hundred, the order quantity, so it became one batch equal to the whole order, and a single full-order batch cannot be passed downstream early. Lot streaming works by moving a partial quantity ahead while the upstream step continues; with only one batch there is no partial, so the downstream step waits for the complete order and the operations run back to back. Set the transfer batch below three hundred, for example one hundred, so the first hundred pieces can move to the next step while the upstream finishes the rest."
+  - question: "How do I pick a transfer batch that overlaps without creating a mess of hand-offs?"
+    answer: "Start from the order quantity and pick a batch that divides it into a handful of hand-offs, not dozens. On a five-hundred-piece order, a transfer batch of one hundred gives five hand-offs and real overlap; a batch of ten gives fifty hand-offs and more downstream setup exposure than the overlap is worth. The batch must be smaller than the order to overlap at all, and moderate enough that the number of hand-offs stays practical for the floor. Confirm the resulting overlap on the Gantt after a run."
+---
+
+**When a transfer batch larger than the order quantity produces no overlap, the engine capped the batch at the order quantity, turning it into a single full-order batch, and one batch that equals the whole order has no partial to hand off before the operation finishes.** [EDGEBIC by User Solutions](/edgebic) sizes the first hand-off from the smaller of the transfer batch and the order quantity, so a transfer batch bigger than the order behaves exactly like no lot streaming at all.
+
+This post covers the oversized-batch symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It is a close cousin of [my transfer batch size was ignored](/blog/my-transfer-batch-size-was-ignored-edgebic) and [lot streaming did not overlap my operations](/blog/lot-streaming-did-not-overlap-my-operations-edgebic). For why overlap matters at all, see [how overlapping operations shorten delivery](/blog/how-overlapping-operations-shorten-delivery).
+
+## What You Are Seeing
+
+You set a transfer batch to enable overlap between two operations, but the downstream step still waits for the upstream step to finish completely. The operations run back to back on the Gantt, with no overlap, and the transfer batch you entered is larger than the order quantity for the job.
+
+## Why It Happens
+
+### Cause 1: The Batch Was Capped to the Order Quantity (the Rule)
+
+The engine uses the smaller of the transfer batch and the order quantity when it sizes the first hand-off. A transfer batch of one thousand on an order of five hundred becomes five hundred, which is the whole order. A single full-order batch cannot move downstream early, because there is no partial quantity to pass while the upstream step keeps working.
+
+**How to tell:** the transfer batch you entered is greater than or equal to the order quantity.
+
+### Cause 2: The Order Is Small
+
+Even a modest transfer batch can exceed a small order. A batch that overlaps a five-hundred-piece order fine offers nothing on a fifty-piece order if the batch is above fifty. The cap is relative to each order's quantity.
+
+**How to tell:** the same batch overlaps larger orders but not this small one.
+
+### Cause 3: You Expected the Batch to Add Capacity
+
+A transfer batch controls overlap, not throughput. Sizing it large does not push more work through; it just removes the overlap by collapsing to one batch. If the goal was speed, overlap comes from a smaller batch, not a larger one.
+
+**How to tell:** the intent was to go faster by making the batch big.
+
+## How to Fix It
+
+- **Set the transfer batch below the order quantity.** A partial batch must exist for the downstream step to start early.
+- **Size it to a handful of hand-offs.** On a five-hundred-piece order, a batch of one hundred gives five hand-offs and real overlap.
+- **Account for small orders.** A batch that overlaps large orders may exceed a small one, so review the batch against each order's quantity.
+- **Confirm the overlap on the Gantt** after a run, rather than assuming the setting took effect.
+
+## How to Diagnose It, in Order
+
+1. **Compare the transfer batch to the order quantity.** Batch greater than or equal to order means no overlap by rule.
+2. **Lower the batch below the order quantity** and re-run.
+3. **Read the Gantt** for overlap between the two operations.
+4. **Check whether the order is unusually small,** which caps even a moderate batch.
+5. **Run the anomaly report,** which flags a transfer batch larger than the order quantity so the intent is confirmed.
+
+## How to Prevent It
+
+- **Always size the transfer batch below the order quantity,** since a full-order batch cannot overlap.
+- **Pick a batch that yields a practical number of hand-offs,** not dozens, so downstream setup exposure stays reasonable.
+- **Review batch sizing when orders are small,** where a standard batch can exceed the quantity.
+- **Verify overlap on the Gantt after any lot-streaming change,** because the setting is accepted even when it produces no effect. For the difference between piece-count batches and a flow-time overlap, see [lot streaming did not overlap my operations](/blog/lot-streaming-did-not-overlap-my-operations-edgebic).
+
+<Accordion title="Why did a transfer batch larger than the order quantity produce no overlap?">
+Because the engine caps the transfer batch at the order quantity, so a batch bigger than the whole order becomes the whole order, and one batch that equals the entire order cannot be handed off before the operation finishes. Lot streaming overlaps operations by passing a partial batch downstream while the upstream step keeps working; if the batch is the full order, there is no partial to pass early, and the downstream step waits for the complete quantity. Set the transfer batch below the order quantity so a partial batch exists to move ahead.
+</Accordion>
+
+<Accordion title="Does setting a very large transfer batch cause an error?">
+No, it does not error; it silently caps to the order quantity. The engine uses the smaller of the transfer batch and the order quantity when it sizes the first hand-off, so a transfer batch of two thousand on an order of five hundred is treated as five hundred. The setting is accepted, but the effect is the same as no lot streaming at all, because a single full-order batch offers nothing to overlap. This is worth flagging in the anomaly report so the intent is confirmed rather than assumed.
+</Accordion>
+
+<Accordion title="What transfer batch size actually creates overlap?">
+Any transfer batch smaller than the order quantity creates overlap, and smaller batches create more of it. If an order is five hundred pieces and you set a transfer batch of one hundred, the downstream step can start once the first hundred are ready rather than waiting for all five hundred. The trade-off is more hand-offs and more setup exposure downstream, so choose a batch small enough to overlap meaningfully but large enough to keep hand-offs manageable.
+</Accordion>

@@ -1,0 +1,108 @@
+---
+title: "Actual Dates Look Wrong: Tracing What the Shop Floor Really Reported"
+description: "Actual dates wrong in production tracking? Auto-filled steps, end-of-day stamps, and mirrored parallel dates explain most cases. Trace each to its source."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - actual dates wrong production tracking
+  - actual start end dates incorrect
+  - shop floor data accuracy
+  - production actuals troubleshooting
+  - kiosk time logging errors
+  - actual vs planned dates manufacturing
+targetPhrase: "actual dates wrong production tracking"
+wordCount: 1380
+readingTime: 7
+faqQuestions:
+  - question: "Why do my actual production dates look wrong?"
+    answer: "Suspicious actual dates usually come from one of four sources: a prior step's actuals were auto-filled from the plan when a later step was logged first, an end-of-day completion stamp placed the finish at 23:59, a parallel operation's dates were mirrored from its primary rather than logged directly, or the operator simply logged against the wrong job or step. Each source leaves a visible marker you can check."
+  - question: "Can a reschedule change my actual dates?"
+    answer: "No. Actual dates are immutable under rescheduling: a reschedule replaces the future plan and preserves all history, including actual starts, actual ends, and logged daily hours. If an actual date appears to have changed after a reschedule, open the audit trail; what actually moved was a planned date, a display window, or a different row of the same operation."
+  - question: "Why does an actual end date show 11:59 PM?"
+    answer: "An end-of-day timestamp is the completion stamp working as designed. When an operation is marked complete without an explicit finish time, the system stamps the end at the close of the last day that has hours logged. This guarantees the end never lands before the start on a same-day partial, at the cost of a precise-looking 23:59 that really means end of that working day."
+  - question: "What does an auto-filled badge on an actuals entry mean?"
+    answer: "It means the system filled that step's actual dates from the plan, with the planner's acknowledgment, because a later step was being logged while the prior step had no actuals. The badge marks the values as derived rather than reported, so anyone auditing knows the floor never typed them. The badge disappears once someone edits the entry with real values."
+qaQuestions:
+  - question: "Step 2 shows actuals but the operator swears nobody logged step 2. Who wrote them?"
+    answer: "The system did, and it left a marker. EDGEBIC validates that prior steps have actuals before allowing a downstream step to be logged; when the floor logs step 3 while step 2 is empty, the planner is prompted, and on acknowledgment step 2 is back-filled from its planned dates with the source recorded as auto-filled from plan. The Log Actuals grid shows an auto-filled badge on exactly these entries. If the planned dates the back-fill used were far from reality, edit the entry with the real times; the badge clears and downstream calculations follow the correction."
+  - question: "Two welders ran a synchronized parallel step, but both machines show identical actual dates and we only logged one. Is the data corrupted?"
+    answer: "No, that is the parallel mirror working. A step configured with a synchronized parallel work center produces two schedule rows, and shop-floor actuals are logged once, against the primary. The partner row's dates are copied from the primary one-to-one at log time, with hours scaled by the partner's configured factor. Since the machines are physically synchronized (same start, same end by definition of the mode), mirrored dates are the honest record. Correct the primary if the times are wrong; the mirror follows."
+---
+
+**When actual dates look wrong, the first question is not "what broke" but "who wrote this value": in a well-run tracking system every actual date has one of four origins (direct logging, plan-based auto-fill, an end-of-day completion stamp, or a parallel mirror), and each origin leaves a marker you can trace in minutes.** Most "wrong" actuals turn out to be derived values doing their documented job; the rest are wrong at the source, and the trace tells you exactly where to correct them.
+
+Actuals matter more than any other data in [EDGEBIC by User Solutions](/edgebic), because every reschedule resumes from the position your actuals describe. Wrong actuals mean the whole forward plan stands on fiction. This guide, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), walks through each origin, its telltale marker, and its fix.
+
+## First Principle: Actuals Never Move on Their Own
+
+Before hunting causes, rule out the impossible one. A reschedule replaces the future plan and preserves all history: actual starts, actual ends, logged daily hours and pieces, and completed rows are untouched by every reschedule mode. EDGEBIC additionally validates on every write path that an actual end can never land before its actual start, so inverted date pairs are rejected at entry.
+
+If an actual date "changed," open the Job Audit trail. Every reschedule and every manual edit is an event with old and new values side by side. What usually changed is a planned date sitting next to the actual in the grid, or the schedule window of an in-progress operation extending to cover its re-planned remainder. A job summary date that disagrees with the job's own earliest and latest operations is a different problem with its own repair, covered in [a job header date that does not match its operations](/blog/a-job-header-date-does-not-match-its-operations-edgebic). The audit trail settles it in thirty seconds; the same discipline covered in [why a job jumps after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic) applies here.
+
+## Origin 1: Auto-Filled From Plan (the Step Nobody Logged)
+
+The floor logs step 3; step 2 has no actuals. EDGEBIC will not silently accept the gap, because a downstream actual with an empty upstream makes the job's history incoherent. Instead it prompts the planner, and on acknowledgment back-fills the prior step's actuals from its planned dates, recording the source as auto-filled from plan.
+
+**The marker:** an auto-filled badge on the entry in the Log Actuals grid. The badge means "derived, not reported" and disappears live once someone edits the entry with real values.
+
+**When it looks wrong:** the planned dates used for the back-fill can differ from what actually happened, especially if the plan was stale. A back-filled step showing a start the operators know is off by a shift is the classic case.
+
+**The fix:** edit the entry with the real times. You are not fighting the system; the back-fill exists precisely so the gap is visible and correctable rather than silent.
+
+## Origin 2: The End-of-Day Completion Stamp
+
+An operator logs 3 hours in the morning and taps Mark Complete at 11:30 without entering a finish time. What end should the system record? Stamping "now" would work here, but a completion recorded after the fact (say, marking yesterday's work complete this morning) would produce an end before the start. The rule EDGEBIC applies: with no explicit end, the actual end snaps to the very end of the last day that has hours logged.
+
+**The marker:** an actual end at 23:59 on the last logged day.
+
+**When it looks wrong:** the timestamp reads oddly precise. It is not claiming the crew worked until midnight; it means "complete as of the end of that working day," and it guarantees the end can never precede the start on a same-day partial.
+
+**The fix:** none needed for scheduling purposes; downstream steps queue behind real logged hours. If your reporting needs a precise finish time, enter it explicitly when marking complete.
+
+## Origin 3: The Parallel Mirror
+
+A step configured with a synchronized parallel work center runs on two machines at once, and the mode's contract is exact: same start, same end on both. Actuals are logged once, against the primary; the partner row receives the same dates one-to-one, with hours scaled by its configured factor. Nobody logs the mirror directly, by design.
+
+**The marker:** two rows with identical actual dates where only one was logged, on a step whose routing shows a synchronized parallel partner.
+
+**When it looks wrong:** identical timestamps across machines can read as copy-paste corruption to someone who does not know the mode. It is the honest record of physically synchronized work.
+
+**The fix:** if the times are wrong, correct the primary; the mirror follows.
+
+## Origin 4: Plain Mis-Logging
+
+The residue after the three derived origins: the operator logged the right hours against the wrong job, the wrong step, or the wrong day. No badge marks these, because from the system's point of view they are legitimate entries.
+
+**How to find them:** cross-check the suspicious entry against its neighbors. Hours on a step whose machine was down that day, a completed step 3 while steps 1 and 2 sit empty on a routing with no parallel branches, or a job showing actuals dated before its release are all shapes worth questioning. EDGEBIC's anomaly report catches the structural ones (inverted pairs, bookings on holiday dates, material-only steps carrying hours); the purely human swaps need a human eye plus the audit trail, which records who logged what and when.
+
+**The fix:** correct the entry in the Job View or the kiosk, then reschedule so the plan re-anchors to the corrected reality. Log first, reschedule second.
+
+## The Trace, End to End
+
+1. **Check for the badge.** Auto-filled means derived from plan; edit with real values if reality differed.
+2. **Check the timestamp shape.** An end at 23:59 is the completion stamp, not a night shift.
+3. **Check the routing for a parallel partner.** Mirrored dates are logged once, applied twice.
+4. **Check the audit trail.** Who wrote the value, and when, with old and new side by side.
+5. **Run the anomaly report.** Structural impossibilities surface with detail attached.
+
+A tracking system earns trust the same way a schedule does: by making every value explainable. Once your team knows the four origins, "the actuals look wrong" conversations get shorter, and the reschedules built on those actuals get more honest. That trust also compounds when actuals flow onward: if you [export schedule and completion dates back to your ERP](/edgebic-erp-integration), the same four origins explain every value your ERP receives. For the fundamentals of why accurate inputs decide schedule quality, see [what production scheduling is](/blog/what-is-production-scheduling), and for a full recovery scenario where fresh actuals drive the re-plan, the [machine breakdown walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic) shows the whole loop.
+
+<Accordion title="Why do my actual production dates look wrong?">
+Suspicious actual dates usually come from one of four sources: a prior step's actuals were auto-filled from the plan when a later step was logged first, an end-of-day completion stamp placed the finish at 23:59, a parallel operation's dates were mirrored from its primary rather than logged directly, or the operator simply logged against the wrong job or step. Each source leaves a visible marker you can check.
+</Accordion>
+
+<Accordion title="Can a reschedule change my actual dates?">
+No. Actual dates are immutable under rescheduling: a reschedule replaces the future plan and preserves all history, including actual starts, actual ends, and logged daily hours. If an actual date appears to have changed after a reschedule, open the audit trail; what actually moved was a planned date, a display window, or a different row of the same operation.
+</Accordion>
+
+<Accordion title="Why does an actual end date show 11:59 PM?">
+An end-of-day timestamp is the completion stamp working as designed. When an operation is marked complete without an explicit finish time, the system stamps the end at the close of the last day that has hours logged. This guarantees the end never lands before the start on a same-day partial, at the cost of a precise-looking 23:59 that really means end of that working day.
+</Accordion>
+
+<Accordion title="What does an auto-filled badge on an actuals entry mean?">
+It means the system filled that step's actual dates from the plan, with the planner's acknowledgment, because a later step was being logged while the prior step had no actuals. The badge marks the values as derived rather than reported, so anyone auditing knows the floor never typed them. The badge disappears once someone edits the entry with real values.
+</Accordion>

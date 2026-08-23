@@ -1,0 +1,82 @@
+---
+title: "My Mask Re-Run Made No Changes: Why Updates Did Not Land"
+description: "Re-importing a file and seeing nothing change usually means the rows reconciled as reused, or the update cells you counted on were blank. How to tell which and fix it."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-06T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - import made no changes
+  - mask rerun no update
+  - import reused rows
+  - blank cell preserved update
+  - import reconcile behavior
+  - import mask troubleshooting
+targetPhrase: "mask re-run made no changes"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "Why did re-running my import mask change nothing?"
+    answer: "Because the run reconciled the rows and found nothing genuinely different to write. An import matches each incoming row to an existing record and only updates fields that differ, so a file identical to the database imports as reused with no change. The other common cause is that the cells you expected to update were blank, and blank cells are preserved on an update rather than overwriting. Confirm the file actually differs from the current data and that your update columns hold values."
+  - question: "Does a re-import overwrite existing records or skip them?"
+    answer: "It updates the fields that differ and leaves the rest alone. A re-import is a reconcile, not a wipe: each row is matched to its existing record and only changed values are written, which is why re-running the same file is safe and does not duplicate. The catch is that a blank cell on an update is treated as no value, so it preserves the current database value instead of clearing it. To clear a field you need the source to carry an explicit zero or empty marker the mask maps."
+  - question: "Why did a blank cell not clear the old value on re-import?"
+    answer: "Because blank cells are preserved on an update by design, so an empty cell keeps whatever the database already holds rather than overwriting it with nothing. This protects you from a partial file wiping fields it simply did not include. If you genuinely need to clear a value, put an explicit zero (for a number) or the intended empty value in the cell so the mask writes it, rather than leaving the cell blank and expecting the old value to disappear."
+qaQuestions:
+  - question: "We updated fifty prices in the spreadsheet and re-imported, but the result said fifty reused and zero updated. The prices in the app are still old. What happened?"
+    answer: "The most likely cause is that the price column is not mapped to the field you think, so the run compared the right-looking file against the field it actually maps and found no difference in that field. The second possibility is that you re-imported the old copy of the file, not the edited one. Confirm the mask maps the price column to the price field, save and re-open the edited file to be sure it holds the new numbers, and re-run. One product's before-and-after check tells you which of the two it is."
+  - question: "Our routing re-import reported all rows reused and none updated, even though we changed a setup time. Why no update?"
+    answer: "Check whether the changed value actually differs once units are considered. If the file holds minutes and the mask applies a conversion factor, a setup that reads 30 in both the old and new file converts to the same hours and reconciles as no change. Also confirm you edited the sheet the mask reads and saved it. If the value truly differs and the column is mapped correctly, the run will report an update; a reused count means the compared field matched what is already stored."
+---
+
+**A mask re-run that reports everything reused and nothing changed is usually correct behavior, not a failure: the import reconciles each row against its existing record and only writes fields that genuinely differ, so an identical file changes nothing.** [EDGEBIC by User Solutions](/edgebic) imports through configurable masks that match, compare, and update rather than blindly overwrite, which is exactly what makes a re-run safe and also what makes an expected update quietly not land.
+
+This post sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and is the reconcile-behavior companion to [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic) and [import masks explained](/blog/edgebic-import-masks-explained).
+
+## What You Are Seeing
+
+You edited a file, re-imported it, and the result summary shows a stack of reused rows with zero (or far fewer than expected) updates. The data in the app still reads the old values. Nothing failed, nothing aborted, and the log does not name a problem row. The run did work; it just decided there was nothing to write. That decision is the thing to understand.
+
+## Why It Happens
+
+An import is a reconcile. For each incoming row it finds the matching record, compares field by field, and writes only what differs. Three situations produce "no change" honestly:
+
+- **The file matches the database.** If the values you re-imported equal what is already stored, every row reconciles as reused. This is the safe, expected outcome of re-running an unchanged file.
+- **A blank cell on an update is preserved.** An empty cell is treated as "no value supplied," so it keeps the current database value rather than overwriting it with nothing. A file with your changes in some columns and blanks in others updates only the filled columns.
+- **The column is not mapped to the field you think.** If the mask maps your edited column to a different field, the run compares the field it actually maps (unchanged) and reports no update, even though the file looks right.
+
+A fourth, subtler case: **units cancel the difference.** If the mask applies a conversion factor and both the old and new cells convert to the same stored value, the comparison sees no change.
+
+## How to Fix It
+
+Work from the outside in: confirm the file, then the mapping, then the values.
+
+1. **Confirm you re-imported the edited file.** Re-open the saved file and verify it holds the new values on the sheet the mask reads. Re-importing an earlier copy is the most common cause of "nothing changed."
+2. **Check the column-to-field mapping.** Open the mask and confirm the edited column maps to the field you intend to update. A column mapped one position off, or to a similarly named field, compares the wrong thing.
+3. **Verify the values genuinely differ.** Pick one record, read its current value in the app, and compare against the file cell after any conversion factor. If they are equal, there is nothing to update.
+4. **To clear a field, supply an explicit value.** A blank cell is preserved. Put a zero (for a number) or the intended empty value in the cell so the mask writes it.
+5. **Re-run and read the summary.** After correcting the mapping or the file, the summary should now show updates. A one-record spot check confirms the change landed.
+
+## How to Prevent It
+
+- **Edit and re-import the same file object.** Save the edited workbook and re-open it before importing, so you never load a stale copy.
+- **Treat blank as "keep," not "clear."** Design your update files knowing that empty cells preserve existing values. If a field must be cleared, carry an explicit value for it.
+- **Name the mask's mapping intent.** A mask whose field mappings are documented (which column feeds which field) makes an off-by-one mapping visible before it costs a silent run.
+- **Spot-check one record after every update load.** Reading a single before-and-after value turns "the run did nothing" into an immediate, obvious diagnosis.
+- **Watch for units that cancel.** If a column carries a conversion factor, remember the stored value is scaled; compare against the scaled result, not the raw cell.
+
+If instead the run reported failed rows, that is a different symptom covered in [the import said failed rows](/blog/the-import-said-failed-rows-edgebic). If updates landed but created extra records, see [an import created duplicate records](/blog/how-to-re-run-a-saved-import-mask-in-edgebic).
+
+<Accordion title="Why did re-running my import mask change nothing?">
+Because the run reconciled the rows and found nothing genuinely different to write. An import matches each incoming row to an existing record and only updates fields that differ, so a file identical to the database imports as reused with no change. The other common cause is that the cells you expected to update were blank, and blank cells are preserved on an update rather than overwriting. Confirm the file actually differs from the current data and that your update columns hold values.
+</Accordion>
+
+<Accordion title="Does a re-import overwrite existing records or skip them?">
+It updates the fields that differ and leaves the rest alone. A re-import is a reconcile, not a wipe: each row is matched to its existing record and only changed values are written, which is why re-running the same file is safe and does not duplicate. The catch is that a blank cell on an update is treated as no value, so it preserves the current database value instead of clearing it. To clear a field you need the source to carry an explicit zero or empty marker the mask maps.
+</Accordion>
+
+<Accordion title="Why did a blank cell not clear the old value on re-import?">
+Because blank cells are preserved on an update by design, so an empty cell keeps whatever the database already holds rather than overwriting it with nothing. This protects you from a partial file wiping fields it simply did not include. If you genuinely need to clear a value, put an explicit zero (for a number) or the intended empty value in the cell so the mask writes it, rather than leaving the cell blank and expecting the old value to disappear.
+</Accordion>

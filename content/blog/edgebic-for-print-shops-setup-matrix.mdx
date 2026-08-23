@@ -1,0 +1,136 @@
+﻿---
+title: "Ink and Substrate Changeovers: Sequencing Print Jobs"
+description: "Print shop scheduling changeover, resolved rule by rule: how the engine finds what a press ran last and picks the right makeready time for the next job."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - print shop scheduling changeover
+  - makeready time scheduling
+  - ink changeover sequencing
+  - substrate changeover scheduling
+  - offset press scheduling software
+  - digital press scheduling
+  - print job sequencing
+targetPhrase: "print shop scheduling changeover"
+wordCount: 1749
+readingTime: 9
+faqQuestions:
+  - question: "What is print shop scheduling changeover?"
+    answer: "It is scheduling that prices makeready by the pair of jobs involved rather than by one average number per press. Washing up from a dark ink set before a light one takes longer than the reverse, and a substrate change adds time that a same-stock job does not. Storing makeready per from-to pair lets the plan charge what the transition really costs and lets the sequence be chosen on that basis."
+  - question: "How does the engine know what a press ran last?"
+    answer: "It looks at what has already been allocated to that press, taking the most recent operation that ends before the new job's earliest start, and falling back to the most recently allocated operation if no earlier one exists. During a reschedule it prefers what actually completed on that press according to logged shop-floor data, so the makeready is priced against the job that physically ran rather than against a planning assumption."
+  - question: "What happens on the first job of the day?"
+    answer: "That is a cold start, and it does not mean zero makeready. With no previous job there is no changeover to price, so the engine uses the routing step's own setup time, or the press default if the step has none. Only a genuine repeat of the same job back to back returns zero. Treating a cold start as free is one of the easiest ways to build a plan that is short by an hour every morning."
+  - question: "Can a digital press and an offset press share the same job data?"
+    answer: "Yes, because the matrix is per press. The same two jobs can carry a 45-minute transition on the offset press and near zero on the digital one, and the engine charges whichever machine the job is scheduled on. That difference is also what makes the routing decision visible: a short run that costs 45 minutes of makeready on one press and five on another has an obvious home once both numbers are in the plan."
+qaQuestions:
+  - question: "We have six presses and hundreds of jobs a month. How small can a first matrix be and still be useful?"
+    answer: "Start with one press and five families and you will still see the effect. Families that work in print are usually ink set plus substrate class: light stock, standard coated, dark or heavy coverage, uncoated, and specialty. That is a 25-cell grid, and the diagonal is often just the plate change. Load it, schedule a week, and compare the plan's finish times to what the press actually achieved. The cells that are wrong show up immediately as a consistent gap, and you correct five numbers instead of debating hundreds of job records."
+  - question: "Our scheduler says the plan charged a flat setup on jobs we know need a full wash-up. Where do we look?"
+    answer: "Add the Setup Source column in the Job View and read what each row says. A row showing a matrix source used the sequence logic. A row showing a routing default did not, and in nearly every case the reason is that one of the two jobs has no family assigned. The family lookup requires both sides to be in a family, so a half-assigned catalog silently falls back to the flat number without any error. Assign the missing side, or add a product-level entry for that specific pair, and re-run."
+---
+
+**Print shop scheduling changeover means pricing makeready by what the press is coming from, not by a single average per press.** Wash-up from a heavy dark coverage before a light job is not the same event as the reverse, and a substrate change is not free. [EDGEBIC by User Solutions](/edgebic) stores makeready per press and per job pair, then walks an explicit rule chain to decide which number applies to the job in front of it.
+
+For the mechanism in general terms, read [the setup matrix explained](/blog/edgebic-setup-matrix-explained). Wide-format shops face a different lever, a handful of printers running at different speeds against a constant stream of dated jobs, covered in [machine scheduling for signage and large-format](/blog/edgebic-for-signage-and-large-format-scheduling). For the wider scheduling problem a print shop shares with other high-mix operations, see [job shop scheduling challenges](/blog/job-shop-scheduling-challenges), and for the cross-industry map, [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## Makeready is a pair, not a number
+
+A commercial print shop runs a lot of jobs and most of them are short. That means the press spends a large share of its day changing over, and the size of each changeover depends on the pair:
+
+- **Ink set.** Coming off dense dark coverage to a light job needs a full wash-up. The reverse often does not.
+- **Substrate.** Changing stock caliper or finish costs press adjustment. Staying on the same stock costs nothing.
+- **Coating.** Adding or removing an aqueous or UV coating unit is a real event.
+- **Plate and format.** Broadly constant, and the part of makeready people usually quote when asked how long a changeover takes.
+
+Only the last is close to a fixed number, which is why a single setup field on a routing describes it badly. The plan ends up systematically short on the days that run dark to light and systematically long on the days that run like with like, and both errors are invisible because each individual job looks reasonable.
+
+## The three layers of the model
+
+**Setup families** group jobs that change over identically on a press. In print the useful grouping is ink set plus substrate class rather than customer or product type. A working set is Light, Standard, Dark, Uncoated and Specialty.
+
+**The family matrix** is the per-press grid of from-family to to-family minutes, holding the total transition. Roughly 95 percent of behavior lives here. Five families give 25 cells, whatever the job count. The concept alone is covered in [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+**The product matrix** holds specific from-job to to-job pairs that break their family rule and always wins over the family cell. The one metallic ink that fights everything after it gets a row here rather than forcing a new family.
+
+One arithmetic fact to internalise before loading data: a matched cell **replaces** the routing's flat setup rather than adding to it. Cells hold total makeready, plate change included.
+
+## The rule chain, walked
+
+For every operation, the engine finds what that press ran last, then walks five rules in order. The first match wins.
+
+| Order | Rule | Result |
+|---|---|---|
+| 1 | Cold start: nothing has run on this press yet | Routing setup, then press default. Not zero. |
+| 2 | Same job back to back | 0 minutes |
+| 3 | A product-level cell exists for this pair | That cell |
+| 4 | Both jobs have families and a family cell exists | That cell |
+| 5 | Nothing matched | Routing setup, then press default |
+
+Work a real queue through it. Press-1, five jobs, families as above. The matrix holds Light to Light 20, Light to Dark 45, Dark to Light 120, Standard to Light 35, and a product-level entry for one metallic job to any light job at 150.
+
+| Job | Family | Previous | Rule that fired | Minutes |
+|---|---|---|---|---|
+| A | Light | none (first of the week) | 1, cold start | Routing setup, 30 |
+| B | Light | A, different job | 4, family Light to Light | 20 |
+| C | Dark | B | 4, family Light to Dark | 45 |
+| D | Light | C | 4, family Dark to Light | 120 |
+| E | Light | D, same job repeated | 2, same job | 0 |
+
+Two things stand out. The cold start still charged 30 minutes, because the press needed preparing even though no changeover existed. And the sequence chose to pay 120 minutes once. Move job D next to B and that 120 becomes 20, with the dark job run last, which is the campaign logic every experienced print planner already applies by hand.
+
+## Finding what the press ran last
+
+This traversal is worth understanding, because it is where the model connects to reality.
+
+In a fresh scheduling run, the engine scans what has already been allocated to that press. It takes the most recent operation that ends at or before the new job's earliest start. If there is no such operation, because many jobs share the same earliest-start floor, it falls back to the most recently allocated operation on that press. Without the fallback, every job sharing a start floor would be treated as a cold start and the whole matrix would go quiet.
+
+In a reschedule, actuals win. The engine prefers the last product that genuinely completed on that press according to logged shop-floor data, rather than a planning-state guess. If the dark job really ran this morning, tomorrow's light job is priced against dark even if a rebuilt plan would have assumed something else. That matters because a reschedule clears and rebuilds future allocations, and without the actuals anchor the very transition about to cost you two hours would be evaluated as free.
+
+## Why the matrix is per press
+
+Print shops usually run mixed technology, and this is where the per-machine keying pays.
+
+A five-color offset press with an inline coater has real wash-up times. A digital press has almost none: substrate change, a calibration, and go. The same two jobs can carry 45 minutes on the first and five on the second, and the plan charges whichever press the job lands on.
+
+That difference does more than improve accuracy. It makes the routing decision visible. When a 700-sheet job costs 45 minutes of makeready on the offset press and five on the digital one, the total time on each machine is comparable in the plan rather than in someone's head. Estimators reach the same conclusion faster, and the schedule stops being surprised by short runs landing on the wrong machine.
+
+## The audit column
+
+Every scheduled operation stores two things: a short code for which rule set its makeready, and a plain sentence explaining it. In the Job View, rows priced by the matrix are shown at full brightness and rows that fell back to a flat default are muted.
+
+That single column answers most support questions a print scheduler will ever have about setup. A row reading "family matrix light to dark, 45 minutes" is settled. A row reading "routing default" on a transition that should have been priced tells you a family assignment is missing, which is the most common configuration gap because the family lookup requires **both** jobs to have a family. Assign the missing side, or add a product-level entry, and re-run.
+
+## What the numbers look like
+
+The documented worked case is a booth rather than a press, and the arithmetic reads across directly. Three jobs, one machine, one eight-hour shift.
+
+Flat setup of 30 minutes: the plan showed a 12:45 finish while the floor needed roughly 11 hours, because two long reverse changeovers went uncharged. Matrix loaded, same due-date order: 330 minutes of changeover, an honest 16:45 finish, visibly overflowing the shift. Matrix loaded and campaigned like to like: 90 minutes of changeover, back to a 12:45 finish inside the shift with three hours spare. That is a 73 percent reduction in changeover from sequencing alone.
+
+The two-step shape is the important part. The matrix buys an honest plan. Sequencing buys capacity. You cannot do the second without the first. The full six-job walkthrough is in [the paint-booth math](/blog/paint-shop-changeover-sequencing-example-edgebic).
+
+## Getting it loaded
+
+1. **Start with one press**, the one that decides your ship dates.
+2. **Define four or five families** by ink set and substrate class.
+3. **Assign every recurring job** to a family. One-off work can stay unassigned and use the routing default.
+4. **Fill the grid** with total makeready per transition, taken from the press crew rather than from the routing file.
+5. **Add product-level rows** for the specific inks and stocks the crew already warns each other about.
+6. **Bulk load from Excel** if that is faster: the grid exports to CSV and imports back in one operation. The [build guide](/blog/how-to-build-a-setup-matrix-in-edgebic) walks the sequence.
+7. **Verify with the Setup Source column** after the first run and fix any missing family assignments.
+
+Nothing changes until you enter a cell. With an empty matrix the engine uses the flat routing setup exactly as before, so a shop can load one press, measure the difference, and expand.
+
+Maintenance is lighter than the first load suggests. Families change rarely, because they describe the machine rather than the work. New jobs inherit their family from the ink and stock they use, so a shop adding twenty SKUs a month adds no cells at all. The cells themselves change when the process changes: a new wash-up chemistry, a new anilox, a plate system upgrade. Editing those cells is a five-minute job that immediately updates every future transition of that class, which is the argument for holding the data per machine rather than per routing step in the first place.
+
+The one recurring task is checking for jobs that arrived without a family. Run the Setup Source column after a scheduling pass, filter for rows using a routing default, and assign whatever turns up. Five minutes a week keeps the matrix live.
+
+## Where it fits
+
+Changeover pricing is one of three things a print shop usually needs from a schedule. The second is knowing where each job actually is, covered in [tracking print jobs from press to bindery](/blog/edgebic-for-print-shops-job-tracking). The third is working back from the delivery date, covered in [working backward from the delivery date in print](/blog/edgebic-for-print-shops-due-date-scheduling). Shops that also run converting equipment will find the same problem discussed from that side in [packaging manufacturing scheduling](/blog/packaging-manufacturing-scheduling).
+
+Bring one press, its real makeready times and a week of jobs to a demo of [print shop scheduling software](/print-shop-scheduling-software), and we will build the grid with you.

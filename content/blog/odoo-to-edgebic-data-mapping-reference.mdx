@@ -1,0 +1,179 @@
+---
+title: "Odoo to EDGEBIC: The Data Mapping Reference"
+description: "Odoo data export scheduling field by field: map products, work centers, operations and manufacturing orders into EDGEBIC masks, with conversions and upsert rules."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Odoo data export scheduling
+  - Odoo field mapping scheduling
+  - Odoo operations export
+  - import mask field reference
+  - Odoo work center export
+  - ERP data mapping scheduling
+targetPhrase: "Odoo data export scheduling"
+wordCount: 1920
+readingTime: 10
+faqQuestions:
+  - question: "Which columns must an Odoo export contain before EDGEBIC will import it?"
+    answer: "Each entity type has a short mandatory list and everything else is optional. Products need a product id. Work centers need a work center id. Operations need end product, step name, an operation flag, and hours required. Orders need product, quantity, and a job date. Time logs need job number, work center id, and the actual date. If a mandatory field is unmapped in the mask, the run aborts before reading a single row."
+  - question: "How do I map an Odoo operation duration that is per batch rather than per piece?"
+    answer: "Use a conversion factor on that mask column. An operation quoted per 100 pieces becomes per piece with a factor of 0.01, and a duration in minutes becomes hours with 0.016667; combine them if the export mixes both. The multiplication happens before the value is stored, so the file needs no pre-processing. Factors are saved with the mask, which makes the conversion permanent, repeatable, and auditable through the per-run log."
+  - question: "In what order should Odoo files be imported?"
+    answer: "Dependency order: products first, then work centers, then operations, then open manufacturing orders, then time logs. Operations reference both products and work centers, and orders reference products, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but a record created that way carries only the name it was given."
+  - question: "How does EDGEBIC handle a multi-company Odoo export?"
+    answer: "By scheduling scope rather than by Odoo structure. If companies or warehouses share machines or transfer work between sites, import them into one database and use departments to group each site's work centers, because the engine can only balance load across resources it can see. If each plans independently, a database per site keeps files small and each planner's view focused. You filter the Odoo export by company either way."
+qaQuestions:
+  - question: "Odoo lets us define the same operation on a bill of materials by reference. Will exporting operations flatten that correctly?"
+    answer: "Export the operations as one row per step per end product, flattened, because that is the shape the routing import expects: it groups rows by end product, sorts by sequence, and wires the chain. If your Odoo operations are shared across several bills of material by reference, the export should still resolve each usage to its end product so the same physical operation appears once per product that uses it. The two-pass import then builds a connected routing for each product independently. The one thing to avoid is exporting the operation definition without its end product context, because a routing row with no end product has nothing to attach to and fails with that reason in the log."
+  - question: "Our Odoo product identifiers sometimes export as the internal reference and sometimes as the display name. Does that matter?"
+    answer: "It matters a great deal, because the identifier is the natural key that ties operations and orders back to the product. Pick one field, almost always the internal reference, and make every export (products, operations, orders) render that same field in the identifier column. Matching is case-insensitive, so casing drift is forgiven, but a product exported as its internal reference in one file and its display name in another becomes two unrelated records, and the routing you loaded points at a product that has no orders. Run a distinct-values check across the three files before the first import; it is minutes of work and it prevents the one error that is expensive to unwind."
+---
+
+**Mapping Odoo data into EDGEBIC is a column-mapping exercise rather than a development project: you export products, work centers, operations, open manufacturing orders, and optionally work order time logs to Excel or CSV, then drag each source column heading onto the matching EDGEBIC field once and save it as a reusable import mask.** Because Odoo's manufacturing module carries all of this natively, every export has a clean source. This reference lists what maps to what, which columns are mandatory, how unit conversion and blank cells behave, and what every row outcome means.
+
+EDGEBIC by User Solutions integrates with Odoo through those masks rather than a certified app, so nothing is installed inside the ERP. If you have not read the end-to-end version, start with the [complete Odoo integration guide](/blog/edgebic-odoo-integration-guide). This post is the lookup table you keep open while building masks.
+
+## The load order
+
+Import in dependency order. Later files reference records that earlier files created.
+
+| # | Odoo export | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Products | Product | Nothing |
+| 2 | Work centers | Workcenter | Nothing |
+| 3 | Operations / routings | BOR (bill of routing) | Products and work centers |
+| 4 | Open manufacturing orders | SalesOrder | Products |
+| 5 | Work order time logs (optional) | Actuals | Scheduled jobs |
+
+Two entity types have no Odoo origin and are built from a spreadsheet you write yourself: **Shift** (one row per shift with a start and end pair per weekday, a blank pair meaning the day is off) and **PlantHoliday** (closures by name and date). These define the calendar every date is computed against, so they deserve ten careful minutes. Odoo's work center calendars do not carry across as shifts; you set the calendar once in EDGEBIC.
+
+Auto-create is on by default, so an operations file naming a work center that has not been imported yet creates it on the fly. That is a useful safety net and a poor strategy: an auto-created work center has a name and nothing else. Load the work center file properly first.
+
+## Products to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id` | Yes | The Odoo internal reference. Natural key, matched case-insensitively |
+| `Product_Name`, `Description` | | Descriptive text |
+| `UOM` | | Unit of measure |
+| `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Only the identifier is required. Everything else can arrive later through a second, narrower refresh file, because blank cells preserve existing values on an update run. Use the internal reference, not the display name, and use it consistently across every export.
+
+## Work centers to Workcenter
+
+This is the file where scheduling accuracy is won or lost, because it carries capacity.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. Operation steps match on it |
+| `Workcenter Name` | | Label on the Gantt and in reports |
+| `Number_Of_Instances` | | How many identical machines the center holds. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per operation where present |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint so the engine can anchor around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts`, `Shift_Names` | | Calendar assignment |
+| `Pieces_Per_Hour` | | Rate-based capacity where the center is measured in output |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+`Number_Of_Instances` is the highest-value column on the page. Odoo describes a work center partly through its capacity and time efficiency rather than an explicit machine count, so this is a column you often set deliberately rather than export straight. A center of four identical machines imported with one instance produces a plan roughly four times too long, and it fails quietly: nothing errors, the dates are simply wrong. The arithmetic is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+If your Odoo export expresses capacity as an available-hours figure that already embeds a machine count, do not carry that number into `Capacity` unchanged while also setting instances, or you will count the same capacity twice. Instances plus the shift calendar is the representation the engine reasons about best.
+
+## Machine pools have no export column
+
+Planners think in pools of interchangeable machines, and EDGEBIC models that as a **work center group**. A routing step bound to a group re-evaluates every member on each reschedule, picks by strategy (earliest completion, primary first, or earliest start), and applies a per-member efficiency factor so a slower machine is chosen only when it still finishes first. Operations already started keep the machine they started on, because recorded work is never moved. Import the members as ordinary work centers, then create the group inside EDGEBIC and add them: see [how to create work center groups](/blog/how-to-create-work-center-groups-in-edgebic).
+
+## Operations to BOR
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Product identifier this routing builds |
+| `Sub_Prod` | Yes | Work center id (operation row) or component product (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; chaining happens automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and transport time |
+| `Parallel_Op` | | Parent step's work center name for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent`, `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Applicable machine instances for this step |
+| `Fam_Dept` | | Department for auto-created work centers |
+
+`Op_Flag` is the field people get wrong first. True means "this row is an operation running on a work center". False means "this row is a component consumed at this point in the routing". Odoo bill of materials lines land as component rows with a flag of false, and the operations land as rows with a flag of true.
+
+### Why the import takes two passes
+
+An operation chain cannot be written row by row, because step 10 must point at step 20 and step 20 does not exist yet. So the import runs in two passes. Pass one validates each row, resolves or creates the products and work centers it names, and buffers the row. Pass two groups the buffer by end product, sorts by sequence number, writes the steps, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product. Check that visually after the first import: a routing missing its final link draws as a chain floating free of the product it builds.
+
+All of one product's steps must travel in one file, because a run wipes and recreates that product's steps on first reference. And re-importing is safe for running orders, because every scheduled job carries a frozen snapshot of the routing it was planned with.
+
+Subcontracted operations map cleanly as an operation row on a work center that represents the vendor, with the turnaround expressed as transit days, so the outside time stays visible on the Gantt rather than buried inside one long step.
+
+## Manufacturing orders to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Product being built |
+| `Qty` | Yes | Order quantity |
+| `Job_Date` | Yes | Release or start date |
+| `Sales_Order(Ref#)` | | Order reference: shared references group into one sales order, jobs auto-number `{Ref}-{line}` |
+| `Job_Number` | | Your Odoo manufacturing order name carried across |
+| `Due_Date`, `Order_Date`, `Priority` | | Promise, entry, and ranking |
+| `Customer_Name` | | Auto-created when missing |
+| `Unit_Price`, `User_Notes` | | Optional |
+
+Two mask options control the date logic when the export carries only one date: one treats the job date as the due date, the other derives the job date backward from the due date. Choose the one matching how your export is built, once, on the mask.
+
+## Time logs to Actuals
+
+Job number, work center id, and actual date are mandatory. Hours and pieces are both optional, and either can be derived from the other using the operation's rate. A `Complete` column marks the operation finished, and an explicit start column overrides the default of using the earliest imported date. The import always overwrites the days a file carries, so re-running a corrected extract fixes the numbers rather than doubling them.
+
+## Conversions, blanks, and zeros
+
+| Situation | Behavior |
+|---|---|
+| Minutes in the export | Conversion factor `0.016667` on that mask column |
+| Seconds in the export | Conversion factor `0.000278` |
+| Duration quoted per 100 pieces | Conversion factor `0.01` |
+| Blank cell on an update | Existing value preserved |
+| Zero in a cell on an update | Zero is written: it is a value, not a blank |
+| Unmapped column | Ignored entirely |
+| Mandatory field unmapped | Run aborts before reading any row |
+| One bad row | Fails alone and the run continues, unless you choose strict mode |
+
+## Reading the outcomes
+
+Every row resolves to **Created**, **Updated**, **Reused**, or **Failed**. Reused is the default for a record that already exists, so a weekly product file of 6,000 rows reporting Created 12, Reused 5,988 is the desired result rather than a failure. When counts look wrong, the per-run log file carries one line per row with the exact reason for every failure.
+
+## What import cannot bring, and why it matters
+
+The settings that most differentiate a schedule have no column in an Odoo export: the sequence-dependent setup matrix, operator skills and certifications, work center group strategies, bottleneck anchoring, and lot streaming transfer batches. Those are configured once in EDGEBIC and then apply to every imported order afterwards. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) explains why one mask design serves every ERP.
+
+For the questions that come up before a project starts, see the [Odoo integration FAQ](/blog/edgebic-odoo-integration-faq). The [Fishbowl](/blog/fishbowl-to-edgebic-data-mapping-reference) and [Syteline / CloudSuite Industrial](/blog/syteline-to-edgebic-data-mapping-reference) references show how little the method changes from one platform to the next, and the [ERP scheduling add-on page](/erp-scheduling-add-on) frames the category.
+
+<Accordion title="Which columns must an Odoo export contain before EDGEBIC will import it?">
+Each entity type has a short mandatory list and everything else is optional. Products need a product id. Work centers need a work center id. Operations need end product, step name, an operation flag, and hours required. Orders need product, quantity, and a job date. Time logs need job number, work center id, and the actual date. If a mandatory field is unmapped in the mask, the run aborts before reading a single row.
+</Accordion>
+
+<Accordion title="How do I map an Odoo operation duration that is per batch rather than per piece?">
+Use a conversion factor on that mask column. An operation quoted per 100 pieces becomes per piece with a factor of 0.01, and a duration in minutes becomes hours with 0.016667; combine them if the export mixes both. The multiplication happens before the value is stored, so the file needs no pre-processing. Factors are saved with the mask, which makes the conversion permanent, repeatable, and auditable through the per-run log.
+</Accordion>
+
+<Accordion title="In what order should Odoo files be imported?">
+Dependency order: products first, then work centers, then operations, then open manufacturing orders, then time logs. Operations reference both products and work centers, and orders reference products, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but a record created that way carries only the name it was given.
+</Accordion>
+
+<Accordion title="How does EDGEBIC handle a multi-company Odoo export?">
+By scheduling scope rather than by Odoo structure. If companies or warehouses share machines or transfer work between sites, import them into one database and use departments to group each site's work centers, because the engine can only balance load across resources it can see. If each plans independently, a database per site keeps files small and each planner's view focused. You filter the Odoo export by company either way.
+</Accordion>

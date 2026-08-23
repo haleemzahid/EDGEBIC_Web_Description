@@ -1,0 +1,99 @@
+---
+title: "Several Anomaly Checks Fired on One Job: Which One to Fix First"
+description: "When one job trips four anomaly checks at once, most of them are symptoms. The documented pairings that share a root cause and the order to work them in."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - multiple anomaly checks one job
+  - anomaly report triage order
+  - anomaly root cause pairing
+  - critical before warning anomalies
+  - scheduler anomaly cascade
+  - fix anomaly rows in order
+targetPhrase: "several anomaly checks fired on one job"
+wordCount: 1122
+readingTime: 6
+faqQuestions:
+  - question: "Which anomaly check should I fix first when several fire on the same job?"
+    answer: "Sort by severity and work the critical rows top down. Critical findings usually describe the cause and warning findings usually describe its consequences, so fixing one critical row often clears several others on the next run. Fix one root cause, re-run scheduling, then re-open the report before deciding what remains. Working the list in the order it happens to be displayed leads to fixing symptoms and leaving the cause in place."
+  - question: "Which anomaly combinations share a single root cause?"
+    answer: "Four pairings recur. Physical over-utilization with a per-unit overload and an instance collision points to synchronized parallel machines double-booking a unit. Mirror drift with an hours mismatch means the mirrored operation diverged from its parent. A zero-length operation with an hours mismatch means a routing step has no hours. A missing machine unit with over-utilization means a deleted unit is still carrying bookings."
+  - question: "Do all the checks on one job always share a cause?"
+    answer: "No. Some combinations are genuinely independent. A booking on a holiday and an ambiguous overlap setting on the same job have nothing to do with each other, and fixing one will not touch the other. Read each row's description before assuming a cascade. The reliable test is to fix the strongest candidate, re-run scheduling, and see which rows disappear: whatever remains was always a separate problem."
+qaQuestions:
+  - question: "One job came back with six rows across four checks and I do not know where to start. What is the fastest path?"
+    answer: "Sort by severity, then look for one of the known pairings. If you see over-utilization together with an instance collision, start there: a synchronized parallel machine double-booking a unit produces both. Fix that one thing, re-run scheduling for the job, and re-open the report. In most cases the six rows collapse to one or two, and those survivors are the real second problem. Fixing them one at a time in display order would have taken four passes to reach the same place."
+  - question: "I fixed the critical row, re-ran, and now a different check fires that was not there before. Is that normal?"
+    answer: "It can be. Correcting a booking moves work, and work that moves lands somewhere new, so a check that was quiet can start reporting on the new placement. Read the new row on its own terms rather than assuming your fix broke something. If the new row is a warning describing an idle gap or an hours difference, it may simply be the honest consequence of the corrected plan. If it is critical, treat it as the next root cause and repeat the cycle."
+---
+
+**When one job trips several anomaly checks at once, most of the rows are usually symptoms of a single root cause, and the way to find it is to sort by severity and work the critical rows top down.** [EDGEBIC by User Solutions](/edgebic) runs its checks independently, so a single scheduling problem can light up four chips at the same time. Fixing them in display order wastes passes, because several of them will clear on their own once the cause is corrected.
+
+This post covers the documented pairings that share a root cause, the order to work them in, and the combinations that are genuinely unrelated. It is the triage entry in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the report itself see [how to run the scheduler anomalies report](/blog/how-to-run-the-scheduler-anomalies-report-in-edgebic), and for the definition of a check see [what is a scheduling anomaly check](/blog/what-is-a-scheduling-anomaly-check).
+
+## What You Are Seeing
+
+You filter the anomaly report to one job and the chip strip lights up in several places at once: an over-utilization row, an instance collision, an hours mismatch, and a consistency drift row, all naming the same work center and often the same date. Nothing in the display says which one came first.
+
+## Why It Happens
+
+The checks are deliberately independent. Each one asks a narrow question about the stored schedule and reports what it sees, without knowing what the others found. That independence is what makes the report trustworthy, and it is also why one defect produces a cluster of rows rather than a single verdict.
+
+A machine unit that ends up carrying two jobs at the same time, for example, is simultaneously a collision, an over-utilization, and, once the hours are summed, a consistency problem. Three checks, one defect.
+
+## The Pairings That Share a Root Cause
+
+| What you see together | The usual single cause | Fix this first |
+|---|---|---|
+| Physical over-utilization, a per-unit overload, and an instance collision | A synchronized parallel machine mirrored a booking onto a unit that was already taken | The parallel configuration, then re-run |
+| Mirror drift plus an hours mismatch between the two hour stores | The mirrored operation's window diverged from its parent | The mirror, and the hours mismatch clears with it |
+| A zero-length operation plus an hours mismatch | A routing step with no run hours and no setup | The routing step's hours |
+| A missing machine unit plus over-utilization | Bookings still point at a machine unit that was deleted | Restore the unit or re-run so the engine picks a live one |
+
+Each row in that table is a documented cascade. In every case the second and third findings are consequences: correct the first and re-run, and they stop reporting.
+
+## How to Fix It
+
+- **Sort by severity first.** Critical before warning, every time. The critical rows are the ones that describe a defect rather than an observation.
+- **Match the cluster against the pairings above.** If it matches, you already know the root cause and can skip the exploration.
+- **Fix one thing, then re-run scheduling.** Do not fix four things in one pass, because you will not learn which fix mattered.
+- **Re-open the report after the run.** The report reads current stored state at load time, so a pane left open across a run shows the old picture.
+- **Read what survives.** Rows that persist after a clean re-run were never part of the cascade.
+
+## How to Diagnose It, in Order
+
+1. **Filter to the job** so the schedule-shaped checks report on it alone.
+2. **Sort by severity, then by check identifier,** so related rows group together.
+3. **Read the detail column** on the critical rows. It carries the concrete values: booked hours against the cap, the two jobs in a collision, the drift in minutes.
+4. **Name one root cause** using the pairings table or the description itself.
+5. **Fix it, re-run scheduling, re-open the report,** and compare the row count.
+6. **Repeat for whatever is left,** and stop when only acceptable warnings remain.
+
+## The Combinations That Are Not Related
+
+Not every cluster has a single cause. A booking on a holiday and an ambiguous overlap configuration can appear on the same job and share nothing: one is a calendar entered after the run, the other is a routing setting. Treat the pairings table as a set of known shortcuts rather than a rule that every cluster collapses.
+
+The reliable test is the re-run. Whatever disappears was part of a cascade. Whatever stays was always separate.
+
+## How to Prevent It
+
+- **Clear critical rows before you publish a plan,** which is the discipline described in [clearing scheduler anomalies before publishing](/blog/clearing-scheduler-anomalies-before-publishing-edgebic).
+- **Watch for a check that reappears on different jobs.** That pattern points at shared configuration, usually a work center or a routing, rather than at any one job.
+- **Get the instance count right on every machine,** because an understated count turns normal loading into an over-utilization report and drags other checks along with it. See [a work center shows more hours than it has](/blog/a-work-center-shows-more-hours-than-it-has-edgebic).
+- **Do not treat warnings as a queue to empty.** Idle gaps and hours differences often describe reality, and chasing them hides the critical rows that matter.
+
+<Accordion title="Which anomaly check should I fix first when several fire on the same job?">
+Sort by severity and work the critical rows top down. Critical findings usually describe the cause and warning findings usually describe its consequences, so fixing one critical row often clears several others on the next run. Fix one root cause, re-run scheduling, then re-open the report before deciding what remains. Working the list in the order it happens to be displayed leads to fixing symptoms and leaving the cause in place.
+</Accordion>
+
+<Accordion title="Which anomaly combinations share a single root cause?">
+Four pairings recur. Physical over-utilization with a per-unit overload and an instance collision points to synchronized parallel machines double-booking a unit. Mirror drift with an hours mismatch means the mirrored operation diverged from its parent. A zero-length operation with an hours mismatch means a routing step has no hours. A missing machine unit with over-utilization means a deleted unit is still carrying bookings.
+</Accordion>
+
+<Accordion title="Do all the checks on one job always share a cause?">
+No. Some combinations are genuinely independent. A booking on a holiday and an ambiguous overlap setting on the same job have nothing to do with each other, and fixing one will not touch the other. Read each row's description before assuming a cascade. The reliable test is to fix the strongest candidate, re-run scheduling, and see which rows disappear: whatever remains was always a separate problem.
+</Accordion>

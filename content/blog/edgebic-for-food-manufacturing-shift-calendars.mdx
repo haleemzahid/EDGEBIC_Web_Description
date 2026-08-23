@@ -1,0 +1,172 @@
+﻿---
+title: "Scheduling Food Production Around Shifts, Sanitation and Holidays"
+description: "Food production shift scheduling that survives CIP washes, deep-clean nights and plant shutdowns: how EDGEBIC resolves real available hours per line, per day."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - food production shift scheduling
+  - sanitation downtime scheduling
+  - food plant capacity planning
+  - shift calendar scheduling software
+  - plant shutdown scheduling
+  - CIP wash scheduling
+  - food manufacturing capacity override
+targetPhrase: "food production shift scheduling"
+wordCount: 1916
+readingTime: 10
+faqQuestions:
+  - question: "How does food production shift scheduling handle daily sanitation?"
+    answer: "By taking the wash out of the line's working hours before any job is placed. A nightly clean-in-place that happens every single day belongs in the shift definition itself: define the shift hours net of it and those two hours are never schedulable. A wash that lands on specific dates is a per-day capacity override on that line, shift and date, entered as the reduced hours with a reason. Either way the engine subtracts before it multiplies by machines and utilization, so the dashboard and the scheduler read the same number. There is no separate downtime screen in the current release, so sanitation lives in the shift or in an override."
+  - question: "What is the difference between a plant holiday, a shift holiday and a line holiday?"
+    answer: "They differ in scope, and only one of them is something you can enter. A plant holiday closes every work center and every shift, whole-day or as a partial window, and it has its own screen. Shift holidays and work center holidays are understood by the scheduling engine but have no configuration screen in the current release. So a night-shift-only deep clean or a single filler's annual teardown is modeled with a per-day capacity override on that line, shift and date, set to reduced hours or to zero."
+  - question: "Can a planner approve a Saturday run without changing the shift pattern?"
+    answer: "Yes, through a daily capacity override for that line, shift and date. You enter the hours the line will actually be available, for example 4.0, plus a reason such as overtime approved for a rush order. The override wins over every other rule, so a Saturday that the normal calendar skips becomes schedulable for that one day. The override is taken exactly as entered and is not re-multiplied by machine count."
+  - question: "How do you cap a whole peak week without editing every day?"
+    answer: "In the current release you cap it day by day: a per-day capacity override on each date of the week, each carrying the hours that line will really offer and a reason. A date-range override that spreads a single hour budget across a window exists in the engine but has no visible entry point today, so five typed numbers is the honest answer for a five-day week. The upside is that each day carries its own reason and its own overridden flag, which reads better in an audit than one aggregate budget would."
+qaQuestions:
+  - question: "Our line runs 08:00 to 16:30 with a 30-minute break, two fillers, we hold 85 percent for changeovers and we wash for an hour every Wednesday. What does the schedule actually offer on a Wednesday?"
+    answer: "11.9 hours, and how you get there matters. The break and the wash both come out of the line's working hours before anything is multiplied: a gross 8.5 hours less the 30-minute break and the 1-hour wash leaves 7.0 net hours, times 2 machines is 14.0 raw hours, and 85 percent utilization brings it to 11.9. Because there is no downtime screen in the current release, the way you express that on a Wednesday is either a Wednesday shift defined at 7.0 hours on that line's own calendar, or a per-day capacity override on the Wednesdays the wash actually happens. A job needing 10 hours fits. A job needing 13 spills into Thursday, and it spills in the plan rather than on the floor."
+  - question: "The dashboard says we have capacity but the schedule will not place work there. Where do we look first?"
+    answer: "In this system those two cannot disagree, because the scheduler and the Resource Calendar run the same resolution chain, so the answer is usually an availability gate rather than a capacity number. The engine skips a date entirely if the line is marked unavailable, if its effective date has not arrived, if a whole-day plant holiday matches, or if the date is a weekend and weekend production is off. A skipped date creates no allocation at all, which reads as zero rather than as a full line. Check the plant holiday list, the line's available flag and the weekend setting before you look at hours, then check whether a stale per-day override is holding that date at a low number, since an override persists until someone resets it."
+---
+
+**Food production shift scheduling has to answer one question per line per day: after the wash, the break, the deep clean and the holiday, how many hours are genuinely available?** Every promise you make to a customer rests on that number. [EDGEBIC by User Solutions](/edgebic) derives it rather than storing it, resolving each line and date through a fixed chain of overrides, closures and downtime so the planner's dashboard and the scheduling engine can never disagree about what a line can do on a Wednesday.
+
+For the mechanism without the food framing, see [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained). For the category-level discussion of this sector's constraints, see [food and beverage production scheduling](/blog/food-beverage-scheduling), and for the map of which capability matters most in which plant, [how different industries use EDGEBIC](/blog/edgebic-by-industry). This post covers the food-specific configuration: sanitation netted into working hours, deep cleans and teardowns as per-day capacity overrides, and seasonal peaks capped day by day.
+
+## Four things eat a food plant's day
+
+A food line rarely runs a clean eight hours. Four separate mechanisms take time away, and the model keeps them separate because they behave differently.
+
+**Breaks** come out of the shift's working hours. A shift stores a start time and an end time per day of week, so a line that runs 08:00 to 16:30 and stops 30 minutes for a break is entered as 8.0 working hours, not 8.5. There is no separate break field to fill in; you define the hours the line actually runs.
+
+**Sanitation and preventive maintenance** are unavailable time inside the shift. The engine subtracts them before anything else is calculated, so a two-hour clean-in-place removes two hours of schedulable capacity per machine. What the current release does not give you is a downtime record to create: there is no downtime screen, no recurrence picker and no scheduled-versus-unscheduled type field. So a wash goes into the calendar one of two ways. If it happens every single day the line runs, net it out of the shift hours and it is handled permanently. If it lands on particular dates, enter a per-day capacity override on the line, shift and date with the reduced hours and a reason.
+
+**Closures** are holidays. Three scopes exist in the engine and one of them has a screen, which is described below.
+
+**Deliberate throttling** is the utilization percentage on the work center. Many food plants hold back 10 to 20 percent of nameplate to absorb variability. That is a legitimate planning choice, and the engine treats it as a multiplier rather than pretending the hours do not exist.
+
+## The three holiday scopes, and the one you can enter
+
+Getting scope right is what stops one closure from blanking the wrong part of the plant.
+
+| Scope | Closes | Configurable today? |
+|---|---|---|
+| Plant holiday | Every work center, every shift | Yes, on the plant holidays screen |
+| Shift holiday | One shift, on the lines that use it | No screen in this release |
+| Work center holiday | One line only | No screen in this release |
+
+That third column is the practical one. The scheduling engine understands all three scopes and honors them, but only the plant holiday can be created. A night-shift-only deep clean or a single filler's teardown day is therefore a **per-day capacity override**: you pick the line, the shift and the date, type the reduced hours or zero, and add a reason. It closes exactly what you meant to close, and it leaves a better trail than a closure record would, because the override shows in the grid with its reason attached.
+
+A plant holiday can be whole-day or partial. A partial closure blocks only the overlap between the closure window and the shift window, which is exactly what a 45-minute all-hands meeting or a mid-shift audit is. The engine computes the overlap per shift and subtracts those hours rather than writing the whole day off.
+
+Plant holidays can also be recurring, which means the same month and day every year. Read that carefully, because it is annual and not weekly: a recurring holiday will not give you every Wednesday. The engine pre-expands recurring holidays into a per-date lookup before scheduling starts, so the hot path stays fast even with a decade of dates.
+
+## The resolution chain
+
+For any combination of line, shift and date, three paths are tried in a fixed order. The first match wins.
+
+```
+1. Daily capacity override for (line, shift, date)?
+     yes -> use those hours exactly as entered
+2. Date-range override covering this date?
+     yes -> budget / available days / shifts active that day
+3. Shift formula:
+     gross  = shift end - shift start
+     net    = gross - break - downtime - partial holiday
+     hours  = max(0, net) x machines x (utilization / 100)
+```
+
+Two consequences are worth internalizing. A daily override is taken verbatim: the planner owns that number and the engine does not re-multiply it by machine count or utilization. And the formula path is the only one that reads downtime and partial holidays, because an override already reflects whatever the planner knew.
+
+Note the middle rung. The date-range path exists in the engine but has no visible entry point in the current release, so in practice the chain you work with is the daily override on top and the shift formula underneath.
+
+Before any of this runs, the engine asks whether the line is even available on that date. It returns no capacity at all if the line is marked unavailable, if its effective date has not arrived, if a whole-day plant holiday matches, or if the date is a weekend and weekend production is switched off. A skipped date produces no allocation, which is different from a date with zero hours.
+
+## Worked numbers
+
+### A normal Wednesday with a wash
+
+A packaging line, two machines, 85 percent utilization, day shift 08:00 to 16:30 with a 30-minute break, and a one-hour wash every Wednesday.
+
+```
+gross            = 16:30 - 08:00      = 8.5 h
+break            = 0.5 h
+wash             = 1.0 h
+net                                   = 7.0 h
+raw              = 7.0 x 2 machines   = 14.0 h
+effective        = 14.0 x 0.85        = 11.9 h
+```
+
+The line offers 11.9 hours that Wednesday. A 10-hour job fits. A 13-hour job spills into Thursday, in the plan, where you can still do something about it.
+
+How you tell the system about those first two subtractions is the part that matters. Because there is no downtime record to create, the break and the wash reach the calendar as working hours you did not claim: give this line its own shift calendar and enter Wednesday as 7.0 hours, so the wash is permanently out of the schedulable pool. If the wash moves around, leave the shift at 8.0 net of the break and put a per-day override of 7.0 on the Wednesdays it actually happens.
+
+### An approved Saturday
+
+Weekend production is off, so Saturday would normally be skipped entirely. The planner approves a four-hour run for a rush order and enters a daily override for that line, that shift and that date: 4.0 hours, reason "overtime approved". The engine finds the override first and returns 4.0 immediately. The formula, which would have returned zero, is never computed. The Resource Calendar shows the Saturday bar in the overridden color so everyone can see it was a decision rather than a default.
+
+### A capped peak week
+
+A line is being partially retooled during a promotion. Across Monday to Friday the plant can guarantee 60 total machine-hours instead of the usual load. Work out the per-slot number first, then enter it:
+
+```
+budget           = 60.0 h over Mon-Fri
+available days   = 5
+shifts per day   = 2
+daily total      = 60.0 / 5 = 12.0 h
+per shift slot   = 12.0 / 2 = 6.0 h
+```
+
+Then enter 6.0 as a per-day capacity override on each shift slot for that week, with a reason such as retooling week. Every job scheduled into the week respects the cap, and resetting the overrides restores the normal calendar. A date-range override that would hold the whole budget in one record exists in the engine but has no entry point in the current release, so the arithmetic above is yours to do once and the entry is a short typing job.
+
+### A partial-day closure
+
+A negotiated 45-minute assembly from 10:00 to 10:45 is entered as a partial plant holiday. It does not close the day. The engine computes the overlap between 10:00 to 10:45 and each shift window, subtracts those hours from that shift's net figure, and carries on. A line on the day shift loses 0.75 hours. A line on a night shift that does not overlap the window loses nothing.
+
+## Configuration order that works
+
+Do these in sequence on one line before rolling out plant-wide.
+
+1. **Define the shift pattern** with real start and end values per day of week, entered net of breaks. Days left empty mean the shift does not run.
+2. **Net standing sanitation into those hours.** A wash that happens every day the line runs is not a separate record, it is an hour you never claimed. Put it in the shift and it stays out of the schedulable pool permanently.
+3. **Use plant holidays for plant-wide closures only.** Resist the urge to make everything a plant holiday: a night deep clean entered plant-wide silently deletes the day shift's capacity too. Anything narrower than the whole plant is an override.
+4. **Set utilization deliberately.** If you hold back 15 percent, say 85, and write down why. Do not model the same buffer twice by also shortening the shift.
+5. **Use per-day overrides for everything line-specific and dated.** A filler's teardown day, a moving wash, an approved Saturday, a capped retooling week. Each one carries a reason, which is what makes the plan explain itself later.
+6. **Give a line its own calendar when it earns one.** A work center can use its own shift records instead of the plant-wide catalog, which is how you model a filler that runs weekends when the rest of the plant does not, or one that gives up an hour every Wednesday.
+
+## When a line needs its own calendar
+
+Most lines can share the plant-wide shift catalog. Some cannot, and the model supports both without forcing a choice for the whole plant.
+
+A work center carries a use-global-shifts setting. Leave it on and the line inherits the plant-wide shift catalog. Turn it off and that line gets a private calendar: a filler that runs Saturdays when the rest of the plant does not, a packing hall on a four-day pattern, or a line whose Wednesday is an hour shorter because of the wash.
+
+Local shift records use the same shape as global ones, with per-day start and end times. You can start from an existing shift, which copies the pattern locally, then change only the day that differs, rather than building a second full copy by hand. The grid marks the line as running a custom calendar so everyone can see the exception exists, and that badge matters: a line on a custom calendar stops following plant-wide shift edits, so when the plant changes hours you have to update it separately.
+
+The practical rule is to give a line its own calendar only when its pattern genuinely differs, because every private calendar is one more thing to update when the plant changes hours. Start with the shared catalog and break lines out as they earn it.
+
+## What to check when the hours look wrong
+
+Work these in order. The answer is almost always in the first three.
+
+1. **Is the date being skipped rather than sized?** A skipped date produces no capacity at all, which reads as zero. Check the line's available flag, its effective date, the plant holiday list and the weekend setting.
+2. **Is an override in force?** A daily override wins over everything and is taken verbatim, so a stale override entered for last month's shutdown will hold that day at whatever number someone typed. Nothing expires it; someone has to reset it.
+3. **Did the wash ever get entered?** This is the quiet one. If the sanitation hour is not netted into the shift and there is no override on that date, the engine has no way to know about it, and the day will look an hour richer than the floor.
+4. **Is the closure at the right scope?** A night deep clean entered as a plant holiday silently removes the day shift too. Line-specific closures belong in per-day overrides.
+5. **Is utilization doing double duty?** Holding 15 percent back and also shortening the shift models the same buffer twice.
+
+## Why this matters more in food than elsewhere
+
+Two reasons, and they compound.
+
+Sanitation is not optional and not small. In a plant with a nightly wash and a weekly deep clean, the difference between a calendar that models them and one that does not is easily 15 to 20 percent of stated capacity. A plan built on the higher number will be late every single week, and the cause will be invisible because each individual day looks fine.
+
+Second, food demand is seasonal and lumpy. Peak weeks, promotion runs and holiday shutdowns all need capacity to move without anyone rebuilding the master calendar. The override layer exists precisely so a planner can say "this week is different" without touching the underlying pattern, and then remove the exception when the week is over.
+
+Calendars are one of three constraints most food plants need to model. The other two are covered in [allergen and flavor changeover sequencing](/blog/edgebic-for-food-manufacturing-changeover-sequencing) and [scheduling continuous-process equipment](/blog/edgebic-for-food-manufacturing-continuous-process). Multi-shift plants should also read [running around the clock without overbooking](/blog/edgebic-for-plastics-multi-shift), which covers how a single job spreads across shifts and machines.
+
+Bring one line's shift pattern, its sanitation schedule and last quarter's holiday list to a demo of [food manufacturing scheduling software](/food-manufacturing-scheduling-software), and we will show you the hours that line really has.

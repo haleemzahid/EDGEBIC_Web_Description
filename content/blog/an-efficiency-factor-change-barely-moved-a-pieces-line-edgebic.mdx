@@ -1,0 +1,82 @@
+---
+title: "An Efficiency Factor Change Barely Moved a Pieces Line: Why, and the Fix"
+description: "A speed factor edit that leaves a pieces-based line running the same length almost always means the factor you changed is not the number that step consults. Here is how to find the one that is."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - efficiency factor no effect
+  - speed factor not applied
+  - pieces per hour rate
+  - effective pieces per hour
+  - pieces line scheduling factor
+  - efficiency factor troubleshooting
+targetPhrase: "efficiency factor barely moved a pieces line"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "Why did changing the efficiency factor on my pieces line barely change the schedule?"
+    answer: "Almost always because the factor you edited is not the number that step consults. A speed factor set on a work center group's member row applies to steps bound to that group, so a step routed straight at a named machine never reads it. A parallel factor set on a true alternative does nothing at all, because a true alternative carries its own hours and setup instead. And a work center itself has no efficiency editor, so there is nothing to turn there. Find the number the step actually uses, which for a pieces line is its piece-rate math on the routing step."
+  - question: "Where does a pieces line's output rate actually live?"
+    answer: "On the routing step that runs there, not on the work center editor. The work center's capacity type and unit of measure appear as read-only columns in the grid; the piece-rate math, pieces per hour and batch sizes, is configured on the step. The step's hours-per-piece value is the number the plan is built from, and the Pieces and Hours converter next to it turns a rate you know in pieces per hour into the decimal hours per piece the step stores. Change that value and the line's duration changes with it."
+  - question: "I changed a factor and nothing moved at all. Is that the same problem?"
+    answer: "Possibly not. Saving master data never reschedules on its own, so a change that looks completely ignored is often just a plan that has not been rerun. Run Drive Schedule and look again before you go hunting. If the operation moves then, the edit was fine all along. If it still sits at the same length after a fresh run, the number you changed is not the one that step reads, and the routing step's own hours are the place to look next."
+qaQuestions:
+  - question: "I set a factor to 3.0 to model a line running triple its rated speed, but the jobs barely got shorter. What happened?"
+    answer: "Check what you set it on. A speed factor belongs to a machine within a work center group and applies to run hours for steps bound to that group, so if the step names the machine directly it never reads the factor at all. A factor entered on a true alternative is a documented no-op, because a true alternative carries its own hours and its own setup rather than a scaled copy of the primary's. If the line genuinely runs at triple the rate you have recorded, that belongs in the routing step's per-piece time. Correct the hours-per-piece there, rerun Drive Schedule, and the duration will follow."
+  - question: "We wanted a badly worn machine to run much slower in the plan, but the run times did not stretch. Is the factor working?"
+    answer: "The factor works, but only for the machines and steps it governs. If the worn machine is a member of a pool, its factor stretches run hours for steps bound to that pool, and you should see longer bars on the very next scheduling run. If it is not in a pool, or the step targets it by name, put the slower speed in the routing step's per-piece time instead, which is the number the plan is built from for a pieces line. Either way rerun Drive Schedule afterwards, because saving master data does not move a plan by itself."
+---
+
+**A speed factor edit that leaves a pieces-based line running the same length almost always means the factor you changed is not the number that step consults, or the plan has not been rerun since you changed it.** In [EDGEBIC by User Solutions](/edgebic) the output rate a pieces line is planned from comes from its routing step, so an edit made somewhere else can be entirely valid and still leave that step's duration untouched.
+
+This post lives in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [pieces-based versus hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic) and the wider question of [what is production scheduling](/blog/what-is-production-scheduling).
+
+## What You Are Seeing
+
+You have a pieces-based line, and you changed a factor somewhere to reflect it running much faster, or much slower, than the number on file. You expected the schedule to react in proportion. Instead the operation came back at almost exactly the length it was before, as if the scheduler ignored the change. The field accepted the value and saved cleanly, but the plan did not follow it.
+
+## Why It Happens
+
+There are four causes, and they are quick to separate.
+
+- **The plan has not been rerun.** Saving master data never reschedules by itself. Bars already placed stay where they are until the next **Drive Schedule** run, so a change can look ignored when it is simply pending.
+- **The factor belongs to a pool, and this step does not use the pool.** A speed factor is a property of a machine's membership in a work center group: it multiplies run hours for steps bound to that group. A step that names the machine directly never reads it.
+- **The factor was entered on a true alternative.** That is a documented no-op. A true alternative is not a scaled copy of the primary; it carries its own hours required and its own setup time, entered on its own row.
+- **The work center has no efficiency editor.** Capacity type and unit of measure show as read-only columns on the work center grid, and piece-rate math is configured on the routing step rather than on the work center dialog. If you went looking for a rate multiplier on the machine record, there is not one to turn.
+
+None of these is a bug. Each one is the engine reading the number that genuinely governs that step, which is a different number from the one that was edited.
+
+## How to Fix It
+
+Find the number the step actually reads, change that, and rerun.
+
+1. **Rerun scheduling first.** Run **Drive Schedule** and re-check the operation before investigating anything else. If it moves, the edit was correct and only the plan was stale.
+2. **Check how the step is routed.** If it names a machine directly, a pool member's factor has no bearing on it. Either bind the step to the work center group so the pool's factors apply, or correct the step's own numbers.
+3. **Put a pieces line's real rate on the routing step.** The per-piece time on the step is what the plan is built from. If you know the line as pieces per hour, use the converter beside the hours value to turn that rate into the decimal hours per piece the step stores.
+4. **Give a true alternative its own numbers.** Do not expect a factor to derive them. Enter that machine's real hours required and its real setup time on its own alternative row.
+5. **Re-run and check one operation.** The duration should follow from the step's own piece requirement and per-piece time. If it does, the model and the plan now agree.
+
+## How to Prevent It
+
+- **Decide where speed differences live before you enter them.** Interchangeable machines of different speeds belong in a work center group, where each member's factor is read on every run. A single named machine's real rate belongs on the routing step.
+- **Treat "the plan did not move" as a rerun question first.** It is the most common answer and the cheapest to rule out.
+- **Keep the per-piece time honest.** A line's real sustained output is the number worth maintaining, because every job through that step is sized from it.
+- **Do not confuse this with capacity.** A speed factor and a per-piece time size the work; shift hours, downtime, and per-day capacity overrides size the day. Those are the levers when the issue is how many hours the line offers, not how fast it runs, as covered in [pieces-based versus hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic).
+
+If your pieces work center is scheduling in run hours rather than by output at all, that is a different symptom covered in [a pieces work center scheduled in hours](/blog/a-pieces-work-center-scheduled-in-hours-edgebic).
+
+<Accordion title="Why did changing the efficiency factor on my pieces line barely change the schedule?">
+Almost always because the factor you edited is not the number that step consults. A speed factor set on a work center group's member row applies to steps bound to that group, so a step routed straight at a named machine never reads it. A parallel factor set on a true alternative does nothing at all, because a true alternative carries its own hours and setup instead. And a work center itself has no efficiency editor, so there is nothing to turn there. Find the number the step actually uses, which for a pieces line is its piece-rate math on the routing step.
+</Accordion>
+
+<Accordion title="Where does a pieces line's output rate actually live?">
+On the routing step that runs there, not on the work center editor. The work center's capacity type and unit of measure appear as read-only columns in the grid; the piece-rate math, pieces per hour and batch sizes, is configured on the step. The step's hours-per-piece value is the number the plan is built from, and the Pieces and Hours converter next to it turns a rate you know in pieces per hour into the decimal hours per piece the step stores. Change that value and the line's duration changes with it.
+</Accordion>
+
+<Accordion title="I changed a factor and nothing moved at all. Is that the same problem?">
+Possibly not. Saving master data never reschedules on its own, so a change that looks completely ignored is often just a plan that has not been rerun. Run Drive Schedule and look again before you go hunting. If the operation moves then, the edit was fine all along. If it still sits at the same length after a fresh run, the number you changed is not the one that step reads, and the routing step's own hours are the place to look next.
+</Accordion>

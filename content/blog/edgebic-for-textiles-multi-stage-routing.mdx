@@ -1,0 +1,182 @@
+---
+title: "Routing Fabric Through Dye, Cut and Sew"
+description: "Textile production routing scheduling that handles outside dyeing, queue time between stages, and the difference between calendar days and vendor working days."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - textile production routing scheduling
+  - dye cut sew routing
+  - outside processing transit days
+  - garment manufacturing routing steps
+  - queue time between operations
+  - fabric production stages scheduling
+targetPhrase: "textile production routing scheduling"
+wordCount: 1785
+readingTime: 9
+faqQuestions:
+  - question: "How do you model an outside dye house in a production routing?"
+    answer: "As a routing step with transit days on it. EDGEBIC by User Solutions adds transit time after the step's own work is done, and you choose whether the count runs in calendar days or working days. A five working-day dye turnaround entered as working days skips the weekend correctly, so the cutting step downstream is offered the right Wednesday rather than an optimistic Monday."
+  - question: "What is the difference between queue time and transit days?"
+    answer: "Queue time is a shift-aware buffer measured in hours, applied after an operation ends and before its successor may start: relax time on knitted fabric, cooling after pressing, an inspection window. Transit days are whole days of travel measured against a calendar, for material moving to and from an outside processor. Queue time never consumes work center capacity, and neither does transit."
+  - question: "Does the scheduler follow the step numbers on a routing?"
+    answer: "No. It follows the dependency link on each step, which names what that step feeds. Sequence numbers order the routing for people reading it; the links are what the scheduling engine reads to build its order of operations. A step with a missing or unresolvable link has nothing pulling it later, so it schedules as early as capacity allows, which is the single most common cause of an operation appearing in the wrong place."
+  - question: "Can one routing step run on more than one machine?"
+    answer: "Yes, in three different ways, and they behave differently. Alternates replace the primary machine when they would finish sooner. Independent parallel machines run at the same time and share the work, each consuming its own capacity. Dependent parallel machines mirror the primary's timing exactly for operations that physically occupy several machines at once. Picking the wrong one produces a plan that is wrong in a way nobody notices until the floor disagrees."
+qaQuestions:
+  - question: "We send greige goods out for dyeing on a five-working-day turnaround. The schedule keeps promising cut dates that assume the dye house works weekends. How do we fix it?"
+    answer: "Put the transit on the dye step and set the count to working days rather than calendar days.\n\nWith working days, the engine advances one day at a time and only counts days that actually have shifts. A dye step finishing Wednesday counts Thursday, Friday, Monday, Tuesday, Wednesday, and releases cutting at Wednesday's shift close, five real working days later. With calendar days it would count Saturday and Sunday and release cutting on the Monday, which looks two days better on paper and is not true.\n\nUse calendar days only when the transit genuinely runs through weekends, such as a sea freight leg or an unattended cure."
+  - question: "A 500-unit order runs cut, sew and finish with a two-hour relax between sew and finish. What does the schedule actually produce?"
+    answer: "Roughly two and a half days, and each stage lands where the capacity allows rather than where the routing wishes.\n\nCut needs 0.02 hours per unit plus 1 hour of setup, so 11 hours, starting Monday 08:00 and running past the day shift. Sew needs 0.015 per unit plus 0.5 setup, so 8 hours, and takes the next viable full slot: Tuesday 08:00 to 16:00. The 2-hour relax pushes the earliest finish start to Tuesday 18:00, which is past the shift, so finish takes Wednesday 08:00 and completes at 10:30 after its 2.5 hours.\n\nThe relax buffer did not consume capacity anywhere. It moved the earliest start, which is exactly what a queue is."
+---
+
+**A garment does not have one process. It has a chain of them, and half the chain is not in your building.** EDGEBIC by User Solutions models fabric routings as a linked sequence of operations with explicit handoff time between them: queue hours for relax and cure, transit days for outside dyeing and washing, and finite capacity on every stage you actually own.
+
+## The Pain: The Stages Between the Stages
+
+Ask a textile planner where their schedule breaks and the answer is rarely a machine. It is a gap.
+
+Fabric comes off the knitting machine and has to relax before it can be cut. Goods go out to a dye house on a five-day turnaround and come back on the vendor's calendar rather than yours. Panels are pressed and need to cool. Garments come off the line and wait for an inspection window.
+
+None of these consume machine capacity. All of them consume calendar. A scheduling system that only models operations and assumes zero time between them produces dates that are optimistic by exactly the sum of the gaps, which in a dye-cut-sew chain is usually more than the processing time itself.
+
+The industry-level treatment of this is in the [textile and garment scheduling overview](/blog/textile-garment-scheduling). What follows is the routing structure that removes the gap between the plan and the calendar.
+
+## What a Routing Step Actually Carries
+
+Every stage in the chain is a step, and the fields that matter divide into three groups.
+
+**Work fields** decide capacity consumption:
+
+| Field | Meaning |
+|---|---|
+| Run time | Hours per unit of quantity. The primary capacity consumer |
+| Setup time | Fixed preparation per run, added before allocation |
+
+**Handoff fields** decide the gap to the next stage without consuming capacity:
+
+| Field | Meaning |
+|---|---|
+| Queue time | A shift-aware buffer in hours after the step ends. Relax, cool, inspect |
+| Transit days | Whole days of travel, counted in calendar days or working days |
+| Transfer batch and handling delay | Overlap: how much can move downstream before the whole lot is done |
+
+**Structure fields** decide order:
+
+| Field | Meaning |
+|---|---|
+| Dependency link | What this step feeds. This is what the scheduler reads |
+| Sequence number | Display and sorting order for people |
+
+That last distinction is worth being blunt about, because it accounts for most sequencing complaints. The engine builds a graph from the dependency links and sorts it so nothing is scheduled before its predecessors have finish times. Renumbering steps changes what the grid looks like. Rewiring links changes what the schedule does. Full field reference is in the [bill of routing guide](/blog/edgebic-bill-of-routing-explained).
+
+## Worked Example One: A 500-Unit Cut, Sew, Finish Run
+
+Three in-house stages, one buffer, a day shift starting Monday 08:00.
+
+| Step | Work center | Run time | Setup | Queue |
+|---|---|---|---|---|
+| Cut | Cutting table | 0.02 h per unit | 1.0 h | 0 |
+| Sew | Sew line | 0.015 h per unit | 0.5 h | 2.0 h |
+| Finish | Finishing | 0.005 h per unit | 0 | 0 |
+
+The engine works through it:
+
+```
+Cut    : 0.02 x 500 + 1.0 = 11.0 h
+         starts Mon 08:00, runs past the day shift
+         no queue, so sew may start when cut ends
+
+Sew    : 0.015 x 500 + 0.5 = 8.0 h
+         takes the next viable full slot, Tue 08:00 to 16:00
+         queue 2.0 h, so finish may start Tue 18:00
+
+Finish : 0.005 x 500 = 2.5 h
+         Tue 18:00 is past the shift, so Wed 08:00 to 10:30
+```
+
+Two and a half days. The two-hour relax did not consume capacity on any machine. It moved the earliest start of the next stage, which is precisely what a queue is for.
+
+That distinction matters more than it sounds. Padding the sew operation by two hours to cover the relax would make the sew line look busier than it is forever, and capacity is the number every other decision rests on. Queue and transit fields are covered in [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained).
+
+## Worked Example Two: Five Working Days at the Dye House
+
+Outside processing is where calendar arithmetic earns its keep.
+
+| Step | Work center | Run time | Setup | Transit days | Counted as |
+|---|---|---|---|---|---|
+| Prepare | Prep line | 0.1 h per unit | 0.5 h | 0 | calendar |
+| Dye | Dye house | 0.25 h per unit | 2.0 h | 5 | working days |
+| Cut | Cutting table | 0.08 h per unit | 0.5 h | 0 | calendar |
+
+On a 200-unit order the prep step runs 20.5 hours and the dye step runs 52. When the dye step's own work is done, the transit count begins.
+
+In working-day mode the engine advances one day at a time and only counts a day that actually has shifts:
+
+```
+Day 1  Thursday   remaining 4
+Day 2  Friday     remaining 3
+Day 3  Monday     remaining 2
+Day 4  Tuesday    remaining 1
+Day 5  Wednesday  remaining 0
+Transit ends at Wednesday's shift close.
+```
+
+Cutting is released Wednesday 16:00, five real working days after dyeing finished.
+
+In calendar-day mode the same five days would count Saturday and Sunday, releasing cutting on the Monday. On paper that looks two days better. On the floor the goods are still at the dye house.
+
+The rule of thumb is simple. Use working days when the transit is constrained by somebody's working calendar: a dye house, a wash house, an embroidery vendor, a local carrier. Use calendar days when the clock genuinely runs through weekends: a sea freight leg, an unattended cure, a soak.
+
+## Overlap: Not Every Stage Waits for the Whole Lot
+
+A cut lot does not have to be complete before sewing starts. The first bundle is sewable as soon as it is cut.
+
+Setting a transfer batch on the upstream step tells the scheduler how many pieces must accumulate before the downstream stage may begin. The engine computes when that many pieces will physically exist, from setup plus the batch multiplied by the per-piece run time, and offers the downstream stage a start from that point rather than from the upstream end.
+
+In a cut-sew chain the effect is substantial, because cut and sew both run for hours and the gap between them is pure elapsed time. The mechanism and the numbers are in [lot streaming explained](/blog/edgebic-lot-streaming-explained), and the textile treatment is in [batch and overlap scheduling in textile production](/blog/edgebic-for-textiles-batch-scheduling).
+
+## One Step, More Than One Machine
+
+Three configurations exist and they behave differently.
+
+**Alternates** replace the primary machine. Two sew lines that can both run a style, with different cycle times: the resolver compares projected completion across the candidates before scheduling begins and picks the one that finishes soonest, using that machine's own run time rather than a scaled version of the primary's.
+
+**Independent parallel** runs machines at the same time, sharing the work, each consuming its own capacity. Two cutting tables on one large lot.
+
+**Dependent parallel** mirrors the primary's timing onto secondary machines for operations that physically occupy several at once. The mirrors are not capacity-checked, which is the tradeoff for guaranteed synchronization.
+
+The distinction and its consequences are in [parallel work centers explained](/blog/edgebic-parallel-work-centers-explained). Choosing dependent because it always finds a slot is the mistake to avoid: it always finds a slot precisely because it does not check.
+
+## Splits, Joins, and Routing Depth
+
+Textile routings are rarely a straight line. A knitted panel and a woven trim converge at assembly. A dyed lot splits into two finish treatments and rejoins at packing.
+
+The dependency link handles this because it accepts more than one target, separated by commas. A step that feeds two downstream stages names both, and a stage fed by two upstream branches is simply a step that two links point at. The engine's sort respects every edge, so a join waits for the later of its inputs and a split releases both.
+
+Depth is computed from those links rather than declared. A step feeding the finished product sits at the shallowest level, a step feeding that one is a level deeper, and where a link points at another product the walk resolves into that product's own routing and keeps going. That mechanism is what makes a component with its own routing schedule as part of the parent job rather than as a separate plan.
+
+One failure mode is worth recognizing by sight. A circular chain, where two steps eventually point back at each other, is detected rather than looped over. Both steps end up treated as the same depth and the routing is flagged with a warning. The schedule still runs, which is why the warning matters: the sort has stopped expressing the order the routing intended, and the plan is quietly less meaningful than it looks.
+
+## Modeling Standards That Prevent Trouble
+
+Four practices, each of which fixes a failure that is otherwise hard to diagnose.
+
+**Every step names its successor.** A step with no link, or a link the engine cannot resolve, has nothing pulling it later, so it lands as early as capacity allows. That looks like a sequencing bug and is a data problem.
+
+**Handoff time goes in the handoff fields.** Relax, cure, cool, transit, and inspection windows belong in queue time and transit days. Padding an operation's run time to cover them corrupts capacity permanently.
+
+**Purchased material is a material step.** A step with a product and no work center documents the consumption without pretending an operation exists or reserving capacity nothing will use.
+
+**Watch for circular links.** A chain that loops back on itself is detected rather than looping forever, but both steps end up treated as the same depth and flagged. Fix the chain when the warning appears rather than working around it.
+
+Sequencing problems and their causes are cataloged in [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic).
+
+## Where to Start
+
+Take one style that goes outside for processing, because that is where the biggest gap between plan and reality usually lives. Model its full chain including the transit, in working days, and compare the promised date against what that style actually delivered last time it ran.
+
+For the industry picture, see the [textile and garment scheduling overview](/blog/textile-garment-scheduling) and the [textile and garment manufacturing software page](/textile-garment-manufacturing-software). Shift structure across a two-shift or seven-day operation is covered in [scheduling textile production across shift patterns](/blog/edgebic-for-textiles-shift-patterns). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product, [EDGEBIC](/edgebic).

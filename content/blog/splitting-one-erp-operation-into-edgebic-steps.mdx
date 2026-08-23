@@ -1,0 +1,117 @@
+---
+title: "Splitting One ERP Operation Into Multiple EDGEBIC Steps"
+description: "How to break a single coarse ERP operation into separate EDGEBIC routing steps when work runs across different machines, so finite capacity scheduling sees the real flow."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - split ERP operation into steps
+  - coarse ERP routing scheduling
+  - ERP operation to routing steps
+  - finite capacity routing granularity
+  - EDGEBIC routing import steps
+  - sequence numbers routing import
+targetPhrase: "split one ERP operation into multiple steps"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "Why would I split one ERP operation into several EDGEBIC steps?"
+    answer: "You split when a single ERP operation actually happens on more than one work center or at more than one point in time. If your ERP records mill, deburr, and inspect as one lumped operation but they run on three different machines, the scheduler cannot load those machines correctly from one line. Splitting into three steps with their own work centers and times lets EDGEBIC see the real flow, load each machine to real capacity, and sequence the pieces between them."
+  - question: "Does splitting an operation change anything in my ERP?"
+    answer: "No. The split lives in the routing you import into EDGEBIC, not in the ERP. You expand the operation into multiple rows in the export file or the mapping, each with its own sequence number, work center, setup, and run time. The ERP keeps its coarser operation record for costing and reporting. This is the same one-way, file-based pattern used for every ERP: export, import through a mask, schedule, and export dates back, with no write-back to the ERP."
+  - question: "How do I keep the split steps connected as one flow?"
+    answer: "Number the steps in ascending sequence and the routing import wires them automatically. The two-pass import groups all of a product's rows, sorts them by sequence number, then links step 10 to 20, 20 to 30, and the last step to the finished product. Number in gaps of 10 so a later insert becomes 25 without renumbering. The result renders as one connected chain in the graphical routing designer, exactly as if the ERP had exported the steps separately."
+qaQuestions:
+  - question: "Our ERP has one operation called Machining that covers a lathe, a mill, and a manual finish bench. All three are always jammed. How do we get EDGEBIC to schedule them separately?"
+    answer: "Expand that one operation into three routing steps in the file you import. Give them sequence numbers 10, 20, and 30, and point each at its real work center: lathe, mill, finish bench. Split the operation's standard hours across the three steps according to where the time actually goes, keeping setup and run separate on each. Once imported, EDGEBIC loads each machine to its own finite capacity and sequences pieces through the chain, so you finally see which of the three is the true bottleneck instead of a single blended Machining load that hides it."
+  - question: "We only have a rough idea of how the total operation time splits across the three machines. Is an estimate good enough to start?"
+    answer: "Yes. Start with your best proportional estimate, for example 40 percent lathe, 45 percent mill, 15 percent finish, and import that. A rough split that puts time on the right machines is far more useful than one lumped operation, because the schedule now loads three separate capacities. Then correct the proportions where they matter: watch which step actually constrains jobs and refine that one first. Re-importing the corrected routing is safe, because running jobs keep the routing snapshot they were planned with and only future jobs pick up the change."
+---
+
+**Split a single ERP operation into multiple EDGEBIC steps whenever that operation really runs across more than one work center, because finite capacity scheduling can only load a machine correctly when each machine has its own routing step.** A coarse operation that lumps three machines into one line hides where the real bottleneck is and loads none of them accurately. The split lives in the routing you import, not in your ERP, so it costs nothing on the ERP side.
+
+EDGEBIC by User Solutions has unpacked coarse ERP routings this way since 1991. Across 35+ years of scheduling for manufacturers like GE, BAE Systems, and Cummins, the lumped operation is one of the most common reasons a first schedule looks wrong, and one of the easiest to fix.
+
+## Why a coarse operation cannot schedule a real flow
+
+ERPs often model routings at the level costing needs, not the level scheduling needs. A single operation named Machining might cover a lathe, a mill, and a finish bench. For a cost rollup that is fine: it is one bucket of hours at one rate. For finite capacity scheduling it is a problem, because those three machines have separate capacities, separate queues, and separate shift patterns.
+
+Feed one lumped operation to the scheduler and three things go wrong:
+
+- The engine loads one nominal work center instead of three, so it never sees that the mill is at 160 percent while the lathe sits at 60.
+- Pieces cannot flow between machines, because there is only one step, so you lose any overlap the shop actually gets.
+- The true constraint stays invisible, which defeats the point of [production bottleneck identification](/blog/production-bottleneck-identification).
+
+## The split lives in the routing, not the ERP
+
+You do not restructure your ERP. You expand the one operation into several rows in the routing file you import, each row a real work center with its own times. The ERP keeps its coarse operation for costing and reporting. This is the same one-way method used for every ERP, described in [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way): export to file, import through a mask, schedule, export dates back, no write-back.
+
+## Step 1: decide where the operation really breaks
+
+List the physical work centers the single operation touches, in the order pieces move through them. For the Machining example:
+
+| New step | Work center | What happens |
+|---|---|---|
+| 10 | Lathe | Turn the part |
+| 20 | Mill | Mill features |
+| 30 | Finish bench | Deburr and hand finish |
+
+Number in gaps of 10 so a later insert (a wash step at 25, say) does not force a renumber.
+
+## Step 2: split the time across the steps
+
+The lumped operation carries a total time. Distribute it across the new steps according to where the work actually happens, and keep setup separate from run on each, because setup is once per job and run scales with quantity. The full reasoning is in [handling an ERP export with combined setup and run time](/blog/handling-combined-setup-and-run-time-from-your-erp).
+
+A worked split of a 5.0 hour lumped operation at a standard lot of 100:
+
+| Step | Work center | Setup (hr) | Run per piece (hr) | Run across 100 |
+|---|---|---|---|---|
+| 10 | Lathe | 0.5 | 0.018 | 1.8 |
+| 20 | Mill | 0.75 | 0.020 | 2.0 |
+| 30 | Finish bench | 0.25 | 0.007 | 0.7 |
+
+Setup totals 1.5 and run totals 4.5 across 100, reconciling near the original 5.0, which is the check that your split is sane. Now each machine carries its own load.
+
+## Step 3: import and let the two-pass wire it
+
+You import the expanded routing exactly like any routing. The two-pass import reads and validates every row first, auto-creates any work center the file names that does not exist yet, and buffers the steps. The second pass groups a product's rows, sorts by sequence, writes them, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product. The result renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour), identical to a routing the ERP exported step by step. The mechanics of the two-pass import are covered in [mapping routings versus operations](/blog/mapping-routings-vs-operations-from-your-erp).
+
+Keep all of a product's steps in one file. A routing import wipes and recreates that product's steps once per run, which is what makes re-imports idempotent. Splitting one product's steps across two runs means the second run's wipe deletes the first run's steps.
+
+## When to split, and when to leave it lumped
+
+Splitting adds routing rows to maintain, so do it where it earns its keep:
+
+- **Split** when the machines have genuinely different capacities or queues, especially if one is a bottleneck.
+- **Split** when pieces overlap between the machines, so you can model transfer batches and get real flow time. The concept is in [what is a transfer batch](/blog/what-is-a-transfer-batch).
+- **Leave lumped** when the whole operation runs on one machine at one time, because there is nothing to separate.
+- **Leave lumped** when the machines are never tight, since a single blended load costs nothing where there is slack.
+
+## Start rough, refine where it matters
+
+You do not need exact proportions on day one. A rough split that puts time on the right machines beats one lumped operation immediately, because the schedule now loads three separate capacities instead of one fictional average. Then watch which step actually constrains jobs and refine that one first.
+
+Re-importing the refined routing is safe. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched. You can improve the split over several weeks without disturbing the floor.
+
+## The opposite problem: too many tiny operations
+
+Occasionally an ERP exports the reverse, dozens of micro-operations that all run on the same machine back to back with no real handoff. There the useful move is to combine, not split: merge adjacent same-machine steps into one routing line so the scheduler is not tracking meaningless sub-second gaps. The rule is the same in both directions: the routing granularity should match where capacity and time actually change, not how the ERP happens to record cost.
+
+## Bring your coarsest routing
+
+Export the routing for a product whose operations lump several machines together and [bring it to a demo](/contact-us). Splitting one operation live takes minutes, and you leave able to see each machine loaded to its real capacity for the first time. The full finite capacity engine that consumes the result is mapped on the [EDGEBIC product overview](/edgebic), and the universal integration method sits under the [ERP integration hub](/edgebic-erp-integration).
+
+<Accordion title="Why would I split one ERP operation into several EDGEBIC steps?">
+You split when a single ERP operation actually happens on more than one work center or at more than one point in time. If your ERP records mill, deburr, and inspect as one lumped operation but they run on three different machines, the scheduler cannot load those machines correctly from one line. Splitting into three steps with their own work centers and times lets EDGEBIC see the real flow, load each machine to real capacity, and sequence the pieces between them.
+</Accordion>
+
+<Accordion title="Does splitting an operation change anything in my ERP?">
+No. The split lives in the routing you import into EDGEBIC, not in the ERP. You expand the operation into multiple rows in the export file or the mapping, each with its own sequence number, work center, setup, and run time. The ERP keeps its coarser operation record for costing and reporting. This is the same one-way, file-based pattern used for every ERP: export, import through a mask, schedule, and export dates back, with no write-back to the ERP.
+</Accordion>
+
+<Accordion title="How do I keep the split steps connected as one flow?">
+Number the steps in ascending sequence and the routing import wires them automatically. The two-pass import groups all of a product's rows, sorts them by sequence number, then links step 10 to 20, 20 to 30, and the last step to the finished product. Number in gaps of 10 so a later insert becomes 25 without renumbering. The result renders as one connected chain in the graphical routing designer, exactly as if the ERP had exported the steps separately.
+</Accordion>

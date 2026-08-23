@@ -1,0 +1,106 @@
+---
+title: "How a Forecast Becomes a Replenishment Suggestion in EDGEBIC"
+description: "Follow the exact path a demand forecast takes to become a build suggestion: gross requirements, projected balance, reorder trigger, lot sizing, and yield."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - replenishment suggestion
+  - demand forecast to build order
+  - projected available balance
+  - reorder point trigger
+  - lot sizing manufacturing
+  - make to stock replenishment
+targetPhrase: "replenishment suggestion"
+wordCount: 1720
+readingTime: 9
+faqQuestions:
+  - question: "How does a forecast turn into a build suggestion in EDGEBIC?"
+    answer: "A forecast becomes a suggestion through a five-step chain. The forecast combines with firm demand into gross requirements, gross requirements roll the projected available balance forward bucket by bucket, the balance is compared against the product's reorder trigger, the shortfall is calculated to a target level, and lot-sizing and yield rules round that shortfall into a buildable quantity. The result is a display-only number until a planner firms it."
+  - question: "Does a replenishment suggestion change the projected balance automatically?"
+    answer: "No. A suggestion is advisory and does not improve the projected balance of later buckets until a planner firms it into a real order. This is deliberate: a number sitting on the screen is not supply. If three consecutive buckets show suggestions and the planner firms only the first, the second and third still show suggestions against the same depressed balance until the firmed order's completion date lands as a scheduled receipt on the next projection."
+  - question: "Why is the suggested quantity sometimes larger than the shortfall?"
+    answer: "Two rules can inflate it. A fixed-order-quantity lot rule rounds the raw shortfall up to a whole multiple of the reorder quantity, so a shortfall of 360 with a lot of 100 becomes 400. A yield below one then inflates further to cover scrap, so a 400-unit target at 90 percent yield becomes 445 units started. Both rules exist so the good output after rounding and scrap actually clears the target."
+qaQuestions:
+  - question: "We stock a bracket with a reorder point of 100 and a reorder quantity of 200, and it sits at 250 on hand. When exactly does EDGEBIC suggest a build?"
+    answer: "Run the documented numbers. Weekly forecasts of 120, 120, 80, 80 combine with firm orders of 60 and 30 in the first two weeks under the greater-of rule, so week 1 demand is 120 and week 2 demand is 120. Starting from 250, week 1 projects to 130, still above the 100 trigger, so no suggestion. Week 2 projects to 10, below the trigger, so the suggestion fires. The target is reorder point plus reorder quantity, 300, minus the projected 10, which is 290 units. That 290 is what appears in the suggested column."
+  - question: "Our castings scrap about 10 percent. Does the suggestion account for that or do we add it by hand?"
+    answer: "It accounts for it, if the product's yield is set below one. With a target shortfall rounded to 400 units and a yield of 0.90, the suggestion inflates to the ceiling of 400 divided by 0.90, which is 445 units to start. The scheduler starts 445 castings and roughly 400 good units arrive into stock. You never add the scrap allowance by hand: the yield field on the product drives it, so a change to the scrap rate updates every future suggestion at once."
+---
+
+**A replenishment suggestion** is EDGEBIC's recommended build quantity for a make-to-stock product in a bucket where projected stock would otherwise fall below its reorder trigger. It does not appear by magic. It is the end of a short, fully deterministic chain that starts with a forecast you typed and passes through gross requirements, the projected available balance, a trigger comparison, and two rounding rules. This post walks that chain step by step, in planner language, with the documented worked numbers, so the number in the suggested column is never a mystery.
+
+EDGEBIC by User Solutions computes the whole chain fresh every time the calendar refreshes. Nothing along the way is stored back onto your forecast rows, which means the same forecast produces a different suggestion as firm orders and stock evolve. For the wider context of how this planning layer connects to capacity, see the [inventory and planning pillar](/blog/edgebic-planning-guide). For the demand-side background this post builds on, see [demand forecasting for manufacturing](/blog/demand-forecasting-manufacturing).
+
+## Step 1: Forecast Plus Firm Demand Become Gross Requirements
+
+The first thing the engine does with your forecast is combine it with firm demand for the same bucket into a single number called gross requirements. It never simply adds the two, because a firm order is usually the fulfillment of the forecast that predicted it, and adding both would plan the same demand twice.
+
+Two consumption rules control the combination. The default, greater-of, takes the larger of forecast and firm in each bucket. The alternative, minus-consumed, lets firm orders eat into the forecast first and then adds them on top of what remains. The choice is a per-product setting, and the difference between the two rules is covered in detail in [greater-of versus minus-consumed consumption](/blog/greaterof-vs-minusconsumed-forecast-consumption-rules-edgebic). For the pipeline in this post, the important fact is that gross requirements is one number per bucket, and forecast is only one of its two inputs.
+
+For a make-to-order product, the engine ignores forecast entirely at this step and gross requirements equals firm demand alone. Suggestions never fire for make-to-order items, so the rest of the chain does not apply to them.
+
+## Step 2: Gross Requirements Roll the Projected Balance Forward
+
+With gross requirements known for every bucket, the engine rolls the projected available balance forward one bucket at a time. Each bucket's projected balance is the previous bucket's balance, plus any scheduled receipts landing in the bucket, minus that bucket's gross requirements. Past buckets use realized ledger movement rather than the plan, so the balance carries a truthful history up to today and then switches to the planning model.
+
+A projected balance is not a warning by itself. It is the raw signal the next step reads. A balance of 130 in a bucket with a reorder trigger of 100 is fine; a balance of 10 in the same bucket is a problem. The engine needs the balance for every bucket before it can decide which ones need a suggestion, which is why the roll-forward runs completely before any suggestion is calculated.
+
+## Step 3: The Balance Meets the Reorder Trigger
+
+Now the engine compares each bucket's projected balance against the product's reorder trigger. The trigger depends on the product's reorder method:
+
+| Reorder method | Trigger the balance is compared against | Target if it fires |
+|---|---|---|
+| Reorder point | The product's reorder level | Reorder level plus reorder quantity |
+| Min/Max | The product's minimum level | The maximum level |
+| None | No comparison | No suggestion ever |
+
+If the projected balance is at or above the trigger, the bucket gets no suggestion and the chain stops for that bucket. If it is below, the engine moves to the shortfall calculation. The raw shortfall is simply the target minus the projected balance. For a reorder-point product with a reorder level of 100, a reorder quantity of 200, and a projected balance of 10, the target is 300 and the raw shortfall is 290.
+
+## Step 4: Lot Sizing Rounds the Shortfall
+
+The raw shortfall is rarely the number you build. Lot-sizing rules shape it into something a shop actually runs. Lot-for-lot uses the exact shortfall with no rounding. Fixed-order-quantity rounds the shortfall up to a whole multiple of the reorder quantity, so a shortfall of 360 with a reorder quantity of 100 becomes four lots, or 400. The full behavior of each rule, and how they interact with pallet sizes and batch minimums, is covered in [how lot sizing and yield inflation shape order quantities](/blog/how-lot-sizing-and-yield-inflation-shape-order-quantities-in-edgebic).
+
+## Step 5: Yield Inflation Covers Scrap
+
+If the product's yield is set below one, the engine inflates the lot-sized quantity to cover expected scrap. A quantity of 400 at a yield of 0.90 becomes the ceiling of 400 divided by 0.90, which is 445. The logic is that you must start 445 to end with roughly 400 good units. Yield inflation runs after lot sizing, so the started quantity reflects both the rounded batch and the scrap allowance. The final number, after both rules, is what appears in the suggested column.
+
+## When the Chain Produces No Suggestion
+
+It is worth knowing the cases where the chain deliberately stops early, because a missing suggestion is often correct rather than a fault. The chain produces nothing in four situations. If the product is make-to-order, forecast is ignored and no suggestion ever fires. If the reorder method is set to none, the trigger comparison is skipped entirely. If the projected balance stays at or above the trigger in every bucket, there is simply nothing to recover. And if a bucket's target minus its projected balance works out to zero or less, the shortfall is not positive and no build is proposed.
+
+Reading these cases back to front is the fastest way to diagnose a suggestion you expected but did not get. A stocked item that never suggests almost always turns out to be make-to-order by build method or to have a reorder method of none. Conversely, a suggestion larger than you expected traces to lot sizing or yield, and a suggestion in a bucket you thought was covered usually means an earlier bucket's shortfall carried the balance down below the trigger.
+
+One related pitfall belongs here. Forecast rows are additive by type within a bucket, so a Sales forecast of 100 and a Production forecast of 100 for the same week produce 200 units of forecast, not 100. That is by design, since each type is independent demand, but it is a common source of over-forecasting that inflates gross requirements and, in turn, the suggestion. If a suggestion looks too big and the lot and yield settings are innocent, check whether the same demand was entered twice under different types.
+
+## The Suggestion Is Advisory Until You Firm It
+
+Here is the single most important behavior to internalize: the suggested quantity does not change the projected balance of any later bucket. It sits on the screen as a recommendation. The projected balance only rises once a planner firms the suggestion into a real make-to-stock order and that order's completion date lands as a scheduled receipt on the next projection run.
+
+This is why you can see three consecutive buckets each showing a suggestion against a steadily falling balance. Firming the first suggestion does not silence the second and third until the firmed order's receipt appears. Once it does, the balance recovers and the downstream suggestions drop to zero. Turning a suggestion into an order is one click, described in [firming a replenishment suggestion into an order](/blog/how-to-firm-a-replenishment-suggestion-into-an-order-in-edgebic).
+
+## The Chain End to End: The Bracket Worked Example
+
+Put the whole chain together on one product. Bracket-A500 is make-to-stock with a reorder level of 100, a reorder quantity of 200, lot-for-lot sizing, and a yield of 1.0. It opens at 250 units. The greater-of rule is active. Weekly forecasts are 120, 120, 80, 80. Firm orders are 60 in week 1 and 30 in week 2.
+
+| Week | Forecast | Firm | Gross req (greater-of) | Opening | Projected | Below trigger? | Suggested |
+|---|---|---|---|---|---|---|---|
+| 1 | 120 | 60 | 120 | 250 | 130 | No | 0 |
+| 2 | 120 | 30 | 120 | 130 | 10 | Yes | 290 |
+| 3 | 80 | 0 | 80 | 10 | -70 | Yes | shown against a depressed balance |
+
+Week 1 combines a 120 forecast and a 60 firm order into gross requirements of 120, rolls 250 down to 130, and finds 130 above the 100 trigger, so no suggestion. Week 2 combines 120 and 30 into 120, rolls 130 down to 10, finds 10 below the trigger, and calculates a target of 300 minus 10, or 290. With lot-for-lot and full yield, 290 passes through both rounding steps unchanged. The suggested column reads 290.
+
+When the planner firms that 290 and the order completes in week 2, the next projection shows a 290 receipt in week 2, lifting week 2 to 300 and carrying every following week back above the 100 reorder point. The week 3 suggestion, which existed only because the balance was depressed, disappears.
+
+## Why the Chain Matters
+
+Each link in this chain is a lever you control. The consumption rule decides how forecast and firm combine. The reorder method and its levels decide when a suggestion fires and how big the target is. The lot rule decides the rounding. The yield decides the scrap allowance. Because the engine recomputes the whole chain on every refresh, adjusting any one product setting updates every future suggestion for that product at once, with no re-entry.
+
+Seeing the chain also tells you where to look when a suggestion surprises you. A suggestion that seems too large usually traces to a fixed-order-quantity rule or a low yield. A suggestion that never fires when you expected one usually traces to a make-to-order build method or a reorder method of none. Walk the five steps and the number always explains itself.
+
+To see how these suggestions sit alongside sales-order-driven and MPS-driven builds, read [the six demand sources behind every job](/blog/the-six-demand-sources-behind-every-job-in-edgebic), and to understand the balance that drives the trigger, read [reading projected available balance across the horizon](/blog/reading-projected-available-balance-across-the-horizon-in-edgebic).

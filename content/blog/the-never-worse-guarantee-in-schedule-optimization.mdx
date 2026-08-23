@@ -1,0 +1,78 @@
+---
+title: "The Never-Worse Guarantee in Schedule Optimization"
+description: "The EDGEBIC multi-run optimizer is guaranteed never worse than your baseline. Here is how a post-solve clamp enforces that promise instead of just hoping for it."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - never worse optimization guarantee
+  - schedule optimization baseline
+  - production schedule optimizer
+  - multi-run optimization
+  - optimizer safety clamp
+  - finite capacity scheduling optimization
+targetPhrase: "never worse than the baseline"
+wordCount: 1480
+readingTime: 7
+faqQuestions:
+  - question: "What does the never-worse guarantee mean in the EDGEBIC optimizer?"
+    answer: "It means the plan the optimizer hands back can never score worse than the schedule you started with. EDGEBIC scores the starting plan and every candidate it builds with one shared calculator, then compares them on the goal you chose. If nothing it found beats the starting plan, the optimizer returns the starting plan unchanged. So running the optimizer can only help or leave you exactly where you were, never harm you."
+  - question: "Is the never-worse promise just a hope, or is it enforced?"
+    answer: "It is enforced by a post-solve check, not assumed. After the optimizer builds a candidate, it decodes that candidate into a real schedule and scores it with the same calculator used on the baseline. If the candidate's objective is worse, the optimizer discards it and keeps the baseline. This clamp runs every time, so a modeling quirk or an unlucky search can never leak a worse plan to you."
+  - question: "Does the never-worse guarantee mean the result is optimal?"
+    answer: "No. Never worse is a floor, not a ceiling. The multi-run layer promises the result is at least as good as your starting plan, which is a guarantee it can always keep. The mathematical solver goes further and reports a proven optimality gap so you can see how close to the best possible plan it got. Never worse protects you from harm; the gap tells you how much better it can be."
+qaQuestions:
+  - question: "I ran the optimizer and it changed nothing. Did it fail?"
+    answer: "No, that is the guarantee working. If the optimizer searches and cannot find any plan that beats your current schedule on the goal you chose, it returns your current schedule untouched rather than force a lateral move that shuffles the floor for no gain. A no-change result means your starting plan was already the best the optimizer could find within the time budget. You lose nothing by having tried."
+  - question: "Could a bug in the solver ever hand me a worse schedule anyway?"
+    answer: "The clamp exists precisely to stop that. Even if the internal model had a flaw and proposed something poor, the final step scores the decoded plan against the baseline with the shared calculator and refuses to return it if it is worse. The comparison is on the real, decoded schedule, not on the solver's internal math, so a discrepancy between the two cannot slip a worse plan past the check."
+---
+
+**The never-worse guarantee means the EDGEBIC optimizer can only hand you a plan that is at least as good as the one you started with, and it enforces that promise with a check that runs on every optimization.** Running the optimizer can help you or leave you exactly where you were. It can never make your schedule worse.
+
+EDGEBIC by User Solutions treats this as a hard contract, not a marketing line. The multi-run optimizer is guaranteed never worse than the baseline, and the reason you can trust that claim is that it is enforced by code, not left to chance. For the full picture of how the optimizer fits beside the scheduling engine, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## What "the baseline" is
+
+The baseline is your current schedule, the one the scheduling engine already produced before you pressed Run on the optimizer. Every optimizer run starts from that plan and asks a single question: can I find an ordering or an assignment that scores better on the goal you chose, without breaking anything?
+
+The baseline matters because it is the thing the optimizer measures itself against. It is not a blank slate or a theoretical ideal. It is the real, feasible plan you would ship if you never opened the optimizer at all. The guarantee is stated relative to that plan: whatever comes back is at least as good.
+
+## Scoring both sides with one calculator
+
+The guarantee only works because both the baseline and every candidate are scored the same way. EDGEBIC uses one shared schedule scorer for the baseline, for each plan the search tries, and for the final comparison table you see. There is no second yardstick anywhere in the loop.
+
+That single-source rule is what makes the comparison honest. If the baseline were scored one way and the candidates another, a plan could look better on paper while being worse in reality. Because the same calculator measures both, a candidate that beats the baseline genuinely beats it on the goal you picked. How that scoring works in detail is covered in [how the optimizer scores a schedule](/blog/how-the-optimizer-scores-a-schedule).
+
+## The clamp: enforcement, not assumption
+
+Here is the part that turns a hope into a guarantee. After the optimizer finds its best candidate, it does not simply trust that the candidate is better. It decodes the candidate into a real schedule, scores that decoded schedule with the shared calculator, and compares the number against the baseline's number. If the candidate is worse, the optimizer throws it away and returns the baseline.
+
+This post-solve step is called the clamp, and it runs on every optimization, both engines, every time. It is the difference between "we designed the search so it should never regress" and "we check, after the fact, that it did not." A search hint alone is advisory. The clamp is the enforcement.
+
+Why go to the trouble when the search is supposed to keep the best plan anyway? Because a schedule model is an approximation of a messy shop floor, and approximations can drift. A candidate that looks strong inside the model might decode into something slightly worse once every real constraint is applied. The clamp catches exactly that case. It scores the thing you would actually run, not the thing the model imagined, and it refuses to ship a regression.
+
+## Why never-worse is a floor, not a ceiling
+
+Never worse is a promise about the downside. It says the optimizer cannot hurt you. It deliberately does not say the result is the best plan that could possibly exist, because the multi-run layer is a search and a search cannot prove it found the very best answer.
+
+That is a feature, not a gap. The multi-run optimizer evaluates many complete schedules and keeps the best it tried, clamped so it never regresses. It is honest about being a search: it will not claim optimality it cannot back up. When you need a stronger statement, the mathematical solver layer proves a bound and reports how close to optimal it got, described in [how a proven optimality gap builds trust](/blog/how-a-proven-optimality-gap-builds-trust). The two layers give you two different promises: never worse from the search, and proven within a stated gap from the solver.
+
+## What a no-change result actually tells you
+
+Sometimes you run the optimizer and it returns your schedule untouched. That is not a failure. It is the guarantee doing its job. The optimizer searched, found nothing that beat your current plan on the goal you chose within the time you allowed, and correctly declined to shuffle the floor for zero gain.
+
+A lateral move that reorders jobs without improving your objective is exactly the kind of pointless churn the never-worse contract is built to prevent. If the honest answer is "your plan is already the best I could find," the optimizer tells you that by changing nothing. This pairs with the way [a greedy schedule can leave capacity on the table](/blog/how-a-greedy-schedule-leaves-capacity-on-the-table): often there is room to improve, and when there is, the optimizer takes it; when there is not, it leaves your work alone.
+
+## The guarantee lives beside the Accept step
+
+Never worse pairs with a second protection: nothing the optimizer proposes is written until you choose to apply it. The optimizer holds its result in memory and shows you a comparison. You Accept to commit or Discard to walk away. So even the guaranteed-never-worse plan only takes effect when you say so.
+
+That combination is what makes the optimizer safe to run whenever you are curious. The clamp guarantees the proposal is not a regression, and the deferred Accept guarantees you stay in control of whether it lands. You can try it, read the deltas, and decline, all without touching your committed schedule.
+
+## The bottom line
+
+The never-worse guarantee is a floor the multi-run optimizer cannot fall through: the plan it returns is always scored at least as good as your baseline on the goal you chose. It is enforced by a clamp that decodes and re-scores every candidate against the baseline with one shared calculator, so a modeling quirk or an unlucky search can never leak a worse plan to you. Never worse protects your downside; the solver's proven gap tells you the upside. Between them, running the optimizer is a decision with no risk attached. Explore the platform at [EDGEBIC](/edgebic).

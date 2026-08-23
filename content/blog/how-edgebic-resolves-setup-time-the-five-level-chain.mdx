@@ -1,0 +1,136 @@
+---
+title: "How EDGEBIC Resolves Setup Time: The Five-Level Chain"
+description: "Setup time resolution in scheduling: the five checks EDGEBIC runs per operation, how it finds the previous product, and the audit trail on every row."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - setup time resolution scheduling
+  - sequence dependent setup resolver
+  - changeover time calculation
+  - setup source audit trail
+  - cold start setup time
+  - setup matrix fallback
+  - scheduling setup time logic
+targetPhrase: "setup time resolution scheduling"
+wordCount: 2050
+readingTime: 10
+faqQuestions:
+  - question: "How does a scheduler decide which setup time to use for an operation?"
+    answer: "EDGEBIC runs five checks in a fixed order and takes the first hit. Cold start, then same product, then a product-level matrix cell, then a family-level matrix cell, then a fallback to the routing step's setup or the work center default. Every scheduled row records which of the five supplied its number, so any setup time on the plan can be traced back to its source."
+  - question: "What does a cold start mean in setup time resolution?"
+    answer: "A cold start means nothing is known to have run on that work center before this job, so there is no changeover to price. The engine uses the routing step's setup time, or the work center default if the step has none. Cold start does not mean zero setup: the machine still needs its initial preparation, and only a same-product transition returns zero."
+  - question: "How does the engine know what the machine ran previously?"
+    answer: "During planning it looks at the allocations already placed on that work center and takes the one ending latest at or before the new job's earliest start, falling back to the most recent allocation on the machine if none qualifies. During a reschedule it uses what actually completed on that work center according to logged actuals, because physical fact beats a planning guess."
+  - question: "Why is the resolved setup time cached during a scheduling run?"
+    answer: "Because it is needed twice and the second lookup would give the wrong answer. Lot streaming needs the upstream setup to compute when the first transfer batch is ready. By that point the current operation is already the most recent allocation on the machine, so a second lookup would see the step's own product and return zero, erasing the setup from the overlap math. Resolving once and caching avoids that."
+  - question: "Does a partly filled setup matrix cause errors?"
+    answer: "No. Any transition without a matching cell falls through to the routing step's setup time, exactly as it behaved before the matrix existed. That makes incremental adoption safe: fill the transitions that hurt, leave the rest, and the schedule improves only where you have real data. When the matrix is completely empty the engine skips the mechanism entirely."
+qaQuestions:
+  - question: "Our job view shows Family matrix on most rows and Routing default on a few. What are those few telling us?"
+    answer: "They are telling you a transition happened that your matrix does not describe. Two causes account for nearly all of them. Either one of the two products in that transition has no family assigned, in which case the family lookup skips regardless of how complete the grid is, or the pair genuinely has no cell because that combination is new. Fix the first by assigning the family, and fix the second by measuring the changeover and adding the cell. Both are five-minute jobs once the audit column has told you which rows to look at."
+  - question: "We rescheduled mid-week and the first setup on each machine changed. Is that right?"
+    answer: "Yes, and it is the reschedule path working as intended. During a reschedule the engine anchors the previous product to what actually completed on that work center per the logged actuals, not to whatever the planning pass had assumed. If white finished on the booth Tuesday afternoon, Wednesday's first job is priced as a changeover from white even though the planning allocations were cleared and rebuilt. Anchoring to the floor is what keeps the first setup of every reschedule honest."
+---
+
+**Every operation EDGEBIC by User Solutions schedules gets its setup time from one of five checks, run in a fixed order, first hit wins.** The chain runs from cold start through same-product, product-level matrix, family-level matrix, and finally a fallback to the routing step's own number. Because the answer is recorded on every scheduled row, any setup hour on the plan can be traced to the rule that produced it. This post walks the chain, the traversal that finds the previous product, and the two places the mechanism has to be careful.
+
+For what the matrix is, read [the setup matrix explained](/blog/edgebic-setup-matrix-explained). For how to build one, see [how to build a setup matrix](/blog/how-to-build-a-setup-matrix-in-edgebic). This is what happens after you have.
+
+## The Chain
+
+When the engine schedules a non-material operation, it needs one number: how many hours to reserve for setup before the run hours begin. It gets that number like this:
+
+| Level | Check | Result if it hits |
+|---|---|---|
+| 1 | No previous product known on this work center | Routing step setup, or work center default. Source: **cold start** |
+| 2 | Previous product is the same as this one | **Zero** hours. Source: same product |
+| 3 | A product-level cell exists for this exact from-to pair on this work center | That cell's minutes, converted to hours. Source: product matrix |
+| 4 | Both products have families and a family cell exists for this from-to pair | That cell's minutes, converted to hours. Source: family matrix |
+| 5 | Nothing matched | Routing step setup, or work center default. Source: routing default or machine default |
+
+Two things about the order are worth pausing on.
+
+**Level 3 beats level 4 unconditionally.** A product-level override is consulted before the family rule and stops the search when it hits. That is what makes overrides useful: red-to-black can cost 90 minutes while every other light-to-dark pair keeps the family's 60, without touching the family grid at all.
+
+**Level 1 does not return zero.** A cold start means there is no *changeover* to price, but the machine still needs its initial preparation, so the routing step's setup applies. Only level 2, the same product back to back, genuinely returns zero. Confusing the two is how a first-job-of-the-day gets planned with no setup at all.
+
+Before any of this runs, the engine checks whether a matrix exists at all. With no cells entered anywhere, the whole mechanism is skipped and the flat routing setup is used exactly as it was before the feature existed. That short-circuit is why turning the matrix on cannot change a schedule until somebody enters a cell.
+
+## Finding the Previous Product
+
+Levels 2 through 4 all depend on one question: what did this machine run last? The engine answers it two different ways depending on whether it is planning fresh or rescheduling against actuals.
+
+**On a reschedule, actuals win.** The engine consults what actually completed on that work center and instance according to the shop floor record. If white finished on the booth on Tuesday afternoon, Wednesday's first job is priced as a changeover from white. This matters because a reschedule clears and rebuilds all future allocations, so the planning state has no memory of Tuesday. Anchoring to the floor is what keeps the first setup after every reschedule honest. The wider rule that recorded work is never re-planned is covered in the [partial completion reschedule walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic).
+
+**When planning, the engine scans the machine's allocations.** It looks for the allocation ending latest at or before the new job's earliest start. If it finds one, that is the predecessor. If it does not, it falls back to the most recently placed allocation on that machine regardless of timing.
+
+That second fallback exists for a specific reason. A job's start date in EDGEBIC is an earliest-start floor rather than a chronological cursor, so many jobs legitimately share the same one. A strict "must end before this moment" filter would cold-start every job whose floor matched another job's, and a schedule full of cold starts prices no changeovers at all. The fallback keeps the chain meaningful when timestamps tie.
+
+If neither lookup finds anything, the answer is genuinely a cold start: nothing has run here yet.
+
+## Resolve Once, Use Twice
+
+The resolved setup is computed a single time per operation per scheduling pass and then held for the rest of that pass. That is not an optimization, it is a correctness requirement, and the reason is worth understanding because it links two features that look unrelated.
+
+Lot streaming needs the upstream setup time to compute when the first transfer batch is ready: the gate is setup plus batch size times hours per piece. So the streaming calculation asks for the setup value a second time, after the operation has already been placed.
+
+By that moment, the operation is itself the most recent allocation on the machine. A fresh lookup would find the step's own product as the "previous" product, hit level 2, and return zero. The overlap math would then behave as though setup had never happened, releasing the downstream step early by exactly the changeover time. Caching the first resolution and reading it back avoids the trap entirely.
+
+The cache is cleared between passes, so a second job's resolution can never inherit the first job's answer. That reset is the invariant that keeps repeated scheduling runs producing the same numbers.
+
+## A Worked Resolution
+
+A paint booth with two families: Light (white, cream) and Dark (black, dark grey). The family grid holds light-to-light 0, light-to-dark 60, dark-to-light 240, dark-to-dark 0. The routing step carries a flat 30-minute setup as a fallback. Three jobs in due-date order: white, black, white.
+
+**Job 1, white.** Nothing has run on the booth. Level 1 hits: cold start, 30 minutes from the routing step, 0.5 hours reserved.
+
+**Job 2, black.** Previous product is white.
+1. Previous product exists, so level 1 does not apply.
+2. White is not black, so level 2 does not apply.
+3. No product-level cell for white-to-black.
+4. White is in Light, black is in Dark, and the light-to-dark cell holds 60. **Hit.** 60 minutes becomes 1.0 hour, source: family matrix.
+
+**Job 3, white.** Previous product is black. Levels 1, 2, and 3 all pass through, and the dark-to-light cell holds 240. Four hours reserved, source: family matrix.
+
+Total planned changeover: 30 + 60 + 240 = 330 minutes, which is what the floor actually spends.
+
+Now add one override: red belongs to Light, but red-to-black needs an extra flush at 90 minutes. Schedule a red job followed by a black one and level 3 hits immediately with 1.5 hours. The family grid is never consulted, and the row's reason reads "Product matrix Red to Black: 90 min."
+
+## What Honest Numbers Look Like
+
+The same three paint jobs, scheduled three ways, show what the chain buys you:
+
+| Scenario | Configuration | Planned changeover | Plan finishes | Matches the floor |
+|---|---|---|---|---|
+| A | Flat 30-minute setup, no matrix | 90 min | 12:45 | No. The floor takes about 11 hours |
+| B | Matrix on, same due-date order | 330 min | 16:45 | Yes |
+| C | Matrix on, lights before darks | 90 min | 12:45 | Yes |
+
+Scenario A and Scenario C finish at the same time on paper, and only one of them is real. That is the whole argument for the chain: A is a plan that cannot be executed, C is a plan that can. Getting from B to C is a sequencing decision rather than a software one, and the [paint-booth walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic) works six jobs through it.
+
+## The Audit Trail
+
+Every scheduled row carries both the source code and a readable sentence. Two additional sources appear that are not part of the five-level chain:
+
+- **Historical completed.** The operation already ran, so its setup is preserved from the record rather than re-resolved. Recorded work is never re-planned.
+- **Mirrored from parent.** A dependent-parallel operation running in lockstep with its parent inherits the parent's changeover by definition, so the resolver does not run independently for it. The synchronized case is covered in the [multi-spindle example](/blog/synchronized-multi-spindle-scheduling-example-edgebic).
+
+The job view renders matrix-driven rows at full brightness and the rest muted, which turns the audit trail into a coverage report. A plan where most rows are muted is telling you the matrix is not describing the transitions that are actually happening.
+
+## Two Places to Be Careful
+
+**Minutes versus hours.** Matrix cells are stored in minutes and the engine works in hours, with the conversion done once inside the resolver. Enter a value in decimal hours by mistake and you are wrong by a factor of sixty: a one-hour changeover typed as 60 is correct, and typed as 1 it becomes one minute. The field is labeled in minutes for exactly this reason.
+
+**Both products need families.** Level 4 requires the previous product **and** the current product to both have a family assigned. If either is missing, the family lookup is skipped silently and the routing default applies, which produces a matrix that looks complete and does nothing. There is no warning for this today, so the audit column is your detection mechanism: an unexpected routing-default row on a transition you thought was covered almost always means a missing assignment.
+
+## Where This Feeds
+
+The resolved setup does not just reserve hours. It flows into the operation's total time, which drives the multi-shift allocation, which drives the finish date, which drives every downstream step. It also feeds the lot streaming gate, so a longer changeover pushes the transfer batch later and shrinks the overlap. That interlock is covered in [transfer batch versus flow overlap](/blog/piece-count-vs-time-lag-overlap-in-edgebic).
+
+Which is the practical case for getting the chain right: setup time is not a line item on a report, it is an input to the dates you promise customers. [Setup matrix mistakes](/blog/setup-matrix-mistakes-edgebic) covers the configurations that leave the chain resolving to fallbacks, and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide) shows where changeover sits among the engine's other decisions.
+
+Bring one machine's worth of changeover times to a demo of [EDGEBIC](/edgebic) and we will trace the chain on your own transitions.

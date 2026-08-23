@@ -1,0 +1,156 @@
+---
+title: "Master Production Schedule in EDGEBIC: The Build Plan Explained"
+description: "Master production schedule software explained: how the EDGEBIC MPS grid turns forecast and firm demand into build orders your capacity plan can absorb."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - master production schedule software
+  - MPS grid manufacturing
+  - build to stock planning
+  - projected available balance
+  - firm demand sales orders
+  - time fences planning
+targetPhrase: "master production schedule software"
+wordCount: 1814
+readingTime: 9
+faqQuestions:
+  - question: "What is a master production schedule in manufacturing software?"
+    answer: "A master production schedule is a time-phased statement of which finished goods to build, how many, and in which period. In EDGEBIC it is a grid: one row per planning bucket per product, showing forecast demand, firm demand, gross requirements, projected available balance, available to promise, a system suggestion, and one editable column for the planner's own build decision. Firming a row creates a build-to-stock manufacturing order that the finite capacity engine then schedules."
+  - question: "Where does firm demand in the MPS come from?"
+    answer: "Firm demand comes from open sales order lines on confirmed sales orders, bucketed by each line's due date. The open balance is the ordered quantity minus the quantity already shipped. Open make-to-order manufacturing orders are deliberately not counted as firm demand, because those orders were created from sales order lines in the first place and counting both would double the same customer demand."
+  - question: "What is the difference between a suggested quantity and an MPS quantity?"
+    answer: "The suggested quantity is what the projection engine calculates to prevent a projected stockout, respecting the product's lot-sizing rule. The MPS quantity is the planner's own committed build decision, stored separately in its own column. The two are allowed to disagree: the suggestion is arithmetic, the MPS quantity is judgement, and the grid shows both so the difference is visible rather than hidden."
+  - question: "Does an MPS build quantity affect projected on-hand before it is firmed?"
+    answer: "No, and that is deliberate. A committed build quantity stays in its own column and is not rolled into the projected available balance until the bucket is firmed and the resulting manufacturing order exists as a real scheduled receipt. Rolling an uncommitted number into the balance would make supply appear that no order has been created for, and would risk showing the same quantity twice after firming."
+  - question: "How does an MPS row become a real job on the shop floor?"
+    answer: "Selecting a bucket and firming it creates one build-to-stock manufacturing order in a single transaction: the order gets the bucket's quantity rounded up to a whole number, the bucket start as its due date, and a start date of the due date minus the product's lead time. The bucket flips to Released and stores the new order's identity. The order then competes for real work center capacity in the next scheduling run like any other job."
+qaQuestions:
+  - question: "We build both to stock and to order on the same machines. Does an MPS help, or does it just add a second plan to maintain?"
+    answer: "It helps precisely because both streams land on the same machines. Without an MPS, the stocked items get built when somebody notices the bin is low, which is usually the week the shop is already full of customer orders. With it, you decide the stock build a bucket ahead, firm it, and it enters the schedule as a normal job that has to win capacity against the customer work. The documented behavior is explicit here: a firmed build competes for the same work center capacity as any other order, and if capacity is tight it can slip past its own due date. That visibility is the point. You find out in the grid, not on the shipping dock."
+  - question: "Our planner already reads the projected balance calendar. What does the MPS grid add on top of it?"
+    answer: "One column and one button. The projection calendar answers what will happen: forecast, firm demand, gross requirements, projected balance, available to promise, and a suggested order quantity. The MPS grid overlays the planner's decision on top of that same projection: an editable build quantity per bucket, a status of Suggested, Firm, or Released, and the fence flags that say which buckets are near-term. In the documented example, Widget A projects to minus 80 by week 4; the calendar shows the hole and suggests 110, and the MPS grid is where a human commits the 110 and turns it into an order."
+---
+
+**Master production schedule software** answers one question that a capacity schedule cannot: how many of each finished good should you build in each future period, before any specific job exists? EDGEBIC by User Solutions answers it with a grid. One row per planning bucket per product shows the demand arriving, the stock projected to remain, and what the system suggests building. One editable column holds the planner's own decision. One button turns that decision into a build-to-stock manufacturing order that the finite capacity engine schedules against real work center capacity.
+
+This post explains what the MPS is inside [EDGEBIC](/edgebic), why the module exists as a distinct layer, and when a shop actually needs one. For the wider planning picture the MPS sits inside (ledger, projected balances, forecasting, replenishment), read the [inventory and planning pillar](/blog/edgebic-planning-guide). For the generic discipline independent of any product, the [master production schedule guide](/blog/master-production-schedule-guide) covers the classic MPS process.
+
+## Where the Master Production Schedule Sits
+
+Planning has two halves that most shops keep in separate heads. The first half is quantity: what to build and roughly when. The second half is capacity: which machine runs it, in what order, starting at what hour. The MPS is the bridge.
+
+Above it sits raw demand. That means forecast entries for expected sales, plus confirmed sales order lines for orders you actually hold. Below it sits the [finite capacity scheduling engine](/blog/edgebic-scheduling-engine-guide), which takes manufacturing orders and places them on real work centers around real shifts, holidays, and existing load.
+
+The MPS is where a person decides. The projection engine can calculate that you will run out of Widget A in week 2. It cannot decide whether you build 110 now, 200 next month, or nothing at all because the customer is about to redesign the part. That decision is what the MPS grid captures, timestamps, and turns into an order.
+
+Master production scheduling and time fences are standard planning vocabulary rather than product-specific inventions. The professional body that maintains that vocabulary is [ASCM, formerly APICS](https://www.ascm.org). EDGEBIC implements the standard shape and connects its output straight into capacity, which is the part most planning tools leave to a spreadsheet.
+
+## One Row Per Bucket: How the Grid Is Built
+
+A **bucket** is a planning period: a day, a week, or a 28 day period. You pick the granularity, the horizon, and the product, and the grid loads one row per bucket.
+
+| Column | What it tells you |
+|---|---|
+| Bucket | The period's start date |
+| Forecast | Forecast demand falling in this bucket |
+| Firm | Confirmed sales order demand in this bucket |
+| Demand | Gross requirements after forecast consumption |
+| Proj. on hand | Projected available balance at the end of the bucket |
+| ATP | Available to promise: supply not already claimed by known demand |
+| Suggested | What the projection engine recommends building |
+| MPS build | Your committed build quantity, editable |
+| Status | Suggested, Firm, or Released |
+| Frozen | Flag showing the bucket sits inside the planning time fence |
+
+Above the grid, a summary strip carries current on-hand from the ledger, total demand, total committed build, total suggested, the minimum projected balance across the horizon, and the first date the projection goes negative. Those last two are the ones planners read first. A minimum projected balance of minus 80 and a stockout date of week 2 tell you the whole story before you look at a single row.
+
+For the arithmetic behind projected available balance and available to promise, see the [planning pillar](/blog/edgebic-planning-guide); the MPS grid reuses the same projection rather than computing its own.
+
+## Firm Demand Comes From Sales Order Lines
+
+This is the rule that keeps the numbers honest, and it is worth understanding before you trust any MPS row.
+
+Firm demand is sourced from open lines on **confirmed** sales orders. A line's open balance is its ordered quantity minus the quantity already shipped, and it is bucketed by the line's due date. Open make-to-order manufacturing orders are not counted as firm demand.
+
+That exclusion looks strange until you follow the paper trail. A make-to-order job exists because a customer ordered something. The sales order line is the demand. The job is the response to it. Count both and you have doubled one customer's order, inflated gross requirements, and talked yourself into building stock nobody asked for.
+
+Build-to-stock orders behave differently and correctly stay on the supply side. When a build-to-stock order is open, it appears as a **scheduled receipt** in the bucket where it is expected to complete. Demand pulls the balance down, receipts push it back up, and the same order never plays both roles.
+
+One practical consequence: a line on a draft sales order contributes nothing. If a planner builds lines but never confirms the order, the MPS grid shows no firm demand for it, and the forecast alone drives the plan. See [how sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic) for the full path from order entry to demand.
+
+## The Three States of an MPS Bucket
+
+Every bucket carries a status, and each state means something specific about how far a decision has travelled.
+
+**Suggested.** No stored entry exists for this bucket. The MPS build column reads zero. The system may be recommending a quantity in the Suggested column, but nobody has agreed to it.
+
+**Firm.** A planner typed a quantity and saved it. The commitment is recorded and survives a reload. No manufacturing order exists yet. This is the state where a plan can still be revised freely.
+
+**Released.** The bucket has been firmed into a real build-to-stock manufacturing order, and the row stores which order it created. From here the order is the plan; the MPS row is the audit trail that explains where it came from.
+
+The separation between Firm and Released matters more than it first appears. It gives you a place to hold a decision that is agreed but not yet released to the floor, which is exactly what a weekly planning meeting produces.
+
+## Worked Example: Widget A Heads for a Stockout
+
+Widget A is make-to-stock with 80 units on hand. Weekly buckets. Two confirmed sales orders land next week, one the week after, and the forecast expects 30 per week throughout.
+
+| Bucket | Firm | Forecast | Gross req | Receipts | Projected on hand |
+|---|---|---|---|---|---|
+| Week 1 | 0 | 30 | 30 | 0 | 50 |
+| Week 2 | 60 | 30 | 60 | 0 | -10 |
+| Week 3 | 40 | 30 | 40 | 0 | -50 |
+| Week 4 | 0 | 30 | 30 | 0 | -80 |
+
+The summary strip reads minimum projected minus 80, projected stockout at the start of week 2. The engine suggests 110 for week 2: enough to carry through week 4 given a 60 unit lot minimum.
+
+The planner agrees, types 110 into the MPS build column for week 2, and saves. The row goes to Firm and the committed total reads 110. Nothing has changed on the shop floor and nothing has changed in the projected balance, which still shows the hole.
+
+Then the planner firms the bucket. Widget A has a three day lead time, so a week 2 Monday due date produces a start date of the previous Friday. A build-to-stock order is created for 110 units. The row flips to Released.
+
+On the next load, the projection sees that order as a scheduled receipt of 110 in week 2:
+
+| Bucket | Firm | Gross req | Receipts | Projected on hand |
+|---|---|---|---|---|
+| Week 1 | 0 | 30 | 0 | 50 |
+| Week 2 | 60 | 60 | 110 | 100 |
+| Week 3 | 40 | 40 | 0 | 60 |
+| Week 4 | 0 | 30 | 0 | 30 |
+
+The stockout is gone, and it went away because a real order now exists rather than because a number was typed into a planning column.
+
+## When Your Shop Actually Needs an MPS
+
+Not every shop does. A pure make-to-order job shop that builds only what customers order, with no stocked finished goods, gets very little from a master production schedule. Its sales orders already are the build plan.
+
+You need one when any of the following is true:
+
+- You stock finished goods or sub-assemblies and build them ahead of demand.
+- Your lead time to the customer is shorter than your production lead time, so something has to be built before the order arrives.
+- Demand for a family of items is lumpy, and building to each order means constant changeovers.
+- Two people in the building disagree about how much of item X is going to be built next month, and neither can point at a document.
+
+That last one is the most common and the least discussed. The MPS grid is a decision record. The value of the Firm state is that a build commitment exists somewhere other than in a planner's memory.
+
+## What the MPS Deliberately Does Not Do
+
+Three limits are worth stating plainly, because each one is a design decision rather than a gap.
+
+**A committed build quantity does not improve the projected balance.** Until a bucket is Released and its order exists, the MPS build column stays its own column. This avoids a specific failure: showing supply for an order that was never created, and then showing it twice once it is.
+
+**The planning fence does not lock anything.** It flags near-term buckets as frozen and suppresses automatic suggestions inside the window. It does not stop a planner from firming inside it. The fence is planner discipline made visible, not an enforced constraint. The [time fences deep dive](/blog/firm-demand-forecast-and-time-fences-in-edgebic) covers exactly what each fence changes.
+
+**Firming does not guarantee the date.** The new order joins the queue and competes for capacity like every other job. If the shop is full, it can finish after its own due date, and the schedule will show that rather than hide it. That is finite capacity working as intended, and it is the difference between [finite and infinite capacity planning](/blog/finite-vs-infinite-capacity-scheduling).
+
+## Where to Go Next
+
+The MPS is one screen in a connected planning layer, and it is most useful once the products underneath it are configured correctly.
+
+- [How to work the MPS grid](/blog/how-to-work-the-mps-grid-in-edgebic) walks the setup and the daily loop, field by field.
+- [Firm demand, forecast, and time fences](/blog/firm-demand-forecast-and-time-fences-in-edgebic) explains the mechanism behind the numbers.
+- [MPS mistakes](/blog/mps-mistakes-edgebic) covers the configuration errors that make a grid lie to you.
+- [Products and planning attributes](/blog/edgebic-products-and-planning-attributes-explained) covers build method, lead time, and the fence settings each product carries.
+- The [EDGEBIC complete guide](/blog/edgebic-complete-guide) maps every module in the platform.

@@ -1,0 +1,109 @@
+---
+title: "Connecting EDGEBIC to Your ERP Database With a SQL Source"
+description: "How to point a scheduled EDGEBIC integration at a read-only ERP query instead of a file: testing the connection, previewing columns, checking the mask fits, and the stored-password rule that catches most teams out."
+published: 2026-08-22T12:00:00.000Z
+modified: 2026-08-22T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ERP database SQL source scheduling
+  - external SQL Server integration
+  - preview columns import mask
+  - read-only ERP query scheduling
+  - scheduled ERP sync setup
+  - EDGEBIC SQL integration
+targetPhrase: "ERP database SQL source"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "Does a SQL source let EDGEBIC write back into my ERP?"
+    answer: "No. A SQL source runs one statement you supply and reads its result columns, and those rows go through the same import mask a file would use. EDGEBIC never writes to the ERP through this path or any other. The return trip, sending the finished plan back, stays a separate Excel export that you apply through your normal order maintenance process, so your ERP remains under your team's control. Point the query at a read-only view or grant the login read access only, and the arrangement enforces itself."
+  - question: "Why does my SQL login work when I test it but fail on a scheduled run?"
+    answer: "Because a stored password is encrypted against the Windows account that saved it, on the machine where it was saved. If you set the integration up on your workstation and the runs are hosted somewhere else, that host cannot decrypt the password and the run fails with a cryptography or key error. Whoever actually hosts the runs has to open the integration on that machine, re-enter the password, and save. Windows authentication avoids the problem entirely and is the better choice wherever your environment allows it."
+  - question: "How do I know my query still fits the import mask?"
+    answer: "Click Preview Columns before you save. EDGEBIC reads the query's column names without importing anything, lists them as chips with a count, then checks them against the mask you selected. You get one line under the mask row: a green confirmation that it maps the source columns to the target entity, or a red warning naming exactly which columns the mask expects and the query no longer returns. Two clicks there replace a night of failed runs after someone changes a view."
+qaQuestions:
+  - question: "Our IT team can expose a read-only view, but they want to know what load EDGEBIC will put on the ERP database. What should we tell them?"
+    answer: "Tell them it is one statement, on an interval you choose, with two caps they can see. The query runs once per dispatch, and the interval is set in minutes on the integration itself, so a nightly cadence is a value of 1440 rather than a background process holding a connection open. There are two safety limits on the same panel: a maximum rows per run, which defaults to unlimited, and a maximum minutes per run, which defaults to thirty and stops a run that is still going at that point. That second cap is the one IT usually cares about, because it puts a hard ceiling on how long any single query can sit against their database. It is also worth telling them the interval is measured from one dispatch to the next rather than from the end of the previous run, so a slow night does not quietly push the following runs later and stack up. Start at a short interval while you prove the query, then lengthen it once the run history is boring."
+  - question: "We already export CSV files and they work. Is there a real reason to move to a SQL source?"
+    answer: "Only if the export step is the part that keeps breaking. The honest case for a query is that it removes a human and a file from the chain: nobody runs the wrong report, nobody leaves last week's file in the folder, and there is no half-written file to read at the wrong moment. The honest case against it is that you lose the ability to open the file and look at it before it lands, which is genuinely how most shops build confidence early on. Because the source is chosen per integration rather than globally, you do not have to decide once for everything. A common and sensible split is a query for the slow-moving master data, where automation pays and nobody inspects it anyway, and a file for the open orders you actually want to read before they hit the plan. The wider comparison is in the CSV versus database view post, and nothing downstream changes either way: same mask, same outcome counts, same engine."
+---
+
+**A SQL source lets a scheduled EDGEBIC integration read your ERP's tables directly instead of waiting for someone to produce a file, and everything after the rows arrive is unchanged: the same import mask, the same created, updated, reused and failed counts, and the same rule that an import never schedules anything.** It is not a connector, a certified interface, or anything installed inside your ERP. It is one read-only statement you write, run on an interval you set.
+
+EDGEBIC by User Solutions has moved ERP data through mapped files since 1991, and a query source is the same idea with the export step taken out. If you have not built the mask yet, start with [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic), because an integration runs a mask rather than replacing one.
+
+## What you need before you start
+
+| Prerequisite | Why it matters |
+|---|---|
+| An import mask for the entity you want to load | The integration runs the mask; it does not do its own mapping |
+| A queryable ERP database and a login that can read it | Windows authentication or a SQL login with read access to the tables the statement touches |
+| Agreement on which machine will host the runs | The stored password is tied to a Windows account and a machine, as below |
+
+The eight entity types a mask can target are unchanged by the source: product, work center, customer, sales order, routing, actuals, plant holiday and shift. Which fields each one needs is in [which ERP fields EDGEBIC needs to schedule](/blog/which-erp-fields-edgebic-needs-to-schedule).
+
+## Setting up the source
+
+On the Integration tab, create a new integration, name it after the routine rather than the file, and set the source to External SQL Server. Then fill in the connection:
+
+- **Server** and **Database**. Type the instance, then use **Load** to list the databases on that server rather than guessing the name.
+- **Authentication**, either Windows or a SQL login. Prefer Windows where you can.
+- **Query**, the statement EDGEBIC runs each time. Its result columns are what the mask maps, so `SELECT ItemNo, Descr, Price FROM dbo.Items` presents three columns named exactly that.
+
+Click **Test Connection**. The result appears beside the button, green when EDGEBIC could connect and red with the reason when it could not. The button enables itself once the server and database are filled.
+
+## Prove the query fits the mask before you save
+
+This is the step that earns its keep, and it has no equivalent on the file side.
+
+Click **Preview Columns**. EDGEBIC reads the query's column names without importing a single row and lists them as chips underneath, with a count such as three columns. Then pick the target entity and the mask, and EDGEBIC checks one against the other and shows a single line under the mask row. Either it confirms in green that it maps the source columns to that entity, or it warns in red that the mask expects columns the query does not return, naming them.
+
+That red line is the difference between finding out now and finding out from a week of failed overnight runs. If no existing mask fits, **New from Columns** opens the mask editor already loaded with the previewed columns, so you drag them straight onto the fields. That button appears only for SQL sources, because only a query can tell EDGEBIC its columns before it runs.
+
+It is worth re-running the preview any time the ERP side changes. A renamed column in a view is the query equivalent of the renamed heading described in [what to check after an ERP version upgrade](/blog/what-to-check-after-an-erp-version-upgrade), and the preview catches it in two clicks. The same discipline as [testing a mask change before the live run](/blog/testing-an-import-mask-change-before-the-live-run) applies here.
+
+## The interval and the two caps
+
+Set the cadence on the Schedule and Limits panel. Tick **Run every** and set the minutes, so a daily refresh is 1440. The interval is measured from one dispatch to the next rather than from the end of the last run, so a slow run does not push its successors later.
+
+Two safety limits sit below it, and it is worth knowing they fail differently:
+
+| Limit | Default | What happens when it is hit |
+|---|---|---|
+| Max rows per run | 0, meaning unlimited | The run ends as completed with errors. Rows past the cap are not read, and nothing resumes them next run |
+| Max minutes per run | 30 | The run ends as failed. Rows already written before the cut stay written |
+
+Leave the row cap at unlimited unless a runaway export has actually burned you, because a cap that silences a runaway also silently truncates a legitimately large load.
+
+## The stored-password rule
+
+A SQL login password is stored encrypted, never in plain text, and the encryption is tied to the Windows user who saved it on the machine where it was saved. That is what makes it safe, and it is also why it cannot travel. Another Windows account on the same PC, or the same account on a different workstation, cannot decrypt it and the run fails with a cryptography or key error.
+
+The symptom is distinctive and confusing: **Test Connection** succeeds while scheduled runs fail. The fix is to sign in as the account that will host the runs, open the integration on that machine, re-enter the password and save. Windows authentication sidesteps the whole issue. Where the runs belong is covered in [why your ERP sync belongs on a server, not a workstation](/blog/why-your-erp-sync-belongs-on-a-server-not-a-workstation).
+
+## What a run does, and what it still does not do
+
+A successful run changes exactly the records the mask's target entity covers, by the same rules a manual import follows. A routing load still wipes and recreates that product's steps per run, so all of one product's steps must come back in one result set.
+
+What it does not do is move a single bar on the Gantt. An integration changes data, not the plan. You still run the scheduler afterwards, exactly as with a manual import, and jobs already scheduled keep their own frozen routing snapshot regardless. Missed runs are never backfilled either: if EDGEBIC was closed for six nights, one catch-up run fires at the next start, not six.
+
+Every run that starts is recorded with its trigger, its counts and its duration, and that history outlives the integration, which is what turns "why did that price change on Tuesday" into a row in a grid. Reading it is covered in [administering scheduled ERP syncs](/blog/administering-scheduled-erp-syncs-in-edgebic), and the per-run detail in [reading the import log](/blog/reading-the-import-log-after-a-nightly-erp-run).
+
+## Where to start
+
+Most shops begin with files because seeing what will land builds confidence, then move the slow-moving master data to a query once the routine is trusted. The tradeoff is laid out in [CSV versus database view](/blog/csv-vs-database-view-erp-export-tradeoffs), and the manual counterpart routine in [the nightly export and import routine](/blog/scheduling-a-nightly-erp-export-import-routine). Whichever source you use, the plan still goes back the same way, as an export you apply yourself, described in [exporting the schedule back to your ERP](/blog/exporting-the-edgebic-schedule-back-to-your-erp). To see the whole model end to end, the [EDGEBIC ERP integration overview](/edgebic-erp-integration) sets it out, and the [EDGEBIC product overview](/edgebic) shows the engine it all feeds. Bring a query or an export to [a demo](/contact-us) and map it live.
+
+<Accordion title="Does a SQL source let EDGEBIC write back into my ERP?">
+No. A SQL source runs one statement you supply and reads its result columns, and those rows go through the same import mask a file would use. EDGEBIC never writes to the ERP through this path or any other. The return trip, sending the finished plan back, stays a separate Excel export that you apply through your normal order maintenance process, so your ERP remains under your team's control. Point the query at a read-only view or grant the login read access only, and the arrangement enforces itself.
+</Accordion>
+
+<Accordion title="Why does my SQL login work when I test it but fail on a scheduled run?">
+Because a stored password is encrypted against the Windows account that saved it, on the machine where it was saved. If you set the integration up on your workstation and the runs are hosted somewhere else, that host cannot decrypt the password and the run fails with a cryptography or key error. Whoever actually hosts the runs has to open the integration on that machine, re-enter the password, and save. Windows authentication avoids the problem entirely and is the better choice wherever your environment allows it.
+</Accordion>
+
+<Accordion title="How do I know my query still fits the import mask?">
+Click Preview Columns before you save. EDGEBIC reads the query's column names without importing anything, lists them as chips with a count, then checks them against the mask you selected. You get one line under the mask row: a green confirmation that it maps the source columns to the target entity, or a red warning naming exactly which columns the mask expects and the query no longer returns. Two clicks there replace a night of failed runs after someone changes a view.
+</Accordion>

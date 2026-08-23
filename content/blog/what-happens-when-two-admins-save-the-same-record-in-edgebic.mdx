@@ -1,0 +1,99 @@
+---
+title: "What Happens When Two Admins Save the Same Record in EDGEBIC"
+description: "EDGEBIC uses last-write-wins: two people saving the same work center means the second save overwrites the first silently. Here is why, and the working rules that prevent it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - last write wins
+  - concurrent edits manufacturing software
+  - multi-user data conflict
+  - shared database editing
+  - master data ownership
+  - simultaneous edits
+targetPhrase: "last write wins"
+wordCount: 1570
+readingTime: 8
+faqQuestions:
+  - question: "What happens if two people edit the same record in EDGEBIC at the same time?"
+    answer: "The second save wins and the first change is silently lost. EDGEBIC uses a last-write-wins contract: no exception is raised, no warning appears, and neither person is told. If one supervisor changes a work center's batch size while another changes its efficiency, whoever saves second writes their whole record over the first, and the first person's field reverts to the value it had when they loaded the screen."
+  - question: "Why does EDGEBIC use last-write-wins instead of blocking the second save?"
+    answer: "Because the alternative produced false conflicts in normal use. A stricter model rejects a save whenever the underlying row appears to have changed, and out-of-band writes made that check fire on perfectly valid saves, most visibly in the routing designer. A rejected save that the user cannot explain is worse than a rare overwrite in a plant where a handful of named people own distinct areas of master data, so the contract is deliberate rather than accidental."
+  - question: "Does last-write-wins mean a reschedule can overwrite someone else's schedule changes?"
+    answer: "It applies to record saves, not to completed work. Operations with an actual start and an actual end are never moved by a reschedule regardless of who runs it. What last-write-wins governs is two people saving the same master data record, such as one work center or one product, in the same short window. The practical protection is ownership: one named person owns each area of master data, so two people rarely have the same row open."
+qaQuestions:
+  - question: "Two of us edited work center settings this morning and one change vanished. Is the data corrupted?"
+    answer: "No, and the vanished change is explainable. Say you both open the same work center while it reads a batch size of 50 and an efficiency of 85 percent. You change the batch size to 75 and save at five past. Your colleague changes efficiency to 90 and saves at eight past. The database now holds a batch size of 50 and an efficiency of 90: their save wrote the whole record as they loaded it, so your batch size change is gone. Nothing warned either of you. Re-apply the lost change, then agree who owns work center settings so the two of you are not in the same row again."
+  - question: "We have four planners on one shared database. How do we stop this happening at all?"
+    answer: "Divide master data by owner rather than trying to coordinate in real time. One person owns work centers and shifts, one owns products and routings, one owns customers, and everyone owns their own orders. That removes almost every collision, because collisions need two people in the same row within the same few minutes. Add two habits on top: reopen a record immediately before editing it rather than working from a screen that has been open since morning, and save small edits promptly rather than accumulating a screenful. Neither habit is enforced by the software, which is why they belong in your written conventions."
+---
+
+**EDGEBIC uses a last-write-wins contract: if two people save the same record within the same window, the second save overwrites the first silently, with no exception and no warning.** In [EDGEBIC by User Solutions](/edgebic) this is a deliberate design decision rather than a gap, and knowing it changes how a multi-user plant divides ownership of master data. This post explains what actually happens, why it works that way, and the three working rules that make it a non-issue.
+
+The wider multi-user picture is in [moving from single user to a shared server](/blog/moving-from-single-user-to-shared-server-edgebic). This post is the one behavior of a shared database that surprises administrators.
+
+## What Actually Happens
+
+Two supervisors, Alice and Bob, both open the same work center. It currently reads a maximum batch size of 50 and an efficiency of 85 percent.
+
+| Time | Event | The database afterward |
+|---|---|---|
+| 0 | Alice loads the work center | batch 50, efficiency 85 |
+| 0 | Bob loads the same work center | batch 50, efficiency 85 |
+| 5 | Alice saves, having changed batch size to 75 | batch 75, efficiency 85 |
+| 8 | Bob saves, having changed efficiency to 90 | batch 50, efficiency 90 |
+
+Read the last row carefully. Bob did not touch the batch size, and yet it is back to 50. His save wrote the whole record as he had it loaded, and his copy still carried the old batch size. Alice's change is gone. No error appeared for either of them. Alice will not find out until she opens the work center again, which might be next week.
+
+That is the contract, stated plainly: the last save wins, the loser is not told, and the loss is a field the winner never intended to change.
+
+## Why It Works That Way
+
+The obvious alternative is to reject the second save: check whether the row changed since it was loaded, and refuse if it did. That approach was tried and produced a worse problem.
+
+Any write that touched a row outside the current screen (an import run, a scheduler persist, another part of the application) made the check fire on saves that were perfectly valid. The routing designer hit it repeatedly. A user who is told "somebody else changed this, your save was rejected" when nobody did loses trust in the software fast, and the workaround they invent is to save twice.
+
+So the contract is deliberate. In a plant where a handful of named people own distinct areas of master data, a rare silent overwrite is cheaper than a frequent false rejection. The design assumption is ownership, and that assumption is the thing an administrator has to actually implement.
+
+## What This Does Not Affect
+
+Three clarifications, because "silent overwrite" makes people nervous about the wrong things.
+
+**Completed work is never moved.** Operations with an actual start and an actual end stay exactly where they happened, no matter who runs the scheduler or when. The engine replans forward from where the job actually stands. That guarantee is independent of anything on this page.
+
+**Accepted schedule changes are recorded.** A reschedule that you accept writes an entry to the schedule change history for the job, so "what moved and when" remains answerable. See [the schedule change log](/blog/the-edgebic-schedule-change-log-audit-trail).
+
+**Security events are recorded permanently.** Sign-ins, failed attempts, lockouts, user and role changes, and permission denials all land in an append-only security audit trail inside the database. There is no browsing screen for it in the application, so it is queried by your administrator or support when a compliance question arrives, but it is written whether or not anyone looks.
+
+What last-write-wins governs is narrower than it sounds: two people saving the same record in the same short window.
+
+## The Three Rules That Prevent It
+
+**Divide master data by owner.** This is the whole answer, and everything else is a refinement. One person owns work centers and shifts. One owns products and routings. One owns customers. Everyone owns their own orders. Collisions need two people in the same row at the same time, and clear ownership makes that vanishingly rare. Write the division down in your [plant conventions](/blog/documenting-your-plants-edgebic-conventions), because it is a convention rather than a setting.
+
+**Reopen before editing.** A screen that has been open since this morning holds this morning's values. If a record has been sitting on someone's second monitor for four hours and they now change one field, they are about to write four-hour-old values over everything else. Closing and reopening the record before editing costs two seconds.
+
+**Save small, save promptly.** A planner who edits eight fields across three records over twenty minutes has a twenty-minute window to lose in. A planner who saves after each record has a two-second one.
+
+## Where Else the Same Idea Shows Up
+
+Two settings behave differently enough to be worth naming, because administrators often assume they follow the same rule.
+
+Role permission edits apply to everyone holding the role, but they load when a user signs in. So a change made while a planner is working reaches them at their next sign-in, not immediately (a user signed in on the same machine picks it up straight away). If you edit a role and the person reports no change, have them sign out and back in before you investigate anything else. This is the most common false alarm in [user and permission mistakes](/blog/user-and-permission-mistakes-edgebic).
+
+Site scheduling policy is read fresh on every scheduler run, with no restart. That makes it easy to change and easy to change under someone. Two administrators adjusting policy in the same afternoon is the same collision in a different costume, and the fix is the same: one owner, changes announced. See [choosing a safe change window](/blog/choosing-a-safe-change-window-in-edgebic).
+
+## The Practical Summary
+
+| Situation | What happens | What to do |
+|---|---|---|
+| Two people save the same record | Second save wins, silently | Divide ownership by data area |
+| A screen has been open for hours | Old values get written back | Reopen the record before editing |
+| A role is edited while someone works | They see it at next sign-in | Have them sign out and back in |
+| Policy changed mid-week | Next scheduler run uses it | One owner, and announce the change |
+| A reschedule runs over completed work | It does not | Nothing, this is guaranteed |
+
+Last-write-wins is a small contract with a large implication: in a shared deployment, ownership is a design decision your plant makes, not one the software makes for you. Make it explicitly and this behavior never costs you a thing. For the full administrator reference, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide); for the rollout that leads to a shared database in the first place, [planning a multi-user rollout](/blog/planning-a-multi-user-edgebic-rollout); and for the fundamentals underneath, [what production scheduling is](/blog/what-is-production-scheduling).

@@ -1,0 +1,171 @@
+---
+title: "How to Set Up Products in EDGEBIC, Field by Field"
+description: "Set up product master data the right way: every field on the EDGEBIC product form, the order to fill them in, categories, imports, and what saving changes."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - set up product master data
+  - add a product manufacturing software
+  - product form fields
+  - product categories manufacturing
+  - import products from excel
+  - product lead time setup
+targetPhrase: "set up product master data"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "What is the minimum information needed to create a product?"
+    answer: "Only the Product Id is required, and it must be at least two characters. Everything else on the form is optional at creation time, including unit of measure, price, cost, lead time, and category. The practical minimum for a product you intend to schedule is a Product Id plus a unit of measure, because the routing you build next is what actually makes the item schedulable."
+  - question: "How do you create a product category without leaving the product form?"
+    answer: "Click the New button beside the Category dropdown on the product dialog. That opens the category creation flow in place, so you can name a category such as Finished Goods and return to the product without losing your entries. Categories can also be maintained in bulk from the Manage Categories button on the product page toolbar, where you set name, code, description, and active status."
+  - question: "Should you type products one by one or import them?"
+    answer: "Import anything over about twenty items, and always import a price or cost update across an existing catalog. EDGEBIC loads products from Excel or CSV through configurable import masks, so a 300-part catalog and a plant-wide price revision are both single operations. Typing belongs to the handful of products you add between imports, and to the first few items while you are learning the form."
+  - question: "What happens to existing jobs when you edit a product?"
+    answer: "No machine booking moves. Dropdowns across the application update immediately, the lead-time tail on Job View and the Gantt redraws at once, and new quote simulations pick up the new cost and price. Existing quotes keep their historical figures. Work center allocations change only on the next scheduling run, so product edits never silently rearrange the shop floor."
+qaQuestions:
+  - question: "We are migrating 300 parts out of a spreadsheet. What order should we load things in so nothing has to be redone?"
+    answer: "Load in dependency order: units of measure and categories first, then products, then routings, then work centers if they are not already in place, then orders. Products before routings matters because a routing step references products as materials, and a routing cannot resolve a material that does not exist yet. Categories before products saves a second pass to assign them. In the documented greenfield sequence a plant goes from an empty database to a committed schedule this way, and the product import is one file rather than 300 dialogs."
+  - question: "Someone renamed a product and now the Gantt still shows the old name. What went wrong?"
+    answer: "The rename prompt asked whether to update related references and someone answered No. That option updates only the product record and deliberately leaves routings, scheduled jobs, and work center detail views showing the old text. The fix is to edit the product again, re-save the same name, and answer Yes this time, which propagates the change everywhere the old name is still stored. Nothing is lost either way, but until you re-save, two names for one item circulate on the floor."
+---
+
+**To set up product master data in EDGEBIC by User Solutions, you create one record per item you make, buy, or consume, fill in an identifier plus the fields that later modules read, and then give the makeable items a routing.** The form is short. What matters is knowing which fields are decorative, which feed quoting, and which change how the schedule reads. This guide walks the sequence in the order that avoids rework.
+
+If you want the concepts first, read [product master data and planning attributes explained](/blog/edgebic-products-and-planning-attributes-explained). This post is the hands-on version.
+
+## Before you start
+
+Two optional prerequisites save a second pass:
+
+- **Units of measure.** Each definition carries a name, a symbol, a category, and a scheduling behavior (hours, pieces, or both). Having them defined means the product form's dropdown is ready.
+- **Product categories.** Categories group the product list, which is grouped by category by default. You can create one on the spot from the product form, but seeding three or four up front (Raw Materials, Sub-Assemblies, Finished Goods) keeps the catalog tidy from item one.
+
+Neither is required. Both take five minutes.
+
+## Step 1: Open the product screen and add a product
+
+Open the **Product** tab from the main navigation and click **➕ Add Product**. The Product Configuration dialog opens with the heading **Add Product**.
+
+Fill the Basic Information section:
+
+| Field | Required | What to enter | Example |
+|---|---|---|---|
+| **Product Id** | Yes | The identifier everyone reads: routings, orders, quotes, Gantt, kiosk. Minimum two characters | `Widget-A` |
+| **Product Name** | No | A secondary unique name. Auto-generates unless you override it with your part number | `WGT-A-001` |
+| **Unit of Measure** | No | How the item is counted | `Each (EA)` |
+| **Sale Price** | No | Price per unit; feeds quote totals and margin | `120.00` |
+| **Rollup Cost** | No | Cost per unit including materials and labor; feeds quote cost estimates | `48.50` |
+| **Lead Time** | No | Delivery-ready tail in calendar days after the last operation | `2` |
+| **Category** | No | Grouping for the list and reports. The **➕ New** button beside it creates one in place | `Finished Goods` |
+| **Size**, **Weight**, **Description**, **Country of Origin** | No | Reference and compliance data | `120 × 80 mm` |
+| **Icon/Image** | No | Optional thumbnail shown beside the Product Id in the grid | (none) |
+
+Click **Save**. The dialog closes, the product appears in the grid, and it appears immediately in every product dropdown across the application. No refresh, no restart.
+
+The single most useful habit here: keep Product Id short and human. It appears in narrow grid columns, on the Gantt, and on the shop floor. Formal part numbers live in Product Name, which is the field that enforces uniqueness when you edit it through the form.
+
+## Step 2: Decide lead time honestly
+
+Lead time is entered in calendar days and describes the window after the last work center operation before the item is genuinely deliverable: packing, curing, shipping prep. It consumes no machine capacity.
+
+Where it shows up:
+
+- Job View and the scheduler Gantt draw a slate "Lead Time" band after the job's last operation.
+- Schedule grids show **Item Start** (last operation end) and **Job End** (Item Start plus lead time) as separate columns.
+- Backward scheduling aims the last operation at due date minus lead time so the finished item is ready on the promise, not merely work-complete.
+- The dashboard judges lateness against the delivery-ready end.
+
+Enter it only for real post-production time. Padding lead time to buy yourself safety hides capacity problems and makes every promise later than it needs to be. Standard planning practice, and the practice this platform is built around, keeps buffers visible in the schedule rather than buried in master data. If your shop needs protection, protect the constraint explicitly rather than inflating a master-data field.
+
+Set it to 0 and Item Start and Job End collapse into one date, so shops with no meaningful tail never see the extra columns do anything.
+
+## Step 3: Set the planning attributes you actually use
+
+The planning attribute set decides how an item is replenished, and none of it is required to schedule a job. Fill it when you carry stock for the item.
+
+The order that makes sense:
+
+1. **Build method.** Make-to-order builds only against a customer order. Make-to-stock builds a buffer and posts a receipt on completion. A third value means "make-to-stock by default, but a per-order override is expected." The mechanics are covered in [make-to-stock vs make-to-order](/blog/make-to-stock-vs-make-to-order-in-edgebic).
+2. **Stocked.** This gate controls whether inventory transactions happen at all. Make-to-stock with the stocked flag off can never hold inventory, which is a documented misconfiguration the anomaly report flags.
+3. **Reorder method and levels.** Reorder point uses a single trigger level; min/max uses a lower trigger and an upper refill target.
+4. **Lot size rule.** Suggest the exact shortfall, or round up to a whole multiple of the reorder quantity.
+5. **Yield.** Enter as a fraction: 0.92 for 92 percent good units, 1.0 for none lost. The suggested start quantity inflates so scrap does not become a shortage.
+6. **Setup family.** Assign it if changeovers between this item and others cost real time. See [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+The [planning guide](/blog/edgebic-planning-guide) covers how those attributes feed the projected balance calendar and master production schedule once you use them.
+
+## Step 4: Manage categories
+
+Click **Manage Categories** on the product page toolbar to open the category manager. Click **+ New**, fill in name, code, and description, tick Active, and save. Existing rows have Edit and Delete.
+
+Two things categories buy you:
+
+- The product grid groups by category by default, so a tidy category set makes the catalog navigable at a glance.
+- The toolbar's **Category:** dropdown filters the list, with a clear button to reset it.
+
+Because there is no item-type switch on the form, categories plus the Procured flag are how you keep raw materials, sub-assemblies, and finished goods visibly separate.
+
+## Step 5: Verify routing readiness
+
+After the catalog exists, build routings for everything you make. Then come back to the product list and read the **BOR** column:
+
+- **Active BOR** means one routing exists and the product is schedulable.
+- **No BOR** means no routing yet, so the product cannot be ordered or scheduled.
+- A red legacy warning means the product resolves to more than one routing.
+
+Group the grid on the BOR column to bucket the whole catalog in one click. Products showing No BOR are your build queue. Products showing the red legacy warning are your cleanup queue, because current practice is one routing per product and the scheduling and quoting chain assumes it. Building the routing itself happens in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+## Step 6: Import instead of typing, past about twenty items
+
+Click **📥 Import** on the product page to load products from Excel or CSV. EDGEBIC integrates with your existing systems through configurable import and export masks rather than a fixed connector, so the column layout your ERP already exports is the layout you map. The same route handles bulk updates: a price revision across 200 products belongs in a re-import, not 200 dialogs.
+
+If you are standing up a plant from nothing, the [greenfield setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) shows the full load order with real numbers, and the [ERP integration hub](/edgebic-erp-integration) explains the mask architecture.
+
+## What saving changes, and what it does not
+
+| Surface | Effect of saving a product |
+|---|---|
+| Product dropdowns everywhere | Updated immediately, no refresh |
+| Routings and scheduled jobs after a rename | Updated only if you answer Yes to the update-related-references prompt |
+| Quotes | New simulations use the new cost and price; existing quotes keep their historical figures |
+| Job View and Gantt lead-time tail | Redrawn at once with the new lead time |
+| The schedule itself | Nothing moves until the next scheduling run |
+
+That last row is the important one. Product edits never silently reschedule work. Machine bookings change when you run the scheduler, and not before.
+
+## A short worked sequence
+
+Building a small catalog looks like this:
+
+1. Add `Widget-A`: unit Each, sale price 120.00, rollup cost 48.50, lead time 2, category Finished Goods (created inline).
+2. Add `Bracket-B`: sale price 14.00, rollup cost 10.00, lead time 0.
+3. Add the sub-assembly `Frame-S` with no sale price, because it is never sold alone.
+4. Add the raw material `Steel-Plate-4mm`: rollup cost 6.20, category Raw Materials. It will never get a routing; it appears inside routings as a material.
+5. The grid shows the three makeable items as No BOR, which is expected, because routings come next.
+6. After the routings exist, the markers flip to Active BOR and the products are schedulable.
+
+## One warning before you delete anything
+
+Deleting a product cascades. The confirmation says so plainly: the routing goes with it, and production schedule rows tied to the product are flushed. There is no undo. Old products cost nothing to leave in place, so untick Active instead. The record stays for historical orders and reports, and it disappears from new-order dropdowns.
+
+Next: the [deep dive on build method and lead time](/blog/make-to-stock-vs-make-to-order-in-edgebic), the [failure modes to avoid](/blog/product-setup-mistakes-edgebic), and the [complete platform guide](/blog/edgebic-complete-guide). The [product hub](/edgebic) has the feature map.
+
+<Accordion title="What is the minimum information needed to create a product?">
+Only the Product Id is required, and it must be at least two characters. Everything else on the form is optional at creation time, including unit of measure, price, cost, lead time, and category. The practical minimum for a product you intend to schedule is a Product Id plus a unit of measure, because the routing you build next is what actually makes the item schedulable.
+</Accordion>
+
+<Accordion title="How do you create a product category without leaving the product form?">
+Click the New button beside the Category dropdown on the product dialog. That opens the category creation flow in place, so you can name a category such as Finished Goods and return to the product without losing your entries. Categories can also be maintained in bulk from the Manage Categories button on the product page toolbar, where you set name, code, description, and active status.
+</Accordion>
+
+<Accordion title="Should you type products one by one or import them?">
+Import anything over about twenty items, and always import a price or cost update across an existing catalog. EDGEBIC loads products from Excel or CSV through configurable import masks, so a 300-part catalog and a plant-wide price revision are both single operations. Typing belongs to the handful of products you add between imports, and to the first few items while you are learning the form.
+</Accordion>
+
+<Accordion title="What happens to existing jobs when you edit a product?">
+No machine booking moves. Dropdowns across the application update immediately, the lead-time tail on Job View and the Gantt redraws at once, and new quote simulations pick up the new cost and price. Existing quotes keep their historical figures. Work center allocations change only on the next scheduling run, so product edits never silently rearrange the shop floor.
+</Accordion>

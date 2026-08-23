@@ -1,0 +1,153 @@
+---
+title: "How to Build a Routing as a Flow Chart in EDGEBIC"
+description: "Build a manufacturing routing flow chart in EDGEBIC: drag work centers onto a canvas, connect steps with arrows, and schedule straight from the diagram."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Visual Scheduling
+author: user-solutions
+cluster: edgebic-visual-scheduling
+pillarSlug: edgebic-visual-scheduling-guide
+keywords:
+  - build manufacturing routing flow chart
+  - routing flow chart software
+  - visual routing builder
+  - bill of routing
+  - graphical routing editor
+  - drag and drop routing
+  - finite capacity scheduling
+targetPhrase: "build manufacturing routing flow chart"
+wordCount: 2250
+readingTime: 11
+faqQuestions:
+  - question: "What is a routing flow chart in manufacturing scheduling?"
+    answer: "A routing flow chart is a diagram of the steps that make a product: each box is an operation at a work center, and each arrow shows which step comes next. In EDGEBIC the flow chart is not just documentation. The scheduler walks the same arrows to compute setup plus hours-per-unit times order quantity for every step, then books that time against real shift capacity."
+  - question: "Does the sequence number control the order of operations in EDGEBIC?"
+    answer: "No. The sequence number (10, 20, 30) is a display and sorting hint only. Execution order follows the Next In Sequence link on each step: the arrow from one step to the next, ending at the end product. Keep both consistent so the grid reads the way work actually flows, and number in tens so you can insert step 15 later without renumbering."
+  - question: "What is the difference between a work center step and a material step?"
+    answer: "A work center step is a real operation that consumes machine time: it carries hours per unit, setup time, and queue time. A material step names a component that is consumed at that point: it carries a quantity and a lead time but books no machine hours, and the scheduler assigns it instantly without reserving any capacity. Fields that do not apply to a row's type show as N/A."
+  - question: "How long does it take to build a first routing in EDGEBIC?"
+    answer: "A simple three-step routing takes a few minutes: create the BOR, add three work center steps, type the hours, link the chain, and save. The worked example in this guide (saw, mill, assemble) uses nine numbers total. Longer routings go faster with the Advanced BOR Construction expander, which lets you multi-select machines and components and preview the generated chain before creating it."
+qaQuestions:
+  - question: "Our routings live in spreadsheets today, one row per operation. Do we have to retype everything into the flow chart?"
+    answer: "No. EDGEBIC imports routings from Excel or CSV through import masks, so a spreadsheet with product, work center, hours per unit, and setup columns loads directly. Once imported, the same routing appears in both the Data Grid and the Designer flow chart; they are two views of one record. Most shops import the bulk, then use the canvas to fix chains and add the structure a flat sheet cannot express, like a component feeding step 3."
+  - question: "If I type 20 hours in the hours field for a batch of 100, what goes wrong?"
+    answer: "Everything downstream inflates by 100x. Hours Required is time per one unit; the scheduler multiplies it by order quantity itself. A 100-unit order against a step entered as 20 hours plans 2,000 hours of machine time instead of 20. If you know rates as pieces per hour, use the built-in Pieces to Hours converter (enter 5 pieces per hour and it computes 0.20 hours per piece), or type an expression like 1/5 straight into the cell."
+---
+
+**In EDGEBIC by User Solutions, a manufacturing routing is a flow chart you can schedule: each box is an operation at a work center, each arrow is the link to the next step, and the last arrow points at the finished product itself.** The diagram is not a picture of the plan. It is the plan. When you press Drive Schedule, the engine walks your arrows in dependency order, computes setup plus hours-per-unit times order quantity for every box, and books that time against real shift capacity on real machines.
+
+This guide builds a complete routing from nothing: a three-step recipe for a product we will call Widget-A, first in the data grid, then as a flow chart on the design canvas. Every number you type here becomes machine time on the [Gantt chart](/blog/edgebic-visual-scheduling-guide), so we will also check the math at the end.
+
+If routings are new territory, start with the concept post on [what production scheduling is](/blog/what-is-production-scheduling), then come back. If you want the full tour of the canvas itself, the companion post [walks through the graphical designer](/blog/edgebic-graphical-bor-designer-tour) panel by panel.
+
+## What a Bill of Routing Actually Is
+
+EDGEBIC calls the routing a **Bill of Routing (BOR)**: the ordered list of operations required to manufacture one unit of a product. Cut it on the saw. Machine it on the mill. Assemble it at the bench. Each step names a work center, says how long one unit takes there, and points at what comes next.
+
+A routing contains two kinds of rows:
+
+| Row type | What it carries | What the scheduler does with it |
+|---|---|---|
+| Work center step | Hours per unit, setup time, queue time | Books real machine time inside shift calendars |
+| Material step | Component quantity, lead time in days | Assigns it instantly; no capacity consumed |
+
+One product has one standard BOR. Every manufacturing order for that product is scheduled by walking this recipe. That single fact is why routing accuracy matters more than almost any other master data: a wrong number here is a wrong promise to a customer later.
+
+## Before You Start: Three Prerequisites
+
+1. **The product exists.** A routing is always attached to one end product.
+2. **The work centers exist.** Every production step names the machine or station that does the work.
+3. **Shifts are assigned to those work centers.** The scheduler can only place hours inside working shifts. A routing on a machine with no shift calendar schedules nothing.
+
+If you are setting up a fresh system, the [greenfield setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers products, work centers, and shifts in order.
+
+## Step 1: Create the Routing
+
+Open the **BOR** tab from the main navigation. Pick your product in the selector at the top. If the product has no routing yet, EDGEBIC offers to create one: give it a descriptive name like `Widget-A Standard Routing` (not `BOR 1`; the name is what other planners see), confirm the end product, and click **Create BOR**.
+
+For long routings there is a shortcut worth knowing: the **Advanced BOR Construction** expander in the same dialog lets you multi-select machines and components from list boxes, move them across with one click, and preview the generated chain before creating. You rough out a ten-step routing in one pass, then refine.
+
+## Step 2: Add the Work Center Steps
+
+Click **Add Step** on the grid toolbar and pick the machine for each row. For Widget-A we add three steps:
+
+| Sequence | Work center | Hours Required | Setup Time (hrs) | Queue Time (hrs) |
+|---|---|---|---|---|
+| 10 | Saw-1 | 0.20 | 0.50 | 0 |
+| 20 | CNC-Mill-1 | 0.50 | 1.00 | 2.00 |
+| 30 | Assembly-1 | 0.30 | 0.50 | 0 |
+
+Three fields do the heavy lifting, and each means something different to the scheduler:
+
+- **Hours Required** is processing time **per one unit**, never per batch. The scheduler multiplies by order quantity itself. This is the single most common data entry mistake; a batch total typed here inflates every future order.
+- **Setup Time** is one-time preparation added once per run, regardless of quantity. Keep it out of the per-unit hours or setup will wrongly scale with batch size.
+- **Queue Time** is a buffer after the step ends before the next step may start. It consumes no machine capacity, and it only counts down during working shifts, which matches how a physical queue of parts behaves. Use it for cooling, curing, and inspection waits.
+
+Number sequences in tens (10, 20, 30) so you can insert step 15 later without renumbering everything. And if you think in pieces per hour rather than hours per piece, the **fx** converter next to the hours cell does the arithmetic: 5 pieces per hour becomes 0.20 hours per piece.
+
+## Step 3: Chain the Steps Together
+
+Here is the part that trips up every new user: **the sequence number does not control the order of work.** Execution follows the **Next In Sequence** link on each step. The number is a display hint; the link is the flow chart.
+
+On the Saw-1 row, open the Next In Sequence picker and select CNC-Mill-1. On the CNC-Mill-1 row, select Assembly-1. On the last row, Assembly-1, click **End Item**. That final link points the chain at Widget-A itself, which is how the system knows the routing is finished.
+
+Every step must be reachable on a chain that ends at the end product. A step whose link is missing or points at a deleted step shows a warning marker in the grid; fix the chain before scheduling, or steps will execute in a strange order. An unterminated chain is the most common cause of "my operations scheduled out of sequence."
+
+## Step 4: See It as a Flow Chart
+
+Click **Designer** on the toolbar. The same routing renders as a diagram: each step is a node, each Next In Sequence link is a connector arrow, and the finished product is the terminal node every chain must reach. Grid and Designer are two views of one routing; edit in either and the other shows it.
+
+Building visually works in the other direction too:
+
+1. Drag a machine from the **Toolbox** panel onto the canvas. A node appears where you drop it.
+2. Toggle **Draw Connector** on the toolbar, then click the upstream node and drag onto the new one. The arrow you just drew is exactly what the Next In Sequence column holds in the grid.
+3. Select the node and fill in setup, hours, and queue values in the **Properties** panel on the right.
+4. Click **Update** to save.
+
+Keep the diagram flowing one way, left to right or top to bottom. It reads like the shop floor, and a missing connector becomes obvious at a glance. The Designer validates on save: a step that cannot reach the end product, or an end product with outgoing arrows, is reported as an error. Fix the connectors rather than saving around them.
+
+Components fit the same picture. Drag a product from the Toolbox, connect it into the step that consumes it, and set its quantity per unit. If that component has a routing of its own, it becomes a sub-assembly and gets exploded at schedule time; [modeling sub-assemblies on the canvas](/blog/sub-assemblies-in-the-edgebic-designer) covers that in depth.
+
+## Step 5: Read the Header Totals and Save
+
+Above the grid, three live totals update as you edit. For Widget-A:
+
+- **Estimated Hour per unit** = 0.20 + 0.50 + 0.30 = **1.00**
+- **Setup Time** = 0.50 + 1.00 + 0.50 = **2.00**
+- **Total Cost** = work center rates times time, plus material costs
+
+Click **Update Standard BOR**. If validation finds problems (broken links, missing hours), it lists them and asks whether to save anyway. Prefer no: the validator flags exactly the issues that later become scheduling surprises.
+
+## Check the Math: What the Scheduler Does With Your Flow Chart
+
+Now imagine an order for **100 units** starting Monday 08:00 on a single 8-hour day shift. The scheduler books:
+
+| Step | Total time | Calculation |
+|---|---|---|
+| Saw-1 | 20.5 h | 0.50 setup + 0.20 × 100 |
+| CNC-Mill-1 | 51.0 h | 1.00 setup + 0.50 × 100 |
+| Queue | 2.0 h | shift-hours buffer after milling ends |
+| Assembly-1 | 30.5 h | 0.50 setup + 0.30 × 100 |
+
+Sawing runs Monday through Wednesday midday. Milling follows and ends the next Thursday afternoon. The two-hour queue pushes assembly's start to Friday morning, and assembly finishes the following Wednesday: roughly 13 working days end to end. Every one of those hours traces directly back to the nine numbers you typed. That traceability is the whole point of [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling): the plan is arithmetic on your data, not wishful thinking.
+
+## What Saving Does (and Does Not) Change
+
+**Update Standard BOR** writes the routing as the product's standard recipe. New orders and new quote simulations use it immediately. But jobs that are **already scheduled do not move**: each scheduled job carries its own frozen copy of the routing it was scheduled with, so your edit never silently re-routes work in progress. Shop paperwork stays valid.
+
+That freeze is deliberate, and there are explicit per-job controls for when you do want a live job to adopt a change. The post on [editing a live job's routing safely](/blog/editing-a-live-jobs-routing-in-edgebic) walks through those controls and their blast radius.
+
+## Common Mistakes, Quick Fixes
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Steps schedule in the wrong order despite correct sequence numbers | Execution follows Next In Sequence, not the number | Repair the chain link by link; end at End Item |
+| An operation takes 100x too long on the Gantt | Batch hours entered instead of per-unit hours | Divide by batch size or use the Pieces to Hours converter |
+| Timing cells show N/A and cannot be edited | The row is a material step | Enter Quantity and Lead Time instead; hours belong on work center rows |
+| Saved a change but the scheduled job did not move | Scheduled jobs keep a frozen routing copy by design | Use the per-job BOR controls to adopt the change deliberately |
+
+## Start With Your Real Recipes
+
+User Solutions has been helping manufacturers turn tribal knowledge into schedulable data since 1991, from job shops to the US Navy, GE, BAE Systems, and Cummins. The pattern that works: pick one real product, build its routing as a flow chart, schedule one real order, and compare the Gantt against what the floor actually does. The gaps you find are data fixes, not software problems, and each fix makes every future schedule sharper.
+
+[See what EDGEBIC does end to end](/edgebic), or bring one of your routings (spreadsheet is fine; the [import masks](/edgebic-erp-integration) will read it) and build it live with US in a demo.

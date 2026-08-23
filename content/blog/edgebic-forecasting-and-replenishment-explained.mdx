@@ -1,0 +1,163 @@
+---
+title: "Manufacturing Replenishment Planning in EDGEBIC: Forecast, Trigger, Firm, Build"
+description: "Manufacturing replenishment planning turns a forecast into a build order. Here is how EDGEBIC sizes the suggestion, what triggers it, and where the loop closes."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - manufacturing replenishment planning
+  - reorder point vs min max
+  - lot sizing rules manufacturing
+  - yield inflation build quantity
+  - demand forecast entry
+  - firm replenishment suggestion
+  - replenishment order scheduling
+targetPhrase: "manufacturing replenishment planning"
+wordCount: 1907
+readingTime: 10
+faqQuestions:
+  - question: "What is manufacturing replenishment planning?"
+    answer: "Replenishment planning decides when to build stock ahead of demand and how much to build. It watches a projected balance bucket by bucket, fires a suggestion when the balance falls below a configured trigger, sizes that suggestion to restore a target level, rounds it to a sensible lot, and inflates it for expected scrap. The planner then converts the suggestion into a real build order, which is scheduled against finite capacity like any other job."
+  - question: "What is the difference between reorder point and min-max replenishment?"
+    answer: "Both are triggers with different targets. Reorder point fires when the projected balance drops below the reorder level and aims to restore the reorder level plus one reorder quantity. Min-max fires when the balance drops below the minimum level and aims to restore the maximum level. Reorder point suits steady consumption with a standard order size, and min-max suits items where you want a defined band between a floor and a ceiling."
+  - question: "How does yield change a replenishment quantity?"
+    answer: "Yield inflates the suggestion so scrap does not become a shortage. If the calculation needs 450 good units and the product's yield is 0.95, the suggestion becomes the ceiling of 450 divided by 0.95, which is 474 units to start. Inflation is applied after lot rounding, so the quantity is rounded to your standard lot first and the scrap allowance sits on top of the rounded figure."
+  - question: "What happens when a planner firms a replenishment suggestion?"
+    answer: "A real manufacturing order is created in one step, flagged build-to-inventory, with the suggestion quantity rounded up to a whole number and the bucket start as its due date. It carries a replenishment demand source and a job number prefixed to identify its origin. Nothing posts to the inventory ledger at that moment: the order first has to be scheduled, then completed, and completion is what posts the receipt."
+qaQuestions:
+  - question: "We keep three forecasts per week for the same part from sales, production and R and D. Does the system add them or take the largest?"
+    answer: "It adds them, because each forecast type is treated as independent demand. Forecast rows are keyed by product, bucket, bucket date and type, so a sales forecast of 150, a production forecast of 30 and a consumption forecast of 10 for the same week are three separate rows summing to 190 units of forecast demand for that bucket. That is intentional and it is also the most common source of over-forecasting in practice: if two people enter the same expected demand under different types, you plan for double. Agree who owns which type before you enter anything, and use the type breakdown to report demand by origin rather than as a way for everyone to have their own row."
+  - question: "The suggestion says 474 but our standard lot is 150. Where does that number come from and do we have to accept it?"
+    answer: "It comes from three steps applied in order, and you can override it. Take a documented example: min-max with a floor of 100 and a ceiling of 500, a projected balance of 75, fixed lots of 150 and a yield of 0.95. The raw need is 500 minus 75, which is 425. Fixed-lot rounding takes 425 up to three whole lots of 150, which is 450. Yield inflation then divides 450 by 0.95 and rounds up, giving 474 units to start so that roughly 450 good ones survive scrap. You can firm a different quantity if you disagree; the suggestion is advice, not a mandate, and the projection will show you what the smaller quantity leaves behind."
+---
+
+**Manufacturing replenishment planning is a loop with four moves: forecast the demand, watch the projected balance, fire a sized suggestion when it dips below a trigger, and turn that suggestion into a real build order.** [EDGEBIC by User Solutions](/edgebic) runs that loop per stocked product, and the last move matters more than it sounds: the resulting order is scheduled against finite capacity like every other job, competing for real machine time rather than living in a planning system that does not know what the shop is doing.
+
+This post covers each move and the arithmetic behind the sizing. For the pillar-level view of how replenishment connects to inventory, projection and the master schedule, see the [inventory and planning guide](/blog/edgebic-planning-guide). For a narrative of one full cycle from breach to receipt, see the [make-to-stock replenishment walkthrough](/blog/make-to-stock-replenishment-walkthrough-edgebic).
+
+## The Independent Demand Side
+
+Everything in this loop rests on knowing what demand is coming. Committed orders tell you part of that. Forecasts tell you the rest.
+
+A forecast row in EDGEBIC is a planner's estimate of units needed in a future time bucket. It is stored per product, per bucket date, per bucket width and per type, and it is explicitly not a commitment. Three types exist:
+
+| Forecast type | Typical use |
+|---|---|
+| Sales | Expected customer demand for a finished item |
+| Production | Internal throughput target or prototype run |
+| Consumption | Raw-material or component usage rate |
+
+The four-part key (product, bucket width, type, bucket date) has one consequence worth knowing before you enter anything: **types are additive within a bucket**. A sales forecast of 150 and a production forecast of 30 for the same week produce 180 units of forecast demand, not 150. That is by design, since each type is independent demand from a different origin, and it is also the most common way shops accidentally double their plan. Decide who owns which type before you start.
+
+If forecasting method itself is your question rather than data entry, [demand forecasting for manufacturing](/blog/demand-forecasting-manufacturing) covers the approaches. EDGEBIC consumes the numbers you decide on.
+
+## Forecast Meets Firm Demand
+
+Once real orders arrive for a period you forecast, the two have to be reconciled or you plan for both. That reconciliation is the **forecast consumption rule**, set per product, with two options.
+
+**Greater-of** takes the larger of forecast and firm demand in each bucket. Forecast 100 against firm 60 gives 100: the orders are considered to be "inside" the forecast that predicted them.
+
+**Minus-consumed** lets firm orders eat into the forecast and adds them on top of what remains. Forecast 100 against firm 60 gives 40 plus 60, which is also 100 here. The two rules diverge when firm demand exceeds forecast, and the difference matters for how gross requirements behave under a surge.
+
+Neither rule ever modifies a forecast row. Consumption is recalculated fresh every time the projection runs, so the same stored forecasts produce different gross requirements as orders arrive and change. The full arithmetic, with a worked daily table, is in [how forecast consumption works](/blog/how-forecast-consumption-works-in-edgebic).
+
+One boundary to remember: for a make-to-order product, forecast is ignored entirely and gross requirements come from committed demand alone. Forecast rows for such a product are stored and displayed but contribute nothing.
+
+## The Trigger: When a Suggestion Fires
+
+Suggestions are evaluated per bucket against the projected balance, and only for make-to-stock products with a reorder method set. Leave the reorder method at none and no suggestion ever appears, which is the correct setting for items you build only to order.
+
+Two trigger methods exist.
+
+| Method | Fires when | Restores to |
+|---|---|---|
+| Reorder point | Projected balance falls below the reorder level | Reorder level plus reorder quantity |
+| Min-max | Projected balance falls below the minimum level | Maximum level |
+
+Reorder point is the classic model: a threshold and a standard order size, well suited to steady consumption. Min-max defines a band, which suits items where you want a defined floor and ceiling rather than a fixed order size.
+
+Safety stock sits alongside both and does a different job. It flags a bucket as below safety and contributes to the projected stockout figure, and by default it does not block consumption. Set your reorder trigger above safety stock so the build starts before you eat into the cushion.
+
+## The Sizing: Three Steps in Order
+
+Once a suggestion fires, its quantity is computed in three steps, and the order of the steps changes the answer.
+
+**Step one: the raw need.** Target level minus the projected balance. If the balance is negative the raw need is larger than the target, which is correct: you have to cover the deficit and refill.
+
+**Step two: lot rounding.** With lot-for-lot sizing, the raw need is used as is. With fixed order quantity, the raw need is rounded up to whole multiples of your reorder quantity, so a raw need of 70 against a lot of 50 becomes 100.
+
+**Step three: yield inflation.** If the product's yield is below one, the quantity is divided by the yield and rounded up. Yield of 0.95 on 450 units gives 474 to start.
+
+A worked example makes the sequence concrete. Take a product on min-max with a minimum of 100 and a maximum of 500, fixed lots of 150, and a yield of 0.95. The projected balance in a bucket comes out at 75.
+
+| Step | Calculation | Result |
+|---|---|---|
+| Trigger check | 75 is below the minimum of 100 | Fire |
+| Raw need | 500 − 75 | 425 |
+| Fixed-lot rounding | Round 425 up to whole 150s: 3 × 150 | 450 |
+| Yield inflation | 450 ÷ 0.95, rounded up | **474** |
+
+The suggestion is 474 units to start, so that roughly 450 good ones reach the shelf and the balance returns to the ceiling. Reversing steps two and three would give a different and less defensible number, which is why the order is fixed.
+
+## The Suggestion Is Advice, Not Supply
+
+This is the design choice that most often surprises new planners, and it is deliberate.
+
+The suggested quantity is displayed on the row and is **not** rolled into the balances of later buckets. A product with a persistent shortfall therefore shows suggestions on several consecutive rows, even though logically the first would fix the rest.
+
+The reason is trust. A projection that silently assumed its own suggestions would show a healthy plan resting on decisions nobody made. Keeping the plan honest means the balance only ever reflects supply that genuinely exists.
+
+## Firming: One Click, One Order
+
+Firming converts a suggestion into a real manufacturing order. Select a row with a non-zero suggested quantity on the inventory calendar and click **Firm**.
+
+The order created carries:
+
+- A job number prefixed to mark its origin as a replenishment
+- The suggested quantity, rounded up to a whole number
+- The bucket start date as its due date
+- The build-to-inventory flag set, so completion posts a receipt to the ledger
+- A replenishment demand source, which is the audit trail back to where it came from
+- A note recording that it was firmed from the inventory calendar, and by whom when an actor name is supplied
+
+Nothing posts to the inventory ledger at this moment. The order has to be scheduled, then run, then completed, and completion is what posts the receipt. That separation is worth internalising: firming creates a commitment to build, not stock.
+
+The step-by-step procedure, including the fields on the forecast pane and how to verify the created order, is in [how to enter forecasts and firm suggestions](/blog/how-to-enter-forecasts-and-firm-suggestions-in-edgebic).
+
+## Where the Loop Closes
+
+The firmed order enters the scheduling queue and is treated exactly like a customer job. It competes for machine time, respects setups and shift calendars, and appears on the same Gantt as everything else. That is the whole point of running replenishment through a finite capacity scheduler rather than a standalone planning tool: a stock build that cannot get machine time is not a plan.
+
+Once scheduled, the order appears as a **scheduled receipt** in the projection bucket containing its expected completion. The balance rises from that bucket onward and the suggestion clears, because the projected balance is now above the trigger.
+
+When the floor finishes it and a planner marks it complete, a receipt posts to the inventory ledger with the quantity, and on-hand rises for real. From that point the stock is available for netting, which means a later demand for the same part can be satisfied from it instead of triggering another build. That netting decision is covered in [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock).
+
+## Replenishment and the Master Schedule
+
+A second route creates build-to-stock orders: firming a row on the master production schedule. The two produce the same shape of order, and differ in provenance and in start-date handling.
+
+| | Firmed from the inventory calendar | Firmed from the master schedule |
+|---|---|---|
+| Demand source recorded | Replenishment | Master schedule |
+| Job number prefix | Replenishment marker | Master schedule marker |
+| Start date | The suggested start, when supplied | Due date less the product's lead time |
+| Linkage | Stands alone | Stamped back onto the master schedule row |
+
+Both are flagged build-to-inventory and both schedule identically. The distinction exists so that a month later you can tell whether an order came from a reorder trigger or from a deliberate plan, which is the sort of question that becomes urgent during a review. The master schedule surface is covered in the [master production schedule guide](/blog/master-production-schedule-guide).
+
+## Two Fields to Treat With Care
+
+Products carry a demand time fence and a planning time fence, both expressed in days. In classical planning these freeze the near horizon: inside the demand fence only firm orders count and forecast is ignored, and inside the planning fence new suggestions are suppressed so the immediate schedule stops churning.
+
+The fields are present and safe to populate, and they do not currently drive the suggestion logic. Set them if you want the values recorded against your items, and do not build a process that depends on a fence suppressing anything until you have confirmed the behavior on your own data. Ask User Solutions to demonstrate the current fence handling against your item settings before you rely on it.
+
+That is worth saying because a fence you believe in and do not have is worse than no fence: it makes you stop watching the near-term buckets.
+
+## Getting the Settings Right
+
+Five fields decide almost everything about a product's replenishment behavior: build method, stocked flag, reorder method with its levels, lot size rule with its reorder quantity, and yield. Two of them fail silently when wrong. A make-to-stock product with the stocked flag off never posts, never nets and never suggests. A yield outside its valid range breaks the sizing calculation. Both are covered, with the checks that find them, in [inventory tracking mistakes](/blog/inventory-tracking-mistakes-edgebic), and the replenishment-specific traps are in [forecasting and replenishment mistakes](/blog/forecasting-and-replenishment-mistakes-edgebic).
+
+To see the loop running against your own demand pattern, lot sizes and yields, bring a forecast and a month of orders to a demo and ask User Solutions to load them. For the platform as a whole, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

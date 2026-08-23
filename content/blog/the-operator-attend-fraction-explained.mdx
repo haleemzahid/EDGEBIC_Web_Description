@@ -1,0 +1,87 @@
+---
+title: "The Operator Attend Fraction Explained in EDGEBIC"
+description: "Not every machine needs a person for its whole run. The attend fraction sets how much operator time a run consumes, from setup-only to lights-out to a two-person crew."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - operator attend fraction
+  - labor constraint scheduling
+  - lights out machining
+  - setup only staffing
+  - operator hours ledger
+  - multi machine tending
+targetPhrase: "operator attend fraction"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "What is the operator attend fraction in EDGEBIC?"
+    answer: "The attend fraction is a setting on a routing step that says how much operator attention the run phase needs per machine-hour. A fraction of 1.0 means one operator-hour per machine-hour, fully attended. A fraction of 0.5 means one person tends two machines. A fraction of 0.0, the default, means setup-only: a person is needed to set up, but the run consumes nobody. Values above 1.0 model a crew, so 2.0 books two operator-hours per machine-hour."
+  - question: "Why does the attend fraction default to zero?"
+    answer: "The default is 0.0, meaning setup-only, so a forgotten fraction under-books labor visibly instead of silently overselling people. If the default were 1.0, every skill step would quietly demand a full operator through its whole run whether or not you meant it. With the zero default, an untouched skill step gates operators on setup only, and if it has no setup it consumes no operator time at all. You raise the fraction deliberately when a run genuinely needs tending."
+  - question: "How does a fraction below one let one operator run several machines?"
+    answer: "The engine tracks a per-operator pool of hours per shift and converts machine-hours to operator-hours through the fraction. At 0.5, eight pool-hours of one operator buy sixteen machine-hours of run time, so one person can keep two machines going. Setup is always booked at one operator-hour per setup regardless of the fraction, because one person sets up one machine. Only the run phase scales, which is what makes multi-machine tending schedulable."
+qaQuestions:
+  - question: "I run a lights-out cell: one operator sets up seven CNC mills in the morning and they run unattended. How do I model that?"
+    answer: "Set each step's attend fraction to 0.0, which is setup-only, and give a setup of about one hour. With one qualified operator, each job books one operator-hour for its setup, so seven setups fill seven of the operator's eight hours and all seven machines start the same morning. The run hours past setup are unconstrained, so the machines run themselves into unstaffed evening hours if machine capacity allows. An eighth setup still fits that day, but a ninth slides to the next day because the operator's hours are full."
+  - question: "A step needs two people standing at the machine the whole run. Can EDGEBIC schedule that?"
+    answer: "Yes. Set the attend fraction to 2.0. Each machine-hour then books two operator-hours against the pool. If only one qualified operator is staffed on a shift, that operator's eight hours cap the machine at four run hours per day after setup, so the step splits and slides until enough crew is available. Certify and roster a second qualified operator and the machine gets its full run in a shift. The fraction above one is exactly how you tell the engine a job is a crew job, not a one-person job."
+---
+
+**In EDGEBIC by User Solutions, the operator attend fraction is the setting on a routing step that says how much of an operator a run actually needs: none, a share, one person, or a whole crew.** It is the knob that turns the labor constraint from a blunt "this needs a person" into an accurate model of how your floor really staffs machines. A lights-out mill and a two-person weld cell both schedule correctly because the attend fraction tells the engine how many operator-hours each machine-hour costs. This is the human side of [shop floor data collection](/blog/edgebic-shop-floor-guide): the machine is one constraint, the person is the second.
+
+## The Idea in One Sentence
+
+Every scheduled operation consumes machine time. The attend fraction says how much operator time it consumes alongside that machine time, per machine-hour of the run.
+
+EDGEBIC tracks a per-operator pool of hours for each shift. A qualified operator rostered on Monday's day shift has eight hours to give, full stop, no matter how many skills they hold. The attend fraction converts a step's machine-hours into a demand on that pool, and the engine will not oversell any operator's day. When the pool for a required skill runs out on a shift, the step slides to the next staffed window rather than pretending a person exists.
+
+## The Four Common Settings
+
+The fraction is a plain number, floor-clamped at zero with no upper limit, so it can express everything from unattended running to a crew.
+
+| Fraction | Meaning | Effect |
+|---|---|---|
+| 0.0 (default) | Setup-only | The run books nobody. Post-setup hours may execute on completely unstaffed days |
+| 0.5 | One person tends two machines | 8 pool-hours buy 16 run machine-hours |
+| 1.0 | Fully attended | One operator-hour per machine-hour, the classic ledger |
+| 2.0 | Two-person crew | Each machine-hour books two operator-hours |
+
+Setup is a special case that never scales. Setup always books at one operator-hour per setup, because one person sets up one machine, regardless of the run fraction. Only the run phase uses the fraction. So a step with a real setup can never start on an unstaffed shift even at a 0.0 run fraction: the setup still needs a human.
+
+## Why the Default Is Zero
+
+The default fraction is 0.0, setup-only, and that choice is deliberate. If the default were 1.0, every step that carries a required skill would quietly demand a full operator through its entire run, whether or not you intended it, and a forgotten setting would silently oversell your people. With the zero default, a forgotten fraction under-books labor visibly rather than hiding a shortage. An untouched skill step gates operators on setup alone, and if it has no setup at all, the involvement rule kicks in and the operator constraint is skipped entirely: the step schedules as if it had no skill.
+
+You raise the fraction on purpose, for the steps that truly need tending. That is the honest direction for a default to lean.
+
+## Lights-Out Machining, Worked
+
+Consider a cell of seven CNC mills, one instance each, an eight-hour day shift. Each of seven jobs has a step with one hour of setup and nine hours of run, a required CNC-Setup skill, and an attend fraction of 0.0. Joe is the only qualified operator, with eight hours a day.
+
+Per job, the operator cost is one hour of setup at full attention plus nine run-hours at zero, which is one hour of Joe per job. So:
+
+- Jobs one through seven all start Monday. Seven machines running, Joe booked seven of his eight hours on setups.
+- The run hours past setup are unconstrained, so the machines run themselves, into unstaffed evening hours if machine capacity allows.
+- An eighth job's setup still fits Monday, Joe's last hour. A ninth setup slides to Tuesday, because Joe's day is full.
+
+One operator legitimately starts a lights-out cell, and no day oversells anyone. Change the fraction to 0.5 and Joe's eight hours would afford far more attended run time; change it to 2.0 with only Joe qualified and each machine's day caps at its run hours divided by two.
+
+## Fractions Below and Above One
+
+A fraction below one is multi-machine tending. At 0.5, one operator's eight hours buy sixteen machine-hours of run, so a single person keeps two machines moving. The engine simply lets each machine-hour draw half an operator-hour from the pool.
+
+A fraction above one is a crew. At 2.0, each machine-hour books two operator-hours. With one qualified operator staffed, the machine can only run half a shift after setup, so the step splits and slides until enough qualified people are rostered together. This is how you tell the engine a job needs more than one pair of hands. It composes cleanly with the operator pin, too: a step pinned to one person at a fraction above one books the whole crew demand against that single person, which caps the machine day accordingly.
+
+## Where It Fits With Skills and Rosters
+
+The attend fraction never works alone. It sits on top of the machine calendar and the skill model. A window must first survive the work center's holidays, downtime, and shift capacity. Only then does the operator gate ask whether anyone qualified can actually stand there, and the fraction decides how much of that person the run consumes. Skills decide who is eligible, rosters decide when they work, and time-off removes them for a range. For how eligibility itself is enforced, see [how operator skills gate work center assignment](/blog/how-operator-skills-gate-work-center-assignment), and for the weekly staffing pattern, [how the shift operator roster works](/blog/how-the-shift-operator-roster-works).
+
+If your plant never configures operators at all, none of this applies. With no operator data loaded, every gate is a no-op and the schedule is byte-identical to a machine-only plan. The labor constraint costs you nothing until you decide to use it.
+
+## The Bottom Line
+
+The operator attend fraction is how EDGEBIC captures the real staffing shape of a machine: setup-only for a lights-out cell, a share for multi-machine tending, one for a fully attended run, or more than one for a crew. Setup always books one person, only the run scales, and the zero default keeps a forgotten setting from silently overselling your people. Set it deliberately per step and the schedule respects the second constraint that a machine-only plan ignores. For the setup-only case worked end to end, see [how to schedule lights-out machining with one operator](/blog/how-to-schedule-lights-out-machining-with-one-operator-in-edgebic). Explore the whole execution loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), see how the plan reflects real [production bottleneck identification](/blog/production-bottleneck-identification), and visit [EDGEBIC](/edgebic).

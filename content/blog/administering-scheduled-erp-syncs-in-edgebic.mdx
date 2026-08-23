@@ -1,0 +1,81 @@
+---
+title: "Administering Scheduled ERP Syncs in EDGEBIC"
+description: "How EDGEBIC's Integration tab runs scheduled and file-watched imports on interval, keeps run history, monitors live runs, and lets you test a sync with the built-in simulator."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - scheduled ERP sync
+  - integration run history
+  - automated data import scheduling
+  - file watch import
+  - import mask automation
+  - manufacturing data integration
+targetPhrase: "scheduled ERP sync"
+qaQuestions:
+  - question: "Our ERP drops a nightly CSV of new orders. Can EDGEBIC pick it up automatically?"
+    answer: "Yes, a file-watched integration is built for exactly that. Point an integration at the folder where the ERP drops the file and map the file through an import mask, and EDGEBIC imports it automatically when the file changes, running it through the same validated import path a manual import uses. Each run writes a row to the run history with its status and counts, so the morning after you can confirm the orders arrived and see any rows that failed with their reasons. There is no native ERP connector involved; it is the flexible file import running on a watch."
+  - question: "We want a scheduled pull from our ERP's SQL database every hour. Is that reliable enough to leave unattended?"
+    answer: "Yes, because the runner is built to run unattended without disturbing the system. Each run is time-boxed and row-capped, runs on a background thread with its own database connection, and one failing run never affects the loop or the next run. Every run writes a history row before it starts and finalizes it when it ends, so a crash leaves a detectable Interrupted row rather than a silent gap. Set the interval in minutes, and check the run history periodically for Interrupted rows or low counts. The interval measures from one dispatch to the next, and a missed run does not pile up backfills."
+wordCount: 1350
+readingTime: 7
+faqQuestions:
+  - question: "How does EDGEBIC run scheduled imports from an ERP?"
+    answer: "EDGEBIC's Integration tab runs two kinds of automatic import: a file-watched source that imports when a file changes, and an external SQL query that pulls a resultset on an interval. Both feed the same validated import path and the same import masks a manual import uses, so automation reuses the proven pipeline rather than a separate one. Each run is scheduled by interval in minutes, writes a persistent run-history row, and can be triggered on demand with Run Now. This is flexible import automation, never a native certified ERP connector."
+  - question: "What is the EDGEBIC integration simulator for?"
+    answer: "The simulator lets you test the whole integration path end to end without touching a real ERP. It provisions demo data and masks from the field registry, so you can watch a sync run, produce a run-history row, and import records exactly as a real integration would, then tear the demo down afterward. It is how an administrator gains confidence in the mechanism before pointing it at production data, and how you demonstrate the feature safely."
+  - question: "Does deleting an integration in EDGEBIC delete its run history?"
+    answer: "No, run history outlives the integration that produced it. Deleting an integration definition is a hard delete, but its past runs survive as an audit record, viewable under the run history. This is deliberate: removing an integration should not erase the evidence of what it did while it existed. An administrator reviewing what ran last quarter can still see it even after the integration itself is retired."
+---
+
+**EDGEBIC's Integration tab runs scheduled and file-watched imports on an interval, reusing the same validated import masks a manual import uses, and keeps a persistent run history with live monitoring and a built-in simulator for testing.** In [EDGEBIC by User Solutions](/edgebic) automating data flow from an ERP is not a separate native connector. It is the flexible import pipeline running on a schedule, with the end-to-end run history that makes an unattended sync trustworthy.
+
+This post is the administrator's guide to that automation. For the full reference behind the controls here, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide), and for the manual side of the same pipeline, see [the data import governance workflow](/blog/the-data-import-governance-workflow-in-edgebic). It names controls that live in the Integration tab, never any internal path.
+
+## Automation Reuses the Import You Already Trust
+
+The load-bearing idea is that scheduled integration does not fork the import pipeline. A file-watched source, an external SQL query, and a manual file import all produce the same kind of import rows and run through the same orchestrator, the same import masks, and the same validation. There is exactly one import path.
+
+That matters because the subtle behavior of a good import (continuing past a bad row, aborting when it must, the two-pass handling of routings) is battle-tested, and automation inherits all of it rather than reimplementing a shakier copy. When you schedule a sync, you are scheduling the import you already trust, not a parallel mechanism that might drift from it.
+
+It also sets the honesty boundary. This is Excel, CSV, and database import automation through flexible masks. It is not a native, turnkey, or certified connector to any specific ERP. The strength is that any source you can export to a file or expose as a query can feed EDGEBIC on a schedule.
+
+## The Two Source Types
+
+An integration draws from one of two sources.
+
+- **A watched file.** Point the integration at a folder, and when a file there changes, EDGEBIC imports it automatically through its mask. This suits an ERP that drops a nightly export, or any upstream system that writes a file on a cadence.
+- **An external SQL query.** Give the integration a query against a source database, and EDGEBIC pulls the resultset on an interval and maps it through a mask. This suits pulling orders or master data directly from an ERP's database.
+
+Both are configured in the Integration tab, both map through import masks, and both land in the same run history. Adding a new source is a matter of defining it, not building new plumbing.
+
+## Scheduling, Run Now, and What Missed Runs Do
+
+Scheduling is by interval, measured in minutes, from one dispatch to the next. That dispatch-to-dispatch measurement is deliberate: an overdue integration fires once when the host starts, and missed runs do not backfill into a pile. A desktop application that was closed overnight does not wake up owing twelve runs; it runs once and resumes its interval. Alongside the schedule, Run Now triggers an integration on demand, which is how you test a change or force a pull without waiting for the next interval.
+
+This design fits how a plant actually runs a scheduling application: on during the working day, off overnight, and never surprised by a flood of catch-up work at startup.
+
+## The Run History Is the Trust
+
+An unattended sync is only as good as your ability to confirm it ran. The run history is that confirmation. Every run writes a history row before any work begins and finalizes it when the run ends, so a run is always visible even if it fails midway. A run still marked Running after a restart is flipped to Interrupted by the startup sweep, so a crash leaves a detectable orphan rather than a gap.
+
+Each run row carries its status and row counts, and a detail view reads the tail of that run's log. So a glance at the history answers the two questions that matter: did it run, and did it run cleanly. An Interrupted row or a low count tells you where to look. The broader guide to these surfaces is [reading EDGEBIC run logs and run history](/blog/reading-edgebic-run-logs-and-run-history).
+
+Run history also outlives its integration. Deleting an integration is a hard delete, but its past runs survive as an audit record, so retiring an integration never erases the evidence of what it did.
+
+## Built to Run Without Disturbing the System
+
+Because integrations run while planners are working, the runner is built to stay out of the way. Each run is time-boxed and row-capped, so a runaway query or an oversized file cannot run forever or import without limit. Each runs on a background thread with its own database connection, and the runner dispatches each due integration so that one failing integration never affects the loop or its siblings. A stored password for an external SQL source is protected, not echoed back, and re-entered per user and machine.
+
+The practical upshot for an administrator is that you can leave scheduled syncs running and trust that the worst case is one failed run recorded in the history, not a disturbed scheduling session.
+
+## Test It First With the Simulator
+
+Before pointing an integration at production data, the built-in simulator lets you exercise the whole path safely. It provisions demo data and masks from the field registry, runs a sync end to end, produces a real run-history row, and imports records exactly as a live integration would, then tears the demo down afterward. It is how you gain confidence in the mechanism, and how you demonstrate the feature, without risking real data.
+
+Starting with the simulator, then a Run Now on a real integration, then a scheduled interval, is the natural adoption path: prove the mechanism, prove the mapping, then automate.
+
+For the manual import governance behind the same masks, read [the data import governance workflow](/blog/the-data-import-governance-workflow-in-edgebic), and for the general context of feeding a scheduling system, see [what production scheduling is](/blog/what-is-production-scheduling). The full administrator reference is the [EDGEBIC admin guide](/blog/edgebic-admin-guide).

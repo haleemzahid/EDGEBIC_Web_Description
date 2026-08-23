@@ -1,0 +1,166 @@
+---
+title: "How to Configure Machine Instances and Utilization in EDGEBIC"
+description: "Configure machine instances and utilization correctly: counting machines, choosing instances over a group, setting One Per Day, and expressing headroom well."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - configure machine instances utilization
+  - set number of instances work center
+  - one per day flag configuration
+  - planning headroom capacity
+  - work center import flags
+  - fractional instances scheduling
+targetPhrase: "configure machine instances utilization"
+wordCount: 1720
+readingTime: 9
+faqQuestions:
+  - question: "Where do you set the number of machine instances on a work center?"
+    answer: "On the Basic Information tab of the Work Center Configuration dialog, in the No.Instances field. It defaults to 1, and it multiplies shift capacity directly, so a work center with three instances on an eight-hour shift offers 24 hours a day. The grid's Instances column shows the current value for every work center at a glance."
+  - question: "How do you decide the right instance count?"
+    answer: "Count the machines that would take the same number of hours for the same job. Identical machines with the same speed, shifts, and tooling belong in one work center as instances. Anything that differs belongs in its own work center, pooled with the others in a work center group. The test is a single question: if this job went to any machine behind this name, would it take the same time?"
+  - question: "How is the One Per Day flag turned on?"
+    answer: "Through the work center import file, using the One_Per_Day_Flag column with a truthy value such as 1, true, or yes. It is not on the edit dialog in the current release, and re-importing updates existing work centers. The work center grid shows the current state in its One Per Day column, so you can confirm the import landed."
+  - question: "Where do you set work center utilization?"
+    answer: "Work centers created or imported in current versions run at 100% utilization and the value is not editable on the work center screen. To plan below the full clock, shape the calendar with honest shift hours or use per-day capacity overrides. Both are honored identically by the scheduler and the capacity dashboards, and both leave a reason attached to the number."
+  - question: "Does changing the instance count move jobs that are already scheduled?"
+    answer: "No. Saving master data never reschedules. A new instance count changes available capacity at the next scheduling run, and the bars on screen keep their existing dates until then. Run the schedule again and review before communicating dates. Completed work is never moved by a reschedule, so rerunning is safe on jobs already in progress."
+qaQuestions:
+  - question: "One of our four mills is down for a three-week rebuild. Should I drop the instance count from four to three?"
+    answer: "It works, but it is the blunt version and it is easy to forget to put back. Reducing the count removes a quarter of the capacity from every date, past horizon included, with no record of why. A cleaner approach for a bounded outage is a date-range capacity override across the three weeks with the reduced total, which carries a reason, expires on its own, and leaves the instance count describing the plant as it really is. If the machine is gone permanently, then yes, change the count and rerun."
+  - question: "Our shop reliably loses about an hour a day to cleanup and minor stoppages, but the utilization field is not editable. How do I get that hour out of the plan?"
+    answer: "Put it in the calendar, where it is visible. Two options work. Define the shift hours net of the loss, so a nominal eight-hour shift is entered as seven, which is honest and applies everywhere the shift is used. Or record the recurring cleanup as downtime, which is subtracted from the per-machine shift duration before the instance multiplier and therefore scales correctly on multi-machine work centers. Both approaches are read identically by the scheduler and the dashboards, and both explain themselves to whoever inherits the configuration."
+---
+
+**Configuring instances is one field and one decision: the field is No.Instances, and the decision is whether the machines behind the name are genuinely identical.** Everything else about multi-machine work centers follows from getting that decision right.
+
+[EDGEBIC by User Solutions](/edgebic) makes the count easy to set and easy to get wrong, because nothing on screen can tell you that your four mills are not actually clones. This guide covers how to count, how to configure, and how to express planning headroom without an editable utilization field. The concepts behind it are in [machine instances explained](/blog/edgebic-machine-instances-explained).
+
+## Step 1: Count the Machines That Are Actually Interchangeable
+
+Before opening any dialog, apply one test to each candidate group of machines:
+
+> If this job went to any machine behind this name, would it take the same number of hours?
+
+**Yes** means instances. Same speed, same shifts, same tooling, one queue.
+
+**No** means separate work centers. Different speed, different calendar, different capability. Pool them in a [work center group](/blog/what-is-a-work-center-group-machine-pool) so a routing step can still target any of them, with each machine keeping its own speed and calendar.
+
+This test takes thirty seconds per work center and prevents the most expensive master data error there is. A four-instance pool holding two fast and two slow machines schedules all four at an average nobody can hold, and produces chronic mild lateness with no visible cause.
+
+The mechanisms compose, so "three identical new mills plus two identical old mills, either family acceptable" is two work centers with counts of 3 and 2, pooled in one group.
+
+## Step 2: Set No.Instances
+
+1. Open the **Workcenter** tab, then click **Edit** on the work center row (or **Add Work Center** for a new one).
+2. On the **Basic Information** tab, enter **No.Instances**.
+3. Click **Save**.
+
+| Field | Default | What it does |
+|---|---|---|
+| **No.Instances** | 1 | How many parallel identical machines this work center has. Multiplies shift capacity directly |
+
+The number is a straight multiplier:
+
+```
+capacity per day = shift hours x instances x utilization %
+```
+
+Two instances on an 8-hour day shift offer 16 hours. Three offer 24. That capacity is pooled by default, so two 8-hour jobs run simultaneously on a two-instance work center, and one 16-hour job can be split across both machines and finish in a single day.
+
+Verify the result in the grid's **Instances** column against the machines on the floor. That column is the fastest sanity check available when a capacity or utilization percentage later looks impossible.
+
+## Step 3: Decide Whether Pooling Is Physically Correct
+
+Pooled instances share capacity freely, which is right for mills, lathes, welding cells, and most of a plant. It is wrong wherever a machine is occupied for the day regardless of cycle time.
+
+Set **One Per Day** for those, and understand exactly what it changes:
+
+| Behavior | One Per Day off (default) | One Per Day on |
+|---|---|---|
+| Capacity model | All instances pool their hours | Each instance takes one job per calendar day |
+| Three instances, 8 h shift | 24 h available to any mix of jobs | Three jobs, whatever hours they need |
+| Fourth job of 3 h on a day with 6 h free | Fits today | Slides to tomorrow |
+| Leftover clock time | Reused | Deliberately unused |
+
+That deliberate waste is the entire point. A paint booth loses the rest of the day to a color change; a furnace load owns the chamber. With the flag off the plan promises a fourth load the floor cannot run.
+
+**How to set it.** The flag is loaded through the work center import file, using the `One_Per_Day_Flag` column with a truthy value (1, true, yes). It is not on the edit dialog in the current release, and re-importing updates existing work centers. The grid's **One Per Day** column confirms the value landed. The same import path handles `Is_Bottleneck`, and it is the same flexible Excel and CSV mask used to load work centers in bulk from an ERP export (see [EDGEBIC ERP integration](/edgebic-erp-integration)).
+
+**One caveat.** The flag has no effect at all on a single-instance work center. One machine takes one job at a time either way.
+
+## Step 4: Handle a Genuinely Fractional Resource
+
+Keep instance counts whole unless one unit genuinely handles a fraction of the throughput of the others.
+
+The real case is something like a blending suite with two full-capacity mixers and one half-size vessel. Entered as **2.5**, the engine treats the partial machine explicitly instead of rounding to three and over-counting the small unit. A 12-hour job then places four hours on each full mixer and four hours' equivalent on the half-size unit.
+
+What a fraction should not describe is availability. "The fourth mill is only around half the time" is a calendar or override problem, not an instance problem, and modeling it as 3.5 instances hides the reason from everyone who reads the configuration later.
+
+## Step 5: Express Planning Headroom Honestly
+
+Utilization is an engine-level throttle on how much of the clock the scheduler may book. Work centers created or imported in current versions run at **100%**, and the field is not editable on the work center screen.
+
+That is not a problem, because there are two better places to put headroom, and both are read identically by the scheduler and the capacity dashboards:
+
+**Shape the calendar.** If a nominal eight-hour shift reliably delivers seven, enter seven. If a lubrication window happens every Wednesday, record it as downtime so it is subtracted from the per-machine shift duration before the instance multiplier scales it correctly across the whole work center.
+
+**Use per-day capacity overrides.** For the days that genuinely differ (a PM window, a short-crewed Friday, approved Saturday overtime) type the effective hours with a reason. The override wins over the formula for that cell and shows as overridden in the grid.
+
+One clarification that saves an afternoon: the efficiency percentage on a work center is not the capacity throttle. Reducing it does not reduce the hours the scheduler books.
+
+Planning a resource at slightly under the theoretical clock is standard finite-capacity practice, for the same reason buffers exist in the [Theory of Constraints and APS literature](https://www.ascm.org): a plan loaded to 100% has no recovery room, so the first breakdown propagates through every downstream date. Put the headroom somewhere it carries a reason. The measurement side is in [the capacity utilization KPI](/blog/capacity-utilization-kpi).
+
+## Step 6: Rerun and Read the Result
+
+Saving master data never reschedules. A new instance count, a new flag, a new shift: all of them change capacity at the **next** scheduling run, and the bars on screen keep their existing dates until then.
+
+Run Drive Schedule and check three things before you communicate any date:
+
+1. **Elapsed time on split operations.** With instances pooled, a long operation should now finish sooner because it splits across machines.
+2. **Which instance ran what.** The Gantt and the allocation records name the machine, so a One Per Day work center should show one job per instance per day and nothing more.
+3. **Utilization percentages.** They are computed against instance-multiplied capacity, so a corrected count should move them proportionally.
+
+Completed work is never moved by a reschedule, which is what makes frequent reruns safe on jobs already in progress. The pipeline is described in [the scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+## Step 7: Take One Machine Out Without Touching the Rest
+
+When a single machine inside a multi-instance work center goes down, you have three options and they are not equivalent.
+
+**Mark that instance unavailable.** The engine skips it during selection while the other machines keep running. No count changes, no capacity is removed from the machines that are still working, and there is one thing to undo when the machine returns. This is the right tool for a repair.
+
+**Use a capacity override across the affected dates.** Best for a scheduled or bounded outage: it carries a reason, shows as overridden in the grid, and expires by itself. Remember that an override is the day total across all machines, so a three-instance work center losing one machine for a week is an override of two machines times the shift hours.
+
+**Reduce the instance count.** Correct only when the machine is gone for good. On a temporary outage it removes capacity from every date with no record of why, and it depends on someone restoring it later.
+
+Whichever you choose, rerun the schedule afterwards. Nothing moves until you do, and jobs already assigned to the affected machine will not reassign themselves between runs: instance assignment is sticky for the duration of a run, so a fresh run is what makes a new selection with the outage in view.
+
+## A Checklist Before You Commit Dates
+
+Five checks, five minutes, run against the work center grid after any instance or capacity change:
+
+1. **Instances match the floor.** Read the column against the actual machine count.
+2. **Every instance count is a whole number** unless a fraction genuinely describes a half-capacity unit.
+3. **One Per Day is on only where physics requires it**, and off everywhere else.
+4. **Multi-instance work centers hold identical machines.** Apply the one-question test to each.
+5. **The schedule has been rerun** since the last configuration change.
+
+That last one catches more problems than the other four combined, because every other fix is invisible until the plan is rebuilt.
+
+## A Short Worked Setup
+
+A press shop configuring two identical presses that were previously two separate work centers:
+
+1. Apply the test: same model, same shifts, same tooling, same speed. They are instances.
+2. Create one work center, `Press-1`, and set **No.Instances** = 2.
+3. Leave **Use Global Shifts** on, so it works the plant day shift: 8 hours, two machines, 16 hours a day.
+4. Leave One Per Day off. Nothing about stamping locks a press for the day.
+5. Update the routings that used to name a specific press so they point at `Press-1`.
+6. Run Drive Schedule. A 16-hour stamping operation that used to take two days now splits across both presses and completes in one.
+
+## Next
+
+Understand how the engine chooses between the machines in [how EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day). Read [the instance and utilization mistakes](/blog/instance-and-utilization-mistakes-edgebic) before going live. And if a percentage looks impossible after the change, [work center overload causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes) starts with the instance count for exactly this reason.

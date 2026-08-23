@@ -1,0 +1,91 @@
+---
+title: "My Scenario Result Does Not Match the Live Schedule: Causes and Fixes"
+description: "A what-if scenario runs in memory against a clean copy of the plan, so its dates can differ from the live schedule. The documented reasons a gap appears and what to check."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - scenario does not match schedule
+  - what-if scenario differs
+  - scenario simulation dates
+  - quote simulation vs production
+  - scenario step override
+  - scenario capacity override
+targetPhrase: "scenario result does not match the live schedule"
+wordCount: 1240
+readingTime: 6
+faqQuestions:
+  - question: "Does a what-if scenario change the production schedule?"
+    answer: "No. Scenario and quote simulations run entirely in memory and never write schedule rows, resource allocations, or production schedule headers. The only thing a scenario stores is its own estimated start, estimated end, hours, and costs, plus a flag that it has been simulated. That isolation is deliberate, and it is why a scenario result and the live schedule can differ without either being wrong."
+  - question: "Why does a scenario show an earlier date than the real schedule for the same job?"
+    answer: "A scenario simulates one job against current capacity, while the live schedule places every order in sequence and each one consumes capacity the next has to work around. The scenario also runs with whatever step and capacity overrides it carries. If the scenario has no overrides and still comes out earlier, the usual cause is that the live run placed other work ahead of this job, which the single-job simulation never saw."
+  - question: "Do scenarios respect holidays and maintenance downtime?"
+    answer: "Yes. A scenario loads the same daily and monthly capacity override tables the production scheduler uses, so configured maintenance windows, reduced-hour periods, and holiday capacity changes are all reflected. A scenario is not run against an unconstrained calendar. That is why a scenario result is a credible promise date rather than a best case, provided its own overrides are intentional."
+qaQuestions:
+  - question: "My expedited scenario promised a Friday finish and the job actually landed the following Wednesday after conversion. What explains the five days?"
+    answer: "The scenario simulated that job alone against current capacity. Converting it to a real order put it into the queue with everything else, where earlier orders consumed the capacity the simulation had assumed was free. Re-run scheduling and compare the job's placement against the machines the scenario relied on. If the scenario carried a capacity boost or an added shift as an override, that difference alone can account for several days once the override is gone."
+  - question: "I skipped a step in a scenario and the result came back much earlier than seemed reasonable. Is the number trustworthy?"
+    answer: "Treat it with suspicion. Skipping a step removes it from the routing copy used for the simulation, and any downstream step that pointed at it loses its predecessor. Depending on the routing, the downstream step can then be treated as having nothing in front of it and scheduled earlier than it ever could in reality. Verify the sequence of the remaining steps before presenting a skip-based scenario to a customer."
+---
+
+**A what-if scenario runs entirely in memory against a copy of the plan and never writes to the production schedule, so its dates legitimately differ from the live schedule when the two are answering different questions.** [EDGEBIC by User Solutions](/edgebic) keeps that separation on purpose: a scenario is a promise-date experiment, and the live schedule is the committed plan for every order at once.
+
+This post is the detailed version of the scenario-divergence symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the model, [what a quote scenario is](/blog/what-is-a-quote-scenario) and [what a scenario can and cannot change](/blog/what-a-scenario-can-and-cannot-change-in-edgebic) set the boundaries.
+
+## What You Are Seeing
+
+You build a scenario, run the simulation, and get an estimated start and end. Later you look at the live schedule for the same product, or you convert the quote to an order and reschedule, and the dates do not agree. Sometimes the scenario is optimistic by days, occasionally it is more conservative than reality.
+
+Neither result is a bug. They are different calculations with different inputs.
+
+## Why It Happens
+
+**Cause 1: A scenario simulates one job, the live schedule sequences all of them.** The simulation places the job you asked about against current capacity. The production run places every open order in sequence, and each order consumes capacity that the next has to work around. A job that fits neatly on its own can land days later once it is queued behind other work.
+
+**Cause 2: The scenario carries overrides the live plan does not.** Step overrides change a step's time, its work center, its sequence, or remove it entirely. Scenario-level changes such as an extra shift, weekend production, a capacity boost, or a different priority level all shift the answer. Those are the point of a scenario, but they have to be intentional and remembered when comparing.
+
+**Cause 3: Skipping a step broke a sequence link.** A skipped step is removed from the routing copy the simulation uses. If a later step pointed at the skipped one as its predecessor, that link becomes a dangling reference and the later step can be treated as having nothing in front of it. The result can be much earlier than any real routing would allow. Always check the remaining sequence after a skip.
+
+**Cause 4: Time was measured as assigned hours, not elapsed hours.** Cost and hours in a simulation use the hours actually allocated in shift windows, never wall-clock elapsed time. A job that starts Friday at three in the afternoon and finishes Monday morning has six hours of assigned work and forty-two hours of elapsed time. Comparing an assigned-hours figure against a calendar span will always look inconsistent.
+
+**Cause 5: The plan moved between the simulation and the comparison.** A simulation is a snapshot against capacity as it stood at that moment. New orders, logged actuals, a machine marked down, or a capacity override added afterward all change the live answer without touching the stored scenario numbers.
+
+**Cause 6: A requested target date is a hint, not a lock.** Recording a target start date on a scenario or a converted order records intent. It does not by itself force the constraint-anchored scheduling path, which keys off an existing scheduled placement rather than the order's own field. A brand new order from a conversion has no such placement yet and is scheduled forward normally.
+
+## How to Fix It
+
+1. **Re-read the scenario's own overrides before comparing anything.** Open the scenario and list its step overrides and its shift or capacity settings. Half of these reports resolve here.
+2. **Re-run the simulation now.** If the fresh result matches the live schedule more closely, the stored numbers were simply stale relative to a plan that has since moved.
+3. **Compare assigned hours, not calendar spans.** Read the scenario's estimated hours against the job's allocated hours. Elapsed days across a weekend are not a like-for-like comparison.
+4. **Check what the live run placed ahead of the job.** Look at the machines the scenario relied on and see which other orders are consuming them in that window. This is the usual explanation for a scenario that was optimistic.
+5. **Verify the sequence when a step was skipped.** Confirm that no remaining step lost the predecessor it needed. A skip that leaves a dangling link produces an unrealistically early date.
+6. **Confirm the capacity picture matches.** Scenarios read the same daily and monthly capacity override tables as production, so a difference here means an override was added or removed between the two runs, not that the scenario ignored the calendar.
+
+## A Worked Example
+
+A planner builds three scenarios for a bracket order: standard, expedited, and outside vendor. Expedited adds a second shift on the mill and promises a Friday finish. Standard promises the following Thursday.
+
+The customer takes the expedited option, the quote converts to an order, and the reschedule places it on the Tuesday after the promised Friday. Reading the scenario back shows the second shift was a scenario-level setting that was never added to the real shift calendar, and the live run therefore had one shift of mill capacity rather than two. The gap was not a simulation error. It was a commitment that existed only inside the scenario.
+
+## How to Prevent It
+
+- **Treat every scenario override as a commitment somebody has to make real.** An added shift, a capacity boost, or a substituted machine is a promise to the customer only once it exists on the calendar.
+- **Re-simulate immediately before quoting.** A simulation from last week reflects last week's capacity. The cost of re-running is seconds.
+- **Verify sequence after any skip or reorder.** Skips are the one override that can produce a structurally impossible answer rather than merely an optimistic one.
+- **Record which scenario a promise came from.** When the delivery date is questioned three weeks later, the scenario's overrides are the record of what was assumed.
+- **Compare like with like.** Assigned hours against assigned hours, and scheduled placement against scheduled placement. [Scenario planning mistakes](/blog/scenario-planning-mistakes-edgebic) catalogs the rest, and [the quote promised date does not match the real schedule](/blog/the-quote-promised-date-does-not-match-the-real-schedule-edgebic) covers the quoting variant of this symptom.
+
+<Accordion title="Does a what-if scenario change the production schedule?">
+No. Scenario and quote simulations run entirely in memory and never write schedule rows, resource allocations, or production schedule headers. The only thing a scenario stores is its own estimated start, estimated end, hours, and costs, plus a flag that it has been simulated. That isolation is deliberate, and it is why a scenario result and the live schedule can differ without either being wrong.
+</Accordion>
+
+<Accordion title="Why does a scenario show an earlier date than the real schedule for the same job?">
+A scenario simulates one job against current capacity, while the live schedule places every order in sequence and each one consumes capacity the next has to work around. The scenario also runs with whatever step and capacity overrides it carries. If the scenario has no overrides and still comes out earlier, the usual cause is that the live run placed other work ahead of this job, which the single-job simulation never saw.
+</Accordion>
+
+<Accordion title="Do scenarios respect holidays and maintenance downtime?">
+Yes. A scenario loads the same daily and monthly capacity override tables the production scheduler uses, so configured maintenance windows, reduced-hour periods, and holiday capacity changes are all reflected. A scenario is not run against an unconstrained calendar. That is why a scenario result is a credible promise date rather than a best case, provided its own overrides are intentional.
+</Accordion>

@@ -1,0 +1,118 @@
+---
+title: "How a Reschedule Uses Last Night's Actuals in EDGEBIC"
+description: "A reschedule plans remaining work forward from where the shop really is. See how EDGEBIC derives the resume point from your logged actuals, step by step."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - actuals based rescheduling
+  - resume point scheduling
+  - reschedule from real position
+  - forward shift remaining hours
+  - finite capacity reschedule
+  - production actuals engine
+targetPhrase: "actuals based rescheduling"
+wordCount: 1830
+readingTime: 9
+faqQuestions:
+  - question: "What is the resume point in an EDGEBIC reschedule?"
+    answer: "The resume point is the earliest moment from which remaining work may begin. EDGEBIC computes it as the later of two values: the real end of the last completed step, or the projected end of any step currently in progress. Remaining steps queue behind that reality, not behind the old plan. This is why a reschedule after a late finish pushes downstream work later by exactly the amount reality slipped."
+  - question: "Does a reschedule re-plan work that has already started?"
+    answer: "Only the remainder. A step with an actual start but no end keeps its logged hours locked on their real days and stays on the same work center. The engine re-plans just the hours still owed, placing them on the next free slot. Completed steps are preserved verbatim. Not-started steps are re-planned fully. This is the three-zone model that makes a reschedule surgical rather than a full reset."
+  - question: "Why does my job shift later even though its predecessor ends today?"
+    answer: "Two common causes. First, the resume point may be later than you think because an in-progress step's projected end drives it, its actual start plus planned duration. Second, the work center's next free slot really is days out because other jobs hold the capacity or a holiday blocks it. Check the running step's logged hours and the work center load, then log reality and reschedule again."
+qaQuestions:
+  - question: "Last night step 1 ran two hours long. This morning I rescheduled and the whole tail of the job moved two hours. Is that right?"
+    answer: "Yes, that is the engine working correctly. The resume point is step 1's real end, which was two hours later than planned. Every not-started step queues behind that real finish, so the tail shifts by the amount reality slipped. The value is that the new completion date is honest: it reflects the two hours the shop actually lost, not a plan that pretends they did not happen. That is a date you can promise a customer."
+  - question: "An operator marked a 16-hour step done but only logged 10 hours. What does the next reschedule do with the missing 6?"
+    answer: "It depends on your Partial-Confirm Behavior setting. The default, Forward-shift the remaining hours, keeps the 10 logged hours locked on their real days and re-plans the 6-hour gap onto the next free slot on the same work center, with downstream queuing behind that. If you set Trust the operator's Actual End instead, the stamp is taken as final and the unfinished hours are written off. It is a site policy you decide once."
+---
+
+**When EDGEBIC by User Solutions reschedules a job, it does not start over. It reads your logged actuals, works out where the shop really is, and plans only the remaining work forward from that point.** This is actuals based rescheduling, and the resume point it computes from last night's shop floor data is the hinge the whole re-plan turns on. Get the actuals in, and the reschedule reflects reality. Skip them, and it plans against yesterday's guess.
+
+This article traces exactly how a reschedule consumes actuals: how it sorts work into zones, how it derives the resume point, and how it forward-shifts the remaining hours. If you want the concept behind the zones first, [planned, in-progress, and completed work explained](/blog/planned-in-progress-and-completed-work-explained) sets it up, and [edgebic rescheduling explained](/blog/edgebic-rescheduling-explained) gives the wider tour.
+
+## Step One: Sort Every Operation Into a Zone
+
+Before it plans anything, the engine classifies each operation of the job by its actuals.
+
+- **Completed** if both an actual start and an actual end are set. Frozen history.
+- **In progress** if an actual start is set but no end. Logged hours locked; remainder movable.
+- **Not started** if there are no actuals. Fully re-plannable.
+
+There is a subtle fourth case: a step with no actuals of its own that sits before a step that does have them. The engine infers that the earlier step must have run and backfills its actuals from the scheduled dates, tagging them as system-filled so a planner can review them. After that inference, that step is treated as completed too.
+
+The zones are read purely from what the floor logged. This is why [how actuals flow into the EDGEBIC schedule](/blog/how-actuals-flow-into-the-edgebic-schedule) matters: the reschedule is only as good as the actuals feeding it.
+
+## Step Two: Compute the Resume Point
+
+The resume point is the single most important number the reschedule produces. It is the earliest moment remaining work may begin, and the engine computes it as the maximum of:
+
+- every completed step's actual end date, and
+- every in-progress step's projected end (its actual start plus its planned duration).
+
+Whichever is later wins. The engine then sets the job's start-from constraint to that value. From here on, every slot search, every capacity check, and every instance selection begins after the resume point. Not-started steps cannot slide earlier than reality.
+
+This is why a job's tail moves when an early step runs long. If step 1 finishes two hours late, the resume point is two hours later, and everything queued behind it shifts by that amount. The completion date the engine reports is therefore an honest reflection of what the floor actually did.
+
+## Step Three: Preserve, Then Forward-Shift
+
+With the zones sorted and the resume point set, the engine builds the output.
+
+**Completed steps** are re-emitted exactly as they were logged. Their dates, hours, and machine assignments do not change. This is the immutability guarantee covered in [why actuals are immutable](/blog/why-actuals-are-immutable-in-edgebic).
+
+**In-progress steps** are split logically. The hours already clocked stay on their real days and keep their work center. The remaining balance (planned hours minus logged hours) is re-planned onto the next available slot on that same machine. Internally these are handled as two pieces, but when the run is saved they merge back into one row per routing step per work center, so on your screens you see a single operation whose window now extends to cover the re-planned remainder.
+
+**Not-started steps** are scheduled fresh from the resume point, queuing behind whatever the in-progress work finishes, against current capacity and calendars.
+
+**Short-confirms** (an operator marks a step done with fewer hours than planned) are handled by your site's Partial-Confirm Behavior policy: forward-shift the gap by default, or trust the operator's stamp. Either way the logged hours are never invented or discarded silently. See [how partial completions carry forward](/blog/how-partial-completions-carry-forward-in-edgebic) for the detail.
+
+## A Worked Example
+
+Job 0125, twenty pieces of Widget-A, three steps, day shift 08:00 to 16:00.
+
+**The plan on Monday morning:**
+
+| Step | Work center | Planned start | Planned end | Hours |
+|---|---|---|---|---|
+| 1 - Cut | Saw-1 | Mon 08:00 | Mon 12:30 | 4.5 |
+| 2 - Mill | CNC-Mill-1 | Mon 12:30 | Tue 15:30 | 11.0 |
+| 3 - Assemble | Assembly-1 | Wed 09:30 | Wed 16:00 | 6.5 |
+
+**Reality:** the saw hit a blade change. Step 1 actually ran Mon 09:15 to 14:00, logged at the kiosk. Steps 2 and 3 have no actuals.
+
+**You reschedule. The engine:**
+
+1. Classifies step 1 as completed. Preserves it at Mon 09:15 to 14:00.
+2. Sets the resume point to Mon 14:00, step 1's real end.
+3. Re-plans step 2 from Mon 14:00 on CNC-Mill-1: two hours Monday afternoon, eight Tuesday, one Wednesday morning, new end Wed 09:00.
+4. Re-plans step 3 after step 2's two-hour queue time: Assembly-1, Wed 11:00 to Thu 09:30.
+
+**Result:**
+
+| Step | Dates on screen | What happened |
+|---|---|---|
+| 1 - Cut | Mon 09:15 to 14:00 | Untouched history |
+| 2 - Mill | Mon 14:00 to Wed 09:00 | Shifted later, same machine, same hours |
+| 3 - Assemble | Wed 11:00 to Thu 09:30 | Queued behind step 2, respecting the calendar |
+
+The job's end moved from Wed 16:00 to Thu 09:30. Step 1's bar never moved a minute. And the new end is a date you can promise, because it accounts for the real blade change.
+
+## Verifying What the Reschedule Did
+
+Thirty seconds of checking after a run on your critical jobs is worth it.
+
+- Open the Job View and confirm the hours header: actual hours must be unchanged by the reschedule. Only the forward timing moves.
+- Compare the grid's actual start and actual end columns against what the floor reported. Completed rows must show exactly the logged values.
+- Open the audit trail. The newest event is the reschedule, with the job's old and new dates side by side. Earlier events show every completion and drag that led here.
+
+If a step landed later than you expected, the usual causes are a resume point set by an in-progress step's projected end, or a work center whose next free slot really is days out. Check the running step's logged hours and the work center load before assuming a problem. For the identification of constraints that hold capacity, [production bottleneck identification](/blog/production-bottleneck-identification) helps.
+
+## Why This Beats "Wipe and Rerun"
+
+A reschedule that starts from actuals gives you something a full reset cannot: a forward plan anchored to reality. The completed work stays put, the remaining work queues behind where the shop actually is, and the promise dates you hand out are believable. Combined with a daily [shop floor daily rhythm](/blog/the-daily-rhythm-of-a-kiosk-run-shop), this keeps your plant's plan and its reality tracking closely all week, and it keeps your [WIP management](/blog/wip-management) grounded in where jobs really are rather than where the old plan left them.
+
+For the full loop from operator punch to updated plan, see the [shop floor execution guide](/blog/edgebic-shop-floor-guide), and explore the platform at [EDGEBIC](/edgebic).

@@ -1,0 +1,107 @@
+---
+title: "How Setup Time Composes Into a Step's Duration"
+description: "How EDGEBIC folds a fixed setup and a per-piece run rate into one operation's total hours, why setup is charged once while run scales with quantity, and what that means for batch sizing."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - setup time
+  - run time
+  - operation duration
+  - batch size scheduling
+  - finite capacity scheduling
+  - routing step hours
+targetPhrase: "setup time in operation duration"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler turn a routing step into a number of hours?"
+    answer: "EDGEBIC computes an operation's total hours as the setup time plus the per-piece run time multiplied by the order quantity. Setup is a one-time cost charged once for the whole batch, while run scales with how many pieces you make. A step with a 1.5-hour setup and a 0.2-hour per-piece rate takes 3.5 hours for 10 pieces and 21.5 hours for 100. That single figure is what the capacity search then places onto real shifts."
+  - question: "Why is setup charged once but run time multiplied by quantity?"
+    answer: "Because setup is preparation the machine does one time before the batch runs, such as loading a fixture or changing a tool, while run time is the work of making each piece. Doubling the order doubles the run but not the setup. This is why the setup share of an operation shrinks as the batch grows: on a 10-piece batch setup can be nearly half the operation, and on a 500-piece batch it is barely one percent."
+  - question: "Does a longer setup push a job across a shift boundary?"
+    answer: "It can. EDGEBIC adds the resolved setup to the run hours before it searches for capacity, so setup consumes real machine time exactly like run hours do. If a 6-hour run leaves 2 hours in the shift but the operation also carries a 3-hour setup, the combined 9 hours no longer fits and the allocator spills the remainder into the next available shift."
+qaQuestions:
+  - question: "Our small rush jobs seem to eat far more machine time per piece than the big production runs. Is the schedule wrong?"
+    answer: "No, the schedule is showing you a real effect. Setup is a fixed cost charged once per batch, so on a 10-piece rush order a 2-hour setup is spread over just 10 pieces, while on a 400-piece run the same 2-hour setup is spread over 400. The per-piece cost of the small job is genuinely higher because you paid full setup for a fraction of the output. EDGEBIC prices this honestly, which is exactly why combining small like-jobs into one setup, or running them back to back, recovers capacity you were quietly losing."
+  - question: "We changed a per-piece run rate in a routing and one operation's schedule barely moved, but changing setup on another operation moved it a lot. Why the difference?"
+    answer: "It depends on the batch size behind each operation. On a large-quantity operation the run hours dominate, so a small change to the per-piece rate multiplies across every piece and can move the finish noticeably, while setup is a rounding error. On a small-quantity operation the opposite is true: setup is a big share of the total, so editing it moves the schedule while a per-piece tweak barely registers. EDGEBIC composes both into one figure, and which lever matters is decided by the quantity you are running."
+---
+
+**Setup time composes into an operation's duration by being added once to the run time, where run time is the per-piece rate multiplied by the order quantity. EDGEBIC by User Solutions turns every routing step into a single figure, setup plus run hours, and that figure is what its scheduling engine places onto real shifts and machines.** The distinction sounds trivial, but it is the reason a small job can be more expensive per piece than a large one, and the reason a longer changeover can push an operation into next week even when the run itself is short.
+
+A routing step carries two very different time components that are easy to conflate. One is preparation the machine does once, before any parts are made. The other is the work of making the parts. The engine keeps them separate for a reason, then combines them at exactly the right moment.
+
+## Two kinds of time in one operation
+
+Setup is the one-time cost of getting a machine ready: loading a fixture, changing a tool, threading material, dialing in a temperature. It happens once whether the batch is 5 pieces or 5,000. Run time is the opposite. It is the effort of producing each piece, so it scales directly with how many pieces the order calls for.
+
+If you treat both as a single lump, you lose the ability to reason about batch size, and you misprice every job that is not the size you assumed. Keeping them apart lets the engine answer the two questions that actually drive an operation's footprint: how long to get ready, and how long to run what the order needs.
+
+## The formula the engine actually uses
+
+When EDGEBIC prepares a work-center step for scheduling, it builds the operation's total hours from a simple composition:
+
+```
+operation hours = setup time + (per-piece run rate x order quantity)
+```
+
+Setup enters once. Run enters as a rate multiplied by the quantity on the order. The result is a single number the [multi-shift allocator](/blog/how-multi-shift-allocation-fills-capacity) then spreads across shifts, days, and machine instances. Nothing downstream needs to know that part of the figure was setup and part was run. To the capacity search, it is just hours that need a home.
+
+The setup value itself is not always the flat number in the routing. On work centers where the changeover depends on what ran before, EDGEBIC resolves a [sequence-dependent setup](/blog/how-sequence-dependent-setup-shapes-a-schedule) first, then folds that resolved value into this same composition. Either way, by the time the operation reaches the allocator, setup and run have already been added together.
+
+## Why the split changes the schedule
+
+Because setup is charged once and run scales with quantity, the share of an operation that is setup shrinks as the batch grows. That single fact drives a lot of planning behavior.
+
+Take a step with a 1.5-hour setup and a per-piece run rate of 0.2 hours.
+
+| Order quantity | Run hours | Setup hours | Total hours | Setup share |
+|---|---|---|---|---|
+| 10 | 2.0 | 1.5 | 3.5 | 43% |
+| 50 | 10.0 | 1.5 | 11.5 | 13% |
+| 100 | 20.0 | 1.5 | 21.5 | 7% |
+| 500 | 100.0 | 1.5 | 101.5 | 1.5% |
+
+On the 10-piece batch, nearly half the operation is preparation. On the 500-piece batch, setup barely registers. This is why small batches feel disproportionately expensive on a constrained machine, and why combining like jobs behind one setup recovers real capacity. It is also why a shop that runs many tiny orders through a long-changeover work center is quietly losing hours that never appear as "run" time on any report.
+
+The effect cuts the other way when you edit a routing. Change the per-piece run rate on a large-quantity operation and the finish time can move a lot, because the change multiplies across every piece. Change it on a 10-piece job and almost nothing happens. Setup behaves in reverse: editing it barely touches a big run and visibly shifts a small one. EDGEBIC composes both into one figure, so which lever matters is decided entirely by the quantity behind the operation.
+
+## A worked example: setup crossing a shift boundary
+
+Consider a single-instance machine on an 8-hour day shift, 08:00 to 16:00, with 8 hours of capacity in the bucket. A job arrives that can start at 08:00 and has a 3-hour setup and a per-piece run rate of 0.5 hours for a quantity of 12.
+
+The engine composes the operation first:
+
+```
+setup 3.0 h + (0.5 h x 12 pieces) = 3.0 + 6.0 = 9.0 h
+```
+
+Nine hours will not fit in an 8-hour shift. The allocator places 8 hours on Monday's day shift and carries the remaining 1 hour to Tuesday's day shift, so the operation runs 08:00 to 16:00 Monday and 08:00 to 09:00 Tuesday. Now imagine the same run of 6 hours but with only a 1-hour setup. The operation is 7 hours, it fits inside Monday's shift, and it finishes at 15:00 the same day.
+
+Same run work, same machine, same start. The only difference is the setup, and it decides whether the job clears in one shift or spills into the next. This is exactly why setup cannot be treated as a display-only note. It occupies the machine, so it has to be part of the number the engine schedules against.
+
+## Where the composed figure goes next
+
+Once setup and run are combined, the total behaves like any other block of hours in the pipeline. The [capacity search](/blog/how-capacity-is-computed-for-a-work-center-shift-and-day) checks how much of each shift is free, the allocator consumes the best slots in order, and downstream timing such as queue, flow, and transit compose after the operation ends. The composition described here is the first step: it converts an abstract routing into a concrete number of machine hours.
+
+Understanding it answers a family of "why did that happen?" questions. Why is my small job's per-piece cost so high? Because setup was spread thin. Why did editing a run rate barely move a short operation? Because run was a small part of it. Why did a longer changeover push a job a full day later? Because setup consumes real capacity, and the operation no longer fit the shift.
+
+This is the same reasoning that makes [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) trustworthy: every hour an operation needs, setup included, is placed against a real slot rather than assumed away. For the wider pipeline that surrounds this one calculation, the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows where step composition sits among dependency ordering, capacity, and the timing gaps between operations, and the way EDGEBIC handles changeover cost in detail is covered in [how efficiency scales run time but not setup](/blog/how-efficiency-scales-run-time-but-not-setup).
+
+To see your own routings composed into real hours against your own shifts, explore [the EDGEBIC scheduling engine](/edgebic) or [bring your data to a demo](/contact-us) and watch where setup quietly reshapes the plan.
+
+<Accordion title="How does a scheduler turn a routing step into a number of hours?">
+EDGEBIC computes an operation's total hours as the setup time plus the per-piece run time multiplied by the order quantity. Setup is a one-time cost charged once for the whole batch, while run scales with how many pieces you make. A step with a 1.5-hour setup and a 0.2-hour per-piece rate takes 3.5 hours for 10 pieces and 21.5 hours for 100. That single figure is what the capacity search then places onto real shifts.
+</Accordion>
+
+<Accordion title="Why is setup charged once but run time multiplied by quantity?">
+Because setup is preparation the machine does one time before the batch runs, such as loading a fixture or changing a tool, while run time is the work of making each piece. Doubling the order doubles the run but not the setup. This is why the setup share of an operation shrinks as the batch grows: on a 10-piece batch setup can be nearly half the operation, and on a 500-piece batch it is barely one percent.
+</Accordion>
+
+<Accordion title="Does a longer setup push a job across a shift boundary?">
+It can. EDGEBIC adds the resolved setup to the run hours before it searches for capacity, so setup consumes real machine time exactly like run hours do. If a 6-hour run leaves 2 hours in the shift but the operation also carries a 3-hour setup, the combined 9 hours no longer fits and the allocator spills the remainder into the next available shift.
+</Accordion>

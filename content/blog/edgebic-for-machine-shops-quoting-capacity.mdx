@@ -1,0 +1,134 @@
+---
+title: "Quoting a Machine Shop Job Against Real Capacity"
+description: "Machine shop quoting software that simulates each job against live finite capacity, returning a promise date and a costed breakdown before you send a number."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - machine shop quoting software
+  - job shop quoting capacity
+  - quote simulation scheduling
+  - realistic promise dates
+  - manufacturing quote cost rollup
+  - what-if delivery dates
+  - machine shop estimating
+targetPhrase: "machine shop quoting software"
+wordCount: 1850
+readingTime: 9
+faqQuestions:
+  - question: "How does quote simulation differ from a standard lead time estimate?"
+    answer: "A standard lead time estimate applies a fixed number of days regardless of what is already on the floor. Quote simulation runs the actual scheduling engine against your current shift calendars, holidays, machine loads, and setup rules, then reports the dates that plan produced. Two identical enquiries quoted three weeks apart return different dates, because the shop was in a different state each time."
+  - question: "Does running a quote simulation disturb the production schedule?"
+    answer: "No. The simulation creates a temporary order, runs the engine in memory, reads the dates and hours off the result, and deletes the temporary order in a cleanup block that runs whether the simulation succeeded or failed. Nothing is written to the schedule tables, so a sales engineer can run twenty simulations in an afternoon without touching the floor plan."
+  - question: "Why does the estimated hours figure not match the calendar span?"
+    answer: "Estimated hours counts productive work hours assigned to shifts and machine instances, not wall-clock elapsed time. A job that starts Friday afternoon and finishes Monday morning spans roughly 66 clock hours but contains only a few hours of real labor content. Costing against the calendar span would massively overstate the number, so the simulation sums assigned hours instead."
+  - question: "Can a planner override the calculated cost before pricing?"
+    answer: "Yes. A manual cost override replaces the rolled-up total as the basis for price, while the calculated material and labor breakdown stays stored underneath it. That means a planner can add known tooling wear or scrap allowance to the price without losing the detail needed later to compare the quote against actuals."
+qaQuestions:
+  - question: "Sales promises eight weeks on everything because that is what the last shop manager said. How does simulating change the conversation?"
+    answer: "It replaces one number with two numbers plus a reason. Run the simulation and you get an estimated start, an estimated end, and the hours behind them. A 200-piece job with 1,600 hours of milling and 400 hours of assembly might simulate to a start of 16 June and an end of 22 August, which is 67 days of lead time. That is either inside the customer's date or it is not, and you know before you send the quote. When it is not, you can rerun with a scenario (an added shift, a different routing) and compare, rather than promising eight weeks and hoping. The number stops being a habit and starts being a result."
+  - question: "Our estimator prices from the routing, but products with sub-assemblies always come out light and we lose money on them. Is that a data problem or a math problem?"
+    answer: "It was a math problem and it is fixed. Estimates that walk only the parent product's routing count a sub-assembly reference as material cost and silently drop its work hours, so a product whose real effort lives in its children reads near zero hours. The rollup now recurses through sub-assemblies for hours, labor, and material, respects the quantity multiplier on each step, and guards against a data-error cycle. A three-level topology of finished part to bracket assembly to base plate resolves to 22.5 hours per unit, which is 225 hours at a quantity of 10. The same helper feeds the quote estimate and the order cost analysis, so the two surfaces cannot disagree."
+---
+
+**Quote simulation runs your enquiry through the same finite capacity scheduling engine that plans production, against the shop's current load, and gives back an estimated start, an estimated end, and a costed breakdown before you commit to a number.** EDGEBIC by User Solutions does this without writing a single row to the production schedule, so the quote is honest and the floor is undisturbed. For a machine shop that quotes against a habit ("say eight weeks"), that is the difference between a promise and a guess.
+
+The mechanism, including the full pipeline and the conversion path, is documented in [quote simulation explained](/blog/edgebic-quote-simulation-explained). This post is about what changes in a machine shop's quoting practice.
+
+## The Number Sales Currently Uses
+
+Ask most job shops where a quoted lead time comes from and you get some version of: a standard lead time by part family, adjusted by whoever has been here longest, plus a cushion. The cushion exists because nobody quoting has visibility into what the shop is committed to.
+
+That produces two failures at once. Quotes that lose on delivery when the shop is actually empty, and quotes that win on delivery when the shop is packed, which is the expensive one. The second failure is invisible until the job is late.
+
+Simulating against real capacity fixes the input, not the salesmanship. The engine reads your shift calendars, your holidays, your current machine loads, your setup rules, and your routing, and reports what that plan actually produces.
+
+## What the Simulation Does, Step by Step
+
+The pipeline is short and worth understanding because it explains what the numbers mean.
+
+1. The enquiry becomes a quote record: product, quantity, requested date, customer.
+2. A **temporary order** is created so the engine has something concrete to schedule.
+3. The scheduling engine runs **in memory** against current capacity, honoring the same finite capacity rules, shift calendars, holidays, setup lookups, and routing sequence as a real run.
+4. Estimated start and end come off the resulting schedule. Estimated hours is the **sum of assigned hours** across every shift and machine instance.
+5. Costs roll up from those hours.
+6. The temporary order is deleted in a cleanup block that runs whether the simulation succeeded or failed, so no orphan orders accumulate.
+
+Nothing lands in the schedule tables. Prior temporary quote orders are filtered out of future simulations, so yesterday's twenty what-ifs cannot contaminate today's answer.
+
+## Hours, Not Days: The Detail That Protects Your Margin
+
+Estimated hours is deliberately built from assigned work hours rather than from the calendar span, and this is not a technicality.
+
+A job that starts Friday at 2 PM and finishes Monday at 9 AM spans roughly 67 clock hours. It contains a few hours of actual labor content. Costing the calendar span would inflate that job's labor cost by an order of magnitude, and every job that crosses a weekend or a holiday would be quoted wrong in the same direction.
+
+So the simulation sums the hours actually allocated to shifts and instances. The calendar span still appears, as the lead time, because that is what the customer cares about. The two numbers answer different questions and the quote shows both.
+
+## The Cost Rollup a Machine Shop Recognizes
+
+Here is a worked 200-piece job with a two-step routing.
+
+| Work center | Hours | Rate | Cost | Category |
+|---|---|---|---|---|
+| Mill-1 | 1,600 | $55/h | $88,000 | Labor |
+| Assembly-1 | 400 | $30/h | $12,000 | Labor |
+| Material (unit cost fallback) | n/a | $12/unit | $2,400 | Material |
+
+That produces an estimated labor cost of $100,000, material of $2,400, and a total of $102,400. At a 25 percent markup the derived unit price is $640.00, total price $128,000, margin roughly 20 percent. The simulated dates for the same job are a start of 16 June and an end of 22 August: 67 days of lead time, against a customer who asked for 15 September.
+
+Two rate rules govern that table. The rate for a work center comes first from the routing step's own labor cost per hour, and falls back to the work center's rate when the step does not carry one. If both are zero, that work center contributes zero cost and the quote silently underestimates, so populating rates on production work centers is the single highest-value data cleanup before you trust a quote.
+
+Material cost comes from work centers typed as material. If a routing carries none, the fallback is unit cost multiplied by quantity, which is fine for a simple part and wrong for a multi-component assembly. Modeling material routing steps properly is the fix.
+
+## Sub-Assemblies Used to Eat the Estimate
+
+If your products have sub-assemblies, this section matters more than the rest.
+
+An estimate that walks only the parent product's routing treats a sub-assembly reference as material cost and drops its work hours entirely. A product whose effort lives almost wholly in its children reads close to zero estimated hours, and every quote priced from that estimate is under water before the job is released.
+
+The rollup now recurses. Hours, labor, and material all roll up through sub-assemblies, respecting the quantity multiplier on each step and guarding against a data-error cycle so a bad reference cannot loop. A three-level topology of finished part to bracket assembly to base plate resolves to 22.5 hours per unit, which is 225 hours at a quantity of 10. The same helper feeds both the quote estimate and the order cost analysis, so those two screens report identical numbers by construction rather than by discipline.
+
+## When the Simulated Date Misses
+
+The simulation gives you the answer early, which is when it is useful. Three moves follow.
+
+**Override the cost, keep the breakdown.** A planner who knows this family always burns extra tooling can set a manual cost override that replaces the rolled-up total as the pricing basis. The calculated material and labor split stays stored underneath, so later variance reporting still compares like with like. A 50-piece casting job simulating at 180 hours and $17,400 total might get an override to $19,400, and at a 30 percent rush markup that is $504.40 per unit, a $25,220 order, and a margin of 23.1 percent.
+
+**Ask the date question directly.** For a forward quote the requested date is the target start, so comparing the simulated end against it is meaningless. Set the quote to schedule backward and the requested date becomes the finish-by date, and the comparison "does the estimated end land on or before the requested date" answers the customer's actual question. If the engine could not fit the work backward, it falls back to forward and the estimated end exceeds the requested date, which is exactly the signal you want. See [forward versus backward scheduling](/blog/forward-vs-backward-scheduling) for the concept and [backward scheduling in EDGEBIC](/blog/edgebic-backward-scheduling-explained) for the behavior.
+
+**Run a scenario.** A scenario is a variant configuration stored against the quote: weekend production allowed, a custom start date, capacity overrides on named work centers, per-step routing overrides. Simulate it and compare side by side. Note one current limitation worth knowing before you rely on it: scenario what-ifs always simulate forward, whatever direction the parent quote uses, so compare a scenario to a forward base.
+
+## From Approved Quote to Released Job
+
+An approved quote converts to a manufacturing order in one step. The job number is derived from the quote number, and the conversion carries the cost fields, the manual override if one was set, the markup, the unit price, the customer link, the sales order link, and the scheduling direction.
+
+That last one matters more than it looks. A quote simulated backward converts to an order that schedules backward, so the real production run reproduces the plan you quoted rather than a different plan that happens to use the same routing. Double conversion is blocked at three levels, so an approved quote cannot quietly become two jobs.
+
+Because the quote and the order share a link, once actuals flow in you can compare quoted hours against actual hours per job. That is the loop that eventually makes your estimating data good. See [actuals tracking on the shop floor](/blog/edgebic-for-machine-shops-actuals-tracking) for how those numbers arrive.
+
+## What This Is and Is Not
+
+This is quote simulation and what-if promise dates. It is not a capacity reservation system: running a simulation does not hold capacity, and two simulations run minutes apart against the same shop see the same free hours. If a real scheduling run commits while a simulation is in flight, the simulation sees partially committed state. In practice simulations are fast and concurrent full runs are rare, but plan around it if your shop schedules continuously.
+
+For the category fundamentals, [machine shop scheduling](/blog/machine-shop-scheduling) covers the ground, and the [machine shop scheduling software](/machine-shop-scheduling-software) page is the shorter evaluation read. If your quoting problem is really a machine-selection problem, [machine pool scheduling](/blog/edgebic-for-machine-shops-machine-pools) is the companion piece, because a quote that can shop the same pools as production returns better dates. The [industry fit guide](/blog/edgebic-by-industry) maps the rest of the feature set to shop types, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to quote against your real load? [Contact US for a demo](/contact-us) and bring one enquiry you are nervous about.
+
+<Accordion title="How does quote simulation differ from a standard lead time estimate?">
+A standard lead time estimate applies a fixed number of days regardless of what is already on the floor. Quote simulation runs the actual scheduling engine against your current shift calendars, holidays, machine loads, and setup rules, then reports the dates that plan produced. Two identical enquiries quoted three weeks apart return different dates, because the shop was in a different state each time.
+</Accordion>
+
+<Accordion title="Does running a quote simulation disturb the production schedule?">
+No. The simulation creates a temporary order, runs the engine in memory, reads the dates and hours off the result, and deletes the temporary order in a cleanup block that runs whether the simulation succeeded or failed. Nothing is written to the schedule tables, so a sales engineer can run twenty simulations in an afternoon without touching the floor plan.
+</Accordion>
+
+<Accordion title="Why does the estimated hours figure not match the calendar span?">
+Estimated hours counts productive work hours assigned to shifts and machine instances, not wall-clock elapsed time. A job that starts Friday afternoon and finishes Monday morning spans roughly 66 clock hours but contains only a few hours of real labor content. Costing against the calendar span would massively overstate the number, so the simulation sums assigned hours instead.
+</Accordion>
+
+<Accordion title="Can a planner override the calculated cost before pricing?">
+Yes. A manual cost override replaces the rolled-up total as the basis for price, while the calculated material and labor breakdown stays stored underneath it. That means a planner can add known tooling wear or scrap allowance to the price without losing the detail needed later to compare the quote against actuals.
+</Accordion>

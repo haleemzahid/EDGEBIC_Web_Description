@@ -1,0 +1,81 @@
+---
+title: "Planning a Multi-User EDGEBIC Rollout"
+description: "Planning a multi-user EDGEBIC rollout: the sequence from a single-planner start to a shared server, what moves and what does not, and the order that avoids rework."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - multi-user scheduling rollout
+  - shared scheduling database
+  - SQL Server rollout
+  - scheduling software deployment plan
+  - roles before users
+  - multi-user production scheduling
+targetPhrase: "multi-user scheduling rollout"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "What is the sequence for rolling EDGEBIC out to multiple users?"
+    answer: "Prove the workflow on the local single-file database first, back it up, then move to a shared SQL Server database that every installation points at. Build roles before you add users, add users with least-privilege roles, and point each person's installation at the shared server. The order matters: proving the loop small keeps data quality high, and building roles first means new users inherit sensible access instead of getting rights clawed back later."
+  - question: "Does switching to a shared database move the existing data automatically?"
+    answer: "No. Switching the provider to SQL Server points the application at a new, empty database that the software builds on first connection. The old local database keeps everything, so plan the migration deliberately: either restore from a backup path your IT team supports, or rebuild master data through import masks, which is often the cleaner start for a production go-live. Take an export backup before you switch."
+  - question: "How many users can share one EDGEBIC deployment?"
+    answer: "A shared SQL Server deployment supports a whole planning team, with each person running the application on their own PC pointed at the same database, seeing the same live plan. The single-file SQLite default is for one planner on one workstation. The rollout is the move between those two: from one planner on a portable local file to a team on a shared server, done as a settings change and a data migration, not a reinstall."
+qaQuestions:
+  - question: "We are one planner now but adding three more next quarter. What should we do this month so the rollout is smooth?"
+    answer: "Spend this month proving the workflow on the local database and cleaning your master data, because that data is what you will carry to the shared server. Get shifts, holidays, work centers, products, and routings loaded and correct through import masks, run the scheduler, and confirm the plan looks right. Then, close to the rollout date, ask IT for a server name and Windows-authentication rights, take an export backup, switch the provider on the DataSource tab in Settings, and re-import your clean master data into the fresh database. Because the application behaves identically on both engines, nothing your planner has learned is wasted, and the shared plan starts from data you already trust."
+  - question: "Should we create user accounts before or after moving to the shared server?"
+    answer: "After, and build the roles first. User accounts and their access live in the database, so create them in the shared database that the whole team will use, not in the local file you are about to leave behind. Build roles first, a Planner role and a Supervisor role with least-privilege defaults, then add each person with the right role and a must-change-password flag. Creating accounts in the local database before the switch just means recreating them, since switching points at a new empty database. Roles first, in the shared database, is the order that avoids rework."
+---
+
+**Plan a multi-user EDGEBIC rollout as a sequence: prove the workflow on the local single-file database, back it up, move to a shared SQL Server database that every installation points at, then build roles before adding users.** In [EDGEBIC by User Solutions](/edgebic) the move from one planner to a whole team is a settings change plus a deliberate data migration, not a reinstall, and getting the order right keeps data quality high and avoids reworking access. This post lays out the rollout as a plan you can run.
+
+The rollout draws on the full administrator journey. For the complete reference, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide). This post is the planning-level view: the sequence, what moves and what does not, and the decisions to make before you start. It never touches internal settings by path; every control it names lives in a Settings tab you open in the application.
+
+## Start Where a Single Planner Starts
+
+Every rollout begins on the default local database, a single file created automatically on first run with no server and no database administrator. That is not a throwaway tier: it is the same engine and the same schema as the shared deployment, living in one portable file. A single planner is fully productive on it in minutes.
+
+Use that starting point deliberately. Prove the whole workflow small before you scale it: load master data, run the scheduler, log an actual, reschedule. Proving the loop on a small dataset is how you find data problems while they are cheap to fix, and the clean master data you build here is exactly what you will carry to the shared server. A rollout that scales messy data just gives more people a messy plan.
+
+The instinct to create user accounts early is worth resisting. Accounts live in the database, and the shared rollout points at a new database, so anything you build in the local file before the switch is work you repeat. Keep the single-planner phase about data and workflow, and save accounts for the shared database.
+
+## The Move to a Shared Server
+
+When a second and third person need to work against the same live schedule, the deployment moves to a shared SQL Server database. Every installation points at that one server, so everyone sees the same plan rather than each carrying a private file. The move happens on the DataSource tab in Settings, and the documented path is short: choose SQL Server, enter the server and database name, pick the authentication mode, test the connection, and apply with a restart.
+
+Two facts shape the plan around that switch. First, Windows authentication is the recommended mode, because it stores no password at all and ties access to the network identity your IT team already manages. Ask IT for a server name and Windows-authentication rights, and the scheduling database itself does not need to exist yet: the application builds it on first connection.
+
+Second, and this is the one the documentation warns about in bold, switching the provider does not move your data. The old local database keeps everything; the new one starts empty. So the migration is a deliberate step, not an automatic one. Take an export backup before you switch (the switch dialog offers a one-click export of the database you are leaving), then either restore through a path your IT team supports or rebuild master data through import masks. For a production go-live, re-importing clean master data into a fresh database is often the cleaner start.
+
+## Build Roles Before You Add Users
+
+Access in a shared deployment is role-based, and the order to build it is roles first, users second. A permission is one atomic right, a role is a named bundle of permissions, and a user holds one or more roles. What a person can see and click is the union of their roles, so a second role only ever adds capability, never removes it. That union model is exactly why [role-based access protects the schedule](/blog/how-role-based-access-protects-the-schedule): a planner who lacks a permission simply does not see the screen or button.
+
+Build the roles in the shared database, from a permission tree grouped by area with select-all and clear per group. Start narrow: a Planner role and a Supervisor role with least-privilege defaults, adding rights when someone genuinely hits a wall. That is far easier than clawing rights back after the fact. Then add users, each with a role, a full name, an initial password, and the must-change-password flag so new hires set their own on first sign-in.
+
+A few operational rules belong in the plan. One account per person, never a shared login, because the audit trail only means something when actions map to people. Deactivate leavers rather than deleting them, which bars sign-in while keeping their history. And review custom roles after every upgrade, because new permissions from a product update land automatically only on the built-in Administrator role; custom roles must be granted new capabilities explicitly. Walk the mechanics in [how to set up users and roles](/blog/how-to-set-up-users-and-roles-in-edgebic).
+
+## A Worked Rollout Timeline
+
+Put the pieces in order and a typical rollout for a shop growing from one planner to four looks like this.
+
+| Phase | What you do | Where it lives |
+|---|---|---|
+| Weeks 1-2 | Load master data by mask, run the scheduler, prove the loop | Local single-file database |
+| Week 3 | Clean data, confirm routings and shifts, take an export backup | Local database |
+| Week 4 | Ask IT for server and Windows-auth rights; switch provider; re-import master data | Shared SQL Server |
+| Week 4 | Build Planner and Supervisor roles, least-privilege | Shared database |
+| Week 5 | Add users with roles and must-change-password; point each PC at the server | Shared database |
+| Ongoing | Backups on a schedule; review custom roles after each upgrade | Shared database |
+
+The sequence is the safeguard. Data quality is proven before it scales, the backup is taken before the destructive switch, roles exist before users so access is sensible from the first sign-in, and every account lives in the shared database from the start rather than being recreated. Skip a step and the rework shows up later: messy data multiplied across the team, accounts built in the wrong database, or rights granted broadly and painfully narrowed.
+
+## What Not to Rush
+
+Two things reward patience. The switch to the shared server should happen at a quiet moment, because it requires a restart and a data migration, and doing it mid-crunch invites mistakes. And site scheduling policy (direction, how a backward job that does not fit is handled, and similar engine settings) should be decided once as a site and communicated to the team, not changed quietly under people who are relying on it.
+
+A multi-user rollout is fundamentally a data-and-access migration wrapped in a settings change. Plan the data, plan the access, take the backup, and the switch itself is the easy part. For the full administrator reference behind every step here, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide); to understand why the role model is the schedule's protection, see [how role-based access protects the schedule](/blog/how-role-based-access-protects-the-schedule); and for the underlying discipline of dependable [production scheduling](/blog/what-is-production-scheduling), the small-first rollout is the same principle applied to deployment.

@@ -1,0 +1,69 @@
+---
+title: "How to Set a Flow Step Overlap in EDGEBIC"
+description: "Overlap a continuous-process operation in EDGEBIC with a flow step. Set the hours-after-start lag so the next operation can begin before the first one finishes."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - flow step overlap
+  - start to start lag scheduling
+  - continuous process work center
+  - lot streaming hours lag
+  - EDGEBIC flow step
+targetPhrase: "set a flow step overlap"
+wordCount: 1300
+readingTime: 7
+faqQuestions:
+  - question: "How do you set a flow step overlap in EDGEBIC?"
+    answer: "Set the work center's continuous-process flag on, then open the routing step for that operation and set its Flow Step to the number of hours after the operation starts that the next step may begin. Leave the transfer batch size at zero so the flow step branch fires. After saving and rescheduling, a coating run from 8am to 4pm with a flow step of two lets the next step start at 10am."
+  - question: "Is a flow step measured in pieces or hours?"
+    answer: "A flow step is measured in hours after the upstream operation starts, not in pieces. Since the 2026 semantics update, it is a plain start-to-start lag: it does not depend on quantity, per-piece time, or setup. Set it to two and the successor may start two hours after the predecessor starts. This is the right model for continuous-process equipment where accumulated material, not a piece count, gates the next step."
+  - question: "What happens if I combine a flow step with a queue time?"
+    answer: "EDGEBIC computes the queue time first, then replaces it with the flow step result, so the queue time is silently discarded. The anomaly report flags a step that has both set. To add a handling lag on top of a flow step, use transfer delay instead of queue time. If a shift-aware buffer is what you actually want, set the flow step to zero and keep the queue time."
+qaQuestions:
+  - question: "A very small flow step made the overlap huge, not tiny. Why?"
+    answer: "A flow step is a start-to-start lag, so a small value means the next step may start almost immediately after the first one starts, which is the maximum overlap, not the minimum. If you meant to remove the overlap, set the flow step to zero rather than to a tiny number. Zero makes the downstream step wait for full upstream completion, which is the no-overlap behavior."
+  - question: "My paint booth uses a flow step and I want to be sure a batch size can never override it. How?"
+    answer: "Turn on the continuous-process flag for the paint booth work center. With that flag on, EDGEBIC always uses the flow step model and ignores any transfer batch size a routing step might carry. The anomaly check also flags the mismatched combination so you can clean it up, but the flag alone guarantees the flow step governs and the piece-count model is suppressed on that machine."
+---
+
+**To set a flow step overlap in EDGEBIC by User Solutions, turn on the work center's continuous-process flag and set the routing step's Flow Step to the number of hours after the operation starts that the next step may begin.** The control lives on the routing (Bill of Routing) step for a continuous-process operation. Once saved and rescheduled, the flow step acts as a start-to-start lag: a coating run from 8am to 4pm with a flow step of two lets the next step begin at 10am, overlapping the tail of the coating. Since the 2026 semantics update, the flow step is a plain hours-after-start lag, independent of quantity, per-piece time, and setup.
+
+This is a single configuration task. For how the two overlap models fit together, read [EDGEBIC lot streaming explained](/blog/edgebic-lot-streaming-explained) and the broader recipe [how to overlap operations](/blog/how-to-overlap-operations-in-edgebic).
+
+## Before You Start
+
+- The work center for the continuous-process operation, so you can turn on its continuous-process flag. This model is for equipment that processes material continuously, such as a coater, oven, or paint booth.
+- The routing (Bill of Routing) open, with the continuous-process step identified.
+- The overlap you want, in hours after the operation starts. This is how long the downstream step must wait before enough material has accumulated to begin.
+
+## Step by Step
+
+1. Open the **Work Centers** screen, select the continuous-process machine, and set **Is Continuous Process** to on.
+2. Open the routing and select the step for that operation.
+3. Set **Flow Step** to the number of hours after the upstream start that the next step may begin (for example, 2).
+4. Set **Transfer Batch Size** to **0** so the flow step branch fires rather than the piece-count branch.
+5. Save the routing.
+6. Run **Generate Schedule**.
+
+## What Changes When You Save
+
+On the next run, EDGEBIC sets the downstream step's earliest start to the upstream start plus the flow step hours. It does not matter how long the upstream operation runs or how many pieces it makes: the lag is fixed in hours from the moment the operation starts. A flow step larger than the upstream run acts as a pure start-to-start lag that still ends after the upstream finishes. The two operations overlap on the Gantt, and the sequence completes sooner than it would with each step waiting for full completion.
+
+## How to Check It Worked
+
+Open the Job View and find the two steps. The downstream step should start exactly the flow step hours after the upstream step starts, not after it ends. For the 8am coating example with a flow step of two, the next step should show a 10am start. If the downstream step still waits for full completion, confirm the flow step is greater than zero and that the transfer batch size on the same step is zero.
+
+## Common Mistakes
+
+- **Treating a tiny flow step as "off."** A small flow step means the successor may start almost immediately after the predecessor starts, which is the most overlap possible. To remove the overlap, set the flow step to zero, not to a small fraction.
+- **Combining flow step with queue time.** When both are set, EDGEBIC computes the queue time and then replaces it with the flow step result, discarding the queue. The anomaly report flags this. Use transfer delay for a handling lag on top of the flow step, or set the flow step to zero if the shift-aware queue is what you want.
+- **Setting the continuous-process flag on a discrete machine.** That flag blocks the piece-count model for the whole machine, even when a routing step legitimately wants a transfer batch size. Only set it on genuinely continuous equipment.
+- **Expecting the flow step to react to quantity.** Larger orders do not lengthen a flow step, because it is a fixed hours lag. If you need overlap that scales with pieces produced, use a transfer batch size instead, as in [how to set a transfer batch size](/blog/how-to-set-a-transfer-batch-size-in-edgebic).
+
+## Where to Go Next
+
+The flow step and the transfer batch size are the two lot-streaming models. If your machine makes discrete pieces, read [how to set a transfer batch size](/blog/how-to-set-a-transfer-batch-size-in-edgebic), and for a side-by-side comparison see [piece count versus time lag overlap](/blog/piece-count-vs-time-lag-overlap-in-edgebic). To put a step back on strict serial flow, see [how to turn off lot streaming on a step](/blog/how-to-turn-off-lot-streaming-on-a-step-in-edgebic). The full platform is at [EDGEBIC](/edgebic), and more recipes live in the [EDGEBIC How-To Library](/blog/edgebic-how-to-hub).

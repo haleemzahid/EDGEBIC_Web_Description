@@ -1,0 +1,93 @@
+---
+title: "What Is an Alternate Type Column in a Routing Import?"
+description: "The alternate type column tells a routing import whether an attached step is independent parallel, dependent parallel, or a true alternative. Learn the three values and how EDGEBIC uses them."
+published: 2026-08-16T12:00:00.000Z
+modified: 2026-08-16T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - alternate type column
+  - Alt_Type routing import
+  - parallel independent import
+  - parallel dependent import
+  - alternative work center import
+  - routing import parallel steps
+targetPhrase: "alternate type column"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "What is the alternate type column in a routing import?"
+    answer: "It is the optional routing-file column that says how an attached step relates to its parent. It takes one of three values: Parallel-Independent, which is the default and means the step runs alongside the parent with its own capacity; Parallel-Dependent, which means the step is synchronized to the parent and starts and ends with it; and Alternative, which means the step is a substitute the scheduler may pick instead of the parent. It is read together with the parallel operation column, which names the parent step's work center."
+  - question: "What are the three alternate type values and what does each do?"
+    answer: "Parallel-Independent attaches a work center that works alongside the parent on its own schedule, so two stations share the load and the operation finishes sooner. Parallel-Dependent attaches a work center that mirrors the parent exactly, starting and ending with it, which is how synchronized multi-machine operations such as multi-spindle drilling are modeled. Alternative attaches a work center the scheduler may choose in place of the parent when that is the better option, so only one of the two ever runs."
+  - question: "Do I need the alternate type column on every routing row?"
+    answer: "No. It is optional, and it only applies to rows that attach to a parent step. A straightforward routing where each step follows the last needs neither the alternate type column nor the parallel operation column. Fill them in only for the rows describing a parallel or alternative station."
+qaQuestions:
+  - question: "We imported everything with the default alternate type and now two stations that should only run one at a time are both being scheduled. What went wrong?"
+    answer: "The default is Parallel-Independent, and independent parallel means both stations genuinely work on the operation at the same time, sharing the hours between them. What you described, only one of the two running, is Alternative, where the scheduler chooses one and the other stays free for other work. The two produce very different plans from the same file: independent parallel halves the elapsed time and consumes capacity on both machines, while an alternative consumes capacity on exactly one. The fix is to set the alternate type to Alternative on those rows and re-import, since a routing import replaces the product's live routing entirely so the corrected file rebuilds the structure cleanly. Jobs already scheduled keep their frozen routing snapshot and will only pick up the change when you reschedule them against the global routing."
+  - question: "How do we decide between Parallel-Dependent and Parallel-Independent for three drill heads working the same frame?"
+    answer: "Ask whether the three heads have to run at the same moment or merely have to share the work. If the frame is fixed in place and all three heads must be drilling together, because that is physically how the operation runs, it is Parallel-Dependent: the attached heads mirror the parent's window, so the schedule will not start any of them until all three can start together. If instead the three heads are simply three machines that can each take a share of the batch and finish independently, it is Parallel-Independent, and the scheduler will fill whichever has capacity when. The distinction matters beyond appearance because dependent parallel imposes a much stronger constraint: the operation waits until every attached station is simultaneously free, so an overloaded third head delays the whole group. Choose dependent only when the physical process genuinely demands simultaneity, because it costs schedulable flexibility."
+---
+
+**The alternate type column is the optional routing-import column that states how an attached step relates to its parent, taking one of three values: Parallel-Independent, Parallel-Dependent, or Alternative.** Together with the parallel operation column, which names the parent step's work center, it is how a flat file expresses structure that is not a simple chain.
+
+[EDGEBIC by User Solutions](/edgebic) reads it during a bill-of-routing import. This article defines the three values and what each produces in the plan. For one of them in detail, see the sibling term [independent parallel processing](/blog/what-is-independent-parallel-processing).
+
+## How It Works
+
+Most routing rows describe a step that follows the one before it, and those rows need nothing beyond a sequence number. Some rows describe a second work center that hangs off an existing step, and a flat file has to say two things about such a row: which step it attaches to, and what kind of relationship it has.
+
+The parallel operation column answers the first by naming the parent step's work center. The alternate type column answers the second, and it takes one of three values:
+
+- **Parallel-Independent**, the default. The attached work center runs alongside the parent, each on its own schedule and its own capacity, sharing the operation's hours between them. Two stations working the batch finish it sooner than one.
+- **Parallel-Dependent.** The attached work center is synchronized to the parent: it starts when the parent starts and ends when the parent ends. This models operations that physically require several machines running together.
+- **Alternative.** The attached work center is a substitute rather than a partner. The scheduler may place the operation there instead of on the parent, and only one of the two ever runs.
+
+Leave both columns blank and the row is an ordinary sequential step. Fill the parallel operation column without an alternate type and the row is treated as independent parallel, which is what the default value means in practice.
+
+## A Concrete Example
+
+Think of three people and one job of moving a stack of boxes. Independent parallel is three people each carrying their own boxes, finishing whenever their share is done. Dependent parallel is three people carrying one very long beam, who by necessity start and stop together. Alternative is three people any one of whom could do the job, where you pick whoever is free and the other two do something else.
+
+At Acme Industries the routing file for **Bracket-B** attaches two extra stations to its milling step:
+
+| Row | Parallel operation | Alternate type | Effect |
+|---|---|---|---|
+| CNC-Mill-2 | CNC-Mill-1 | Parallel-Independent | shares the milling hours with Mill-1, both run |
+| CNC-Mill-3 | CNC-Mill-1 | Alternative | scheduler may use Mill-3 instead of Mill-1 |
+
+The milling operation can now be split across Mill-1 and Mill-2 to run faster, and if Mill-1 is unavailable the work can move to Mill-3 instead. Two different kinds of flexibility, declared in one column.
+
+## How EDGEBIC Uses It
+
+The column exists because a routing is a graph and a spreadsheet is a list. Sequence numbers carry the chain, and these two columns carry everything the chain cannot express. What they encode is exactly the structure you would otherwise draw by hand in the BOR Designer after the import.
+
+The default being independent parallel is the right default for the common case, where a second station is added to speed an operation up. It is also the value most likely to be wrong by accident, because a row that meant to say alternative and said nothing will schedule both machines instead of choosing between them. That mistake is visible in the plan rather than in the file, so it is worth reading the Designer after a first import of any routing with attached steps.
+
+Dependent parallel deserves the most care. Synchronization is a genuine constraint: the operation cannot start until every attached station is free at the same moment, so adding stations that way can make a job harder to schedule rather than easier. It is the correct model when the process really is simultaneous, and an expensive one when it is not.
+
+Because a routing import replaces the product's live routing entirely, correcting a wrong value is a matter of fixing the file and re-importing. Jobs already scheduled keep their frozen routing snapshot and take up the change only when they are rescheduled against the global routing.
+
+For running the import, see [how to import a routing from Excel](/blog/how-to-import-a-routing-from-excel-in-edgebic). For the other two values in detail, see [what is dependent parallel processing](/blog/what-is-dependent-parallel-processing) and [what is a true alternate work center](/blog/what-is-a-true-alternate-work-center). Browse more definitions in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+<Accordion title="What is the alternate type column in a routing import?">
+It is the optional routing-file column that says how an attached step relates to its parent. It takes one of three values: Parallel-Independent, which is the default and means the step runs alongside the parent with its own capacity; Parallel-Dependent, which means the step is synchronized to the parent and starts and ends with it; and Alternative, which means the step is a substitute the scheduler may pick instead of the parent. It is read together with the parallel operation column, which names the parent step's work center.
+</Accordion>
+
+<Accordion title="What are the three alternate type values and what does each do?">
+Parallel-Independent attaches a work center that works alongside the parent on its own schedule, so two stations share the load and the operation finishes sooner. Parallel-Dependent attaches a work center that mirrors the parent exactly, starting and ending with it, which is how synchronized multi-machine operations such as multi-spindle drilling are modeled. Alternative attaches a work center the scheduler may choose in place of the parent when that is the better option, so only one of the two ever runs.
+</Accordion>
+
+<Accordion title="Do I need the alternate type column on every routing row?">
+No. It is optional, and it only applies to rows that attach to a parent step. A straightforward routing where each step follows the last needs neither the alternate type column nor the parallel operation column. Fill them in only for the rows describing a parallel or alternative station.
+</Accordion>
+
+<Accordion title="We imported everything with the default alternate type and now two stations that should only run one at a time are both being scheduled. What went wrong?">
+The default is Parallel-Independent, and independent parallel means both stations genuinely work on the operation at the same time, sharing the hours between them. What you described, only one of the two running, is Alternative, where the scheduler chooses one and the other stays free for other work. The two produce very different plans from the same file: independent parallel halves the elapsed time and consumes capacity on both machines, while an alternative consumes capacity on exactly one. The fix is to set the alternate type to Alternative on those rows and re-import, since a routing import replaces the product's live routing entirely so the corrected file rebuilds the structure cleanly. Jobs already scheduled keep their frozen routing snapshot and will only pick up the change when you reschedule them against the global routing.
+</Accordion>
+
+<Accordion title="How do we decide between Parallel-Dependent and Parallel-Independent for three drill heads working the same frame?">
+Ask whether the three heads have to run at the same moment or merely have to share the work. If the frame is fixed in place and all three heads must be drilling together, because that is physically how the operation runs, it is Parallel-Dependent: the attached heads mirror the parent's window, so the schedule will not start any of them until all three can start together. If instead the three heads are simply three machines that can each take a share of the batch and finish independently, it is Parallel-Independent, and the scheduler will fill whichever has capacity when. The distinction matters beyond appearance because dependent parallel imposes a much stronger constraint: the operation waits until every attached station is simultaneously free, so an overloaded third head delays the whole group. Choose dependent only when the physical process genuinely demands simultaneity, because it costs schedulable flexibility.
+</Accordion>

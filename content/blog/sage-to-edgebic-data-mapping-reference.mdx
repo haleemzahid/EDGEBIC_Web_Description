@@ -1,0 +1,183 @@
+---
+title: "Sage to EDGEBIC: The Data Mapping Reference"
+description: "Sage data export scheduling field by field: map items, work centers, routings, work orders and labor into EDGEBIC masks, with conversions and upsert rules."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Sage data export scheduling
+  - Sage field mapping scheduling
+  - Sage routing export
+  - import mask field reference
+  - Sage work center export
+  - ERP data mapping scheduling
+targetPhrase: "Sage data export scheduling"
+wordCount: 2230
+readingTime: 11
+faqQuestions:
+  - question: "Which columns must a Sage export contain before EDGEBIC will import it?"
+    answer: "Each entity type has a short mandatory list and everything else is optional. Products need a product id. Work centers need a work center id. Routings need end product, step name, an operation flag, and hours required. Work orders need product, quantity, and a job date. Labor rows need job number, work center id, and the actual date. An unmapped mandatory field aborts the run before a single row is read."
+  - question: "Our Sage routings store setup in minutes. Do we convert them by hand?"
+    answer: "No. Set a conversion factor of 0.016667 on the setup column in the routing mask and the multiplication happens during import, so a 30-minute cell lands as 0.5 hours. Seconds use 0.000278. The factor is saved with the mask, which makes every future import convert identically without anyone remembering to do it, and the per-run log records each row so the math is auditable."
+  - question: "Does the mapping change between Sage editions?"
+    answer: "The EDGEBIC side does not change at all, because masks map onto EDGEBIC fields rather than onto a specific Sage schema. What changes is which column heading in your export feeds each field, and that is a one-time re-map of a few rows if you move between editions. A file interface is what makes an ERP upgrade a mapping task instead of an integration project."
+  - question: "What order should Sage files be imported in?"
+    answer: "Dependency order: items first, then work centers, then routings, then open jobs, then labor. Routings reference both items and work centers, and jobs reference items, so loading upstream data first stops auto-create from inventing thin placeholder records. Auto-create is on by default, but a work center it creates carries only a name, which means one machine and no calendar."
+qaQuestions:
+  - question: "Our Sage export has no column for how many machines a work center holds, because Sage just holds a capacity number. What is the least painful way to fill that in?"
+    answer: "Build the work center file by hand once, and treat it as master data you own rather than as an export you refresh. There are usually 10 to 30 work centers, so a single spreadsheet listing the identifier, the true machine count, the default setup hours, efficiency, shift assignment, and the bottleneck flag takes under an hour to write with a supervisor standing next to you. Import it with the same mask each time. The reason this is worth doing deliberately is that a cell of three identical machines imported as one instance produces a plan roughly three times too long, and nothing errors: the dates are just wrong. The item, routing, and job files stay pure exports; only this one file is curated."
+  - question: "Our part numbers appear with slightly different spellings across reports (WIDGET-A in one, WIDGET_A in another). What will that do?"
+    answer: "It creates two separate products, and the consequence is worse in the routing file than in the item file. Matching is case-insensitive, so WIDGET-A and widget-a resolve to the same record, but a hyphen against an underscore is a genuinely different key. A routing file using the second spelling auto-creates a second product and hangs the routing on it, so you end up with a part that has demand and no routing, and a part that has a routing and no demand. Five minutes checking distinct part names across your item file and your routing file before the first import prevents the whole class of problem, and a routing re-import with corrected spellings cleans it up because each run wipes and recreates that product's steps."
+---
+
+**Mapping Sage data into EDGEBIC is a column-mapping exercise rather than a development project: you export items, work centers, routings, open jobs, and optionally labor hours to Excel or CSV, then drag each source column heading onto the matching EDGEBIC field once and save it as a reusable import mask.** This reference lists what maps to what, which columns are mandatory, how unit conversion and blank cells behave, and what each row outcome means when a run finishes.
+
+EDGEBIC by User Solutions integrates with Sage through those masks rather than a per-edition connector, which is why the same method works whether your export came from Sage 100, Sage 300, Sage X3, or a report someone maintains alongside a Sage financial platform. If you have not read the end-to-end version, start with the [complete Sage integration guide](/blog/edgebic-sage-integration-guide). This post is the lookup table you keep open while building masks.
+
+## The load order
+
+Import in dependency order. Later files reference records that earlier files created.
+
+| # | Sage export | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Items / inventory | Product | Nothing |
+| 2 | Work centers | Workcenter | Nothing |
+| 3 | Routings / operations | BOR (bill of routing) | Items and work centers |
+| 4 | Open work orders | SalesOrder | Items |
+| 5 | Labor hours (optional) | Actuals | Scheduled jobs |
+
+Two entity types have no Sage origin and come from a spreadsheet you write: **Shift** (one row per shift with a start and end pair per weekday, a blank pair meaning the day is off) and **PlantHoliday** (closures by name and date). These define the calendar every scheduled date is computed against. A shift row with a start time and no matching end time fails, so fill both cells of a pair or blank both to make it a day off.
+
+Auto-create is on by default, so a routing file naming a work center that has not been imported yet creates it on the fly. Useful safety net, poor strategy: an auto-created work center carries a name and nothing else, which means one machine, no shift assignment, and no efficiency.
+
+## Items to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id` | Yes | The item number. Natural key, matched case-insensitively |
+| `Product_Name`, `Description` | | Descriptive text |
+| `UOM` | | Unit of measure |
+| `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Only the item number is required, and a blank one fails that row with a recorded reason while the run continues. Everything else can arrive later through a narrower refresh file, because blank cells preserve existing values on an update run.
+
+## Work centers to Workcenter
+
+This is the file where scheduling accuracy is won or lost, and in a Sage shop it is usually the file you curate by hand rather than export.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. Routing steps match on it |
+| `Workcenter Name` | | Label on the Gantt and in reports |
+| `Number_Of_Instances` | | How many identical machines the center holds. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per routing step where present |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint so the engine can anchor around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts`, `Shift_Names` | | Calendar assignment |
+| `Pieces_Per_Hour` | | Rate-based capacity where the center is measured in output |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+Most Sage exports describe a work center as a capacity figure rather than a count of machines, so `Number_Of_Instances` is the column you fill in yourself. It is worth the hour: a cell of three identical machines imported as one instance produces a plan roughly three times too long, and the failure is silent because nothing errors. With 10 to 30 work centers in a typical Sage shop, a hand-built work center file is small, stable, and re-imported unchanged for months. The arithmetic behind the column is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## Machine pools have no export column
+
+Where machines are genuinely interchangeable, EDGEBIC models a **work center group**: a named pool re-evaluated on every reschedule. A routing step bound to the group picks a member by strategy (earliest completion, primary first, or earliest start) and applies a per-member efficiency factor, so an older slower machine is chosen only when it still finishes first. Operations already started keep their machine, because recorded work is never moved.
+
+None of that fits in an export column. Import the members as ordinary work centers, then build the group inside EDGEBIC. It is a one-time configuration per pool and one of the highest-value settings in a small shop, because it turns a manual weekly assignment into something the engine redoes automatically. The setup path is [how to create work center groups](/blog/how-to-create-work-center-groups-in-edgebic).
+
+## Routings to BOR
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Item number this routing builds |
+| `Sub_Prod` | Yes | Work center id (operation row) or component item (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; chaining happens automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and transport time |
+| `Parallel_Op` | | Parent step's work center name for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent`, `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Applicable machine instances for this step |
+| `Fam_Dept` | | Department for auto-created work centers |
+
+`Op_Flag` is the field people get wrong on a first load. True means the row is an operation running on a work center; false means the row is a component consumed at that point in the routing. Reversing them produces a routing full of work centers that are really parts, and the graphical designer shows it immediately.
+
+### Why the import takes two passes
+
+A routing cannot be written row by row, because step 10 must point at step 20 and step 20 does not exist yet. So the import runs in two passes. Pass one validates each row, resolves or creates the items and work centers it names, and buffers the row. Pass two groups the buffer by end product, sorts by sequence number, writes the steps, then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished item so the routing renders as one connected flow.
+
+Two rules follow from the same mechanism. All of one item's steps must travel in one file, because a run wipes and recreates that item's steps on first reference, so splitting one item across two runs means the second wipe deletes the first run's steps. And re-importing is safe for jobs already running, because every scheduled job carries a frozen snapshot of the routing it was planned with.
+
+Outside processing maps cleanly as an operation row on a work center that represents the vendor, with the turnaround as transit days, which keeps the outside time visible on the Gantt rather than buried inside one long operation.
+
+## Work orders to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Item being built |
+| `Qty` | Yes | Order quantity |
+| `Job_Date` | Yes | Release or start date |
+| `Sales_Order(Ref#)` | | Order reference: shared references group into one sales order, jobs auto-number `{Ref}-{line}` |
+| `Job_Number` | | Your Sage work order number carried across |
+| `Due_Date`, `Order_Date`, `Priority` | | Promise, entry, and ranking |
+| `Customer_Name` | | Auto-created when missing |
+| `Unit_Price`, `User_Notes` | | Optional |
+
+Two mask options cover the case where the export carries only one date: one treats the job date as the due date, the other derives the job date backward from the due date. Choose the one matching your export once, on the mask.
+
+## Labor to Actuals
+
+Job number, work center id, and actual date are mandatory. Hours and pieces are optional, and either can be derived from the other using the operation's rate. A `Complete` column marks the operation finished, and an explicit start column overrides the default of using the earliest imported date.
+
+The import always overwrites the days a file carries, so re-running a corrected timesheet file fixes numbers rather than doubling them. Days the file does not mention are preserved unless you explicitly ask for them to be cleared. Actuals import last because each row has to find an operation on a job that is already scheduled.
+
+## Conversions, blanks, and zeros
+
+| Situation | Behavior |
+|---|---|
+| Minutes in the export | Conversion factor `0.016667` on that mask column |
+| Seconds in the export | Conversion factor `0.000278` |
+| Hours quoted per 100 pieces | Conversion factor `0.01` |
+| Blank cell on an update | Existing value preserved |
+| Zero in a cell on an update | Zero is written: it is a value, not a blank |
+| Unmapped column | Ignored entirely |
+| Mandatory field unmapped | Run aborts before reading any row |
+| One bad row | Fails alone and the run continues, unless you choose strict mode |
+
+The practical consequence of the blank rule is that a partial refresh file is safe: a two-column file of item number and price updates prices and touches nothing else. The practical consequence of the zero rule is the opposite: leave a column out of the export rather than filling it with zeros you do not mean.
+
+## Reading the outcomes
+
+Every row resolves to **Created**, **Updated**, **Reused**, or **Failed**. Reused is the default for a record that already exists, so a weekly item file of 900 rows reporting Created 6, Reused 894 is the correct result rather than a problem. When the counts look wrong, the per-run log file carries one line per row with the exact reason for each failure.
+
+## What import cannot bring, and why it matters
+
+The settings that most differentiate a schedule have no column in any ERP export: the sequence-dependent setup matrix, operator skills and rosters, work center group strategies, bottleneck anchoring, and lot streaming transfer batches. Those are configured once inside EDGEBIC and apply to every imported job afterwards. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) explains why one mask design serves every ERP.
+
+For the questions that come up before a project starts, see the [Sage integration FAQ](/blog/edgebic-sage-integration-faq). The [SAP](/blog/sap-to-edgebic-data-mapping-reference) and [NetSuite](/blog/netsuite-to-edgebic-data-mapping-reference) references show how little the method changes between platforms, and the [ERP scheduling add-on page](/erp-scheduling-add-on) frames the category.
+
+<Accordion title="Which columns must a Sage export contain before EDGEBIC will import it?">
+Each entity type has a short mandatory list and everything else is optional. Products need a product id. Work centers need a work center id. Routings need end product, step name, an operation flag, and hours required. Work orders need product, quantity, and a job date. Labor rows need job number, work center id, and the actual date. An unmapped mandatory field aborts the run before a single row is read.
+</Accordion>
+
+<Accordion title="Our Sage routings store setup in minutes. Do we convert them by hand?">
+No. Set a conversion factor of 0.016667 on the setup column in the routing mask and the multiplication happens during import, so a 30-minute cell lands as 0.5 hours. Seconds use 0.000278. The factor is saved with the mask, which makes every future import convert identically without anyone remembering to do it, and the per-run log records each row so the math is auditable.
+</Accordion>
+
+<Accordion title="Does the mapping change between Sage editions?">
+The EDGEBIC side does not change at all, because masks map onto EDGEBIC fields rather than onto a specific Sage schema. What changes is which column heading in your export feeds each field, and that is a one-time re-map of a few rows if you move between editions. A file interface is what makes an ERP upgrade a mapping task instead of an integration project.
+</Accordion>
+
+<Accordion title="What order should Sage files be imported in?">
+Dependency order: items first, then work centers, then routings, then open jobs, then labor. Routings reference both items and work centers, and jobs reference items, so loading upstream data first stops auto-create from inventing thin placeholder records. Auto-create is on by default, but a work center it creates carries only a name, which means one machine and no calendar.
+</Accordion>

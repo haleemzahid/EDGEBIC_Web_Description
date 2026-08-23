@@ -1,0 +1,101 @@
+---
+title: "A Parallel Operation Did Not Mirror: Causes and Fixes"
+description: "When a dependent parallel operation's partner machines do not show matching times, the cause is a shared-shift gap, a failed parent, or a miswired parallel setting. How to tell which."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - parallel operation did not mirror
+  - dependent parallel scheduling
+  - synchronized machines not aligned
+  - parallel work center failure
+  - no simultaneous capacity
+  - mirror drift scheduling
+targetPhrase: "parallel operation did not mirror"
+wordCount: 1354
+readingTime: 7
+faqQuestions:
+  - question: "Why did my dependent parallel operation not mirror across its partner machines?"
+    answer: "A dependent parallel operation copies one physical event onto several partner machines that must share exact start and end times. It fails to mirror for three documented reasons: the partner machines share no common shift, so no simultaneous window exists; the parent machine failed to schedule, leaving the mirrors nothing to copy; or the parallel setting is miswired, with a partner marked independent instead of dependent or pointing at a work center ID that does not exist. The scheduling failure dialog and the anomaly report name which one fired."
+  - question: "What does 'no simultaneous capacity found' mean for parallel work centers?"
+    answer: "It means the engine searched for a window where every machine in the dependent group was free at the same time and found none within its 30-day parallel search window. Every partner must share at least one common shift on the target days and have open capacity in it. A single partner that is fully booked or down for 30 days blocks the whole group, because a dependent parallel operation is all-or-nothing: either all partners run together or none do."
+  - question: "What is dependent-parallel mirror drift?"
+    answer: "Mirror drift is when a dependent partner's scheduled start or end diverges from the parent's by more than a minute, which violates the synchronization contract that the partners run as one event. The anomaly report flags it as critical because the physical operation cannot have its machines out of step. Re-running scheduling regenerates the mirror from the parent's times; if it persists, it points at a wiring issue rather than a planner mistake."
+qaQuestions:
+  - question: "Two of my three synchronized drills scheduled but the third is missing entirely. What happened?"
+    answer: "A dependent parallel group is all-or-nothing, so a missing partner usually means the group could not find a window where all three were simultaneously free, and the run failed rather than scheduling a partial group. Check that all three drills share a common shift on the target days and that none is fully booked or on a holiday or downtime across the search window. Align the shifts or free the blocked machine, then re-run; the group schedules together or reports exactly which partner has no common capacity."
+  - question: "The parent operation scheduled fine but the dependent mirror threw a 'parent schedule not found' error. How is that possible?"
+    answer: "The dependent mirror copies from the parent's committed row, and if the parent's allocation was rolled back because a later step in the same job failed, the parent is no longer in the run's results for the mirror to copy. Fix the downstream failure first: look in the scheduling failure dialog for another failure on the same job, resolve it, and re-run. Once the whole job schedules cleanly, the parent row survives and the mirror copies it."
+---
+
+**When a dependent parallel operation does not mirror across its partner machines, the cause is one of three documented conditions: the partners share no common shift, the parent machine failed to schedule, or the parallel setting is miswired.** [EDGEBIC by User Solutions](/edgebic) runs a dependent parallel operation as a single physical event copied onto several partner machines that must start and finish together, so a mirror that is missing, misaligned, or errored points at one of those three.
+
+The controls you use to diagnose this are the scheduling failure dialog and the anomaly report. This post is the detailed version of the parallel-mirror symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanism itself, [parallel work centers explained](/blog/edgebic-parallel-work-centers-explained) covers how dependent and independent modes differ.
+
+## What "Mirroring" Actually Means Here
+
+A dependent parallel operation, such as a multi-spindle drilling job or a synchronized weld, physically requires several machines running at once. EDGEBIC schedules the parent machine first, then copies that exact allocation onto each dependent partner, so the partners carry identical start and end times and a distinct setup source marking them as mirrored from the parent. When the mirror does not appear, or appears with different times, the copy step could not complete.
+
+Independent parallel is a different mode: partners work the same operation but each on its own schedule, so they are not expected to match. If your partners were never meant to share times, you have independent parallel, not a mirror failure. [Synchronized multi-spindle scheduling](/blog/synchronized-multi-spindle-scheduling-example-edgebic) walks a dependent example end to end.
+
+## Cause 1: No Common Shift, So No Simultaneous Window
+
+For the partners to run together, they must all be open at the same time. The engine searches for a window where every machine in the dependent group is simultaneously free, across a 30-day window, and if none exists it reports "no simultaneous capacity found" and the group does not schedule.
+
+**How to tell:** the scheduling failure dialog shows a synchronization or no-simultaneous-capacity category naming the job. The common cause is that the partners do not all carry the same shift on the target days: one runs day shift, another only nights, so there is no shared window. A single partner fully booked or on holiday for the whole 30-day window blocks the group the same way.
+
+**Fix:** add the same shift to every machine in the dependent group so a common window exists, or free the blocked partner. Because the group is all-or-nothing, aligning the calendars is the durable fix. [Configuring parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic) shows where the group is defined.
+
+## Cause 2: The Parent Failed, So the Mirror Had Nothing to Copy
+
+The dependent mirror copies from the parent's committed allocation. If the parent machine itself could not schedule, or its row was rolled back because a later step in the same job failed, the mirror finds no parent row and reports "parent schedule not found for mirroring."
+
+**How to tell:** look in the scheduling failure dialog for a separate failure on the same job, usually on the parent work center or a downstream step. The parent-not-found error is a symptom; the parent's own failure is the root.
+
+**Fix:** resolve the parent's failure first. Fix whatever blocked the parent work center or the downstream step, then re-run scheduling. Once the whole job schedules cleanly, the parent row survives the run and the mirror copies it correctly.
+
+## Cause 3: The Parallel Setting Is Miswired
+
+The third cause is configuration. A partner marked as independent instead of dependent will not mirror, and a partner pointing at a work center ID that no longer exists cannot resolve. The engine reports a parallel configuration error in these cases.
+
+**How to tell:** open the routing step and check each partner's parallel type and its work center. A partner that should synchronize but is set to independent, or one referencing a deleted machine, is the miswire.
+
+**Fix:** set the partner's type to dependent parallel and confirm every referenced work center exists and is active. [Making two operations run in parallel](/blog/how-to-make-two-operations-run-in-parallel-in-edgebic) shows the correct setup, and [parallel work center mistakes](/blog/parallel-work-center-mistakes-edgebic) covers the common miswires.
+
+## When the Mirror Appears but the Times Are Off
+
+A related case is a mirror that scheduled but does not match the parent. The anomaly report flags dependent-parallel mirror drift as critical when a partner's start or end diverges from the parent's by more than a minute, because a synchronized operation cannot have its machines out of step.
+
+**How to tell:** the mirror-drift check names the parent and dependent centers and the start and end differences in minutes. Because the mirror is built from the parent's times, a drift means the copy diverged.
+
+**Fix:** re-run scheduling, which regenerates the mirror from the parent's current times. A drift that survives a clean run is a wiring issue worth a support ticket with the exported anomaly rows, not a planner error.
+
+## How to Diagnose a Missing Mirror, in Order
+
+1. **Confirm the mode is dependent parallel.** Independent partners are not meant to match; if that is what you have, there is nothing to fix.
+2. **Read the scheduling failure dialog.** A no-simultaneous-capacity category points at shift alignment; a parent-not-found category points at a parent or downstream failure.
+3. **Check that every partner shares a common shift** on the target days and none is blocked across the window.
+4. **Check each partner's parallel type and work center.** An independent setting or a deleted machine reference is a miswire.
+5. **Run the anomaly report** for mirror drift if the partners scheduled but do not align, then re-run scheduling.
+
+## Prevention
+
+- **Give every machine in a dependent group the same shift.** A shared window is the single requirement that makes a mirror possible, and a shift mismatch is the most common blocker.
+- **Reserve dependent parallel for operations that are physically one event.** If the machines can run on their own schedules, independent parallel avoids the all-or-nothing sync requirement entirely.
+- **Keep partner work center references current.** A partner pointing at a retired machine fails the whole group; update the group when you retire equipment.
+- **Run the anomaly report after routing changes.** Catching a mirror-drift or configuration flag the day you introduce it is far cheaper than finding a half-scheduled synchronized job on the floor. If two jobs appear to share a machine after all this, [two jobs on the same machine at the same time](/blog/two-jobs-are-on-the-same-machine-at-the-same-time-edgebic) explains when overlap is by design.
+
+<Accordion title="Why did my dependent parallel operation not mirror across its partner machines?">
+A dependent parallel operation copies one physical event onto several partner machines that must share exact start and end times. It fails to mirror for three documented reasons: the partner machines share no common shift, so no simultaneous window exists; the parent machine failed to schedule, leaving the mirrors nothing to copy; or the parallel setting is miswired, with a partner marked independent instead of dependent or pointing at a work center ID that does not exist. The scheduling failure dialog and the anomaly report name which one fired.
+</Accordion>
+
+<Accordion title="What does 'no simultaneous capacity found' mean for parallel work centers?">
+It means the engine searched for a window where every machine in the dependent group was free at the same time and found none within its 30-day parallel search window. Every partner must share at least one common shift on the target days and have open capacity in it. A single partner that is fully booked or down for 30 days blocks the whole group, because a dependent parallel operation is all-or-nothing: either all partners run together or none do.
+</Accordion>
+
+<Accordion title="What is dependent-parallel mirror drift?">
+Mirror drift is when a dependent partner's scheduled start or end diverges from the parent's by more than a minute, which violates the synchronization contract that the partners run as one event. The anomaly report flags it as critical because the physical operation cannot have its machines out of step. Re-running scheduling regenerates the mirror from the parent's times; if it persists, it points at a wiring issue rather than a planner mistake.
+</Accordion>

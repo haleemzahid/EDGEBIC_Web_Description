@@ -1,0 +1,116 @@
+---
+title: "How to Keep a Slow Machine Out of a Machine Pool"
+description: "There is no automatic efficiency screen on a pool. Four real controls decide which machines a step can use: the member list, the Active flag, the per-member factor, and the selection strategy."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - work center group members
+  - machine pool selection
+  - keeping a machine out of a pool
+  - selection strategy scheduling
+  - member active flag
+  - finite capacity scheduling
+targetPhrase: "keep a machine out of a machine pool"
+wordCount: 1540
+readingTime: 8
+faqQuestions:
+  - question: "Does a pool automatically exclude machines below an efficiency rating?"
+    answer: "No. There is no automatic efficiency screen and no threshold that filters candidates by a performance rating. In EDGEBIC by User Solutions a machine is in a pool because somebody put it there, and it leaves when somebody takes it out or unticks its Active flag. That is deliberate, because an automatic screen would silently remove capacity you believed you had, and the symptom would arrive later as work that will not fit with no visible cause. The controls are explicit instead: the member list, each member's Active flag, the factor describing relative speed, and the group's selection strategy."
+  - question: "What is the fastest way to stop a pool from using one machine?"
+    answer: "Untick that member's Active flag. It drops the machine from every group-bound step's candidate list on the next scheduling run, while operations already started on it stay exactly where they are. That combination is what makes it safe to do mid-week: you stop future work landing there without disturbing work in progress. Removing the member from the group entirely also works, and is the right move when the machine has left the pool permanently rather than for a fortnight."
+  - question: "How do I make a slow machine the last resort rather than excluding it?"
+    answer: "Describe its speed honestly and let the strategy do the work. Each member carries a factor that multiplies the step's base run hours for that machine, so a machine taking twenty five percent longer for this class of work carries 1.25. With the default earliest-completion strategy the engine computes real per-machine hours before choosing, so the slower machine naturally loses whenever a faster one can finish sooner, and wins only when it genuinely would finish first because the others are busy. That is usually what people actually wanted."
+qaQuestions:
+  - question: "We have three mills in a pool and want the newest used first, with the old one only when the others are full. How do we set that up?"
+    answer: "Two settings, and no exclusion needed. Flag the newest mill as the group's Primary and set the selection strategy to primary-first, which stays on the designated machine whenever it has same-day capacity and falls back to the others only when it is fully booked. Only one member can be primary at a time, so ticking a second automatically unticks the first, which prevents an ambiguous half-configured state. Then set each member's factor to describe its real speed for this class of work, and give the old mill a higher priority number so it sorts last among the fallbacks, since priority breaks ties with lower numbers going first. The result is exactly the behavior you described, and it degrades sensibly: in a busy week the old mill picks up overflow rather than the work simply waiting, which is the whole reason to keep it in the pool. If you would rather the plant just take whatever finishes soonest, leave the strategy on earliest completion and skip the primary flag entirely."
+  - question: "Our third machine is in the pool, is free, and still never gets work. What do we check?"
+    answer: "Work down four things in this order, because each fails differently. First, the Active flag on that member: unticked means it left every candidate list on the last scheduling run, which produces precisely this symptom of an idle machine that is never chosen. Second, the selection strategy: under primary-first the engine stays on the designated machine whenever it has same-day capacity, so a free third machine is correct behavior rather than a fault. Third, the member's factor: a number well above one tells the engine this machine is much slower for this work, so earliest completion keeps preferring the others, and the question is whether that factor reflects reality. Fourth, whether a planner has pinned the step to a specific machine, because a manual pin always wins and survives rescheduling. Only after those four is it worth looking at shifts and calendars."
+---
+
+**There is no automatic efficiency screen on a machine pool: nothing filters candidates by a performance rating, so a machine is in a pool because somebody put it there.** In EDGEBIC by User Solutions you keep a slow machine out, or make it a last resort, through four explicit controls: the member list, each member's Active flag, the factor that describes relative speed, and the group's selection strategy. The explicitness is the design, not a gap.
+
+## Why explicit rather than automatic
+
+It is tempting to want a threshold: set a minimum performance level and let the engine drop anything below it. Consider what that does on a busy week. A pool that quietly excludes a machine has removed real capacity from your plant, and the symptom surfaces later as jobs that will not fit, with no visible cause. You would be debugging a plan against a candidate list you cannot see.
+
+Explicit membership inverts that. The candidate list is exactly what you configured, so when a machine is not being used, the reason is one of a handful of settings you can read in a few seconds.
+
+## The four controls
+
+| Control | What it does | Use it when |
+| --- | --- | --- |
+| Member list | Which machines are in the pool at all | The machine is permanently in or out |
+| Active flag per member | Drops a machine from every group-bound step's candidate list on the next run | The machine is temporarily unavailable |
+| Factor per member | Multiplies the step's base run hours for that machine | The machine is slower or faster for this class of work |
+| Selection strategy | How the engine chooses among available members | You want a preferred machine, or simply the fastest finish |
+
+## Removing a machine, temporarily or permanently
+
+**Temporarily: untick Active.** The machine drops out of every group-bound step's candidate list on the next scheduling run, and operations already started on it stay exactly where they are. That pairing is what makes this safe mid-week: future work stops landing there without disturbing work in progress.
+
+**Permanently: remove the member.** The right move when a machine has left the pool for good.
+
+One guard worth knowing: a group needs at least one active member to be schedulable at all. A fully deactivated pool fails visibly rather than quietly picking something else, which is what you want from a safety mechanism.
+
+## Making a slow machine a last resort instead
+
+Exclusion is often the wrong tool. If the machine can do the work, just not as fast, you usually want it available for overflow and ignored otherwise. Two settings achieve that.
+
+**The factor.** Each member carries a factor multiplying the step's base run hours for that machine: 1.0 is baseline, 0.5 is twice as fast, 2.0 is twice as slow. It is never applied to setup time, which is carried separately as an optional setup override, so a machine can run fast and still set up slowly.
+
+Use the factor for work-class differences, meaning this machine takes twenty five percent longer for *this kind of work*. If a machine is simply slower at everything, that belongs in its own work center configuration rather than in a pool factor, or the same slowness gets described twice. The distinction is covered in [how efficiency scales run time but not setup](/blog/how-efficiency-scales-run-time-but-not-setup).
+
+**The strategy.** With the default earliest-completion strategy the engine computes real per-machine hours using each member's factor before choosing, so an honestly-described slow machine loses whenever a faster one finishes sooner, and wins only when it genuinely would finish first because the others are busy. That is usually the behavior people were reaching for when they asked about a threshold.
+
+## Choosing the strategy
+
+| Strategy | Behavior |
+| --- | --- |
+| Earliest completion | Picks whichever member finishes the operation soonest, accounting for speed and existing queue. The default |
+| Primary first | Stays on the designated primary whenever it has same-day capacity, falling back only when it is full |
+| Earliest start | Picks the member that can begin soonest |
+
+Primary first is the direct answer to "use the new machine unless it is full". Flag that machine as Primary, and note only one member can hold the flag: ticking a second unticks the first. Priority then breaks ties among the rest, lower numbers first, and also decides the fallback primary when no member carries the flag.
+
+## Diagnosing a machine that never gets work
+
+1. **The Active flag.** Unticked means the machine left every candidate list on the last run, which is exactly this symptom.
+2. **The strategy.** Under primary first, a free third machine sitting idle while the primary works is correct.
+3. **The factor.** A number well above one keeps earliest completion preferring others. Check it against reality.
+4. **A manual pin.** A planner's machine pin always wins and survives rescheduling, so a pinned step will not shop the pool.
+
+Only then look at shifts and calendars.
+
+## Pools, parallel machines and alternates are different things
+
+Worth separating, because the words get used interchangeably on a shop floor.
+
+A **pool** is "any of these machines may run this step, pick one". That is a work center group, and everything above applies to it.
+
+**Parallel machines** run *together*: an independent parallel machine takes its own capacity-checked share of the work to shorten the operation, while a dependent parallel mirror runs in lockstep with the primary. To keep a slow machine out of a parallel step you simply do not add it as a parallel machine, since the candidate list there is whatever you configured on the step. The two modes are compared in [dependent and independent parallel](/blog/dependent-vs-independent-parallel-when-to-use-each) and the lockstep behavior in [how dependent parallel mirroring locks machines together](/blog/how-dependent-parallel-mirroring-locks-machines-together).
+
+A **true alternative** is *instead of*: one machine ends up doing the step. It carries its own setup and its own hours, entered directly, with no factor involved. If you want a slow machine available as an emergency route but never as a routine partner, a true alternative is the right shape.
+
+One last note on maintenance: interchangeable machines are better modeled as a group than as an alternate list hand-configured on every routing step, which drifts the first time somebody edits one copy. Binding a step to a group supersedes any manual alternate list on that step, because from then on the group is the alternate list. [How a work center group shops a pool of machines](/blog/how-a-work-center-group-shops-a-pool-of-machines) covers the shopping behavior.
+
+All of this only produces a real decision because capacity is treated as [genuinely finite](/blog/finite-vs-infinite-capacity-scheduling). If capacity were infinite, adding a slow machine would be free. It is not, which is why membership is a decision you make rather than one the engine makes quietly for you.
+
+## The takeaway
+
+Nothing screens machines out of a pool automatically, because a silent exclusion would remove capacity you thought you had. Keep a machine out by unticking its Active flag, which takes effect on the next run while leaving started work alone, or remove the member outright when the change is permanent. More often the better answer is to make it a last resort: describe its speed with an honest factor, which never touches setup, and let earliest completion prefer faster members, or flag a Primary and use primary first. When a pooled machine never gets work, check Active, then the strategy, then the factor, then a manual pin. See the platform on the [EDGEBIC overview](/edgebic), the upgrade path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and pair this with [the complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="Does a pool automatically exclude machines below an efficiency rating?">
+No. There is no automatic efficiency screen and no threshold that filters candidates by a performance rating. A machine is in a pool because somebody put it there, and it leaves when somebody takes it out or unticks its Active flag. That is deliberate, because an automatic screen would silently remove capacity you believed you had, and the symptom would arrive later as work that will not fit with no visible cause. The controls are explicit instead: the member list, each member's Active flag, the factor describing relative speed, and the group's selection strategy.
+</Accordion>
+
+<Accordion title="What is the fastest way to stop a pool from using one machine?">
+Untick that member's Active flag. It drops the machine from every group-bound step's candidate list on the next scheduling run, while operations already started on it stay exactly where they are. That combination is what makes it safe to do mid-week: you stop future work landing there without disturbing work in progress. Removing the member from the group entirely also works, and is the right move when the machine has left the pool permanently rather than for a fortnight.
+</Accordion>
+
+<Accordion title="How do I make a slow machine the last resort rather than excluding it?">
+Describe its speed honestly and let the strategy do the work. Each member carries a factor that multiplies the step's base run hours for that machine, so a machine taking twenty five percent longer for this class of work carries 1.25. With the default earliest-completion strategy the engine computes real per-machine hours before choosing, so the slower machine naturally loses whenever a faster one can finish sooner, and wins only when it genuinely would finish first because the others are busy. That is usually what people actually wanted.
+</Accordion>

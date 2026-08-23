@@ -1,0 +1,95 @@
+---
+title: "A Work Center Group Step Did Not Explode: Causes and Fixes"
+description: "A routing step bound to a machine pool that fails to shop the pool almost always points at a deactivated group, no active members, or a stripped binding. How to tell which."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - work center group did not explode
+  - machine pool not scheduled
+  - unknown work center group
+  - group binding stripped
+  - resource group failed to resolve
+  - group step scheduling
+targetPhrase: "work center group step did not explode"
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "Why did a routing step bound to a machine pool fail to schedule?"
+    answer: "A group-bound step is exploded into its member machines at schedule time, and that explosion fails loudly when the group cannot be found. The three documented causes are a deactivated group, a group whose members are all inactive, and a binding that was stripped by a copy or save path so the step degraded to a single fixed machine. In the first two cases the engine leaves the step unexpanded and records a group warning in the session log rather than schedule it on the wrong machine."
+  - question: "What does it mean when a group step is left unexpanded?"
+    answer: "It means the scheduling engine could not resolve the pool the step points at, so it deliberately did not place the step rather than guess a machine. This happens when the group is deactivated or has no active members. The engine writes a group warning to the scheduling session log naming the step, and the step fails work center resolution visibly. Reactivating the group or at least one member and re-running scheduling fixes it."
+  - question: "Why is my pool step now stuck on one machine and never re-shops the pool?"
+    answer: "Because the group binding was stripped from the step, usually by a field-by-field copy that carried the machine name but dropped the pool binding. Once the binding is gone the step behaves like a plain single-machine pin: it always uses that one machine and never reconsiders the pool on reschedule. Re-open the step, choose the Work Center Group target again to restore the binding, and re-run scheduling so the pool is shopped afresh."
+qaQuestions:
+  - question: "I took two of a three-mill group offline for retrofit and now jobs bound to that group will not schedule at all. Why did losing members break the whole group?"
+    answer: "If you deactivated all three members, or the group itself, the pool has nothing to explode into, so every step bound to it is left unexpanded and flagged in the session log. The group must have at least one active member to resolve. Reactivate one mill, or leave at least one member active before taking the others down, and the group-bound steps schedule on the survivor. Deactivate members, never the whole group, when you want work to keep flowing on what remains."
+  - question: "A step that used to shop our milling pool now shows a single mill on every run and ignores the other two. Nothing looks wrong on the step. What happened?"
+    answer: "The pool binding was almost certainly dropped, leaving the step as a hard pin on that one mill. The tell is that the step shows a real machine name with no pool badge and never surfaces a replaced-from-to indicator on reschedule. Open the step's work center selection and re-choose the Work Center Group option to restore the binding, then re-run. From then on the step re-shops all three mills each run. If it happened during a bulk edit or import, check that path preserved the group binding."
+---
+
+**When a routing step bound to a machine pool does not shop the pool, the cause is almost always that the group could not be resolved at schedule time: a deactivated group, a group with no active members, or a binding that was stripped so the step degraded to a single fixed machine.** [EDGEBIC by User Solutions](/edgebic) explodes a group-bound step into its member machines on every scheduling run, and when that explosion cannot happen it fails visibly rather than schedule work on the wrong machine.
+
+The controls you use to diagnose this are the group badge on the step, the Work Center Groups manager, and the scheduling session log. This post is the detailed version of the group-explosion symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanism, [what a work center group is](/blog/what-is-a-work-center-group-machine-pool) covers the pool concept, and if the pool did explode but picked a machine you did not expect, [a work center group scheduled the wrong machine](/blog/a-work-center-group-scheduled-the-wrong-machine-edgebic) covers that case instead.
+
+## What You Are Seeing
+
+A step you routed to a pool either does not appear on the schedule at all, or it lands on one fixed machine and never reconsiders the others on reschedule. On an unexpanded step you may still see the pool badge (the group name with a member count) because the step never resolved to a real machine. On a stripped step you see a single machine name with no badge. Both mean the pool was never shopped.
+
+## Why It Happens
+
+### Cause 1: The Group Is Deactivated
+
+A deactivated group drops out of the data the engine loads before a run. A step still pointing at it cannot be exploded, so the engine leaves it unexpanded and records a group warning in the scheduling session log naming the step. This is deliberate: silent degradation onto a wrong machine is worse than a visible failure.
+
+**How to tell:** open the Work Center Groups manager and check whether the group is active. An inactive group is the cause.
+
+### Cause 2: The Group Has No Active Members
+
+A group whose members are all inactive is functionally empty. The same thing happens as a deactivated group: the step is left unexpanded with a session-log warning. This is the common outcome after taking every machine in a small pool offline for maintenance at once.
+
+**How to tell:** open the group and confirm at least one member is active. If every member is inactive, the pool has nothing to explode into.
+
+### Cause 3: The Binding Was Stripped
+
+If a field-by-field copy or save path carried the step's machine name but dropped the group binding, the step degrades to a hard single-machine pin. It schedules fine, on that one machine, forever, and never re-shops the pool. This is the case where the step looks normal but the pool value is quietly gone.
+
+**How to tell:** the step shows a real machine name with no pool badge and never surfaces a replaced-from-to indicator on reschedule, even when a faster member is free.
+
+## How to Fix It
+
+- **For a deactivated group:** reactivate it in the Work Center Groups manager, then re-run scheduling. The step explodes and shops the pool again.
+- **For an empty group:** reactivate at least one member. The pool resolves against whatever members are active.
+- **For a stripped binding:** open the step's work center selection popup, choose the Work Center Group target, and re-select the pool. This restores the binding. Re-run scheduling and the step shops all members afresh.
+
+In every case the fix takes effect on the next scheduling run, not retroactively.
+
+## How to Diagnose It, in Order
+
+1. **Check the group's active flag.** A deactivated group cannot be exploded.
+2. **Check the members.** At least one must be active for the pool to resolve.
+3. **Check the step for a pool badge versus a fixed machine.** A fixed machine with no badge means the binding was stripped.
+4. **Read the scheduling session log** for the group warning that names the unexpanded step.
+5. **Re-run scheduling** after any fix; the change applies on the next run.
+
+## How to Prevent It
+
+- **Keep at least one active member in every pool.** Deactivate individual machines for maintenance, never the whole group, so group-bound steps keep scheduling on what remains.
+- **Deactivate members, not the group,** when a machine goes down for retrofit. The step drops that member from its candidates and keeps the others.
+- **Preserve the binding through bulk edits and imports.** A copy path that carries the machine name must carry the pool binding too, or the step degrades to a single-machine pin.
+- **Watch the pool badge.** A step that still shows the badge after a run never resolved a machine and needs attention. When you bind a step to a group, note that it strips any manual alternates, covered in [binding a work center group removed my manual alternates](/blog/my-manual-alternates-disappeared-after-binding-a-group-edgebic).
+
+<Accordion title="Why did a routing step bound to a machine pool fail to schedule?">
+A group-bound step is exploded into its member machines at schedule time, and that explosion fails loudly when the group cannot be found. The three documented causes are a deactivated group, a group whose members are all inactive, and a binding that was stripped by a copy or save path so the step degraded to a single fixed machine. In the first two cases the engine leaves the step unexpanded and records a group warning in the session log rather than schedule it on the wrong machine.
+</Accordion>
+
+<Accordion title="What does it mean when a group step is left unexpanded?">
+It means the scheduling engine could not resolve the pool the step points at, so it deliberately did not place the step rather than guess a machine. This happens when the group is deactivated or has no active members. The engine writes a group warning to the scheduling session log naming the step, and the step fails work center resolution visibly. Reactivating the group or at least one member and re-running scheduling fixes it.
+</Accordion>
+
+<Accordion title="Why is my pool step now stuck on one machine and never re-shops the pool?">
+Because the group binding was stripped from the step, usually by a field-by-field copy that carried the machine name but dropped the pool binding. Once the binding is gone the step behaves like a plain single-machine pin: it always uses that one machine and never reconsiders the pool on reschedule. Re-open the step, choose the Work Center Group target again to restore the binding, and re-run scheduling so the pool is shopped afresh.
+</Accordion>

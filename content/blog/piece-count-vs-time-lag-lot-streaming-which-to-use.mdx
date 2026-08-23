@@ -1,0 +1,108 @@
+---
+title: "Piece Count vs Time Lag Lot Streaming: Which to Use"
+description: "Piece count vs time lag lot streaming: when to overlap operations by transfer batch pieces, when a start-to-start hour lag fits, and worked numbers."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - piece count vs time lag lot streaming
+  - transfer batch scheduling
+  - lot streaming overlap
+  - start to start lag scheduling
+  - continuous process scheduling
+  - operation overlap manufacturing
+targetPhrase: "piece count vs time lag lot streaming"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between piece count and time lag lot streaming?"
+    answer: "Piece count lot streaming lets a downstream step start once a fixed number of physical pieces has finished upstream, so it fits discrete parts you can count. Time lag lot streaming, driven by a start-to-start value in hours, lets the downstream step begin a set number of hours after the upstream step starts, which fits continuous processes where counting pieces is meaningless. Both overlap two operations to cut total makespan; the choice depends on whether your output is countable pieces or a continuous stream."
+  - question: "When should I use a transfer batch instead of a flow step?"
+    answer: "Use a transfer batch when the material is discrete pieces moving between stations, such as machined parts going from a lathe to a drill. Set the transfer batch to the number of pieces that must accumulate before the next station can start. Use a flow step, the start-to-start hour lag, for continuous processes like paint lines, chemical reactors, and extruders, where there is no meaningful piece to count and you want the downstream step to begin a fixed head start after the upstream one."
+  - question: "Does lot streaming reduce the total number of hours a job takes?"
+    answer: "No, lot streaming does not reduce labor hours; it overlaps operations so they run concurrently and the job finishes sooner in elapsed time. A two-step job where each step takes many hours still logs the same total work whether or not the steps overlap. What changes is the wall clock: the downstream step starts before the upstream one finishes, so the job's completion date moves earlier, often by a substantial fraction of the makespan."
+qaQuestions:
+  - question: "I turn 100 shafts on a lathe then drill them, and the drill sits idle for hours waiting. How do I overlap them?"
+    answer: "Set a transfer batch on the lathe step. If the lathe runs 0.5 hours per piece with a 2-hour setup and you set the transfer batch to 20, the drill can start once the first 20 pieces are done: 2 hours setup plus 20 times 0.5 equals 12 hours from the lathe's start, plus any handling delay. Without streaming the drill waits for all 100 pieces, roughly 52 hours in. That is over 15 hours of overlap on one job, and the drill runs alongside the lathe from there on."
+  - question: "My paint line feeds a curing oven. Pieces do not really exist as discrete units here. What do I configure?"
+    answer: "Use the start-to-start hour lag, not a transfer batch, because a continuous paint line has no countable piece. If you set the lag to 1 hour on a spray booth that runs 08:00 to 12:00, the curing oven may start at 09:00, one hour after the booth starts, giving three hours of overlap. Mark the booth as a continuous process so the engine ignores any transfer batch value and uses the lag. If a fixed cooling delay must follow, add a flat transfer delay on top."
+---
+
+**Piece count lot streaming lets a downstream step start once a set number of physical pieces has finished upstream, while time lag lot streaming lets it start a fixed number of hours after the upstream step begins.** Both overlap two consecutive operations so the job finishes sooner, and neither changes the total labor. The right one depends on a single question: does your output come in countable pieces, or in a continuous stream where a piece has no meaning? EDGEBIC by User Solutions supports both models and picks between them from how you configure the step and the work center.
+
+## Why overlap operations at all
+
+Normally a downstream step waits for the full upstream lot. Cut all 200 brackets, then drill all 200. That is safe and simple, and it leaves the drill idle for the entire cutting run. Lot streaming breaks the lot into pieces that flow forward as soon as a meaningful chunk is ready, so the two stations run at the same time. Flow-shop studies routinely report makespan reductions around 30 percent from this alone. The trade-off is more material handling and more work in process at the seam between stations, so it is opt-in per step.
+
+The two models differ only in what triggers the overlap.
+
+## Piece count: overlap by transfer batch
+
+The piece-count model triggers when you set a transfer batch on a discrete work center. The downstream step may start once the transfer batch worth of pieces has completed upstream. The trigger time is:
+
+```
+flow time = setup + min(transfer batch, order qty) x hours per piece
+```
+
+The engine caps the batch at the order quantity, because you cannot wait for a piece that will never exist. A small urgent order of 30 with a transfer batch left at 100 behaves as no streaming, which the anomaly checks flag so you can lower it.
+
+**Worked example.** A custom shaft, 100 pieces. The lathe runs 0.5 hours per piece with a 2-hour setup, and you set a transfer batch of 20 with a 0.5-hour handling delay:
+
+```
+effective batch = min(20, 100) = 20 pieces
+flow time = 2 + 20 x 0.5 = 12 hours
+drill may start = lathe start + 12 + 0.5 delay = start + 12.5 h
+```
+
+Without streaming, the drill waits for all 100 pieces, about 52 hours in. With the transfer batch, it starts 12.5 hours in and runs alongside the lathe. That is more than 15 hours of overlap on this one job. Set the batch to 1 and you get one-piece flow: the drill starts as soon as the first part clears setup plus one cycle.
+
+## Time lag: overlap by start-to-start hours
+
+The time-lag model, called a flow step, is a start-to-start value in hours. The downstream step may begin that many hours after the upstream step starts, independent of piece count, order quantity, or setup:
+
+```
+downstream earliest start = upstream start + flow step (hours)
+```
+
+This is the correct model for a continuous process where pieces are not meaningful. A paint line does not produce a countable twentieth piece; it produces a continuous stream. Mark the work center as a continuous process and the engine uses the flow step even if a transfer batch is set. That setting sits on the machine rather than on the routing, and [why the continuous-process flag lives on the machine](/blog/why-the-continuous-process-flag-lives-on-the-machine) explains how it selects the model and what the resulting mismatch anomaly is telling you.
+
+**Worked example.** A spray booth runs a 4-hour job starting at 08:00, and you set a flow step of 1 hour. The curing oven may start at 09:00, one hour after the booth starts, giving three hours of overlap against the 12:00 finish. A flow step larger than the upstream run acts as a pure start-to-start lag that ends after the upstream ends.
+
+## Which model fits your process
+
+| Question | Piece count (transfer batch) | Time lag (flow step) |
+|---|---|---|
+| Output form | Countable discrete pieces | Continuous stream |
+| Trigger | N pieces finished upstream | N hours after upstream start |
+| Depends on quantity | Yes, capped at order qty | No |
+| Typical resource | Lathe, mill, press, assembly | Paint line, reactor, extruder |
+| Work center flag | Discrete (default) | Continuous process |
+
+The decision is rarely ambiguous. If a supervisor could stand at the machine and count "twenty done, send them," use a transfer batch. If the output is a stream and "twenty pieces" means nothing, use the flow step and mark the resource continuous.
+
+## The handling delay and the one gotcha
+
+Both models take a flat transfer delay on top, in hours, for the physical move: the forklift trip, the cooling before parts can be handled, incoming inspection. A 25-piece transfer batch that must cool 2 hours before machining composes to the batch time plus 2 hours.
+
+The gotcha worth knowing: when lot streaming fires, its result replaces any queue time you set on the same step. The lot-streaming time is the successor gate, so a cooling buffer belongs on the transfer delay, not on queue time. The engine's anomaly report flags a step with both a flow step and a queue time so you can confirm which you meant. The [transfer batch explainer](/blog/what-is-a-transfer-batch) covers the makespan math, and the [lot streaming overview](/blog/edgebic-lot-streaming-explained) walks a full routing.
+
+## Getting the model right
+
+Set a transfer batch on discrete steps where counted pieces gate the next station. Set a flow step on continuous processes and mark the work center continuous. Keep the transfer delay for handling lag on top of either. Every routing step in the database ships with both values at zero, so nothing overlaps until you deliberately turn it on, one step at a time.
+
+Lot streaming is one of several timing mechanisms that sit between operations. Queue time and transit days compose around it, and the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows the full composition order. When the goal is instead to run the same operation on several machines at once rather than overlap two different operations, that is [hours-based vs piece-based capacity modeling](/blog/hours-based-vs-piece-based-capacity-modeling) and [parallel scheduling](/blog/dependent-vs-independent-parallel-when-to-use-each) territory. See the overlap in action in [EDGEBIC](/edgebic).
+
+<Accordion title="What is the difference between piece count and time lag lot streaming?">
+Piece count lot streaming lets a downstream step start once a fixed number of physical pieces has finished upstream, so it fits discrete parts you can count. Time lag lot streaming, driven by a start-to-start value in hours, lets the downstream step begin a set number of hours after the upstream step starts, which fits continuous processes where counting pieces is meaningless. Both overlap two operations to cut total makespan; the choice depends on whether your output is countable pieces or a continuous stream.
+</Accordion>
+
+<Accordion title="When should I use a transfer batch instead of a flow step?">
+Use a transfer batch when the material is discrete pieces moving between stations, such as machined parts going from a lathe to a drill. Set the transfer batch to the number of pieces that must accumulate before the next station can start. Use a flow step, the start-to-start hour lag, for continuous processes like paint lines, chemical reactors, and extruders, where there is no meaningful piece to count and you want the downstream step to begin a fixed head start after the upstream one.
+</Accordion>
+
+<Accordion title="Does lot streaming reduce the total number of hours a job takes?">
+No, lot streaming does not reduce labor hours; it overlaps operations so they run concurrently and the job finishes sooner in elapsed time. A two-step job where each step takes many hours still logs the same total work whether or not the steps overlap. What changes is the wall clock: the downstream step starts before the upstream one finishes, so the job's completion date moves earlier, often by a substantial fraction of the makespan.
+</Accordion>

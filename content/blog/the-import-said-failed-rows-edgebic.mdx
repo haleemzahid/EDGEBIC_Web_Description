@@ -1,0 +1,109 @@
+---
+title: "The Import Reported Failed Rows: Reading and Fixing Them"
+description: "Failed rows in an import come from a short list of causes: a required cell blank, an unmapped mandatory field, or an abort setting. How to read the log and fix each."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - import failed rows
+  - import row failed manufacturing
+  - required field blank import
+  - import aborted error
+  - import log reading
+  - data import troubleshooting
+targetPhrase: "import failed rows"
+wordCount: 1360
+readingTime: 7
+faqQuestions:
+  - question: "Why does an import report failed rows while other rows succeed?"
+    answer: "Because each row is validated on its own, and a failure is recorded per row rather than stopping the whole run by default. The usual cause is a required cell left blank in that row, for example a product name or an order quantity missing where the field is mandatory. The import log lists each failed row with the reason, so the fix is almost always visible: fill the missing value and re-import, since a re-import reconciles rather than duplicating."
+  - question: "What is the difference between an aborted import and one with failed rows?"
+    answer: "An import with failed rows kept going: it skipped the bad rows, imported the good ones, and reported the failures. An aborted import stopped early, either because the mask was missing a required field mapping before any row was read, or because the abort-on-error setting was on and the first bad row halted the run. Failed rows mean partial success; aborted means the run stopped, though rows processed before the stop still committed."
+  - question: "Are the rows that imported before an abort rolled back?"
+    answer: "No. Rows processed before an abort are already committed, because each row saves as it is processed. An aborted run therefore leaves the plant with whatever imported up to the halting row and nothing after it. This is why fixing the halting row and re-importing the whole file is safe: the reconcile logic reuses or updates the already-imported rows rather than creating duplicates, so you are not doubling up the early ones."
+qaQuestions:
+  - question: "The run aborted before importing a single row and the message mentions a required field, not a specific row. What happened?"
+    answer: "That is the pre-flight mandatory-field check, and it runs before the file is opened. It confirms every field the entity requires is mapped to some source column in the mask. If a mandatory field like the product name or order quantity is not mapped at all, the run aborts immediately with no rows read, because every row would fail the same way. Fix it in the mask by mapping the missing mandatory field to its column, then run again. This is a mask problem, not a data problem, which is why no row number appears."
+  - question: "Half our imported products came in with a cost of zero even though the file had costs. The rows did not fail. Why?"
+    answer: "Two possibilities, and both are silent rather than a failure. If these were new products created on this import, a blank cost cell defaults to zero on create, so check whether those specific rows actually had a value in the mapped cost column. If they were updates, blank cells are preserved rather than overwritten, so a blank in the file keeps whatever was already there. Either way, confirm the cost column is mapped to the right source header and that the cells you expected are genuinely populated; a column mapped one position off is a common cause of the right-looking file importing wrong values."
+---
+
+**A failed row in an import is almost never a mystery: the run validates each row, records the reason for every failure, and keeps going, so the import log usually hands you the fix line by line.** The harder cases are the two that stop the run entirely, and telling a per-row failure from a full abort is the first thing to establish.
+
+[EDGEBIC by User Solutions](/edgebic) imports through configurable Excel and CSV masks, validating both the mask and each row, and writes a per-run log with every row's outcome. This post sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), companion to [building an import mask](/blog/how-to-build-an-import-mask-in-edgebic) and the symptom-driven counterpart to the broader [import mask mistakes](/blog/import-mask-mistakes-edgebic).
+
+## First, Failed Rows or an Aborted Run?
+
+These are different situations with different fixes:
+
+- **Failed rows** mean the run kept going. It skipped the bad rows, imported the good ones, and reported the failures in the log and the result dialog. Partial success.
+- **An aborted run** stopped early. Rows processed before the stop still committed; nothing after did.
+
+The result dialog and the log make the distinction plain. Start there, because a failed-row fix is per-row data, while an abort fix is either the mask or a setting.
+
+## Cause 1: A Required Cell Is Blank (Per-Row Failure)
+
+The most common failure is a mandatory value missing in a specific row: a product with no name, an order with no quantity, a routing row missing its end product or its step. The row cannot be created without it, so it is recorded as failed with the reason, and the run continues.
+
+**How to tell:** the log shows the row number, a failed status, and a reason naming the missing field, for example that the product name is required.
+
+**Fix:** fill the missing cell in the source file and re-import. A re-import reconciles rather than duplicates: existing rows are reused or updated, so re-running the whole corrected file does not double up the rows that already succeeded. That same reconcile is why a corrected file can come back reporting everything reused and nothing changed, which [a mask re-run that made no changes](/blog/a-mask-rerun-made-no-changes-edgebic) explains row by row. [How to run an import](/blog/how-to-build-an-import-mask-in-edgebic) covers reading the result dialog and opening the log.
+
+## Cause 2: A Mandatory Field Is Not Mapped (Full Abort, No Rows)
+
+If the mask does not map a mandatory field to any source column, the run aborts before a single row is read, because every row would fail the same way. The message names the field, not a row.
+
+**How to tell:** the run aborted with zero rows imported, and the reason is a required field rather than a specific row number.
+
+**Fix:** open the mask and map the missing mandatory field to its source column. Mandatory fields are marked in the mask editor precisely so this gap is visible before you run. This is a mask repair, not a data repair.
+
+## Cause 3: Abort-on-Error Is On, and a Row Failed (Partial Abort)
+
+If the abort-on-first-error setting is on, the first failed row halts the run instead of being skipped. Everything before it committed; everything after it never ran.
+
+**How to tell:** the log ends with an abort marker naming the halting row and its reason, and rows after that row are absent.
+
+**Fix:** decide which behavior you want. To import everything good and review the failures afterward, turn abort-on-error off so bad rows are skipped and reported. To keep the strict halt (useful when one bad row implies the file is untrustworthy), leave it on, fix the halting row, and re-run the whole file. Re-running is safe because the reconcile reuses the already-imported early rows.
+
+## Cause 4: The Row Imported but the Values Are Wrong (Silent, Not Failed)
+
+Not every data problem is a failure. Two behaviors import a row successfully with values you did not intend:
+
+- **Blank cells on a create** default to their zero or empty value. A new product with a blank cost column imports with a zero cost, no failure.
+- **Blank cells on an update** are preserved, keeping the existing database value rather than overwriting it, so a blank in the file leaves the old value in place.
+
+**How to tell:** the rows did not fail, but a field came in as zero, empty, or unchanged where you expected the file's value.
+
+**Fix:** confirm the column is mapped to the correct source header (a mapping one position off imports the right-looking file with wrong values), and that the cells you expected are genuinely populated. For unit conversions, set the conversion factor on the field so minutes become hours before the value is stored; the factor applies to every numeric cell in that column, including zeros.
+
+## Reading the Log Efficiently
+
+The per-run log names the mask, the entity type, the file, and one line per row with its status: created, updated, reused, skipped, or failed, plus the reason. A summary trailer gives the counts. To triage a failed import fast:
+
+1. **Read the summary counts** to see how many failed against how many succeeded.
+2. **Filter the log to the failed lines** and read the reasons; they are the fix list.
+3. **Fix all the failing cells at once** in the source file and re-import the whole thing.
+4. **Confirm the next run's summary** shows zero failures.
+
+## Prevention
+
+- **Map every mandatory field before the first run.** The mask editor marks them; an unmapped one is a guaranteed abort.
+- **Validate the file's required columns before importing.** A quick scan for blank names, quantities, and end-product references catches the per-row failures before they cost a run.
+- **Decide abort-on-error deliberately.** Off for a routine load where you want the good rows in and the failures listed; on for a file you do not trust, where one bad row should stop everything.
+- **Confirm column mappings match the file's headers,** especially after a file's layout changes. A shifted column is the quietest import bug, because nothing fails; it just imports the wrong values into the right fields.
+- **Audit master data after importing work centers or shifts.** An import that succeeds row by row can still leave a machine unschedulable, most often with a missing shift link; the [zero-capacity checklist](/blog/capacity-shows-zero-for-a-work-center-edgebic) catches it before the next scheduling run does.
+
+<Accordion title="Why does an import report failed rows while other rows succeed?">
+Because each row is validated on its own, and a failure is recorded per row rather than stopping the whole run by default. The usual cause is a required cell left blank in that row, for example a product name or an order quantity missing where the field is mandatory. The import log lists each failed row with the reason, so the fix is almost always visible: fill the missing value and re-import, since a re-import reconciles rather than duplicating.
+</Accordion>
+
+<Accordion title="What is the difference between an aborted import and one with failed rows?">
+An import with failed rows kept going: it skipped the bad rows, imported the good ones, and reported the failures. An aborted import stopped early, either because the mask was missing a required field mapping before any row was read, or because the abort-on-error setting was on and the first bad row halted the run. Failed rows mean partial success; aborted means the run stopped, though rows processed before the stop still committed.
+</Accordion>
+
+<Accordion title="Are the rows that imported before an abort rolled back?">
+No. Rows processed before an abort are already committed, because each row saves as it is processed. An aborted run therefore leaves the plant with whatever imported up to the halting row and nothing after it. This is why fixing the halting row and re-importing the whole file is safe: the reconcile logic reuses or updates the already-imported rows rather than creating duplicates, so you are not doubling up the early ones.
+</Accordion>

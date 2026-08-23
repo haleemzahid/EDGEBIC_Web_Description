@@ -1,0 +1,66 @@
+---
+title: "What Is FlowStep Overlap?"
+description: "FlowStep overlap is a start-to-start lag in hours that lets a downstream step begin before the upstream step finishes. Learn how the lot-streaming lever works."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - flowstep overlap
+  - flowstep definition
+  - start to start lag scheduling
+  - lot streaming overlap
+  - overlapping operations manufacturing
+  - flow time scheduling
+targetPhrase: "FlowStep overlap"
+wordCount: 1120
+readingTime: 6
+faqQuestions:
+  - question: "What is FlowStep overlap in scheduling?"
+    answer: "FlowStep is a start-to-start lag measured in hours that lets a downstream step begin before its upstream step finishes. If the upstream step starts at 08:00 and FlowStep is set to one hour, the downstream step may start at 09:00, overlapping the upstream run. It is a simple lot-streaming lever: the downstream operation begins a fixed number of hours after the upstream operation begins, not after it ends."
+  - question: "How is FlowStep different from a transfer batch?"
+    answer: "FlowStep is a time lag: downstream starts a fixed number of hours after upstream starts, regardless of run time or quantity. A transfer batch is a piece count: downstream starts once a set number of finished pieces are ready to move. FlowStep is the simpler model and fits continuous processes; transfer batches suit discrete parts where the overlap should follow actual piece progress rather than the clock."
+  - question: "Does FlowStep depend on run time or order quantity?"
+    answer: "No. FlowStep is a raw number of hours, independent of the upstream step's run time, the order quantity, and the setup time. A FlowStep of two hours always means the downstream step may start two hours after the upstream start, whether the upstream run is four hours or forty. That makes it predictable but also blunt: it does not scale with the size of the batch."
+  - question: "What happens if I set both FlowStep and queue time on the same step?"
+    answer: "FlowStep wins and the queue time is discarded. When FlowStep fires, its result replaces the queue-adjusted start unconditionally, so a queue buffer on the same step has no effect. This is flagged as an anomaly because it is rarely what a planner intends. If you need a handling lag on top of the flow gate, use the transfer delay field instead of queue time on a FlowStep step."
+qaQuestions:
+  - question: "We want grinding to start partway through a long welding run instead of waiting for it to finish. How does FlowStep do that?"
+    answer: "Set FlowStep on the welding step to the number of hours after welding starts that grinding may begin. Say welding starts Monday 08:00 and runs twenty hours; set FlowStep to six and grinding's earliest start becomes Monday 14:00, six hours into the weld, not after it. The two operations overlap for the rest of the weld run. The key thing to understand is that FlowStep is measured from the upstream start, not the upstream end, and it ignores the twenty-hour run length entirely: change the weld to forty hours and grinding still starts at 14:00. That predictability is the feature, as long as you set the lag to match when material is genuinely ready to hand off."
+  - question: "Our downstream step started earlier than the cooling queue we set. Why did the queue get ignored?"
+    answer: "Because you set both a FlowStep and a queue time on the same step, and FlowStep replaces the queue result whenever it fires. The engine computes the queue-adjusted start, then FlowStep overwrites it with its own start-to-start gate, so the cooling buffer is silently lost. This is exactly the situation the anomaly check flags. If you need the flow overlap and a cooling lag together, move the cooling time into the transfer delay field, which is added on top of the flow gate rather than replaced by it. Leaving both FlowStep and queue time on one step almost always produces a start earlier than you planned."
+---
+
+**FlowStep overlap is a start-to-start lag measured in hours that lets a downstream step begin before its upstream step finishes: if the upstream step starts at 08:00 and FlowStep is one hour, the downstream step may start at 09:00.** It is one of the simplest lot-streaming levers. Instead of forcing a downstream operation to wait for the full upstream batch, you overlap them by a fixed number of hours measured from when the upstream operation begins.
+
+[EDGEBIC by User Solutions](/edgebic) treats FlowStep as a raw hour count, independent of run time and quantity. This article defines the term and its one important interaction. The full lot-streaming model, including piece-count transfer batches, is in [how EDGEBIC handles lot streaming](/blog/edgebic-lot-streaming-explained).
+
+## How It Works
+
+FlowStep sets the earliest start of the next step to the current step's start plus the FlowStep hours. The formula is deliberately blunt: the downstream earliest start equals the upstream start plus FlowStep, with no dependence on the upstream run time, the order quantity, or the setup time.
+
+That makes it predictable. A FlowStep of two hours always means a two-hour head start into the upstream run, whether the upstream operation lasts four hours or forty. It also means a FlowStep larger than the upstream run acts as a pure start-to-start lag that ends after the upstream finishes, which is a legitimate way to model a fixed delay between operations.
+
+One interaction matters. If a step carries both a FlowStep and a [queue time](/blog/what-is-queue-time-in-manufacturing-scheduling), FlowStep wins and the queue is discarded. The flow result replaces the queue-adjusted start unconditionally, so the buffer you set has no effect. That is why the engine flags any step with both values set. When you need a handling lag on top of the flow gate, use the separate transfer delay field, which adds to the flow start rather than being overwritten by it.
+
+## A Concrete Example
+
+Picture a conveyor line where the painter starts on parts the cutter has already finished, rather than waiting for the whole batch to be cut. That overlap is what FlowStep encodes as a time lag.
+
+Take a welding step that starts Monday 08:00 and runs twenty hours, feeding a grinding step. Set FlowStep to six hours. Grinding's earliest start becomes Monday 08:00 plus six, so Monday 14:00, six hours into the weld run. The two operations now overlap for the rest of the weld. Because FlowStep ignores the run length, changing the weld to forty hours does not move grinding: it still starts at 14:00. The lag is anchored to the upstream start, not its end.
+
+Now suppose that same step also carried a two-hour cooling queue. The queue would push grinding to Monday 12:00, but FlowStep then overwrites it with 14:00, and the cooling buffer vanishes. Set one lever or the other on a given step, and use transfer delay if you genuinely need a lag on top.
+
+## FlowStep, Transfer Batches, and Continuous Processes
+
+FlowStep is one of two ways to overlap sequential steps, and the right choice depends on the resource. FlowStep is a time lag, blind to piece progress: it fits a continuous process where output flows steadily and counting discrete pieces makes no sense, like a chemical reactor or an extrusion line. On a work center marked as a continuous process, the engine always uses the FlowStep model even when a transfer batch is set, because you cannot move a countable batch of a liquid.
+
+A [transfer batch](/blog/what-is-a-transfer-batch) is the other model: it holds the downstream step until a set number of finished pieces are ready to hand off, so the overlap tracks actual production rather than the clock. That fits discrete parts where the first batch of, say, fifty machined pieces should trigger the next step regardless of how the run is pacing. The two models are mutually informative: use FlowStep for continuous flow and fixed time lags, use transfer batches for discrete parts where piece counts drive the handoff. Setting both on one step is not how the overlap is meant to be configured, and the engine picks one model per step based on these rules.
+
+## How EDGEBIC Uses It
+
+FlowStep is a field on a routing step. When it is set and no transfer batch applies, the engine computes the downstream start as the upstream start plus the lag, and the Gantt shows the two operations overlapping. The session diagnostics record when a FlowStep gate replaced a queue value, so a start that lands earlier than expected has a clear cause.
+
+For discrete parts where the overlap should track actual pieces produced rather than the clock, a [transfer batch](/blog/what-is-a-transfer-batch) is the better model. The [manufacturing glossary](/blog/manufacturing-glossary) covers the related terms, and [the lot streaming guide](/blog/edgebic-lot-streaming-explained) compares FlowStep and transfer batches with worked numbers so you can pick the right lever for each step.

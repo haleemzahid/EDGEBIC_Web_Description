@@ -1,0 +1,117 @@
+---
+title: "Load Balancing vs Dedicated Instance Scheduling"
+description: "Load balancing vs dedicated instance scheduling: how a finite capacity engine splits work across machines, when one job per instance wins, and worked numbers."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - load balancing vs dedicated instance
+  - instance allocation scheduling
+  - one per day scheduling
+  - machine instance selection
+  - finite capacity load balancing
+  - parallel machine scheduling
+targetPhrase: "load balancing vs dedicated instance scheduling"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between load balancing and dedicated instance scheduling?"
+    answer: "Load balancing splits one job's hours evenly across every machine in a work center so they all finish together and one order completes as fast as possible. Dedicated instance scheduling, driven by the one-per-day flag, gives each machine a single job for the whole day, so several different orders run in parallel. Load balancing optimizes a single job's speed; dedicated instances optimize how many jobs a batch resource clears per shift."
+  - question: "When should a work center use one job per instance per day?"
+    answer: "Use one job per instance per day when changeover owns the day: furnaces, paint booths, heat-treat ovens, and cure tanks. On these resources you cannot swap jobs mid-shift without losing the batch, so each chamber or booth takes one order and holds it. A three-chamber furnace then runs three different jobs at once, which is what a batch shop actually needs, rather than pooling all three into one fast-finishing job."
+  - question: "Does load balancing make a job finish faster?"
+    answer: "Yes, load balancing compresses a single job's elapsed time in direct proportion to the machine count. A 20-hour operation on a four-instance work center splits into 5 hours per machine, and because all four run at once the job finishes in about 5 elapsed hours instead of 20. The total labor hours are unchanged; only the wall-clock finish moves earlier because the work runs concurrently."
+qaQuestions:
+  - question: "I have three identical CNC machines in one cell. Should I load balance across them or give each its own job?"
+    answer: "If your goal is to clear one urgent order as fast as possible, load balance: a 24-hour operation splits into 8 hours on each of the three machines and finishes in roughly 8 elapsed hours. If instead you have three separate orders all due the same day and each needs a long uninterrupted setup, dedicated instances serve you better, because each machine takes one order start to finish and all three complete in parallel. The deciding question is whether you are racing one job or clearing three."
+  - question: "My furnace shows more capacity than one job can ever use. Am I setting it up wrong?"
+    answer: "Probably not, but check the flag. A furnace with three chambers set to one job per instance per day reports 24 hours of capacity on an 8-hour shift (8 hours times 3 chambers), and that is correct: it can hold three separate jobs at once. If you instead pooled that capacity with load balancing, the engine would try to split one job across all three chambers, which is physically wrong for a batch oven. The 24 hours is real parallel capacity, not an error."
+---
+
+**Load balancing splits one job's hours evenly across every machine in a work center so the whole order finishes as fast as possible, while dedicated instance scheduling gives each machine a single job for the day so several orders run side by side.** The two strategies answer different questions. Load balancing asks "how do I finish this one job soonest?" Dedicated instances ask "how many separate jobs can this batch resource clear per shift?" EDGEBIC by User Solutions decides between them from how you configure the work center, and understanding the split explains why a job landed on machine 2 rather than machine 1, and why some resources run three orders at once.
+
+## The two modes, side by side
+
+A work center in a [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) engine can hold more than one physical machine. The engine calls each machine an instance. When a work center has multiple instances, one of three allocation strategies governs which machine gets the work.
+
+| Strategy | Behavior | Typical resource |
+|---|---|---|
+| Load balancing | Split the hours evenly so all instances finish together | General machining, assembly |
+| One per day (dedicated) | Each instance takes one job per day and keeps it | Furnaces, paint booths, cure tanks |
+| Single instance | Everything goes on instance 1 | Single-machine work centers |
+
+Load balancing is the default whenever a work center has more than one instance and the one-per-day flag is off. The dedicated mode switches on when you set that flag with two or more instances.
+
+## How load balancing compresses a job
+
+The mechanism is a plain even split. When a step needs a block of hours and the work center has N instances, the engine divides the hours by N and assigns each machine an equal share. Because the machines run at the same time, the job's elapsed time drops to roughly one Nth of the serial time.
+
+Consider a 20-hour milling operation on a four-instance cell:
+
+```
+20 hours / 4 instances = 5 hours per machine
+
+Instance 1: 5 h  08:00 to 13:00
+Instance 2: 5 h  08:00 to 13:00
+Instance 3: 5 h  08:00 to 13:00
+Instance 4: 5 h  08:00 to 13:00
+```
+
+The job completes at 13:00, five elapsed hours after it started, instead of the 20 hours a single machine would need. The labor content is identical. Only the finish moves, because the four machines share the load concurrently. This is why a four-instance work center can turn a full-shift job into a morning's work.
+
+Load balancing shines when you are racing one order to a due date. It is the wrong tool when the machines are not interchangeable for that split, which is where dedicated instances come in.
+
+## Why dedicated instances exist
+
+Some resources cannot swap jobs partway through a shift. A heat-treat furnace runs a fixed cycle. A paint booth cannot change colors mid-run without a full flush. On these resources, splitting one job across every chamber wastes the whole point of the equipment: you want each chamber running a different order, not a fraction of the same order.
+
+The one-per-day flag models exactly this. With the flag set and multiple instances, the engine assigns each new job to its own free instance rather than pooling capacity. A three-chamber furnace on an 8-hour day shift then reports 24 hours of capacity (8 hours times 3 chambers) and can hold three separate jobs at once.
+
+Here is a furnace shop clearing three orders on a Monday:
+
+```
+Monday 08:00 to 16:00, Heat-Treat-1, one job per instance per day
+
+Job A (6 h): Instance 1, 08:00 to 14:00
+Job B (7 h): Instance 2, 08:00 to 15:00
+Job C (5 h): Instance 3, 08:00 to 13:00
+```
+
+All three jobs run in parallel on the same shift, one per chamber. Used capacity is 18 hours of the 24 available, so a fourth job could still start on Monday if a chamber frees up. The engine also keeps a job on the same instance across shifts once it has been assigned, which preserves setup continuity for a resource that hates being disturbed.
+
+## The trade-off in one line
+
+Load balancing minimizes the elapsed time of the job in front of it. Dedicated instances maximize the number of separate jobs a batch resource clears per day. Choosing wrong is the common mistake: load balance a paint booth and the engine tries to spread one job across booths that cannot share it; set one-per-day on a general machining cell and you forfeit the speed you would gain from splitting an urgent order.
+
+A third path, single instance, applies when the work center has one machine or you switch load balancing off. Everything lands on instance 1 and fills in order. It is the honest default for a true single-machine resource.
+
+## A worked comparison
+
+A cell has three identical mills. Two scenarios, same hardware:
+
+**Scenario 1, one urgent order of 24 machining hours.** Load balancing splits 24 into 8 hours per mill. All three run 08:00 to 16:00 and the order finishes in one shift. Serial time would have been three shifts.
+
+**Scenario 2, three separate orders due the same day, each needing 7 hours with a long dedicated setup.** Dedicated instances give each order its own mill. All three run 08:00 to 15:00 and every order finishes Monday. Load balancing here would have interleaved the three jobs across the machines and multiplied the setups.
+
+Same three machines, opposite strategy, both correct for their case. For the full field-by-field walk through instance selection, including the late-start penalty and fractional instances, see [how EDGEBIC picks a machine](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day).
+
+## Where this fits in the engine
+
+Instance selection is one decision inside the larger multi-shift allocator, which searches the calendar shift by shift for real hours before it ever asks which machine gets them. The [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) traces the whole pipeline, and the related choice between splitting a single operation across machines simultaneously is covered in [dependent vs independent parallel scheduling](/blog/dependent-vs-independent-parallel-when-to-use-each). If your interchangeable machines are different rather than identical, a work center group is usually the better model than instances, a distinction covered in [when to use a machine pool vs an alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center).
+
+The practical takeaway: set the one-per-day flag on any resource where changeover owns the day, leave it off everywhere else, and let [EDGEBIC](/edgebic) split urgent jobs across identical machines automatically. The strategy is a configuration decision you make once per work center, not something you juggle per order.
+
+<Accordion title="What is the difference between load balancing and dedicated instance scheduling?">
+Load balancing splits one job's hours evenly across every machine in a work center so they all finish together and one order completes as fast as possible. Dedicated instance scheduling, driven by the one-per-day flag, gives each machine a single job for the whole day, so several different orders run in parallel. Load balancing optimizes a single job's speed; dedicated instances optimize how many jobs a batch resource clears per shift.
+</Accordion>
+
+<Accordion title="When should a work center use one job per instance per day?">
+Use one job per instance per day when changeover owns the day: furnaces, paint booths, heat-treat ovens, and cure tanks. On these resources you cannot swap jobs mid-shift without losing the batch, so each chamber or booth takes one order and holds it. A three-chamber furnace then runs three different jobs at once, which is what a batch shop actually needs, rather than pooling all three into one fast-finishing job.
+</Accordion>
+
+<Accordion title="Does load balancing make a job finish faster?">
+Yes, load balancing compresses a single job's elapsed time in direct proportion to the machine count. A 20-hour operation on a four-instance work center splits into 5 hours per machine, and because all four run at once the job finishes in about 5 elapsed hours instead of 20. The total labor hours are unchanged; only the wall-clock finish moves earlier because the work runs concurrently.
+</Accordion>

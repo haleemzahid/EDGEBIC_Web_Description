@@ -1,0 +1,80 @@
+---
+title: "A Pieces-Based Work Center Scheduled in Hours: Why, and the Fix"
+description: "A pieces-based work center only schedules by output when the routing step actually carries a pieces requirement. Miss that and the step falls back to run hours."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-06T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - pieces work center scheduled in hours
+  - pieces based capacity not working
+  - capacity type pieces
+  - pieces per hour scheduling
+  - pieces required on routing step
+  - pieces capacity troubleshooting
+targetPhrase: "pieces work center scheduled in hours"
+wordCount: 1240
+readingTime: 6
+faqQuestions:
+  - question: "Why did my pieces-based work center schedule the job in hours instead of pieces?"
+    answer: "Because the work center's capacity type is only half of what pieces scheduling needs, and the other half lives on the routing step. A work center set to Pieces measures its own capacity in output, but the scheduler still needs a pieces requirement on the step to derive a duration from the output rate. If the step carries only run hours and no pieces required, the scheduler uses the hours. Set the pieces required on the step and confirm the work center has a pieces-per-hour rate, and the step schedules by output."
+  - question: "What does a pieces-based work center need to schedule by output?"
+    answer: "Two things that live in two places: the work center needs a capacity type of Pieces or Both and a non-zero pieces-per-hour rate, and the routing step needs a pieces requirement so the scheduler can turn output into a duration. The duration comes from pieces required divided by the effective pieces per hour. If either half is missing, the pieces rate has nothing to act on and the step schedules on its run hours instead. Both halves together produce a pieces-driven duration."
+  - question: "How does EDGEBIC turn a pieces requirement into a schedule duration?"
+    answer: "It divides the pieces required on the step by the work center's effective pieces per hour, which is the base pieces-per-hour rate times the efficiency factor. Five hundred pieces at an effective one hundred pieces per hour is five hours of run. The scheduler then allocates that duration across shifts and instances the same way it allocates any run time. This only happens when the step carries a pieces requirement and the work center has a pieces rate; without both, the run hours drive the duration instead."
+qaQuestions:
+  - question: "We set our injection molding cell to Pieces capacity and a rate of 120 pieces per hour, but jobs still schedule off the routing's run hours. What did we miss?"
+    answer: "The routing step almost certainly has no pieces required value, so the scheduler has nothing to divide by the rate and falls back to the run hours on the step. Open the routing step for that cell and set the pieces required (the count that operation must produce), then re-run scheduling. The duration should become pieces required divided by effective pieces per hour, so 600 pieces at 120 per hour becomes 5 hours. Confirm the rate is non-zero too, because a rate of zero also forces the hours path."
+  - question: "Half our pieces work centers schedule by output and half by hours. The capacity type is Pieces on all of them. Why the split?"
+    answer: "The split is on the routing steps, not the work centers. The steps that schedule by output carry a pieces requirement the scheduler can divide by the rate; the steps that schedule by hours carry only run hours, so there is no pieces value to act on and the hours win. Capacity type on the work center is necessary but not sufficient. Audit the routing steps for the hours-scheduling jobs and add the pieces required to each, and they will match the output-driven ones."
+---
+
+**A pieces-based work center only schedules by output when the routing step it runs actually carries a pieces requirement, so a work center set to Pieces capacity that still schedules in run hours is almost always a step missing its pieces-required value.** [EDGEBIC by User Solutions](/edgebic) needs the capacity type on the work center and the pieces requirement on the step together before it will derive a duration from the output rate.
+
+This post sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and is the practical companion to [pieces-based versus hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic) and the general idea of [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## What You Are Seeing
+
+You configured a work center to measure capacity in pieces (the molding cell, the stamping press, the fill line), set a pieces-per-hour rate, and expected the schedule to size jobs by how many parts each operation produces. Instead the job bars come out sized off the routing's run hours, exactly as they did before you changed the capacity type. The pieces rate looks ignored, and the two settings appear to disagree.
+
+## Why It Happens
+
+Pieces scheduling is a two-part contract, and both parts have to be present.
+
+- **The work center holds the capacity type and the rate.** Setting a work center to Pieces (or Both) tells the scheduler this resource measures its own output, and the pieces-per-hour rate is how fast it produces. That is the supply side.
+- **The routing step holds the demand.** The scheduler turns output into time by dividing the step's pieces required by the work center's effective pieces per hour. That pieces-required value lives on the routing step, not on the work center.
+- **No pieces required means no pieces duration.** If the step carries only run hours and no pieces requirement, there is nothing for the rate to divide, so the scheduler uses the run hours on the step. The capacity type is set, but the step never gave it a number to work with.
+
+The effective rate matters too. Effective pieces per hour is the base pieces-per-hour rate times the efficiency factor, so a rate of zero (or a step with no requirement) both send the calculation down the hours path. If you change that factor and the line barely moves, [an efficiency factor change that barely moved a pieces line](/blog/an-efficiency-factor-change-barely-moved-a-pieces-line-edgebic) covers how to find the number the step is really consulting.
+
+## How to Fix It
+
+Complete the contract: put a pieces requirement on the step and confirm the rate on the work center.
+
+1. **Confirm the work center's capacity type.** It should be Pieces (output only) or Both (whichever of pieces and hours is limiting). [How to schedule a work center in pieces instead of hours](/blog/how-to-schedule-a-work-center-in-pieces-instead-of-hours-in-edgebic) walks the setting.
+2. **Confirm a non-zero pieces-per-hour rate.** A rate of zero cannot produce a duration, so the scheduler falls to hours.
+3. **Set the pieces required on the routing step.** This is the count the operation must produce. Without it, the scheduler has no output demand to size against.
+4. **Re-run scheduling and check one step.** The duration should now be pieces required divided by effective pieces per hour. Six hundred pieces at an effective one hundred per hour is six hours. If it still shows the old run hours, the step is still missing its pieces value.
+
+## How to Prevent It
+
+- **Treat the pair as one setup.** When you make a work center pieces-based, plan to set the pieces required on every routing step that runs through it. The capacity type alone changes nothing about how a hours-only step is sized.
+- **Watch the Both capacity type.** A work center set to Both schedules on whichever of pieces and hours is the limiting constraint, so a step with a pieces requirement and run hours can still land on the hours if the hours are longer. That is correct behavior, not a bug.
+- **Keep the rate honest.** The effective pieces per hour is the base rate times the efficiency factor. A left-at-zero rate is the most common reason a pieces work center quietly schedules in hours.
+- **Spot-check a converted step.** After switching a work center to pieces, open one job and confirm its duration equals pieces required divided by effective pieces per hour. That single check tells you both halves of the contract are in place.
+
+If instead your hours and pieces numbers disagree on the floor, that conversion is covered in the concept side of [pieces-based versus hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic), and for the broader mechanics of resource sizing see [what is production scheduling](/blog/what-is-production-scheduling). If the resource is a reactor, oven, or coating line that should flow rather than move countable parts, [a continuous-process work center scheduling in batches](/blog/a-continuous-process-work-center-is-scheduling-in-batches-edgebic) covers the flag that picks the overlap model.
+
+<Accordion title="Why did my pieces-based work center schedule the job in hours instead of pieces?">
+Because the work center's capacity type is only half of what pieces scheduling needs, and the other half lives on the routing step. A work center set to Pieces measures its own capacity in output, but the scheduler still needs a pieces requirement on the step to derive a duration from the output rate. If the step carries only run hours and no pieces required, the scheduler uses the hours. Set the pieces required on the step and confirm the work center has a pieces-per-hour rate, and the step schedules by output.
+</Accordion>
+
+<Accordion title="What does a pieces-based work center need to schedule by output?">
+Two things that live in two places: the work center needs a capacity type of Pieces or Both and a non-zero pieces-per-hour rate, and the routing step needs a pieces requirement so the scheduler can turn output into a duration. The duration comes from pieces required divided by the effective pieces per hour. If either half is missing, the pieces rate has nothing to act on and the step schedules on its run hours instead. Both halves together produce a pieces-driven duration.
+</Accordion>
+
+<Accordion title="How does EDGEBIC turn a pieces requirement into a schedule duration?">
+It divides the pieces required on the step by the work center's effective pieces per hour, which is the base pieces-per-hour rate times the efficiency factor. Five hundred pieces at an effective one hundred pieces per hour is five hours of run. The scheduler then allocates that duration across shifts and instances the same way it allocates any run time. This only happens when the step carries a pieces requirement and the work center has a pieces rate; without both, the run hours drive the duration instead.
+</Accordion>

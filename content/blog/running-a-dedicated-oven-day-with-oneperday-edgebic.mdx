@@ -1,0 +1,110 @@
+---
+title: "Running a Dedicated Oven Day: One Job Per Chamber in EDGEBIC"
+description: "A OnePerDay walkthrough: schedule a batch furnace so each chamber runs a single job per day, three chambers hold three jobs, and a fourth waits."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - OnePerDay scheduling
+  - dedicated instance scheduling
+  - batch furnace scheduling
+  - heat treat scheduling
+  - one job per machine per day
+  - instance allocation
+targetPhrase: "OnePerDay scheduling"
+wordCount: 2000
+readingTime: 10
+faqQuestions:
+  - question: "How do you schedule a machine that can only run one job per day per unit?"
+    answer: "You turn on the OnePerDay flag for that work center and set its instance count to the number of physical units. The engine then dedicates each unit to a single job per calendar day and routes a job back to the same unit across shifts for consistency. With three chambers on a furnace, three different jobs can run the same day, one per chamber, but a fourth waits for the next day. This models batch equipment like furnaces and ovens where a chamber cannot be shared mid-day."
+  - question: "What is the difference between OnePerDay and normal multi-instance scheduling?"
+    answer: "Normal multi-instance scheduling can pack several jobs onto the same machine unit in a day, filling its hours; OnePerDay dedicates each unit to one job for the whole day even if hours remain. With OnePerDay on, capacity is checked unit by unit rather than as an aggregate, so a chamber that already holds a job that day is skipped for other jobs. Use it for equipment where changing jobs mid-day is impossible or wasteful, such as heat-treat furnaces, cure ovens, or plating tanks."
+  - question: "Can a OnePerDay machine still run several jobs at once?"
+    answer: "Yes, up to its number of units. A three-chamber furnace with OnePerDay on runs three jobs simultaneously, one per chamber, on the same day. What it cannot do is put two jobs in the same chamber that day. So parallelism across chambers is preserved while dedication within a chamber is enforced. If you set the instance count to one, OnePerDay means strictly one job on that machine per day with no parallelism at all."
+qaQuestions:
+  - question: "Our heat-treat furnace has three chambers and a chamber cannot switch jobs mid-day. How do I stop the scheduler from double-booking a chamber?"
+    answer: "Turn on the OnePerDay flag for the furnace and set its number of instances to three. The engine then treats each chamber as dedicated to one job per day: it assigns a job to the first free chamber and keeps that job on the same chamber across shifts, and it will not place a second job in an occupied chamber that day. Three jobs can run the same day, one per chamber, and a fourth job waits for the next day. If you ever see two jobs on the same chamber and date, the flag was not saved to the database, so verify it on the work center."
+  - question: "With OnePerDay on, four jobs came in for the furnace on the same day but only three scheduled that day. Is that a bug?"
+    answer: "No, that is the constraint working. Three chambers can hold three jobs on one day, one per chamber, so the fourth job has no free chamber that day and is scheduled for the next available day. If you need all four the same day, you either need a fourth chamber (raise the instance count if a unit exists) or the jobs are small enough that OnePerDay is the wrong model and normal multi-instance packing would fit them. OnePerDay deliberately trades daily packing for dedication, so a fourth job waiting is the expected outcome, not an error."
+---
+
+**To schedule batch equipment where a unit cannot switch jobs mid-day, you turn on the OnePerDay flag in EDGEBIC by User Solutions and set the unit count, and the engine dedicates each chamber to one job per day, running as many jobs at once as there are chambers and pushing the overflow to the next day.** This walkthrough schedules a three-chamber heat-treat furnace across a busy day. It is part of our [worked examples series](/blog/edgebic-worked-examples). The numbers are illustrative; the OnePerDay behavior is documented behavior.
+
+## The Setup: A Furnace With Three Chambers
+
+Ironclad Heat Treating runs a batch furnace, HT-1, with three physical chambers. A chamber, once loaded and brought to temperature, holds one job for the day; you cannot pull one job and load another mid-cycle. Normal scheduling would try to pack the furnace's hours with several jobs per chamber, which is physically wrong for this machine. OnePerDay fixes that.
+
+Today four jobs need heat treat: J-1, J-2, J-3, and J-4. The question is how the engine places them across three chambers.
+
+## Step 1: Turn On OnePerDay and Set the Chamber Count
+
+Dana, the planner, opens **Work Centers** and selects HT-1. She sets **One Per Day Flag** to true and **Number Of Instances** to 3, one per chamber. She saves.
+
+Those two settings change how the engine reasons about this machine. With OnePerDay on and more than one instance, capacity is checked chamber by chamber rather than as one aggregate pool, so the engine asks "does this specific chamber already have a job today?" instead of "does the furnace have hours left today?" That per-chamber question is the whole feature.
+
+## Step 2: Reschedule and Watch the Chambers Fill
+
+Dana reschedules. When the engine schedules the heat-treat step for each job, it assigns the job to the first free chamber for that day and, to keep a multi-day job consistent, routes it back to the same chamber across shifts rather than shuffling it between chambers.
+
+For today's four jobs:
+
+- **J-1** takes chamber 1 (first free).
+- **J-2** finds chamber 1 occupied by J-1, so it takes chamber 2.
+- **J-3** finds chambers 1 and 2 occupied, so it takes chamber 3.
+- **J-4** finds all three chambers occupied for the day, so it waits and schedules on the next available day, in the first free chamber then.
+
+Three jobs run today, one per chamber, in parallel. The fourth runs tomorrow. The furnace is fully committed for the day even if a chamber has idle hours, because a chamber cannot be shared.
+
+## Where the Jobs Land
+
+| Job | Day | Chamber |
+|---|---|---|
+| J-1 | Today | 1 |
+| J-2 | Today | 2 |
+| J-3 | Today | 3 |
+| J-4 | Tomorrow | first free |
+
+This is the trade OnePerDay makes on purpose: it gives up within-chamber packing to enforce dedication. Three chambers means three jobs a day, full stop, and the engine schedules to that reality instead of overbooking a chamber the floor could never actually share.
+
+## Step 3: Verify No Chamber Is Double-Booked
+
+Dana confirms the constraint held. The check is simple: no chamber should carry more than one job on the same date. She looks at the furnace's resource allocations grouped by chamber and date, and each chamber shows at most one job per day. If two jobs ever appeared on the same chamber and date, the cause is almost always that the OnePerDay flag did not save to the database, so the UI and the stored value would disagree. Confirm the flag on the work center, and reschedule.
+
+## What This Run Proves
+
+1. **OnePerDay dedicates each unit to one job per day.** A chamber holds a single job for the day, no mid-day sharing.
+2. **Parallelism across units is preserved.** Three chambers run three jobs at once; only within-chamber sharing is blocked.
+3. **Overflow waits for the next day.** A fourth job has no free chamber today, so it schedules tomorrow, not crammed into an occupied chamber.
+4. **Capacity is checked per unit, not in aggregate.** The engine asks whether this chamber is free today, not whether the furnace has hours left.
+5. **The constraint is verifiable.** One job per chamber per date is the check; a violation means the flag did not save.
+
+## Variations Worth Trying
+
+**A single-unit machine.** Set OnePerDay on with one instance, and the machine runs strictly one job per day, no parallelism. This models a single-tank plating line or a one-load autoclave.
+
+**OnePerDay with job-consistent balancing.** On a larger machining center with several units, combine OnePerDay with load balancing so each job stays on one unit for its whole run (setup stability) while new jobs are initially assigned to the least-loaded unit. The dedication holds within a job; the balancing spreads jobs across units.
+
+**Compare against normal packing.** Turn OnePerDay off and reschedule the same four jobs to see the engine pack multiple jobs per chamber per day. The contrast makes clear which model matches your equipment: pack when a machine can switch jobs freely, dedicate when it cannot.
+
+## The Bigger Point: Model the Machine You Actually Have
+
+A scheduler is only as honest as its model of the shop floor. A furnace that cannot switch a chamber mid-day is not a machine with a big daily hour bucket; it is three slots a day. OnePerDay lets the [finite capacity engine](/blog/finite-vs-infinite-capacity-scheduling) represent that truthfully, so the plan it produces is one the floor can actually run, instead of a tidy-looking schedule that overbooks a chamber the operators could never share. Matching the model to the equipment is one of the quieter [job shop scheduling challenges](/blog/job-shop-scheduling-challenges), and getting it wrong is how a plan that reads clean falls apart at the furnace.
+
+User Solutions has built that discipline into scheduling tools since 1991, for operations full of batch and dedicated equipment: the US Navy, GE, BAE Systems, and Cummins among them. [EDGEBIC](/edgebic) carries that lineage into a modern engine, and the [complete guide](/blog/edgebic-complete-guide) maps every work center setting that shapes how a machine schedules.
+
+Bring your furnace, oven, or plating line. [Contact us](/contact-us) and we will model its dedication rules against your real jobs, or read the [greenfield setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) to see how work center settings drive the very first schedule.
+
+<Accordion title="How do you schedule a machine that can only run one job per day per unit?">
+You turn on the OnePerDay flag for that work center and set its instance count to the number of physical units. The engine then dedicates each unit to a single job per calendar day and routes a job back to the same unit across shifts for consistency. With three chambers on a furnace, three different jobs can run the same day, one per chamber, but a fourth waits for the next day. This models batch equipment like furnaces and ovens where a chamber cannot be shared mid-day.
+</Accordion>
+
+<Accordion title="What is the difference between OnePerDay and normal multi-instance scheduling?">
+Normal multi-instance scheduling can pack several jobs onto the same machine unit in a day, filling its hours; OnePerDay dedicates each unit to one job for the whole day even if hours remain. With OnePerDay on, capacity is checked unit by unit rather than as an aggregate, so a chamber that already holds a job that day is skipped for other jobs. Use it for equipment where changing jobs mid-day is impossible or wasteful, such as heat-treat furnaces, cure ovens, or plating tanks.
+</Accordion>
+
+<Accordion title="Can a OnePerDay machine still run several jobs at once?">
+Yes, up to its number of units. A three-chamber furnace with OnePerDay on runs three jobs simultaneously, one per chamber, on the same day. What it cannot do is put two jobs in the same chamber that day. So parallelism across chambers is preserved while dedication within a chamber is enforced. If you set the instance count to one, OnePerDay means strictly one job on that machine per day with no parallelism at all.
+</Accordion>

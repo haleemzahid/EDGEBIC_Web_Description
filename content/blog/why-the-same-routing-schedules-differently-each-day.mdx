@@ -1,0 +1,87 @@
+---
+title: "Why the Same Routing Schedules Differently on Different Days"
+description: "Why the same routing schedules differently each day: the routing is fixed but the calendar and the current load are not, so an identical job lands on different dates."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - same routing different schedule
+  - calendar effect on schedule
+  - load-dependent scheduling
+  - finite capacity queue
+  - holiday effect scheduling
+  - release date scheduling
+targetPhrase: "why the same routing schedules differently each day"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "Why does the same job get a different completion date on different days?"
+    answer: "The routing is fixed, but two things around it are not: the calendar and the current load. Release a job into an empty machine on a Monday with a full week ahead and it finishes quickly. Release the identical job on a Thursday before a holiday, onto a machine already booked with other work, and it finishes much later. The run and setup times never changed; the available capacity and the queue in front of the job did. A finite schedule reflects both."
+  - question: "Is a schedule that changes day to day unreliable?"
+    answer: "No, a schedule that changes with the load is reflecting reality, not being unstable. The engine is deterministic, so the same job against the same calendar and the same load always produces the same dates. What changes between days is the input: a new holiday, a machine now busy, an actual logged. If the dates move without a data change, that would be a problem; because they only move when the data moves, the schedule stays trustworthy and auditable."
+  - question: "What calendar factors change when a routing schedules?"
+    answer: "Shifts, holidays, planned downtime, and any daily capacity overrides all change what hours a work center offers on a given day. A job released before a holiday skips the closed day entirely, so its finish slides. A job hitting a maintenance window loses those hours. A day with a reduced-capacity override offers fewer planning hours than a normal day. The routing is constant, but the calendar decides which real hours the routing's operations can actually land in."
+qaQuestions:
+  - question: "I quoted a 3-day lead time last month and the exact same part now schedules at 6 days. Did something break?"
+    answer: "Nothing broke; the shop got busier or the calendar got tighter. Last month the part probably dropped into a lightly loaded machine with a clear week ahead. This month the same machine is already booked with other jobs, so your part queues behind them, and if a holiday or a maintenance day falls in the window, it slides further. The routing and its run times are identical; the queue and the available days are not. The 6-day date is the honest one for this month's load, and it is why a quote should always be simulated against current conditions rather than reused from last month."
+  - question: "Two identical jobs released an hour apart landed on completely different days. How?"
+    answer: "The first job claimed the open capacity, and the second had to queue behind it. If the machine only had a few hours left before a holiday or shift end, the first job consumed them and finished before the break, while the second job could not start until the machine reopened after the closed days. An hour of release difference put the two jobs on opposite sides of a capacity boundary. Identical routings, but one caught the last slot and the other waited for the next opening."
+---
+
+**The same routing schedules differently on different days because the routing is fixed but two things around it are not: the calendar and the current load.** An identical job released into an empty machine on a Monday finishes fast; released onto a busy machine on a Thursday before a holiday, it finishes much later. The operations, their run times, and their setups never changed. What changed is how many real hours the work centers offer that week and how much of that capacity other jobs already claimed. EDGEBIC by User Solutions schedules against both, so the dates move with reality while the logic stays deterministic and reproducible.
+
+This surprises planners who expect a routing to have one lead time. A routing has a fixed amount of work; it does not have a fixed finish date, because the finish depends on when you release it and what else is running.
+
+## The routing is the work, not the calendar
+
+A routing tells the engine the operations, their sequence, their setup and run times, and the work centers they need. That is a fixed quantity of work: a 12-hour job is always 12 hours of machine time. What a routing does not contain is when those 12 hours can actually happen. That comes from the calendar and the load, both of which live outside the routing and both of which change day to day.
+
+So two identical jobs can carry the same routing and land on different dates without any contradiction. The work is the same; the runway it lands on is different.
+
+## The calendar decides which hours exist
+
+Shifts, holidays, planned downtime, and daily capacity overrides all shape how many real hours a work center offers on a given date. A job that spans a weekend or a holiday skips the closed days, so its elapsed finish slides even though its work hours are unchanged. A job hitting a scheduled maintenance window loses those hours from the day. A day carrying a reduced-capacity override offers fewer planning hours than a normal day. The engine only places work into hours that actually exist, and the calendar decides which hours those are. This is the machinery behind [how a schedule accounts for holidays and downtime](/blog/how-a-schedule-accounts-for-holidays-and-downtime).
+
+## The load decides how much of those hours are free
+
+Even on a normal week, the hours a work center offers are not all free. Whatever the engine already scheduled has claimed some of them. A job released into that work center queues behind the jobs that got there first, exactly as a finite engine should, since it respects that a machine runs one job at a time. Release the same job when the machine is empty and it starts immediately; release it when the machine is booked solid and it waits. The queue is not part of the routing; it is part of the shop's state at the moment you schedule.
+
+## A worked example: same 12-hour job, two release days
+
+A job needs 12 run hours on one work center, one instance, an 8-hour day shift planned at a full 8 hours for simplicity.
+
+**Released Monday 08:00, empty machine, clear week.** It runs Monday 08:00 to 16:00 (8 hours) and Tuesday 08:00 to 12:00 (4 hours). Finish: Tuesday noon.
+
+**Released Thursday 08:00, machine already booked Thursday, Friday is a holiday.** Thursday is full of other work, so the job cannot start until the machine reopens. Friday is closed. The machine's next open capacity is Monday. The job runs Monday 08:00 to 16:00 and Tuesday 08:00 to 12:00 of the following week. Finish: next Tuesday noon.
+
+| Release | Calendar and load | Finish |
+|---|---|---|
+| Mon 08:00 | Empty machine, no holiday | Tue noon (same week) |
+| Thu 08:00 | Machine booked Thu, Fri holiday | Tue noon (next week) |
+
+Same routing, same 12 hours of work, a week apart in finish. The difference is entirely the calendar and the load, not the job.
+
+## Different does not mean unstable
+
+None of this makes the schedule unreliable. The engine is deterministic: the same job against the same calendar and the same load always produces the same dates, and the sort that decides queue order (priority, then start date, then due date) never shuffles at random, as covered in [how a scheduler decides which job runs first](/blog/how-a-scheduler-decides-which-job-runs-first). Dates move only when an input moves: a new order, an edited holiday, a machine now busy, an actual logged. If you re-run with identical inputs you get an identical plan. That is what keeps the schedule auditable even as it responds to a changing floor. The difference between a schedule that responds to reality and one that thrashes on noise is the subject of [why schedule stability can beat schedule optimality](/blog/why-schedule-stability-can-beat-schedule-optimality).
+
+## The practical takeaway for quoting
+
+The direct consequence is that a lead time is not a property you can quote from memory. Last month's 3-day date came from last month's load and last month's calendar. This month, quote the date the engine produces against this month's conditions, which is exactly what a quote simulation does when it runs your job through current capacity, as in [how a quote simulation produces a realistic date](/blog/how-a-quote-simulation-produces-a-realistic-date). Reusing an old lead time is how a shop promises 3 days and delivers in 6.
+
+This load-dependent, calendar-aware behavior is the reason finite scheduling produces dates you can keep rather than the fixed, optimistic lead times of [infinite capacity planning](/blog/finite-vs-infinite-capacity-scheduling). The full engine pipeline is in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and you can release the same job on two different days and watch the dates diverge in [EDGEBIC](/edgebic).
+
+<Accordion title="Why does the same job get a different completion date on different days?">
+The routing is fixed, but two things around it are not: the calendar and the current load. Release a job into an empty machine on a Monday with a full week ahead and it finishes quickly. Release the identical job on a Thursday before a holiday, onto a machine already booked with other work, and it finishes much later. The run and setup times never changed; the available capacity and the queue in front of the job did. A finite schedule reflects both.
+</Accordion>
+
+<Accordion title="Is a schedule that changes day to day unreliable?">
+No, a schedule that changes with the load is reflecting reality, not being unstable. The engine is deterministic, so the same job against the same calendar and the same load always produces the same dates. What changes between days is the input: a new holiday, a machine now busy, an actual logged. If the dates move without a data change, that would be a problem; because they only move when the data moves, the schedule stays trustworthy and auditable.
+</Accordion>
+
+<Accordion title="What calendar factors change when a routing schedules?">
+Shifts, holidays, planned downtime, and any daily capacity overrides all change what hours a work center offers on a given day. A job released before a holiday skips the closed day entirely, so its finish slides. A job hitting a maintenance window loses those hours. A day with a reduced-capacity override offers fewer planning hours than a normal day. The routing is constant, but the calendar decides which real hours the routing's operations can actually land in.
+</Accordion>

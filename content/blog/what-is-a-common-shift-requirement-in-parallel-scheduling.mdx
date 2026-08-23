@@ -1,0 +1,77 @@
+---
+title: "What Is a Common Shift Requirement in Parallel Scheduling?"
+description: "Machines that must run one operation together need a shared shift record, not just matching hours. Learn why identical shift times on separate records never intersect."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - common shift requirement
+  - parallel work center shifts
+  - shared shift record
+  - simultaneous capacity slot
+  - synchronized machines scheduling
+  - shift intersection scheduling
+targetPhrase: "common shift requirement"
+wordCount: 1024
+readingTime: 6
+faqQuestions:
+  - question: "What is a common shift requirement in parallel scheduling?"
+    answer: "It is the rule that every machine in a parallel group must share at least one shift on the day the operation is to run. Parallel machines carry out one operation together, starting and finishing in step, so the scheduler has to find a window all of them are open. It builds that window by intersecting the shift records attached to each machine. If the intersection is empty on a given day, no simultaneous window exists on that day and the search moves on to the next."
+  - question: "Two of my machines run the same hours but will not schedule together. Why?"
+    answer: "Because the intersection is done on shift records, not on the times inside them. If one machine is attached to a day shift record and the other is attached to a separate day shift record with identical hours, those are two different records and they do not intersect. The machines physically work the same hours and the scheduler still finds nothing in common. The fix is to attach both machines to the same shift record rather than to two lookalike copies of it."
+  - question: "Does the common shift requirement apply to alternate work centers too?"
+    answer: "No. An alternate work center is a fallback: the operation runs on one machine or the other, never on both at once, so there is nothing to synchronize and no intersection to compute. The requirement applies only where machines genuinely run one operation together, which is the parallel case. If a step keeps failing to find a window and you only ever wanted a fallback machine, the step is probably configured as parallel when it should be configured as an alternate."
+qaQuestions:
+  - question: "How do I check whether my parallel machines share a shift record?"
+    answer: "Open each machine in the work center editor and look at which shifts are attached to it. You are not comparing start and end times, you are comparing which shift each machine points at. If machine one lists a day shift and machine two lists a differently named day shift, or the same name appearing twice in your shift list, that is the problem even when the hours match to the minute. Consolidate to a single shift record and attach it to every machine in the group. Duplicate shift records with identical hours are the most common cause of a parallel step that never finds a window."
+  - question: "Our second machine only runs nights. Can it still be a parallel partner?"
+    answer: "Only if the two machines share at least one shift, and a day-only machine and a night-only machine share none, so no simultaneous window will ever be found and the operation cannot be scheduled as parallel. That is a genuine physical constraint, not a configuration mistake: two machines cannot run one operation together if they are never open at the same time. Either give both machines a shift that overlaps, or model the step differently, for example as two sequential operations or as an alternate machine, depending on what actually happens on the floor."
+---
+
+**A common shift requirement is the rule that every machine in a parallel group must share at least one shift on the candidate day, because a parallel operation runs on all of them at once and the scheduler can only place it in a window they are all open.** The subtlety that catches people is that the shared window is found by intersecting shift *records*, not by comparing the hours inside them. Two day shifts with identical times but separate records share nothing. EDGEBIC by User Solutions computes the intersection on every candidate date before it looks for capacity.
+
+## How it works
+
+A parallel step is one operation carried out by several machines together. Whether the partners are mirrored so they start and finish in lockstep, or run independently on their own portions of the work at the same time, the scheduler still has to find a single window in which all of them are open. That window is called a simultaneous slot.
+
+Finding it happens in two moves, in this order.
+
+First, intersect the calendars. The engine walks candidate dates forward from the operation's earliest allowed start. On each date it collects the shifts attached to the first machine, then keeps only those shifts that are also attached to every other machine in the group and that operate on that day of the week. Whatever survives is the set of shifts common to the whole group on that date.
+
+Second, check capacity. Only for a surviving common shift does the engine ask whether every machine actually has room, whether they can all start at the same moment, whether enough instances are free, and whether each has continuous availability for the duration. If any machine fails, that shift is discarded and the next one is tried.
+
+The order is the important part. If the first move returns nothing, the second never runs. A parallel step whose machines share no shift will search date after date and find no window, no matter how much idle capacity every machine has. The failure is not a capacity failure at all; it is an empty intersection.
+
+And the intersection is strict about identity. It matches shifts by which record they are, not by what times they contain. A plant that created a day shift once and attached it to every machine will intersect cleanly. A plant that created a separate day shift row for each department, all running 08:00 to 16:00, will intersect to nothing across departments, because those are different records that merely look alike.
+
+## A concrete example
+
+An assembly operation is configured to run on two machines together. Both physically work the standard day, Monday to Friday, 08:00 to 16:00. Both are completely idle next week.
+
+| Machine | Shift record attached | Hours | Days |
+|---|---|---|---|
+| Assembly-A | Day Shift (record created for Assembly) | 08:00 to 16:00 | Mon to Fri |
+| Assembly-B | Day Shift (record created for Finishing) | 08:00 to 16:00 | Mon to Fri |
+
+Every visible attribute matches. The hours are identical, the days are identical, both machines are free. And the operation will never schedule as parallel, because the intersection of one record and a different record is empty. The engine walks Monday, then Tuesday, then onward, finding no common shift each day, and the step fails to place.
+
+The fix is one change and it is in the work center editor, not on the routing: delete or stop using one of the duplicate shift records and attach the surviving record to both machines. On the next scheduling run the intersection returns that single shift on every weekday, the capacity checks run for the first time, both machines are open and idle, and the operation places on Monday at 08:00.
+
+Compare that with a genuine constraint. If Assembly-A were attached to a day shift and Assembly-B only to a night shift, the intersection would also be empty, but no amount of consolidation would help. The two machines are never open together, so one operation cannot run on both at once. That is a real-world limit surfacing correctly, and the answer is to change the shifts or to change the routing, not to hunt for a setting.
+
+## How EDGEBIC uses it
+
+The requirement applies to steps configured to run on more than one machine at once. The two flavors, mirrored partners and simultaneous independent portions, are covered in [what is dependent parallel processing](/blog/what-is-dependent-parallel-processing) and [what is independent parallel processing](/blog/what-is-independent-parallel-processing), and the setting that distinguishes them is described in [what is a parallel work center type](/blog/what-is-a-parallel-work-center-type).
+
+The thing being intersected is the association between a machine and a shift, which is defined in [what is a work center shift](/blog/what-is-a-work-center-shift). Once a common shift survives, the capacity bucket the engine then tests is the one described in [what is a shift resource allocation in scheduling](/blog/what-is-a-shift-resource-allocation-in-scheduling).
+
+The requirement does not apply to a fallback machine, because a fallback runs the operation instead of the primary rather than alongside it. That distinction is drawn in [what is a true alternate work center](/blog/what-is-a-true-alternate-work-center), and it is worth checking when a step will not place: a machine you meant as a fallback but configured as a partner inherits the intersection requirement it does not need.
+
+The practical habit is to keep one shift record per real working pattern and attach it widely, rather than creating a copy per department or per machine. Duplicate lookalike shift records cost nothing until the day someone configures a parallel step across them.
+
+## The takeaway
+
+A common shift requirement sounds like a capacity rule and behaves like an identity rule. Machines that work the same hours on different shift records share no window, and a parallel step across them will search forever and find nothing while every machine sits idle. The moment when every machine in the group can genuinely start together is a [simultaneous capacity slot](/blog/what-is-a-simultaneous-capacity-slot-in-scheduling), and it is all or nothing. One shift record per working pattern, attached to every machine that follows it, removes the whole class of problem. For the neighboring concepts see [what is a parallel work center type](/blog/what-is-a-parallel-work-center-type) and [what is a work center shift](/blog/what-is-a-work-center-shift), then explore [EDGEBIC](/edgebic) or, if you are coming from the legacy product, [RMDB to EDGEBIC](/rmdb-to-edgebic).

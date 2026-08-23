@@ -1,0 +1,100 @@
+---
+title: "How the EDGEBIC Kiosk Captures a Production Punch"
+description: "A production punch is one uninterrupted stretch of setup, run, or down time. See how a single operator tap opens and closes a punch and stamps the actual start."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - production punch kiosk
+  - shop floor time capture
+  - operator punch lifecycle
+  - actual start stamp
+  - manufacturing kiosk
+  - run setup down punches
+targetPhrase: "production punch kiosk"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "What is a production punch in EDGEBIC?"
+    answer: "A production punch is one uninterrupted stretch of a single work state: setup, run, idle, down, rework, or teardown. When an operator taps a state button on the kiosk, EDGEBIC opens a punch and starts its clock. Tapping any other button closes that punch and opens the next one. The sequence of punches becomes the true, minute-by-minute story of what happened at the machine."
+  - question: "When does the kiosk stamp a job's actual start?"
+    answer: "The actual start is stamped the moment an operator taps Start Run for the first time on that operation, and only if no one has recorded a start already. The timestamp is read from the shared server clock, not the terminal's clock, so start times stay consistent across every kiosk on the floor. A start a planner entered earlier is never overwritten by the first run punch."
+  - question: "Do setup and down time count as production hours?"
+    answer: "No. Only run and rework punches roll up into a day's production hours. Setup, idle, down, and teardown time are recorded on their own punches for downtime analysis and setup-variance reporting, but they never inflate the operation's productive hours. That separation means nobody's efficiency is judged on a coolant leak or a long changeover."
+qaQuestions:
+  - question: "An operator double-tapped the same button and I see a zero-hour punch in the history. Is that a data problem?"
+    answer: "No. When a punch opens and closes in the same instant, EDGEBIC computes its duration as at or below zero and clamps it to zero rather than writing a negative number. The zero-hour row is harmless in the daily rollup because it contributes nothing, but it can look odd in the history drawer. A supervisor can annotate it with a reason such as 'duplicate tap' so the record reads cleanly."
+  - question: "How precise are the punch times if my terminals and server clocks drift apart?"
+    answer: "Punch open and close times are read server-side, not from the touchscreen terminal. So if one kiosk clock is a few minutes fast, the punches it records still line up with every other terminal and with the planner's schedule. The operator never types a time during normal use: the timestamp is taken when the tap actually lands."
+---
+
+**A production punch in EDGEBIC by User Solutions is one uninterrupted stretch of a single work state, such as setup, run, or down, opened and closed by an operator tapping the kiosk.** Every tap opens a new punch and closes the last one, and the string of punches becomes the operation's true story: when it started, how long each phase took, how many pieces came out, and why it ever stopped. This is [shop floor data collection](/blog/edgebic-shop-floor-guide) at its most granular, and it is the raw material every downstream number is built from.
+
+Most shops still capture actuals as a number scribbled on a traveler at shift end. That number cannot tell you that the run stalled for 40 minutes on a coolant alarm, or that the changeover ate two hours. A punch can, because it is created the instant the state changes, not reconstructed from memory. This article walks the punch lifecycle end to end so you know exactly what each tap writes.
+
+## The Kiosk and Where Punches Live
+
+The kiosk is a separate touchscreen application that lives at the machine and shares the same database as the planner application directly, with no server in between. That shared-database design is why a punch an operator makes appears on the planner's screens within seconds, and why the kiosk needs nothing running in the office to work. For the wider architecture, see [why the EDGEBIC kiosk has no login](/blog/why-the-edgebic-kiosk-has-no-login).
+
+Each kiosk session is bound to one work center and one physical machine lane, so every punch it writes already knows its work center and instance. The operator types a name into the Operator box, and that name rides on every punch made during the session.
+
+## The Six Work States
+
+A punch always carries one state. EDGEBIC recognizes six:
+
+| State | Produces pieces? | Counts as production hours? |
+|---|---|---|
+| Setup | No | No |
+| Run | Yes (good and scrap) | Yes |
+| Idle | No | No |
+| Down | No | No |
+| Rework | Yes (rework pieces) | Yes |
+| Teardown | No | No |
+
+Only Run and Rework produce pieces, and only Run and Rework hours roll up into a day's productive total. The other four states are recorded faithfully so downtime and setup-variance reporting have real numbers, but they never pad the operation's production hours. That single rule is what keeps a machine breakdown from quietly wrecking an efficiency figure.
+
+## The Punch Lifecycle, Tap by Tap
+
+Here is the sequence for a normal operation, from an idle machine to a completed job.
+
+**Tap Start Setup.** A setup punch opens with its own elapsed clock. On a machine with a real changeover, the operator steps through the setup phases (tear down, fixture, tools, first article, QA hold, run-off), and each phase is timed separately so setup variance can be broken out later.
+
+**Tap Start Run.** The setup punch closes and its hours are stamped. A run punch opens. If no actual start has been recorded for this operation yet, EDGEBIC stamps the actual start now, from the shared server clock. If a planner already entered an actual start, the kiosk leaves it alone.
+
+**Tap the piece counters.** During the run, the operator taps the green Good counter once per finished piece and the red Scrap counter for a bad one. Every scrap tap forces a reason, chosen from four categories (Machine, Material, Quality, Waiting), so no scrap is ever recorded without an attributable cause. For the full piece story, see [good, scrap, and rework counts explained](/blog/good-scrap-and-rework-counts-explained).
+
+**Tap Pause.** The run punch closes and a paused (Down or Idle) punch opens carrying its reason. When work resumes, Resume opens a fresh run punch and the clock restarts.
+
+**Tap Complete Operation.** The open punch closes, the day-by-day production hours roll up, and the operation's actual end is stamped now. The machine returns to its idle screen showing the next queued job.
+
+Timestamps at each of these boundaries are read from the shared clock the moment the tap lands. The operator never types a time during normal use.
+
+## A Worked Example
+
+Tuesday, CNC-Mill-1, instance 1, operator C. Diaz.
+
+| Time | Tap | Punch effect |
+|---|---|---|
+| 08:00 | Start Setup | Setup punch opens |
+| 08:50 | Start Run | Setup closes (0.83 h), run opens, actual start stamped 08:50 |
+| 10:15 | Scrap then Quality reason | Scrap piece 1 recorded with a dimensional reason |
+| 11:30 | Pause then Machine reason | Run closes, Down punch opens for a coolant alarm |
+| 12:10 | Resume | Down closes (0.67 h), fresh run opens |
+| 15:40 | Complete Operation | Run closes, actual end stamped 15:40 |
+
+The 40-minute coolant pause is recorded on its own Down punch with a Machine reason. It never enters the day's production hours, which reflect run time only. The planner sees the honest picture: real hours worked, the one scrap piece with its cause, and the downtime available for a Pareto review.
+
+## What the Punch Writes Back
+
+The value of a punch is what it lets the rest of the plan do. The first Start Run gives the operation a real [actual start](/blog/planned-in-progress-and-completed-work-explained), so its Gantt bar shifts from plan to reality. Run time between taps becomes the operation's daily productive hours. Good taps become the day's actual pieces (good only, scrap reported separately). Complete Operation gives the operation an actual end, which is what makes the next reschedule plan downstream work forward from the real finish instead of the plan's guess. That last point is the whole reason the loop exists: see [how a reschedule uses last night's actuals](/blog/how-a-reschedule-uses-last-nights-actuals).
+
+## Corrections Stay Honest
+
+Operators make mistakes, and EDGEBIC handles them without letting anyone quietly rewrite history. A mis-tapped piece can be taken back with an Undo button that appears for about ten seconds, and the undo itself is logged where supervisors can see it. A wrong time on a closed punch is corrected by a supervisor in the history drawer, always with a mandatory reason, and the original value is kept forever beside the correction. Nothing is deleted, so the history drawer becomes a full forensic record. This discipline is the foundation of trustworthy [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling): the plan is only as good as the truth underneath it.
+
+## The Bottom Line
+
+A production punch is the smallest honest unit of shop floor time in EDGEBIC. Each tap opens and closes exactly one state segment, timestamps it from a shared clock, and carries the operator, the work center, and any pieces or reasons with it. From that stream the platform builds actual starts, actual ends, daily production hours, piece counts, and downtime analysis, all without a single number typed from memory. Explore the whole execution loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), or see the platform at [EDGEBIC](/edgebic).

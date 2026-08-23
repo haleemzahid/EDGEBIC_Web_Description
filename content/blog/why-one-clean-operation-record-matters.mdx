@@ -1,0 +1,86 @@
+---
+title: "Why One Clean Operation Record Matters in EDGEBIC"
+description: "One clean record per operation keeps reschedules honest and reports accurate. Learn how EDGEBIC guards against inverted dates, orphans, and duplicate rows."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - clean operation record scheduling
+  - actual date validation
+  - production data integrity
+  - schedule anomaly checks
+  - one row per operation
+  - shop floor data hygiene
+targetPhrase: "clean operation record scheduling"
+wordCount: 1720
+readingTime: 9
+faqQuestions:
+  - question: "Why does EDGEBIC insist on one clean record per operation?"
+    answer: "Because the reschedule engine and every report read those records as the truth about what happened. A duplicate row, an impossible date range, or an orphaned actual corrupts everything downstream: the plan re-plans against junk and the reports show numbers that do not add up. EDGEBIC keeps one clean row per routing step per work center, validated at write time and merged at the persist boundary, so the data feeding your decisions stays sound run after run."
+  - question: "What is an inverted actual date and how does EDGEBIC prevent it?"
+    answer: "An inverted actual date is an actual end that lands before the actual start, which is always a data-entry error. EDGEBIC refuses to save one: a validator checks every actuals write and blocks an end that is not strictly after the start, with a clear message. It also snaps a same-day completion to the end of the last logged day so a job started at 08:00 and completed the same day never records an end before its start. The bad row never reaches the database."
+  - question: "How does EDGEBIC keep repeated reschedules from piling up duplicate rows?"
+    answer: "At the persist boundary it merges the historical and forward pieces of a partial operation back into a single row per routing step per work center, deduplicating the daily hours by date and the resource allocations by machine, day, and instance. So a job rescheduled every day for a week does not accumulate a new pair of rows each run. The merge is keyed carefully so a parallel work center's sibling row is preserved rather than collapsed by mistake."
+qaQuestions:
+  - question: "After a migration from our old system, some jobs showed an actual end before the actual start. How do we clean that up?"
+    answer: "Those inverted rows almost always come from a direct data edit or a legacy system that predated proper validation, and they need fixing before you reschedule because the engine will treat them as impossible completed steps. Run the anomaly report, find the rows flagged for inverted dates, open each affected schedule, correct the date, and save. The validator confirms the fix is valid before it persists, so once the report comes back clean you know the data is sound and the next reschedule will behave."
+  - question: "We noticed a job kept an old actual with no scheduled hours after several reschedules. What is that and why does it matter?"
+    answer: "That is an orphaned actual: a zero-window row carrying an actual start but no schedule hours, usually left behind when a partial step on a parallel-equipped operation was not merged correctly by an older approach. It matters because every subsequent reschedule keeps the orphan and can add another forward row, so the junk compounds. EDGEBIC prevents it by keying the partial merge per work center, which isolates the split pair and leaves the parallel sibling untouched, and the anomaly report flags any orphan shape so you can spot and clear it."
+---
+
+**In EDGEBIC by User Solutions, every operation is meant to leave exactly one clean record: one row per routing step per work center, with sensible dates and no duplicates. That discipline is not housekeeping for its own sake. It is what keeps reschedules honest and reports accurate, because both read those records as the truth about what happened.** A clean operation record scheduling engine can trust is the quiet foundation under everything else on the shop floor. This article explains what "clean" means, how EDGEBIC enforces it, and why it matters to you.
+
+Bad production data is insidious because it does not announce itself. An impossible date range, a duplicated row, an orphaned actual: none of these throw an error on the shop floor. They sit quietly in the data and poison the next reschedule and every report that reads them. The cure is to stop the bad record from being written in the first place, and to keep the data clean through every reschedule cycle. Here is how EDGEBIC does both.
+
+## What "Clean" Means
+
+A clean operation record has three properties.
+
+**Sensible dates.** The actual end is strictly after the actual start. An end before a start is always a data-entry error, never a legitimate state.
+
+**One row per step per work center.** A single routing step running on a single machine leaves one record, even after it is partly done and re-planned many times.
+
+**No orphans.** Every record with an actual start also has real schedule hours behind it. A zero-width row carrying an actual date but no hours is debris, not data.
+
+When all three hold, the reschedule engine and the reports have solid ground to stand on. When any fails, the failure propagates. The value of clean records is entirely downstream: they are what make [immutable actuals](/blog/why-actuals-are-immutable-in-edgebic) and honest promise dates possible.
+
+## Guard One: The Date Validator
+
+The first line of defense is a validator that runs at every point where actuals are written, whether from the kiosk, the Log Actuals dialog, or a Gantt drag. It checks that the actual end is strictly after the actual start. If it is not, the save is blocked with a clear, planner-readable message. The bad row never reaches the database.
+
+This matters because an inverted date is uniquely destructive. A completed step with an impossible date range looks, to the reschedule engine, like a step that finished before it began, and it corrupts every downstream calculation that touches it. Catching it at write time, rather than discovering it later in a report, is the whole point.
+
+There is a companion guard for a common edge case. When an operation is marked complete on the same day it started without an explicit end time, EDGEBIC snaps the actual end to the end of the last logged day, 23:59 of that day. So a job started at 08:00 and completed the same day never ends up recorded as finishing before it began. The same-day completion is always safe. For the wider set of checks, see [what the EDGEBIC anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for).
+
+## Guard Two: The Persist Merge
+
+The second guard keeps records clean across reschedule cycles. A partial operation is handled internally as two pieces, the logged history and the re-planned remainder, but at the persist boundary EDGEBIC merges them back into a single row per routing step per work center. It deduplicates the daily hours by date and the resource allocations by machine, day, and instance.
+
+Without this merge, every reschedule of an in-progress job would leave behind another pair of rows, and a job rescheduled daily for a week would carry a heap of duplicates for the same step. The merge collapses the pair each run, so the record stays clean no matter how many times you reschedule. This is the hygiene that lets [partial completions carry forward](/blog/how-partial-completions-carry-forward-in-edgebic) without accumulating debris.
+
+The merge is also keyed carefully. It groups the split pair by work center as well as routing step, which isolates the partial pair while leaving a parallel work center's sibling row untouched. Key it too loosely and a parallel-equipped operation could shed an orphan; key it per work center and both the merge and the sibling stay correct.
+
+## Guard Three: The Anomaly Report
+
+The third guard is detection. EDGEBIC's anomaly report scans the live data for the shapes that should never exist and grades each by severity: critical for broken data that must be fixed before rescheduling, warning for a configuration ambiguity causing unintended behavior, and info for a known limitation to be aware of. Among the critical checks are inverted actual dates, stray daily-hour rows with logged hours but no plan, orphaned actuals, and duplicate rows for the same operation and day.
+
+Detection matters because guards one and two prevent new bad records, but they cannot retroactively clean data that arrived from a migration or an older system. The anomaly report finds those legacy problems so you can correct them before they distort a reschedule.
+
+## A Worked Example
+
+A shop migrates jobs in from an older system. One job comes across with a step whose actual end reads a day earlier than its actual start, a leftover from a date field that defaulted to the wrong value on export.
+
+Here is what the guards do. Guard one, the validator, would have blocked this on any normal save, but the row arrived by direct migration, not through EDGEBIC's write path, so it slipped in. Guard three, the anomaly report, catches it: the row appears under the inverted-date check, flagged critical. The planner opens the affected schedule, corrects the date, and saves. Now the validator engages: it confirms the end is strictly after the start before persisting. The report is re-run and comes back clean.
+
+Only now is it safe to reschedule. Had the inverted row survived, the engine would have treated it as an impossible completed step and produced a plan built on nonsense. The clean-up was the difference between a trustworthy reschedule and a corrupted one.
+
+## Why It Is Worth the Discipline
+
+Clean records are the substrate everything else stands on. The [reschedule engine](/blog/how-a-reschedule-uses-last-nights-actuals) reads them to decide what is done and what remains. The reports read them to show earned value, utilization, progress, and your [WIP management](/blog/wip-management) picture. The [closed loop from floor to plan](/blog/closing-the-loop-from-shop-floor-to-plan) depends on the actuals in those records being real. If the records are junk, every one of those outputs is junk too, and no amount of clever scheduling recovers it.
+
+That is why EDGEBIC spends effort on the unglamorous work of validating at write time, merging at persist time, and detecting anomalies continuously. It is the same reliability discipline that has kept User Solutions software trustworthy across programs from small job shops to large defense overhauls for over 35 years. Correct scheduling begins with correct data, and correct data begins with one clean record per operation.
+
+For the full picture, see the [shop floor execution guide](/blog/edgebic-shop-floor-guide), and explore the platform at [EDGEBIC](/edgebic).

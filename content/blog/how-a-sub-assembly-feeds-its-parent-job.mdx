@@ -1,0 +1,105 @@
+---
+title: "How a Sub-Assembly Feeds Its Parent Job"
+description: "How EDGEBIC schedules a multi-level routing where a sub-assembly must finish before its parent operation can start, and how the sub-assembly's hours roll up into the job total."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - sub-assembly scheduling
+  - multi-level routing
+  - bill of routing hierarchy
+  - dependency scheduling
+  - feeding operation
+  - finite capacity scheduling
+targetPhrase: "sub-assembly scheduling"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler handle a sub-assembly inside a job?"
+    answer: "EDGEBIC treats a sub-assembly as a chain of operations that must finish before the parent operation it feeds can start. The routing is a graph, not a flat list, so the engine orders every step after the work it depends on, schedules the sub-assembly chain, and only then places the parent step that consumes it. The parent's earliest start is the sub-assembly's finish, adjusted for any queue or transit between them."
+  - question: "Do a sub-assembly's hours count toward the job's total?"
+    answer: "Yes. The sub-assembly's operations are real work on real machines, so their hours are scheduled and consumed like any other step, and they roll up into the job's total hours alongside the parent-level steps. A job that builds a weldment and then machines it counts both the weldment hours and the machining hours. The rollup comes from the schedule graph, summing every operation the job actually contains, not from a single top-level estimate."
+  - question: "What happens to the parent operation if a sub-assembly runs late?"
+    answer: "The parent slides. Because the parent's earliest start is the sub-assembly's finish, a delay anywhere in the feeding chain raises the parent's start and pushes everything after it. The engine does not let the parent begin before its feeder is done, so a late sub-assembly honestly moves the whole downstream tail rather than pretending the parent could start on time without its input."
+qaQuestions:
+  - question: "My product is a welded frame that then gets machined and painted. The frame is really its own little routing. How do I get the machining to wait for the frame?"
+    answer: "Model the frame as a sub-assembly chain that feeds the machining step, and link the last frame operation to the machining operation as its successor. EDGEBIC then schedules the frame's cut, fit, and weld operations first, and sets the machining step's earliest start to the weld's finish, so machining cannot begin until the frame exists. Add a queue or transit between them if the frame has to cool or move to another cell, and that composes on top. The frame's hours are scheduled on their own machines and roll up into the job total, so your plan shows the true content of the whole build, not just the machining and paint at the top level."
+  - question: "Two sub-assemblies feed one final assembly. Does the final assembly wait for both?"
+    answer: "It waits for whichever finishes last. A step that has more than one feeder takes its earliest start from the latest finish among all of them, so if the machined housing is ready Tuesday noon and the wiring harness is ready Wednesday morning, final assembly starts Wednesday morning. The engine schedules each feeding chain against its own capacity, then synchronizes them at the join. This is why speeding up only one sub-assembly may not move the final date at all: if it was not the late one, the other feeder still governs, and the honest lever is whichever branch actually finishes last."
+---
+
+**A sub-assembly in EDGEBIC by User Solutions is a chain of operations that must finish before the parent operation it feeds can begin. The engine treats a routing as a graph rather than a flat list, orders every step after the work it depends on, schedules the sub-assembly chain against real capacity, and only then places the parent step that consumes its output. The sub-assembly's hours are real work on real machines, so they roll up into the job's total alongside the parent-level steps.** This is how a product that is built from smaller built pieces gets a schedule that reflects the whole structure, not just the top layer.
+
+Most real products are not a single straight line of operations. A machine frame is welded from cut stock, then that frame is machined, then the machined frame is assembled with a purchased motor. The welded frame is a sub-assembly: a self-contained little routing whose finished output becomes an input to a later operation. Scheduling it correctly means honoring that structure.
+
+## A routing is a graph, not a list
+
+The foundation is that EDGEBIC does not treat a routing as an ordered list of ten steps. It treats it as a dependency graph. Each operation names its successor, branches can split and rejoin, and a sub-assembly brings its own chain of operations that terminates by feeding a parent step. From that graph the engine produces a schedule order in which every operation comes after everything it depends on. How that ordering is derived is covered in [how a routing graph orders steps for scheduling](/blog/how-a-routing-graph-orders-steps-for-scheduling).
+
+A sub-assembly is a subgraph inside that larger graph. Its operations chain end to start among themselves, and its last operation links forward to the parent step it feeds. The parent step, in turn, may be the middle of the top-level routing, with its own successors after it. The engine does not care how deep the nesting goes; it only cares that dependencies are respected, so no operation is ever scheduled before the work it needs.
+
+## The parent waits for its feeder
+
+The rule that makes a sub-assembly behave is the earliest-start rule. Every operation starts at the latest finish among all of its predecessors, and never before the job's own start. For a parent step fed by a sub-assembly, one of those predecessors is the sub-assembly's final operation. So the parent cannot begin until the sub-assembly is done.
+
+This is exactly the behavior a build requires. Machining cannot start on a frame that has not been welded. Final assembly cannot start on a housing that has not been machined. By making the parent's earliest start depend on the feeder's finish, the engine enforces the physical reality of the build in the plan.
+
+It also means delay propagates the way it should. If a weld operation in the sub-assembly runs late, its finish moves later, which raises the parent's earliest start, which pushes the parent and everything after it. A late feeder honestly moves the downstream tail. The plan never pretends the parent could start on time without its input.
+
+## Joins: when two feeders meet
+
+Products are often built from more than one sub-assembly. A final assembly might consume a machined housing and a wiring harness, each with its own chain. This is a join: a step with multiple predecessors.
+
+The engine handles a join with the same rule, applied to all the predecessors at once. The join step's earliest start is the latest finish among every feeder. If the housing is ready Tuesday noon and the harness Wednesday morning, final assembly starts Wednesday morning, because it needs both. Each feeding chain is scheduled independently against its own capacity, and they synchronize at the join.
+
+A consequence worth internalizing: speeding up one feeder may not move the final date. If the housing was already early and the harness is the late one, making the housing earlier still changes nothing, because the harness governs. The lever that moves the finish is whichever branch actually finishes last, which is a small but constant source of surprise on multi-feeder builds.
+
+## Hours roll up from the graph
+
+Because a sub-assembly's operations are genuine work placed on genuine machines, their hours are scheduled and consumed just like any other step. And when the job's total hours are reported, they come from summing every operation the job actually contains, across every level, not from a single top-level number. The mechanism is described in [how a job's hours roll up from the schedule graph](/blog/how-a-jobs-hours-roll-up-from-the-schedule-graph).
+
+This matters because a top-level estimate almost always understates a built product. A job whose top-level routing is just "machine, paint" looks like a few hours if you only read the top, but if it also welds a frame first, the real content includes all the welding. Rolling up from the graph counts the sub-assembly, so the plan shows the true labor and the true span. Leaving it out would make the job look cheaper and faster than it is.
+
+## A worked example: a welded, machined, painted frame
+
+Take a job for a machine frame with a sub-assembly and a top-level chain.
+
+Sub-assembly (the frame):
+
+```
+Cut stock    2 h
+Fit          1.5 h
+Weld         4 h   -> feeds Machine
+```
+
+Top level (the finished part):
+
+```
+Machine  6 h   (starts after Weld finishes)
+Paint    2 h   (starts after Machine finishes)
+```
+
+The engine orders the graph so cut, fit, and weld come before machine, and machine before paint. It schedules the frame chain first: cut, then fit, then weld, ending, say, Tuesday 12:00. Machining's earliest start is the weld finish, so machining runs from Tuesday 12:00 for 6 hours, spilling into Wednesday if the shift ends. Paint follows machining.
+
+The job's total hours are 2 + 1.5 + 4 + 6 + 2 = 15.5, every one of them from a real operation in the graph. If the weld had run 2 hours late, machining and paint would both slide, and the finish would move, because the parent waits for its feeder. Add a cooling queue between weld and machine, and that composes on top of the earliest start, as covered in [how queue, flow, and transit stack after an operation](/blog/how-queue-flow-and-transit-stack-after-an-operation).
+
+## Why the structure is worth modeling
+
+It would be simpler to flatten a build into one long list and schedule it straight through. But a flat list cannot express that two sub-assemblies feed one join, or that a feeder's delay moves the parent, or that the real content includes work at more than one level. Modeling the sub-assembly structure is what lets the plan match how the product is actually built.
+
+Sub-assembly scheduling sits inside the wider pipeline in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and it rests on the same [finite versus infinite capacity](/blog/finite-vs-infinite-capacity-scheduling) discipline that makes every date honest. If you are mapping a product's structure for the first time, [what a bill of materials is](/blog/what-is-a-bill-of-materials) is the companion idea to the routing. To see your own multi-level builds schedule with the feeders in front of the parents, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="How does a scheduler handle a sub-assembly inside a job?">
+EDGEBIC treats a sub-assembly as a chain of operations that must finish before the parent operation it feeds can start. The routing is a graph, not a flat list, so the engine orders every step after the work it depends on, schedules the sub-assembly chain, and only then places the parent step that consumes it. The parent's earliest start is the sub-assembly's finish, adjusted for any queue or transit between them.
+</Accordion>
+
+<Accordion title="Do a sub-assembly's hours count toward the job's total?">
+Yes. The sub-assembly's operations are real work on real machines, so their hours are scheduled and consumed like any other step, and they roll up into the job's total hours alongside the parent-level steps. A job that builds a weldment and then machines it counts both the weldment hours and the machining hours. The rollup comes from the schedule graph, summing every operation the job actually contains, not from a single top-level estimate.
+</Accordion>
+
+<Accordion title="What happens to the parent operation if a sub-assembly runs late?">
+The parent slides. Because the parent's earliest start is the sub-assembly's finish, a delay anywhere in the feeding chain raises the parent's start and pushes everything after it. The engine does not let the parent begin before its feeder is done, so a late sub-assembly honestly moves the whole downstream tail rather than pretending the parent could start on time without its input.
+</Accordion>

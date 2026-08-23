@@ -1,0 +1,192 @@
+---
+title: "Make to Stock vs Make to Order in EDGEBIC: How the Policy Resolves"
+description: "Make to stock vs make to order scheduling: how EDGEBIC resolves build policy per order, inflates for yield, and turns product lead time into a delivery tail."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - make to stock vs make to order scheduling
+  - build method manufacturing order
+  - build to inventory override
+  - yield inflation start quantity
+  - end item lead time tail
+  - item start job end
+  - replenishment trigger levels
+targetPhrase: "make to stock vs make to order scheduling"
+wordCount: 2150
+readingTime: 11
+faqQuestions:
+  - question: "How does a scheduling engine decide whether an order builds for stock?"
+    answer: "EDGEBIC resolves it per order, not per product. Each manufacturing order carries an optional build-to-inventory flag with three states: true forces make-to-stock, false forces make-to-order, and unset inherits the product's build method. That single rule means a product policy sets the default while any individual order can depart from it, and the departure is visible on the order rather than hidden in master data."
+  - question: "What is the difference between build method and the stocked flag?"
+    answer: "Build method decides intent and the stocked flag decides whether inventory transactions actually happen. A product set to make-to-stock but with the stocked flag off can never hold inventory: no receipt posts on completion, netting skips it, and on-hand stays at zero indefinitely. The anomaly report flags that exact combination as a warning, because it looks configured but silently does nothing."
+  - question: "How does yield change the quantity a replenishment suggestion asks for?"
+    answer: "Yield inflates the start quantity so scrap does not become a shortage. If the calculation needs 150 good units and the product's yield is 0.90, the suggestion becomes the ceiling of 150 divided by 0.90, which is 167 units to start. Inflation is applied after lot sizing, so rounding to a supplier or pallet multiple happens first and the yield allowance sits on top of the rounded figure."
+  - question: "Why does a job show a Job End date later than its last operation?"
+    answer: "Because the product carries an end-item lead time, and the schedule shows the delivery-ready tail separately. Item Start is the end of the last work center operation; Job End is Item Start plus the lead time in calendar days. The tail books no machine capacity, but the dashboard judges lateness against Job End, so a job whose machines finished early can still be late if the packing window crosses the due date."
+qaQuestions:
+  - question: "One rush order uses a special material batch that must not enter general stock, but the product is make-to-stock. How do we handle it?"
+    answer: "Set build-to-inventory to false on that one order. The documented resolution is that an explicit per-order value always wins over the product policy, so this order is treated as make-to-order: no inventory receipt posts on completion and the units ship straight to the customer instead of joining general stock. Every other order for the same product, with the flag left unset, keeps inheriting the make-to-stock policy and keeps posting receipts. You change one order, not the product, so nothing else in the catalog shifts."
+  - question: "Our finished goods take two days to pack and cure. Should we add that to the last operation's run time or to lead time?"
+    answer: "Lead time, not run time. Adding two days to the operation books two days of machine capacity that the machine is not actually using, which inflates work center load, distorts every utilization number, and can push other jobs off a resource that is genuinely free. Lead time is time rather than work: it draws as a tail after the last operation, consumes no capacity, and backward scheduling aims the last operation at due date minus lead time so the item is delivery-ready on the promise. The dashboard then judges lateness against the delivery-ready end, which is the date your customer actually cares about."
+---
+
+**Make to stock and make to order are the two build policies a scheduling engine has to distinguish, and in EDGEBIC by User Solutions the distinction is resolved per manufacturing order rather than only per product.** A product carries the default. Any single order can override it in either direction. That one design decision is what lets a stocked catalog handle a custom job, and a make-to-order shop build ahead for a known runner, without duplicating part numbers.
+
+This is the mechanism post. For the field list see [how to set up products](/blog/how-to-set-up-products-in-edgebic), and for the wider capability map see [product master data and planning attributes](/blog/edgebic-products-and-planning-attributes-explained).
+
+## The two policies, in plain terms
+
+**Make to order (MTO)** means you manufacture only when a customer order exists. Nothing is produced for stock, and no inventory receipt posts when the job completes. The units ship.
+
+**Make to stock (MTS)** means you manufacture to replenish a buffer. When the order completes, a receipt posts into the inventory ledger as a positive quantity, and the on-hand balance rises. Later demand for the same product can consume that buffer instead of triggering another build, which is the netting behavior shown in the [consume-from-stock walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic).
+
+A third value exists on the product: **make to stock with make-to-order override**. It is not a third behavior. It is a permission. The default is still make-to-stock, and the value tells the interface that a per-order departure is an expected business decision rather than a mistake. This is the classic split between [dependent and independent demand](/blog/dependent-vs-independent-demand), expressed as a policy field.
+
+## How the policy actually resolves
+
+Every manufacturing order carries an optional build-to-inventory flag. It has three states, and the resolution is a single rule:
+
+```
+Order build-to-inventory
+  ├─ true   → make to stock  (always, whatever the product says)
+  ├─ false  → make to order  (always, whatever the product says)
+  └─ unset  → inherit the product's build method
+                ├─ make to stock                    → stock
+                ├─ make to stock w/ MTO override    → stock
+                └─ make to order                    → order
+```
+
+Read that from the bottom up and the design intent is clear. The product policy is a default that applies to the many. The order flag is an exception that applies to the one, and the exception is stored on the order where a planner can see it, rather than being toggled on the product where it would silently change every future job.
+
+Worked example. Standard Widget is set to make-to-stock. A planner creates a rush order using a special raw-material batch that must not enter general stock, and sets build-to-inventory to false on that order alone. The resolution takes the explicit false and stops. That order is treated as make-to-order: no receipt posts on completion, the widgets ship directly, and general stock is untouched. Every other Standard Widget order, with the flag unset, keeps posting receipts as before.
+
+## The second gate: is the item stocked at all
+
+Build method decides intent. A separate stocked flag decides whether inventory transactions happen.
+
+If the stocked flag is off, no ledger posting occurs even when the build method says make-to-stock. Consume-from-stock skips the item, no receipts are written, and on-hand stays at zero forever. The combination looks configured and does nothing.
+
+This is common enough that the platform's anomaly report has a dedicated check for it: a product with make-to-stock build method and the stocked flag off is flagged as a warning, with a click-through to the offending product. The fix is one tickbox. The value is that the report finds it before a planner spends a week wondering why the buffer never fills. Non-inventory phantom or service items are the legitimate use of an unstocked record.
+
+## What happens on completion
+
+When a make-to-stock order completes, a receipt posts and two things update together.
+
+**On-hand rises.** The ledger is append-only: every movement is a new signed entry, reversals are new entries rather than edits, and the on-hand figure on the product is a derived cache of the ledger sum. That is why the product form does not let you type a quantity on hand. Typing one would create a permanent gap between the cache and the authoritative ledger, and the platform has an integrity check for exactly that discrepancy.
+
+**Moving-average cost recalculates.** The formula is the standard weighted average:
+
+```
+new average = (on hand × old average + received qty × receipt cost) ÷ (on hand + received qty)
+```
+
+Worked example. A bracket assembly has 60 on hand at a moving-average cost of $12.50. An order completes producing 40 units at a shop cost of $13.00 each.
+
+```
+denominator = 60 + 40 = 100
+new average = (60 × 12.50 + 40 × 13.00) ÷ 100
+            = (750 + 520) ÷ 100
+            = $12.70
+```
+
+After posting, on-hand is 100 and the moving-average cost is $12.70, which is what the stock-on-hand report shows as unit cost.
+
+## Yield: why the suggestion asks for more than you need
+
+Make-to-stock products carry a yield: the fraction of started units that emerge good, expressed as a decimal in the range above zero and up to one. The replenishment calculation inflates the start quantity so that scrap does not turn into a shortage.
+
+The order of operations matters. Lot sizing happens first, yield inflation second.
+
+Worked example. A turbine seal is set up as make-to-stock with a reorder point of 100, a reorder quantity of 50, a fixed-order-quantity lot rule, and a yield of 0.90. On-hand is 85. A planning bucket carries gross demand of 40.
+
+```
+Projected balance after the bucket: 85 − 40 = 45
+Trigger check:  45 < 100  → a suggestion is needed
+Target:         100 + 50 = 150
+Raw shortfall:  150 − 45 = 105
+Lot rounding:   ceil(105 ÷ 50) × 50 = 3 × 50 = 150 units
+Yield inflation: ceil(150 ÷ 0.90) = ceil(166.67) = 167 units to start
+```
+
+The suggestion is 167 starts, which yields 150 good units and restores the balance to 150. Round the wrong way, or skip the yield step, and the buffer comes back 17 units short of where the planner thought it would.
+
+Yield is validated. A value at or below zero is flagged as critical, because it would divide by zero in that inflation step. A value above one is flagged as a warning, because a yield above 100 percent is not a thing, and the inflation formula would actually *reduce* the start quantity, which is the opposite of the intent. Always enter it as a fraction.
+
+## The trigger rules, side by side
+
+Two replenishment methods are available per product, plus none.
+
+| Method | Trigger | Refill target |
+|---|---|---|
+| **Reorder point** | Projected balance falls below the reorder level | Reorder level plus reorder quantity |
+| **Min / max** | Projected balance falls below the minimum level | The maximum level |
+| **None** | No automatic suggestion | Not applicable |
+
+Safety stock behaves differently from what many planners expect. By default it is a **replenishment trigger, not a consumption floor**: the projection flags the row and fires a suggestion when the balance falls below it, but consumption below the level is not prevented. A per-product option turns it into a hard floor for the cases that genuinely need one. The [replenishment cycle walkthrough](/blog/make-to-stock-replenishment-walkthrough-edgebic) shows a full trigger-to-receipt loop with real hours.
+
+Lot sizing then decides the quantity shape: exactly the shortfall, or rounded up to a whole multiple of the reorder quantity, which is how you match a supplier pallet or a press tool's natural batch.
+
+## Lead time: the other half of the policy question
+
+Build policy decides whether you produce ahead. Lead time decides when "done" actually means deliverable, and it is stored once on the product while doing two different jobs.
+
+**On a purchased or component item**, lead time back-schedules a planned order's release: release equals due date minus lead time in calendar days.
+
+**On a finished good**, lead time is the end-item tail. Two dates appear on every schedule surface:
+
+```
+Item Start = end of the last non-material work center operation
+Job End    = Item Start + lead time (calendar days)
+```
+
+The tail consumes no work center capacity. Nothing is booked, nothing is allocated, no other job is displaced. It is a real-world window (packing, curing, paint drying, shipping prep) rendered honestly on the schedule.
+
+Worked example. Widget-A carries a lead time of 2. The job's last operation on Assembly-1 finishes Thursday at 14:00.
+
+| Value | Result |
+|---|---|
+| Item Start | Thursday 14:00 |
+| Job End | Saturday 14:00 |
+| Due date | Friday |
+| Verdict | Late |
+
+The machines finished a day early and the job is still late, because two calendar days of packing push delivery-readiness past the promise. That verdict is correct and it is the whole point: the dashboard judges lateness against the delivery-ready end rather than the bare last operation, so nobody discovers the gap at the loading dock.
+
+Scheduled the other way, the engine handles it for you. Backward scheduling aims at due date minus lead time, so the last operation targets Wednesday and the tail lands on Friday. Compare [forward and backward scheduling](/blog/forward-vs-backward-scheduling) for when each direction fits.
+
+Set lead time to zero and Item Start and Job End collapse to the same instant. Shops that do not need a tail never see one.
+
+## The trap in the dual role
+
+Because lead time is one field doing two jobs, changing it on a finished good changes more than a release date. It lengthens the displayed Job End on every schedule surface, and it shifts what backward scheduling targets. A large value on a finished good with tight due dates can push the backward pass past what is feasible and into its forward fallback.
+
+Changing it on a purchased component only affects release back-scheduling. Components have no tail of their own, because the tail is computed per job from the end item's product.
+
+Two practical rules follow:
+
+1. **Do not pad lead time to buy safety.** It hides capacity problems and makes every promise later than it needs to be. Keep buffers visible in the schedule where they can be managed.
+2. **Do not put packing time in the last operation's run time.** That books capacity the machine is not using, inflates load, distorts utilization, and can displace jobs from a resource that is genuinely free.
+
+## Where to go next
+
+The build policy and the lead-time tail are the two product-level decisions that ripple furthest. For the failure modes and their symptoms, read [product setup mistakes](/blog/product-setup-mistakes-edgebic). For how these attributes feed the projected balance calendar and the master production schedule, see the [planning guide](/blog/edgebic-planning-guide) and the primer on [what MRP is](/blog/what-is-mrp). For the platform overview, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) and the [product hub](/edgebic) tie it together.
+
+<Accordion title="How does a scheduling engine decide whether an order builds for stock?">
+EDGEBIC resolves it per order, not per product. Each manufacturing order carries an optional build-to-inventory flag with three states: true forces make-to-stock, false forces make-to-order, and unset inherits the product's build method. That single rule means a product policy sets the default while any individual order can depart from it, and the departure is visible on the order rather than hidden in master data.
+</Accordion>
+
+<Accordion title="What is the difference between build method and the stocked flag?">
+Build method decides intent and the stocked flag decides whether inventory transactions actually happen. A product set to make-to-stock but with the stocked flag off can never hold inventory: no receipt posts on completion, netting skips it, and on-hand stays at zero indefinitely. The anomaly report flags that exact combination as a warning, because it looks configured but silently does nothing.
+</Accordion>
+
+<Accordion title="How does yield change the quantity a replenishment suggestion asks for?">
+Yield inflates the start quantity so scrap does not become a shortage. If the calculation needs 150 good units and the product's yield is 0.90, the suggestion becomes the ceiling of 150 divided by 0.90, which is 167 units to start. Inflation is applied after lot sizing, so rounding to a supplier or pallet multiple happens first and the yield allowance sits on top of the rounded figure.
+</Accordion>
+
+<Accordion title="Why does a job show a Job End date later than its last operation?">
+Because the product carries an end-item lead time, and the schedule shows the delivery-ready tail separately. Item Start is the end of the last work center operation; Job End is Item Start plus the lead time in calendar days. The tail books no machine capacity, but the dashboard judges lateness against Job End, so a job whose machines finished early can still be late if the packing window crosses the due date.
+</Accordion>

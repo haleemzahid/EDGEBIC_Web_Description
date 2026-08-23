@@ -1,0 +1,147 @@
+---
+title: "EDGEBIC + JobBOSS: The Complete Scheduling Integration Guide"
+description: "JobBOSS scheduling software integration with EDGEBIC, step by step: export jobs and routings, map columns once with import masks, and send finite capacity dates back."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - JobBOSS scheduling software integration
+  - JobBOSS finite capacity scheduling
+  - JobBOSS scheduling add-on
+  - EDGEBIC JobBOSS integration
+  - job shop ERP scheduling
+  - import mask ERP integration
+  - JobBOSS Excel export scheduling
+targetPhrase: "JobBOSS scheduling software integration"
+wordCount: 2000
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC have a native JobBOSS connector?"
+    answer: "No, and that is deliberate. EDGEBIC integrates with JobBOSS through reusable Excel/CSV/database import masks rather than a certified per-ERP connector. You map the columns of a JobBOSS export once; every later run is two clicks. The same universal architecture handles JobBOSS, Epicor, Fourth Shift, SAP, and home-grown databases, so nothing breaks when your ERP version changes its API."
+  - question: "What JobBOSS data does EDGEBIC need to build a schedule?"
+    answer: "Four data sets: items or parts, work centers with available hours, routings (operation sequence, run and setup times), and open jobs with quantities and due dates. All of these live in JobBOSS today and export to Excel or CSV. EDGEBIC imports each through its own mask, matches records by natural key, and reports every row as Created, Updated, Reused, or Failed."
+  - question: "How long does a JobBOSS to EDGEBIC integration take?"
+    answer: "Plan for days, not months. The documented benchmark from the User Solutions lineage is a complete Fourth Shift ERP integration in 5 days at Plastilite Corporation, and the EDGEBIC import-mask method follows the same sequence: export, map, import, schedule. Most shops see a first finite capacity schedule built from real JobBOSS data in the first working session."
+  - question: "Does importing JobBOSS data change my existing schedule?"
+    answer: "No. Imports change data, never the plan. Imported jobs appear as unscheduled work; nothing lands on the Gantt until you run the scheduler. Scheduled jobs also carry a frozen snapshot of the routing they were planned with, so re-importing a changed routing never disturbs work already in progress."
+qaQuestions:
+  - question: "We run JobBOSS2 with about 250 open jobs and 18 work centers. Our scheduler spends most of Monday rebuilding a spreadsheet from JobBOSS reports. What does the weekly rhythm look like with EDGEBIC?"
+    answer: "Monday morning becomes an import run instead of a rebuild. You export open jobs from JobBOSS (one file), run the saved sales-order mask, and the result dialog shows something like Created 32, Reused 218, Failed 0 in a couple of minutes. New jobs appear as unscheduled demand; the 218 jobs EDGEBIC already knows come back Reused and untouched. Then you run the scheduler, and the confirmation dialog tells you exactly what is in scope (how many new jobs and how many existing ones) before anything is planned, so the 32 new jobs slot around everything already on the floor. Total elapsed time is typically under 30 minutes, most of it review."
+  - question: "Our JobBOSS routings store setup times in minutes, but every scheduling tool we have looked at wants hours. Do we have to convert 400 routings by hand?"
+    answer: "No. Put a conversion factor of 0.016667 on the setup-time column in the routing import mask and the multiplication happens during import: a 30-minute setup cell lands as 0.5 hours automatically. The factor is saved with the mask, so every future routing import converts the same way without anyone remembering to do it. A 400-routing file converts in one run, and the per-run log records every row so you can audit the math."
+---
+
+**Integrating JobBOSS with EDGEBIC means exporting the jobs, routings, and work centers JobBOSS already holds to Excel or CSV, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shifts, machine instances, and sequence-dependent setups.** Realistic dates then export back for JobBOSS and your customers. There is no custom API project, no middleware server, and no certified connector to maintain: just the file exports your ERP already produces, feeding a scheduling engine built for job shops.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has been integrating with ERPs this way since 1991. Across 35+ years the same approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide walks through the JobBOSS case specifically: what to export, how the masks work, what comes back, and what a realistic first week looks like.
+
+## Where JobBOSS stops and scheduling starts
+
+JobBOSS runs the business side of thousands of job shops: quoting, order entry, job costing, purchasing, accounting. It is very good at being the system of record. The scheduling side is where many JobBOSS shops quietly fall back to whiteboards and spreadsheets, because the questions a planner asks every morning are finite capacity questions:
+
+- Which of these 40 jobs actually fits on the mill this week?
+- If the rush order jumps the queue, which promise dates slip?
+- Is the bottleneck loaded to 90 percent or 140 percent next Tuesday?
+
+Answering those requires modeling shifts, machine instances, setup sequences, and operator skills against every open job at once. That is a different job than order entry, which is why a dedicated finite capacity layer next to the ERP is the standard pattern. If you want the general argument, read [why finite capacity beats infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling); the rest of this guide covers the JobBOSS-specific mechanics. For the gap-by-gap breakdown, see the companion post on [JobBOSS scheduling gaps and how job shops fill them](/blog/jobboss-scheduling-gaps-and-how-to-fill-them).
+
+## The integration in one picture
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is the same for every ERP, JobBOSS included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| JobBOSS → EDGEBIC | Items / parts | Excel or CSV export → Product import mask |
+| JobBOSS → EDGEBIC | Work centers | Export → Workcenter import mask |
+| JobBOSS → EDGEBIC | Routings | Export → BOR (bill of routing) import mask, two-pass |
+| JobBOSS → EDGEBIC | Open jobs / orders | Export → SalesOrder import mask |
+| JobBOSS → EDGEBIC | Shop-floor actuals (optional) | Export → Actuals import mask |
+| EDGEBIC → JobBOSS | Realistic start/end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what file format it arrives in (Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row is headings, and how each column of your file maps to an EDGEBIC field. You build the mask once by dragging your file's column headings onto EDGEBIC's target fields. Every week after that, importing the new file is two clicks: pick the mask, run it.
+
+Every row in your file becomes exactly one outcome: **Created** (new record), **Updated** (existing record changed), **Reused** (record found and left alone), or **Failed** (something was wrong, and the reason is recorded). A result dialog shows the counts, and a per-run log file records every row. Nothing half-imports silently.
+
+## Step 1: export the four core files from JobBOSS
+
+You do not need everything JobBOSS knows. Four exports carry a complete scheduling model:
+
+1. **Items.** Part number, description, and any costs or lead times you want visible. The part number is the natural key: EDGEBIC matches on it, not case-sensitive, so `WIDGET-A` in the file finds `Widget-A` in the database.
+2. **Work centers.** Name, number of machines (instances), setup hours, and hourly rate if you want cost rollups. A work center row can also carry flags like bottleneck status and shift assignment.
+3. **Routings.** One row per operation: end product, operation or work center name, sequence number, hours per unit, setup time, queue time.
+4. **Open jobs.** Product, quantity, job number or order reference, and due date.
+
+Any report or grid in JobBOSS that can save these to Excel or CSV works. You are not writing queries against the ERP or touching its database schema unless you want to; the file is the interface.
+
+## Step 2: map columns once
+
+For each of the four files you create one mask. The product mask is typical: name it something durable like `Weekly JobBOSS Items` (name the mask after the routine, not the file), point it at this week's export, and drag `Part Number` onto the product identifier field, `Description` onto description, and so on. Mandatory fields are flagged; the mask refuses to run until they are mapped.
+
+Two mask features do disproportionate work in ERP integrations:
+
+**Unit conversion.** ERPs and scheduling tools disagree about units constantly. If your JobBOSS routing export stores setup time in minutes, set the conversion factor on that column to `0.016667` and a `30` in the file lands as `0.5` hours. The factor is part of the mask, so the conversion is permanent and auditable.
+
+**Blank-cell preservation.** When you re-import with updates enabled, a blank cell in the file keeps the existing value instead of wiping it. A price-refresh file that only carries part number and price updates prices and touches nothing else. This one rule is what makes weekly partial exports safe.
+
+## Step 3: the routing import (the clever part)
+
+Routings are the hardest data to move between systems because operations point at each other: step 10 feeds step 20 feeds step 30. A naive row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is being written.
+
+EDGEBIC's routing import runs in **two passes**. Pass one reads every row, validates it, auto-creates any work center or product named in the file that does not exist yet (on by default, so a green-field import needs no pre-work), and buffers the steps. Pass two sorts each product's steps by sequence number, saves them, and then wires the links: step 10 to step 20, step 20 to step 30, and the final step to the finished product, so the routing renders as one connected flow in the graphical routing designer.
+
+Practical conventions that pay off:
+
+- **Number sequences in gaps of 10** (10, 20, 30). When engineering inserts a deburr step next month, it becomes 25 and nothing renumbers.
+- **Keep all of one product's steps in one file.** A routing re-import wipes and recreates that product's steps in a single run, which is what keeps re-imports idempotent; splitting one routing across two files and two runs loses the first file's steps.
+- **Re-importing is safe for running jobs.** Every scheduled job carries a frozen snapshot of the routing it was planned with. A routing re-import changes the live routing for future jobs and leaves jobs in progress exactly as they are.
+
+## Step 4: import jobs and run the scheduler
+
+The jobs import maps product, quantity, reference, and dates. If your JobBOSS export carries an order reference, rows sharing the reference group under one sales order and their jobs auto-number as `{Ref}-{line}`, which keeps multi-line orders together.
+
+One rule matters more than any other here: **imports never schedule anything.** After the run, the new jobs sit as unscheduled demand. You then run the scheduler, which confirms how many new and existing jobs are in scope before it plans, and the new work slots around everything already committed on the floor. Data movement and planning stay separate on purpose, so an import can never silently rearrange your shop.
+
+Once the data is in, the full EDGEBIC engine applies to your JobBOSS work: finite capacity across multiple shifts and machine instances, alternate and parallel work centers, work center groups that re-shop the machine pool on every reschedule, a sequence-dependent setup matrix, lot streaming with transfer batches, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) covers the engine; the [complete EDGEBIC guide](/blog/edgebic-complete-guide) walks it end to end.
+
+## Step 5: send dates back
+
+The return trip is Excel again. The Job View grid exports the job schedule (colored cells plus a legend sheet) as a workbook. Every report dialog exports to Excel or PDF with whatever columns you configured. From there, updated promise dates go back into JobBOSS the way your order-entry process already updates dates, and dispatch lists go to the floor.
+
+Your ERP workflows do not change. JobBOSS remains the system of record for financials, purchasing, and order entry. EDGEBIC adds the [finite capacity scheduling layer next to the ERP](/erp-scheduling-add-on) and hands back dates the shop can actually hit.
+
+## What a realistic first week looks like
+
+The method behind this guide has a documented benchmark in the User Solutions lineage: at Plastilite Corporation, the Fourth Shift ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days, Monday to Friday. EDGEBIC inherits that methodology directly, with the import masks as the modern instrument. A sensible JobBOSS plan:
+
+| Day | Work |
+|---|---|
+| 1 | Export items and work centers from JobBOSS; build and run those two masks; verify counts against the ERP |
+| 2 | Export routings; build the routing mask with unit conversions; import and review the routing designer |
+| 3 | Export open jobs; import; run the first full finite capacity schedule |
+| 4 | Compare EDGEBIC dates to current promises; tune shifts, instances, and setups where reality disagrees |
+| 5 | Lock the weekly rhythm: saved masks, import order, scheduler run, export back |
+
+If you are starting EDGEBIC from an empty database, the [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the sequence in detail.
+
+## Dry-run it with your own export
+
+The fastest way to evaluate this is not a feature list, it is your own file. Export this week's open jobs from JobBOSS and [bring the export to a demo](/contact-us): mapping it live takes minutes, and you leave with your own data scheduled against your own capacity.
+
+<Accordion title="Does EDGEBIC have a native JobBOSS connector?">
+No, and that is deliberate. EDGEBIC integrates with JobBOSS through reusable Excel/CSV/database import masks rather than a certified per-ERP connector. You map the columns of a JobBOSS export once; every later run is two clicks. The same universal architecture handles JobBOSS, Epicor, Fourth Shift, SAP, and home-grown databases, so nothing breaks when your ERP version changes its API.
+</Accordion>
+
+<Accordion title="What JobBOSS data does EDGEBIC need to build a schedule?">
+Four data sets: items or parts, work centers with available hours, routings (operation sequence, run and setup times), and open jobs with quantities and due dates. All of these live in JobBOSS today and export to Excel or CSV. EDGEBIC imports each through its own mask, matches records by natural key, and reports every row as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="How long does a JobBOSS to EDGEBIC integration take?">
+Plan for days, not months. The documented benchmark from the User Solutions lineage is a complete Fourth Shift ERP integration in 5 days at Plastilite Corporation, and the EDGEBIC import-mask method follows the same sequence: export, map, import, schedule. Most shops see a first finite capacity schedule built from real JobBOSS data in the first working session.
+</Accordion>
+
+<Accordion title="Does importing JobBOSS data change my existing schedule?">
+No. Imports change data, never the plan. Imported jobs appear as unscheduled work; nothing lands on the Gantt until you run the scheduler. Scheduled jobs also carry a frozen snapshot of the routing they were planned with, so re-importing a changed routing never disturbs work already in progress.
+</Accordion>

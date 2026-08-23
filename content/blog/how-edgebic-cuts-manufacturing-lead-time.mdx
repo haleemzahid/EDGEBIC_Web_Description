@@ -1,0 +1,136 @@
+---
+title: "Where Lead Time Actually Goes, and How to Get It Back"
+description: "Reduce manufacturing lead time by attacking waiting, not cutting. The four places elapsed time hides, the worked overlap arithmetic, and the honest limits."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Outcomes & ROI
+author: user-solutions
+cluster: edgebic-outcomes
+pillarSlug: edgebic-results-guide
+keywords:
+  - reduce manufacturing lead time
+  - lead time reduction scheduling
+  - lot streaming makespan
+  - queue time reduction
+  - manufacturing cycle time
+  - overlap operations scheduling
+targetPhrase: "reduce manufacturing lead time"
+wordCount: 1830
+readingTime: 9
+faqQuestions:
+  - question: "What actually makes manufacturing lead time long?"
+    answer: "Lead time is dominated by waiting, not by machining. A job's elapsed time is the sum of run hours plus queue time, transfer waiting, transit between operations, and time spent behind other jobs on a busy machine. Cutting faster attacks the smallest component. Overlapping operations, shortening queues, and sequencing work so machines stop idling attack the largest one, which is why scheduling changes lead time more than machine upgrades do."
+  - question: "How does lot streaming reduce lead time?"
+    answer: "Lot streaming lets a downstream operation start when the first transfer batch is ready instead of when the whole lot is finished. In EDGEBIC's documented lean-cell example, 50 sub-assemblies through solder and test take 18 hours run serially. With a transfer batch of one piece, test starts 45 minutes after solder begins and the pair finishes in about 13.75 hours, roughly a 24% reduction in elapsed time with no change to either operation."
+  - question: "Does reducing lead time require more capacity?"
+    answer: "Usually not, because most lead time reduction comes from removing waiting rather than adding hours. Overlapping two operations, resequencing a queue, or routing a job to the member of a machine pool that is free today all shorten elapsed time without adding a shift. Capacity only becomes the constraint when the total work genuinely exceeds the hours available, which a finite capacity schedule shows you directly."
+  - question: "How do I know if my queue times are real?"
+    answer: "Compare configured queue time against logged actuals for the same operation pair. EDGEBIC stores queue time as an explicit field per routing step, shift-aware, so a four-hour queue set at 14:30 on a shift ending at 16:00 spills 2.5 hours into the next day rather than pretending the plant runs overnight. Queue values that nobody can defend are usually padding added years ago to hide a scheduling problem that scheduling now solves."
+qaQuestions:
+  - question: "Every routing in our system has a two-day queue between operations. Can I just delete them?"
+    answer: "Do not delete them globally, but do challenge them one work center at a time. Queue time is real when it protects something physical (cooling, curing, an outside process, an inspection backlog) and it is padding when it exists because the plan was never trusted. Pull your last 30 completed jobs, compare configured queue against the actual gap between operation end and next operation start, and rank the work centers by the difference. Then cut the worst offender in half and reschedule. If the schedule still holds and the floor still flows, you have found free lead time. Repeat until a cut starts hurting."
+  - question: "We machine 200-piece lots and the next operation always waits for the whole lot. What is the size of the prize?"
+    answer: "Compute it directly from the documented formula. Downstream can start after setup plus your transfer batch times per-piece hours. Take EDGEBIC's worked case: 100 shafts, half an hour per piece, two hours setup, transfer batch of 20. The downstream driller can start 12.5 hours into a 52-hour turning run instead of at the end, and the job's elapsed time compresses from 52 hours to about 37. Run that same arithmetic on your own lot size and cycle time before you change anything, because the answer depends entirely on how long your upstream operation is and how small a batch your material handling can actually move."
+---
+
+**Lead time is mostly waiting. A job spends a small fraction of its elapsed time being cut, formed, or assembled, and the rest sitting in a queue, waiting for the rest of its lot, or waiting behind another job on a busy machine.** That is why scheduling changes lead time faster than equipment does, and it is where EDGEBIC by User Solutions puts its mechanisms: overlap the operations, shorten the waiting, and stop the sequence from wasting hours that already exist.
+
+This post walks the four places elapsed time hides, the specific EDGEBIC mechanism that attacks each one, the arithmetic on documented worked examples, and the point at which the software stops being able to help. For the general treatment of the metric, see [manufacturing lead time reduction](/blog/manufacturing-lead-time-reduction). This post sits under the [EDGEBIC results guide](/blog/edgebic-results-guide).
+
+## The Four Places Lead Time Hides
+
+Take one job through one routing and split the clock four ways.
+
+| Component | What it is | The lever |
+|---|---|---|
+| Run time | Hours actually spent processing pieces | Process engineering, faster equipment |
+| Lot wait | Downstream waiting for the whole upstream lot to finish | Lot streaming (transfer batches) |
+| Queue and transit | Configured buffer between operations, plus travel to and from outside processes | Queue and transit review |
+| Contention | Waiting behind other jobs on the same machine | Sequencing, machine pools, optimization |
+
+Only the first row is a shop-floor improvement project. The other three are scheduling decisions, and they are usually the larger share. That is the whole argument for attacking lead time with a schedule.
+
+## Lever One: Overlap the Operations
+
+The most direct compression available is to stop making an operation wait for a complete lot when it only needs the first few pieces.
+
+EDGEBIC's [lot streaming](/blog/edgebic-lot-streaming-explained) supports this two ways. The piece-count model lets a downstream step start once a set number of pieces have accumulated upstream, using the documented formula: setup plus the smaller of transfer batch and order quantity, times hours per piece. The start-to-start lag model (measured in hours) suits continuous processes where a piece count is meaningless.
+
+The worked numbers, from the book's documented examples:
+
+| Case | Configuration | Serial elapsed | Streamed elapsed | Compression |
+|---|---|---|---|---|
+| 100 shafts, turning then drilling | 0.5 h per piece, 2 h setup, transfer batch 20, 0.5 h handling delay | 52 h | about 37 h | Drilling starts 12.5 h in |
+| 50 sub-assemblies, solder then test | 0.25 h per unit, 0.5 h setup, transfer batch 1 | 18 h | about 13.75 h | Roughly 24% |
+| 500 panels, spray then cure | Continuous process, 1 h start-to-start lag | Cure waits until 12:00 | Cure starts 09:00 | 3 h earlier |
+
+Read the first row carefully, because it is the shape that matters. The turning operation still takes 52 hours. Nothing about it got faster. The *job* got 15 hours shorter because the driller stopped waiting for a piece it did not need.
+
+There is a cost, and the book is explicit about it: transfer batches mean more material moves. A transfer batch of one piece is the lean ideal and it demands continuous material handling. Choose a batch size your floor can actually move, then let the arithmetic tell you what it buys.
+
+## Lever Two: Challenge the Queue and Transit Numbers
+
+Queue time in EDGEBIC is an explicit field on the routing step, not a hidden fudge factor, and it is shift-aware. A four-hour queue starting at 14:30 on a shift that ends at 16:00 consumes 1.5 hours Monday and 2.5 hours the next working morning. It never pretends the plant runs overnight. Those handoff hours are real, and [carrying queue, move, and transit time into the plan](/blog/how-realistic-handoff-time-keeps-promise-dates-honest) is what stops a promise date from being quietly optimistic.
+
+That explicitness is the lever. When a number is visible, it can be defended or deleted. Most shops carry queue values that were added years ago to hide unreliable planning, and the moment planning becomes reliable, those hours are pure lead time with no purpose. See [queue and transit times](/blog/edgebic-queue-and-transit-times-explained) for how each field composes with the others.
+
+Transit days deserve the same audit. EDGEBIC supports calendar-day and working-day modes for transit between operations, which matters when parts go to an outside heat treater: three calendar days over a weekend is not three working days, and getting the mode wrong silently lengthens every job on that routing.
+
+One caution the diagnostics catch for you: configuring both a queue time and a start-to-start lag on the same step produces a surprise, because the lot-streaming gate replaces the queue-adjusted end rather than adding to it. EDGEBIC's anomaly checks flag that combination so the planner can confirm intent instead of discovering it on the floor.
+
+## Lever Three: Stop the Sequence From Wasting Hours
+
+Contention is the least visible component and often the largest. In the documented three-job example (a saw and a mill, one machine each, three jobs released together), scheduling in due-date order leaves the mill idle all Monday morning while a six-hour cut blocks the saw. Total elapsed time across the three jobs: 17 working hours, finishing Wednesday morning.
+
+Re-sequenced so the shortest cut feeds the longest mill job first, the same three jobs on the same machines finish in 14 working hours, on Tuesday afternoon. That is an 18% makespan reduction with no added capacity, and the [optimizer](/blog/edgebic-optimizer-guide) proved it optimal on that problem (a gap of zero, meaning no better sequence exists).
+
+Two things make this trustworthy rather than exciting. The multi-run layer is clamped never worse than your current schedule, so a run either beats the baseline or tells you it did not. And nothing is written until a planner reviews the comparison and accepts it.
+
+## Lever Four: Route to the Machine That Is Free
+
+When several machines can do the same operation, forcing every job onto the nominal primary adds queue time that a pool would not.
+
+[Work center groups](/blog/edgebic-work-center-groups-explained) let a routing step target a pool instead of one machine, with a per-member efficiency factor so a faster machine carries fewer hours. The documented three-mill example makes the trade-off concrete: with a base of 0.04 hours per unit on 100 units, Mill-1 needs 4.5 hours, the newer Mill-2 needs 2.5, and the older Mill-3 needs 6.25. When all three are free, the earliest-completion strategy picks Mill-2 and the job finishes at 10:30. When Mill-2 is booked solid until Wednesday, the *available* Mill-1 wins and the job finishes Monday at 12:30 instead.
+
+That second scenario is the point. A job that finishes Monday on a slower machine has a shorter lead time than a job that finishes Wednesday on a faster one, and only a capacity-aware pool can see that.
+
+## Putting the Levers in Order
+
+The levers do not cost the same, so sequence them by effort:
+
+1. **Audit queue and transit first.** It is a data change, it costs nothing but argument, and it often removes days.
+2. **Turn on lot streaming where lots are long.** The formula is documented and the answer is computable before you commit to it.
+3. **Pool the interchangeable machines.** This removes queue at the point where jobs pile up behind a nominal primary.
+4. **Optimize the sequence.** Do this last, because it works best when the underlying data is already honest.
+
+The heritage evidence for what this discipline reaches belongs to the User Solutions line that EDGEBIC succeeds: [Technical Glass Products recorded a 4% capacity increase and a two-week lead time reduction](/blog/case-study-technical-glass). That is a documented outcome of the approach, not a projection for your plant.
+
+## What the Software Cannot Do Alone
+
+**It cannot shorten run time.** If a part takes 1.5 hours to machine, it takes 1.5 hours. Lot streaming and sequencing move the waiting, not the cutting. Real run-time reduction is a process engineering project, and scheduling only tells you which operations are worth the project.
+
+**It cannot move material for you.** A transfer batch of 20 pieces means somebody actually moves 20 pieces mid-run. Configure a batch size your material handling supports, or the schedule will be right and the floor will be late.
+
+**It cannot defend your queue times.** The software makes queue values visible and shift-aware. Deciding that a two-day cooling queue is really four hours requires someone who knows the process to say so.
+
+**It cannot compress supplier lead time.** Outside processes and purchased material are what they are. EDGEBIC models them as transit days and material steps so the plan is honest about them, which is useful, and that is the end of its power.
+
+**It cannot fix a routing nobody maintains.** Every number above comes from hours per unit, setup, queue, and transit values on the routing. Compare a few against [logged actuals](/blog/edgebic-actuals-tracking-explained) before you trust a lead time computed from them.
+
+Want to know which of the four components dominates your lead time? [Bring one routing and a month of actuals to a demo](/edgebic), and we will split the clock four ways on your own data.
+
+<Accordion title="What actually makes manufacturing lead time long?">
+Lead time is dominated by waiting, not by machining. A job's elapsed time is the sum of run hours plus queue time, transfer waiting, transit between operations, and time spent behind other jobs on a busy machine. Cutting faster attacks the smallest component. Overlapping operations, shortening queues, and sequencing work so machines stop idling attack the largest one, which is why scheduling changes lead time more than machine upgrades do.
+</Accordion>
+
+<Accordion title="How does lot streaming reduce lead time?">
+Lot streaming lets a downstream operation start when the first transfer batch is ready instead of when the whole lot is finished. In EDGEBIC's documented lean-cell example, 50 sub-assemblies through solder and test take 18 hours run serially. With a transfer batch of one piece, test starts 45 minutes after solder begins and the pair finishes in about 13.75 hours, roughly a 24% reduction in elapsed time with no change to either operation.
+</Accordion>
+
+<Accordion title="Does reducing lead time require more capacity?">
+Usually not, because most lead time reduction comes from removing waiting rather than adding hours. Overlapping two operations, resequencing a queue, or routing a job to the member of a machine pool that is free today all shorten elapsed time without adding a shift. Capacity only becomes the constraint when the total work genuinely exceeds the hours available, which a finite capacity schedule shows you directly.
+</Accordion>
+
+<Accordion title="How do I know if my queue times are real?">
+Compare configured queue time against logged actuals for the same operation pair. EDGEBIC stores queue time as an explicit field per routing step, shift-aware, so a four-hour queue set at 14:30 on a shift ending at 16:00 spills 2.5 hours into the next day rather than pretending the plant runs overnight. Queue values that nobody can defend are usually padding added years ago to hide a scheduling problem that scheduling now solves.
+</Accordion>

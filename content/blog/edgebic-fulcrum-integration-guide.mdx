@@ -1,0 +1,106 @@
+---
+title: "EDGEBIC + Fulcrum: The Complete Scheduling Integration Guide"
+description: "Fulcrum production scheduling integration with EDGEBIC: export items, work centers, routings and work orders to CSV, map columns once, and schedule at finite capacity."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Fulcrum production scheduling integration
+  - Fulcrum finite capacity scheduling
+  - Fulcrum scheduling add-on
+  - EDGEBIC Fulcrum integration
+  - Fulcrum ERP CSV export scheduling
+  - manufacturing scheduling software
+targetPhrase: "Fulcrum production scheduling integration"
+wordCount: 1610
+readingTime: 8
+faqQuestions:
+  - question: "Does EDGEBIC use a Fulcrum API or connector?"
+    answer: "No. EDGEBIC reads the CSV or Excel exports Fulcrum already produces through reusable import masks. There is no API integration to build, nothing installed inside Fulcrum, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row."
+  - question: "Fulcrum is already a modern cloud platform. Why schedule outside it?"
+    answer: "Finite capacity sequencing is a compute problem a planner runs on demand, separate from recording transactions. EDGEBIC models real machine counts, shift hours, and sequence-dependent setups across every open work order at once and returns a dated plan. Fulcrum stays the system of record; EDGEBIC answers the daily what-runs-where question and hands the answer back as Excel."
+  - question: "What data does EDGEBIC need from Fulcrum?"
+    answer: "Four exports: items, work centers with machine counts and setup detail, routings with operation sequence and run and setup times, and open work orders with quantities and dates. A fifth optional export carries logged hours. Each goes through its own import mask, so a locale-specific date format or quoted text is handled in the mask, not by editing the file."
+qaQuestions:
+  - question: "We chose Fulcrum to avoid running servers and juggling integrations. Is a file-based scheduler going to reintroduce the fragility we left behind?"
+    answer: "It avoids the specific fragility that breaks connectors. A connector binds to an API, an object model, and often a version, so a platform update can quietly take it down. A file interface binds only to the columns in an export, and a Fulcrum export rarely renames those. When it does, the fix is dragging one heading onto its field again in the mask, not a development ticket. Nothing is installed in your Fulcrum account, no integration user is created, and the schedule is computed locally, so a connectivity hiccup stops the export rather than the shop's dispatch list. The setup cost is a one-time mapping session; the maintenance cost is close to zero, which is the opposite of the integration fragility you are describing."
+  - question: "Our work orders come with routings that vary a lot by customer. Will EDGEBIC keep those straight or blur everything into an average?"
+    answer: "It keeps them exact. Each work order carries its own routing into the schedule, one row per operation with its own sequence, run time, and setup, so a customer-specific routing is scheduled on its own terms rather than against a generic standard. When a work order is planned, EDGEBIC freezes the routing snapshot it used, so later routing edits apply to future work and leave that job untouched. The engine then sequences all of those distinct routings against shared capacity, respecting setups and bottlenecks, so two customers who happen to compete for the same machine are sequenced honestly instead of averaged. Nothing is lost to a template."
+---
+
+**Integrating Fulcrum with EDGEBIC means exporting the items, work centers, routings, and open work orders Fulcrum already holds to CSV or Excel, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no API project, nothing installed inside Fulcrum, and no certified connector to version-match when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the Fulcrum case: what to export, how the masks work, and what the engine does with the result.
+
+## Why a modern cloud platform still needs a floor scheduler
+
+Fulcrum runs the manufacturing business record well: items, work orders, purchasing, inventory, and the shop data that hangs off them. What most Fulcrum manufacturers report is that the daily sequencing decision still happens somewhere else, because the morning questions are finite capacity questions:
+
+- Which of these open work orders fit on the two machining cells this week?
+- If this rush order jumps the queue, which promise dates move and by how much?
+- Is the finishing line loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open order at once. It is a different computational problem from recording transactions, which is why a dedicated finite capacity layer beside the ERP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the reason the same layer serves every platform is in [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, Fulcrum included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Fulcrum to EDGEBIC | Items | CSV or Excel export to Product import mask |
+| Fulcrum to EDGEBIC | Work centers | Export to Workcenter import mask |
+| Fulcrum to EDGEBIC | Routings / operations | Export to routing import mask, two-pass |
+| Fulcrum to EDGEBIC | Open work orders | Export to order import mask |
+| Fulcrum to EDGEBIC | Labor hours (optional) | Export to actuals import mask |
+| EDGEBIC to Fulcrum | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe that remembers the data type, the file format, whether the first row is headings, whether text values are quoted, and how each column maps onto an EDGEBIC field. You build it once by dragging column headings onto target fields, and every run after that is two clicks. Each row returns Created, Updated, Reused, or Failed, with a per-run log recording every one.
+
+## The file is the interface, and that is the advantage
+
+Cloud platforms change on the vendor's schedule, not yours. A file-based interface has a small failure mode: the only thing that can break is a column heading, and the fix is re-mapping one row in a mask. Nothing is installed in your account, no integration credential is created, and scheduling keeps working offline because the plan is computed locally.
+
+## Step 1: the four exports
+
+Any Fulcrum list or report that saves to CSV is a valid source.
+
+1. **Items.** Identifier, description, unit of measure, and any cost or lead-time columns worth keeping visible. The identifier is the natural key, matched case-insensitively.
+2. **Work centers.** Identifier, machine count, default setup hours, efficiency, and an hourly rate. A bottleneck flag rides along.
+3. **Routings.** One row per operation: end item, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open work orders.** Item, quantity, order reference, and dates.
+
+## Step 2: map the columns once
+
+Name each mask after the routine, so `Weekly Fulcrum Work Orders` outlives `wo-week29.csv`. Mandatory fields are flagged and the run refuses to start until they are mapped. **Unit conversion** applies a factor to a numeric column before storage, so minutes become hours with `0.016667` and a per-100-piece time becomes per piece with `0.01`. **Blank-cell preservation** keeps an existing value when a cell is blank on an update run, with a zero counting as a value rather than a blank.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings reference each other, so a row-by-row import cannot wire the links because step 20 does not exist when step 10 is written. EDGEBIC's routing import runs in two passes: pass one validates and buffers every row and auto-creates any missing work center or item, and pass two groups the rows by end item, sorts by sequence, writes them, and wires the chain so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour). Number sequences in gaps of 10, and keep all of one item's steps in one file so re-imports stay idempotent.
+
+## Step 4: work orders in, then run the scheduler
+
+The order import maps item, quantity, reference, and dates. Imports never schedule anything: imported orders sit as unscheduled demand until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans. Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained), a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the schedule as a workbook with colored cells and a legend, the work center schedule exports the same way, and every report exports to Excel or PDF using your saved layout. Revised dates go back into Fulcrum through your normal work order maintenance path. There is no automated write-back, which keeps your ERP data under your team's control.
+
+## Test it with your own export
+
+Export this week's open work orders and a routing file, then [bring them to a demo](/contact-us). Mapping them live takes minutes. If you are comparing systems, the [Katana](/blog/edgebic-katana-integration-guide) and [MRPeasy](/blog/edgebic-mrpeasy-integration-guide) versions follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC use a Fulcrum API or connector?">
+No. EDGEBIC reads the CSV or Excel exports Fulcrum already produces through reusable import masks. There is no API integration to build, nothing installed inside Fulcrum, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row.
+</Accordion>
+
+<Accordion title="Fulcrum is already a modern cloud platform. Why schedule outside it?">
+Finite capacity sequencing is a compute problem a planner runs on demand, separate from recording transactions. EDGEBIC models real machine counts, shift hours, and sequence-dependent setups across every open work order at once and returns a dated plan. Fulcrum stays the system of record; EDGEBIC answers the daily what-runs-where question and hands the answer back as Excel.
+</Accordion>
+
+<Accordion title="What data does EDGEBIC need from Fulcrum?">
+Four exports: items, work centers with machine counts and setup detail, routings with operation sequence and run and setup times, and open work orders with quantities and dates. A fifth optional export carries logged hours. Each goes through its own import mask, so a locale-specific date format or quoted text is handled in the mask, not by editing the file.
+</Accordion>

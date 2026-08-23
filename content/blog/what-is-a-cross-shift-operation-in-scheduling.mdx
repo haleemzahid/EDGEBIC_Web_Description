@@ -1,0 +1,77 @@
+---
+title: "What Is a Cross-Shift Operation in Scheduling?"
+description: "A cross-shift operation is one routing step whose hours are split across several shifts or days. Learn why its elapsed span and its worked hours are different numbers."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - cross shift operation
+  - operation spanning shifts
+  - elapsed span versus worked hours
+  - operation split across days
+  - multi shift scheduling
+  - weekend gap in a schedule
+targetPhrase: "cross-shift operation"
+wordCount: 969
+readingTime: 5
+faqQuestions:
+  - question: "What is a cross-shift operation in scheduling?"
+    answer: "It is a single routing step whose hours do not fit in one shift, so the scheduler splits them across consecutive shifts, and across days or weekends where necessary. It remains one operation with one start, one end, and one set of hours; only its placement is fragmented. That distinction matters for reading a plan, because a cross-shift operation's elapsed span from first start to last finish is longer, often much longer, than the hours of work it actually contains."
+  - question: "Why is an operation's duration longer than its hours?"
+    answer: "Because the gaps between shifts are real calendar time that costs no machine hours. An operation needing twenty hours that starts Friday at noon uses the four hours left that day, sits idle through a closed weekend, then resumes Monday. Its elapsed span is four and a half days while its worked content is still twenty hours. Neither figure is wrong; they answer different questions. Hours tell you cost and capacity consumption, and elapsed span tells you when the next step can begin."
+  - question: "Does splitting an operation across shifts cost extra setup?"
+    answer: "Not in the plan. Setup is counted once for the operation, not once per shift, because the split is a scheduling artifact rather than a physical interruption of the changeover: the machine keeps its setup overnight. This is also why an operation stays on the same machine for every shift it occupies within a run. If your process genuinely does require re-preparing after a break, that is a real cost the routing's setup figure does not capture, and it is worth reflecting in the step's hours."
+qaQuestions:
+  - question: "One of my bars stretches across a weekend and looks enormous. Is the work really that long?"
+    answer: "Almost certainly not. Read the operation's hours rather than the width of the bar. A step that starts Friday afternoon and finishes Tuesday afternoon may contain only twenty hours of work, because the closed weekend contributes calendar time and zero machine hours. The wide bar is telling you a true and useful thing, which is when the next step can begin, but it is not telling you cost or capacity consumption. For those, look at the hours column and at the per-day breakdown of where the hours actually landed."
+  - question: "Can I stop an operation splitting across shifts?"
+    answer: "Splitting is the normal behavior and is what lets a long operation be planned at all, so there is no reason to prevent it in general: an eighteen hour operation cannot fit an eight hour shift by any arrangement. Where a genuine physical constraint exists, for example a process that must run start to finish without interruption, that is not really a splitting question but a capacity question. The right model is a work center whose shift is long enough for the process, or a dedicated-machine rule so the operation is not interleaved with other jobs."
+---
+
+**A cross-shift operation is a single routing step whose hours do not fit inside one shift, so the scheduler places part of them in one shift and the remainder in the next available ones, continuing across days or a closed weekend as needed.** It is still one operation with one start, one end, and one hours figure; only its placement is fragmented. The consequence worth internalizing is that its elapsed span and its worked hours are two different numbers, and confusing them is the most common misreading of a production Gantt. EDGEBIC by User Solutions splits operations this way by default.
+
+## How it works
+
+The scheduler places an operation by walking forward from the moment it becomes eligible, examining each shift on each day in turn. In each candidate slot it books whatever will fit and subtracts that from what remains. If hours remain, it continues to the next slot. The loop ends when the remaining hours reach zero.
+
+Three things follow from that loop.
+
+**The first slot is often partial.** An operation eligible from 13:00 on an eight hour day shift can only use the three hours left, not eight. So the first booking is frequently smaller than a full shift, which is normal rather than a sign of contention.
+
+**Gaps cost nothing.** Nights between shifts, weekends, and closures are skipped without consuming any of the operation's hours. The engine simply finds no capacity there and moves on. The gap is real calendar time and zero machine time.
+
+**Setup is counted once.** The split is a scheduling artifact, not a physical interruption of the changeover, so the machine keeps its setup between shifts and the routing's setup hours are counted for the operation rather than per fragment. This is closely related to why an operation stays on the same machine for every shift it occupies within a run: moving it to a different machine mid-operation would mean a genuine second setup.
+
+The result is one operation record whose window spans from the first fragment's start to the last fragment's end, with the hours distributed across the days the work actually happened on. Reading the plan correctly means reading both: the window to know when the next step can start, and the hours to know what the operation cost.
+
+## A concrete example
+
+An assembly work center runs one machine on a day shift, Monday to Friday, 08:00 to 16:00. No weekend shift. An operation needs twenty hours and becomes eligible on Friday at 12:00.
+
+| Pass | Slot | Hours offered | Hours booked | Remaining |
+|---|---|---|---|---|
+| 1 | Fri Day (from 12:00) | 4.0 | 4.0 | 16.0 |
+| 2 | Sat, Sun | no shift | 0 | 16.0 |
+| 3 | Mon Day | 8.0 | 8.0 | 8.0 |
+| 4 | Tue Day | 8.0 | 8.0 | **0** |
+
+The operation starts Friday at 12:00 and finishes Tuesday at 16:00. Its elapsed span is four and a half calendar days. Its worked content is twenty hours, exactly as the routing said.
+
+Both numbers are load-bearing and they answer different questions. If you are asked what this operation costs, or how much of the machine's week it consumed, the answer is twenty hours. If you are asked when the next step can begin, the answer is Tuesday at 16:00, and the four and a half days are the honest span. A planner who reads the bar's width as effort concludes the routing is wrong; a planner who reads only the hours misses that the successor cannot start until Tuesday evening.
+
+Cross-shift splitting also happens without a weekend. The same operation on a work center running both a day and a night shift, with two machines, would consume twelve hours across Monday's day shift from a 10:00 start and sixteen on Monday night, finishing at midnight the same calendar day. Same twenty-eight hour class of problem, a span measured in hours rather than days, because the calendar offered more shifts.
+
+## How EDGEBIC uses it
+
+Splitting is the default and is what makes long operations schedulable at all: an eighteen hour operation cannot fit an eight hour shift under any arrangement. The slot the engine books into is described in [what is a shift resource allocation in scheduling](/blog/what-is-a-shift-resource-allocation-in-scheduling), and what a slot reports as free, including the partial-first-slot case, is covered in [what is available capacity in scheduling](/blog/what-is-available-capacity-in-scheduling).
+
+Where the hours actually landed, day by day, is recorded in the structure described in [what is a daily hour breakdown](/blog/what-is-a-daily-hour-breakdown). That is the surface to use when the span and the hours disagree and you want to see the distribution rather than infer it from a bar.
+
+Which slots exist at all comes from the calendar. The association between a machine and a shift is defined in [what is a work center shift](/blog/what-is-a-work-center-shift), and closures that remove slots entirely are covered in [what is a plant holiday in scheduling](/blog/what-is-a-plant-holiday-in-scheduling). The general distinction between calendar time and working time, which is exactly what a cross-shift span exposes, is laid out in [working day vs calendar day in scheduling](/blog/working-day-vs-calendar-day-in-scheduling).
+
+## The takeaway
+
+A cross-shift operation is one piece of work wearing several calendar windows. The rule that keeps a plan readable is to hold two numbers in mind rather than one: hours for capacity and cost, elapsed span for when the successor can start. Almost every complaint that a Gantt bar looks impossibly long resolves the moment those two are separated, because the extra width is nights, weekends, and closures contributing calendar time and no machine time at all. For the underlying mechanics see [what is available capacity in scheduling](/blog/what-is-available-capacity-in-scheduling) and [what is a daily hour breakdown](/blog/what-is-a-daily-hour-breakdown), then explore [EDGEBIC](/edgebic) or, if you are coming from the legacy product, [RMDB to EDGEBIC](/rmdb-to-edgebic).

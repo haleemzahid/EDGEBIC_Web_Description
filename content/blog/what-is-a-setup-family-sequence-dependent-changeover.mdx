@@ -1,0 +1,101 @@
+---
+title: "What Is a Setup Family? Taming the Changeover Matrix"
+description: "A setup family groups products with identical changeover behavior, collapsing a 10,000-cell setup matrix to 64 cells. Definition, paint-shop math, and setup."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - setup family changeover matrix
+  - setup family definition
+  - sequence dependent setup time
+  - changeover matrix manufacturing
+  - setup time by product family
+  - paint shop changeover scheduling
+targetPhrase: "setup family changeover matrix"
+wordCount: 1170
+readingTime: 6
+faqQuestions:
+  - question: "What is a setup family in manufacturing scheduling?"
+    answer: "A setup family is a named group of products that share identical changeover behavior on a machine. Instead of recording a setup time for every product-to-product pair, you record times between families: light colors to dark colors, one alloy group to another. Eight families covering 100 products collapse a 10,000-cell changeover matrix to 64 cells, which is the difference between a maintainable table and an impossible one."
+  - question: "What is sequence-dependent setup time?"
+    answer: "Sequence-dependent setup is changeover time that depends on both what the machine ran last and what it runs next, not just on the next job. White paint after light grey needs minutes of flushing; white after black needs hours. A flat per-job setup time cannot express that asymmetry, which is why schedules built on flat setups quietly overpromise on changeover-heavy equipment."
+  - question: "How does a scheduler decide which setup time to use for a job?"
+    answer: "Through an ordered resolver: if nothing ran on the machine before, use the routing's default (cold start); if the previous product is the same, use zero; if a product-to-product matrix cell exists, use it; otherwise, if a family-to-family cell exists, use that; and failing everything, fall back to the routing or machine default. First hit wins, and the winning rule is recorded on the schedule row for audit."
+  - question: "Do setup families change the schedule or just document it?"
+    answer: "Both, in stages. Entering the matrix immediately makes the schedule honest: plans stop assuming a flat 30 minutes when the real changeover is 4 hours. Sequencing against the matrix then makes the schedule efficient: running like families together turns most changeovers into zero-minute transitions. In the documented paint-shop example, the same three jobs took 330 setup minutes in due-date order and 90 minutes resequenced."
+qaQuestions:
+  - question: "Our paint booth runs whites, creams, reds, and blacks. Where do we start without entering hundreds of cells?"
+    answer: "Two families and four cells. Group White and Cream into a Light family, Black and Dark Grey into Dark, and enter the four family pairs for the booth: Light to Light 0 minutes, Light to Dark 60, Dark to Light 240, Dark to Dark 0. That covers every changeover among those products with four rows. The documented example runs exactly this table; special pairs come later as product-level overrides, like Red to Black needing an extra solvent flush at 90 minutes, which then outranks the family rule for just that pair."
+  - question: "How do I verify the matrix is actually being applied and not silently ignored?"
+    answer: "Read the setup audit columns. Every scheduled operation records where its setup time came from: a product-matrix cell, a family-matrix cell, same-product zero, cold start, or the routing default, plus a human-readable line such as 'family matrix Light to Dark: 60 min.' If steps you expected to hit the matrix show the routing default instead, the built-in configuration audit will also tell you why: duplicate cells, cells referencing deleted products, or products assigned to a missing family are each flagged with the exact cell named."
+---
+
+**A setup family is a named group of products that share identical changeover behavior on a machine, and it exists to make sequence-dependent setup times manageable: instead of recording a changeover for every product-to-product pair (100 products means 10,000 pairs), you record changeovers between families, and 8 families need just 64 cells.** It is the data structure that turns "we know black-to-white takes four hours" from tribal knowledge into something a scheduler can plan with.
+
+This entry is part of the EDGEBIC glossary; the full dictionary lives in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## The Problem: Changeover Depends on Sequence
+
+On changeover-heavy equipment (paint, coating, plastics, food, chemicals, heat treat), setup time is not a property of the next job alone: it depends on the pair. A paint booth going white to light grey needs a quick flush; going black to white needs hours of cleaning and color matching. A flat "30 minutes setup" on the routing averages those extremes into a number that is wrong in both directions, and the schedule built on it overpromises exactly when the sequence is worst.
+
+The honest representation is a matrix: from-product by to-product, per machine, because changeover physics differ machine to machine. The matrix is truthful and completely unmaintainable at product scale, which is where families come in.
+
+## How Families Collapse the Matrix
+
+Products that behave identically in changeover get one family: every white, cream, and pastel is "Light"; every black and dark grey is "Dark." Changeovers are then recorded family-to-family, and the few genuinely special pairs get product-level overrides that outrank the family rule.
+
+When the scheduler needs a setup time for the next job on a machine, it resolves through an ordered chain, first hit wins:
+
+1. **Cold start**: nothing ran on this machine yet, so no changeover exists; use the routing default.
+2. **Same product**: back-to-back identical product, zero changeover.
+3. **Product matrix**: an explicit cell for this exact pair on this machine.
+4. **Family matrix**: the cell for the two products' families on this machine.
+5. **Fallback**: the routing's flat setup, or the machine's default.
+
+The family tier does roughly 95% of the work; the product tier is the escape hatch for pairs that break their family's rule.
+
+## A Worked Example: The Paint Booth
+
+From the [EDGEBIC by User Solutions](/edgebic) documentation. One booth, three jobs due in the order White (1.0 h paint), Black (1.5 h), White (0.75 h). Families: Light (White, Cream) and Dark (Black, Dark Grey). The family matrix for the booth:
+
+| From \ To | Light | Dark |
+|---|---|---|
+| **Light** | 0 min | 60 min |
+| **Dark** | 240 min | 0 min |
+
+**Without the matrix** (flat 30-minute setup), the plan claims all three jobs finish by 12:45. Floor reality includes a 240-minute dark-to-light flush the plan never saw; the day overruns by half a shift, on paper a mystery.
+
+**With the matrix, due-date order**: 30 (cold start) + 60 (Light→Dark) + 240 (Dark→Light) = 330 setup minutes, finishing 16:45. The plan now overflows the shift, but honestly: the planner sees the real cost of the sequence before the floor pays it.
+
+**With the matrix, resequenced** (both whites first, then black): 30 + 0 + 60 = 90 setup minutes, all three jobs done by 12:45 with three hours of shift to spare. A 73% setup reduction from sequencing alone, with identical work content.
+
+That progression is the whole value proposition: the matrix makes the schedule honest, and sequencing against the matrix makes it efficient. The [paint shop sequencing example](/blog/paint-shop-changeover-sequencing-example-edgebic) walks the full scenario job by job.
+
+## How EDGEBIC Implements It
+
+- **Where it lives:** a Setup Matrix tab on the work center: a families section (name and short code, like "Light"/LIGHT), a family-to-family grid, and a product-to-product override grid. Times are entered in minutes, matching how the floor talks ("a 30-minute flush"), and converted internally.
+- **Assignment:** each product optionally carries a family. A product with no family is its own family: only explicit product-level cells describe its changeovers.
+- **The audit trail:** every scheduled operation records its setup source (cold start, same product, product matrix, family matrix, or default) and a readable reason such as "family matrix Light → Dark: 60 min," visible as columns in the Job View. Matrix-resolved setups render distinctly from fallbacks, so a glance shows whether sequence pricing applied.
+- **Integrity checks:** EDGEBIC's built-in configuration audit flags negative cells, duplicate cells (whose resolution would be unpredictable), self-pairs with non-zero time (unreachable, since same-product resolves to zero first), cells referencing deleted products or machines, and products assigned to a missing family. Run it after any matrix import.
+- **Downstream power:** with a populated matrix, the [optimizer's](/blog/edgebic-optimizer-guide) least-setup goal becomes available and can search for sequences that minimize total changeover, including, with the mathematical solver on eligible machines, changeover-aware sequencing with a proven bound. The matrix also feeds overlap math: lot-streaming calculations use the sequence-resolved setup rather than the flat default.
+
+If your product data already lives in an ERP, family assignments and matrix cells [arrive the same way as the rest of your master data](/edgebic-erp-integration): flexible spreadsheet and database import, verified by the same audit.
+
+<Accordion title="What is a setup family in manufacturing scheduling?">
+A setup family is a named group of products that share identical changeover behavior on a machine. Instead of recording a setup time for every product-to-product pair, you record times between families: light colors to dark colors, one alloy group to another. Eight families covering 100 products collapse a 10,000-cell changeover matrix to 64 cells, which is the difference between a maintainable table and an impossible one.
+</Accordion>
+
+<Accordion title="What is sequence-dependent setup time?">
+Sequence-dependent setup is changeover time that depends on both what the machine ran last and what it runs next, not just on the next job. White paint after light grey needs minutes of flushing; white after black needs hours. A flat per-job setup time cannot express that asymmetry, which is why schedules built on flat setups quietly overpromise on changeover-heavy equipment.
+</Accordion>
+
+<Accordion title="How does a scheduler decide which setup time to use for a job?">
+Through an ordered resolver: if nothing ran on the machine before, use the routing's default (cold start); if the previous product is the same, use zero; if a product-to-product matrix cell exists, use it; otherwise, if a family-to-family cell exists, use that; and failing everything, fall back to the routing or machine default. First hit wins, and the winning rule is recorded on the schedule row for audit.
+</Accordion>
+
+<Accordion title="Do setup families change the schedule or just document it?">
+Both, in stages. Entering the matrix immediately makes the schedule honest: plans stop assuming a flat 30 minutes when the real changeover is 4 hours. Sequencing against the matrix then makes the schedule efficient: running like families together turns most changeovers into zero-minute transitions. In the documented paint-shop example, the same three jobs took 330 setup minutes in due-date order and 90 minutes resequenced.
+</Accordion>

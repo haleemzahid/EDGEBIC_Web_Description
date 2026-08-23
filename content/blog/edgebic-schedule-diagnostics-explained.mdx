@@ -1,0 +1,137 @@
+---
+title: "How EDGEBIC Checks Its Own Schedule: Diagnostics Explained"
+description: "Production schedule validation explained: how EDGEBIC audits its own plan for over-booking, off-calendar work, broken data, and configuration that quietly fails."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - production schedule validation
+  - schedule quality checks
+  - manufacturing data validation
+  - scheduling diagnostics
+  - capacity over-booking check
+  - schedule audit manufacturing
+  - EDGEBIC diagnostics
+targetPhrase: "production schedule validation"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "What is production schedule validation?"
+    answer: "Production schedule validation is an automated audit of a finished schedule that looks for conditions the plan should never contain: a machine booked beyond the hours it physically has, two jobs on the same machine unit at once, work placed on a holiday, an operation ending before it starts, or a work center with no shift calendar to schedule against. It answers whether the plan is internally consistent before anyone works to it."
+  - question: "Why does a scheduler need to check its own output?"
+    answer: "Because most bad schedules are caused by data, not by the engine, and data problems are silent. A work center with no shifts, a routing whose links are broken, or a stock figure that drifted from its transaction history all produce a plan that looks normal. An automated sweep turns those into a short list of named findings, each pointing at the record that caused it, so they are fixed before the shop discovers them."
+  - question: "Does the anomaly report fix problems automatically?"
+    answer: "No, and that is deliberate. Every finding points at a record and a cause, but the decision belongs to a planner. Some findings are genuine data corruption that must be fixed before rescheduling. Others are configuration ambiguity where two settings compete and the engine picked one. A few describe known trade-offs that are correct for your shop. Automatic correction would hide the distinction."
+  - question: "How often should you run a schedule validation sweep?"
+    answer: "Run it after any bulk data change, after any migration, and on a weekly cadence in normal operation. The highest-yield moment is immediately after an import, because that is when hundreds of records change at once and a single mapping error repeats across every row. In steady state a weekly plant-wide pass with the criticals cleared is enough to keep the schedule trustworthy."
+qaQuestions:
+  - question: "Our previous system never told us anything was wrong. How much does self-checking actually change day to day?"
+    answer: "It changes where the surprise happens. Without validation the first person to discover that a work center has no shift calendar is a supervisor at 6am with a dispatch list that skips a machine, and the diagnosis costs an hour of three people's time. With validation that same condition is one line in a report, named, pointing at the work center, found before the schedule was published. The category of problem does not disappear; it moves from the floor to the planner's screen and from urgent to routine. The plants that get the most from it treat the sweep like a pre-flight check rather than an investigation tool."
+  - question: "We just migrated four years of history. What will the first sweep tell us and what should we ignore?"
+    answer: "Expect a long list, and triage it by severity rather than by count. Criticals first: on-hand figures that disagree with their own transaction history, operations whose end date precedes their start, bookings referencing a machine unit that no longer exists. Those are data corruption and they will keep producing wrong answers until they are fixed. Warnings next, grouped by family, because a migration usually produces the same finding hundreds of times from one root cause and fixing that cause clears the block. Informational rows can wait. The one thing not to do is reschedule on top of an uncleared critical list: the engine will faithfully build a plan on broken inputs and you will spend the week arguing with the output."
+---
+
+**EDGEBIC by User Solutions audits its own schedule. After a scheduling run you can ask the system to check the plan it just produced for conditions that should never exist, and it answers with a short list of named findings, each pointing at the record that caused it.** That is unusual in this category, and it exists because most bad schedules are caused by data rather than by the engine, and data problems are silent by nature.
+
+This post explains what the self-check covers and how to think about it. If you already have a symptom in front of you, the symptom-first route is [why does my schedule look wrong](/blog/edgebic-troubleshooting-guide). If you want the button sequence, go to [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic).
+
+## Why a Schedule Needs Validation at All
+
+A finite capacity scheduler does exactly what its inputs tell it. Give it a work center with no shift calendar and it will find no capacity there and route around it, quietly. Give it a routing whose link chain is broken and it will schedule the steps in whatever order the graph implies, which may not be the order on the traveller. Give it a stock figure that drifted away from its own transaction history and it will net against the wrong number.
+
+None of those produce an error message. They produce a plan that looks entirely normal and is wrong in one specific place. Data quality is the recognized weak point in manufacturing systems generally, and organizations such as [NIST MEP](https://www.nist.gov/mep) build much of their manufacturing improvement guidance around getting the underlying records right before layering tools on top.
+
+Validation closes that gap by asking a different question from the one the engine asks. The engine asks "where do these hours fit". The validator asks "does the answer contain anything physically impossible, calendar-illegal, internally inconsistent, or configured in a way that silently does nothing".
+
+## What Gets Checked
+
+The sweep covers roughly fifty named checks. They fall into families, and thinking in families is more useful than memorising individual checks.
+
+| Family | The question it asks |
+|---|---|
+| Over-booking | Is any machine carrying more hours in a day than it physically has? |
+| Machine collisions | Are two jobs occupying the same machine unit at the same moment? |
+| Idle gaps | Is capacity being wasted between consecutive jobs on the same unit? |
+| Dependency order | Does any step start before the step it depends on has finished? |
+| Off-calendar work | Is anything booked on a holiday, a shift closure, or a downtime window? |
+| Impossible dates | Does any operation or booking end at or before it starts? |
+| Configuration gaps | Is anything scheduled against a work center that has no shifts, or a machine unit that no longer exists? |
+| Missing hours | Did the plan book fewer hours than the routing demands? |
+| Overlap conflicts | Are two overlap models fighting, or is one silently doing nothing? |
+| Dead settings | Are values filled in fields the scheduler never reads? |
+| Consistency drift | Do two places that store the same number disagree? |
+| Stock integrity | Does on-hand match its own transaction history, and are yields sane? |
+| Changeover matrix | Does the setup matrix contain cells that can never match anything? |
+
+Each family exists because a real problem produced a real wrong schedule. The full plain-language walk through every family, with the thresholds each one uses, is [what the anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for).
+
+## The Severity Ladder
+
+Every finding carries one of three severities, and they mean genuinely different things.
+
+**Critical** means the condition is physically impossible or the data is corrupt. An operation ending before it starts. A machine booked for more than twenty-four hours in a day. A booking referencing a machine unit that has been removed. A stock cache that disagrees with its own ledger. Fix these before rescheduling, because the engine will build faithfully on top of them.
+
+**Warning** means the configuration is ambiguous and the engine had to pick something. Two overlap models set on one step, so one wins and the other silently does nothing. A transfer batch larger than the order quantity, which caps and behaves as if streaming were off. A work center with no shift definition. These are the findings that most often explain "we configured that and nothing happened".
+
+**Informational** means the report noticed a known trade-off you should be aware of. It is not asking you to do anything.
+
+The practical rule is simple. Clear criticals before you publish a schedule. Work warnings down by family, because a single root cause usually produces many of them. Read informational rows once and move on.
+
+## Two Surfaces, Two Audiences
+
+The same logic runs from two places.
+
+The **in-app report** is where planners live. Open Reports, choose Scheduler Anomalies, optionally filter to a job, and run. Results come back grouped by severity and check, with a summary strip of chips: green when a check found nothing, amber or red when it found rows. Clicking a row navigates to the schedule or routing that produced it. Everything exports to Excel or PDF like any other report.
+
+A **deeper snapshot** exists for implementation work: a full pull of the underlying data for a job set plus a set of hard pass or fail regression gates. Those gates were each added after a real defect was found and fixed, so a non-empty result means a known problem has returned. That surface belongs to implementation consultants and support engineers rather than to daily planning, and it is the tool behind a fast answer when you send US a schedule you cannot explain.
+
+Both surfaces answer the same questions. The difference is depth and audience, not scope.
+
+## When It Pays Most
+
+Three moments return far more than the two minutes the sweep costs.
+
+**Immediately after an import.** This is the single highest-yield moment, because an import changes hundreds of records at once and a single mapping error repeats across every row. A conversion factor left off a minutes column produces setup values sixty times too large on every step in the file, and the sweep will show you the shape of that instantly. The import mechanism itself is covered in [import masks explained](/blog/edgebic-import-masks-explained).
+
+**After a data migration.** Migrations are where stock caches drift from their ledgers, where products end up pointing at setup families that no longer exist, and where bookings reference machine units that were trimmed. Expect a long first list and triage it by severity.
+
+**On a weekly cadence in steady state.** Once the criticals are clear, a weekly plant-wide pass keeps them clear. Configuration drifts as people add machines, retire shifts and edit routings, and the sweep is how drift surfaces before a supervisor finds it.
+
+There is a fourth moment worth naming: right before you promise a date to a customer on a quote. A quoted lead time built on a work center with no shift calendar is a promise you cannot keep, and the sweep is faster than the argument afterwards.
+
+## What Validation Does Not Do
+
+It does not judge whether your numbers are right. A run rate of 0.5 hours per unit is structurally perfectly valid, and no automated check can know the real rate is 0.4. Structure is checkable; accuracy is earned by logging real hours and comparing them to plan.
+
+It does not fix anything. Every finding names a record and a cause, and the decision stays with a planner. Some findings describe behavior that is correct for your shop: synchronized mirror machines legitimately book without a capacity check, and lot streaming legitimately overlaps operations. Automatic correction would erase the distinction between "this is wrong" and "this is what we asked for".
+
+And it does not replace judgement about load. A four-day gap between two operations is flagged only when nothing explains it. When a competing job is genuinely occupying the downstream machine, the gap is the schedule being honest about your capacity, and no report should call that a defect. The reasoning behind that distinction is in [how EDGEBIC reads a routing](/blog/how-edgebic-reads-a-routing).
+
+## Where This Sits in the Platform
+
+Validation is the third leg of a stool. [Finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) produces a plan that respects real constraints. Recorded actuals keep the plan honest against what the floor actually did. Diagnostics keep the inputs honest so the other two are working on solid ground.
+
+Skip the third and the first two degrade quietly. That is the reason it ships in the box rather than as a consulting deliverable.
+
+Next steps: [run your first sweep](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic), read [what each family looks for](/blog/what-the-edgebic-anomaly-checks-actually-look-for), or see [what happens when warnings are ignored](/blog/ignoring-schedule-warnings-mistakes-edgebic). The whole platform is mapped in the [complete EDGEBIC guide](/blog/edgebic-complete-guide) and at the [EDGEBIC](/edgebic) hub.
+
+Bring US a schedule your shop does not believe. [Contact US](/contact-us) and we will run the sweep on it with you.
+
+<Accordion title="What is production schedule validation?">
+Production schedule validation is an automated audit of a finished schedule that looks for conditions the plan should never contain: a machine booked beyond the hours it physically has, two jobs on the same machine unit at once, work placed on a holiday, an operation ending before it starts, or a work center with no shift calendar to schedule against. It answers whether the plan is internally consistent before anyone works to it.
+</Accordion>
+
+<Accordion title="Why does a scheduler need to check its own output?">
+Because most bad schedules are caused by data, not by the engine, and data problems are silent. A work center with no shifts, a routing whose links are broken, or a stock figure that drifted from its transaction history all produce a plan that looks normal. An automated sweep turns those into a short list of named findings, each pointing at the record that caused it, so they are fixed before the shop discovers them.
+</Accordion>
+
+<Accordion title="Does the anomaly report fix problems automatically?">
+No, and that is deliberate. Every finding points at a record and a cause, but the decision belongs to a planner. Some findings are genuine data corruption that must be fixed before rescheduling. Others are configuration ambiguity where two settings compete and the engine picked one. A few describe known trade-offs that are correct for your shop. Automatic correction would hide the distinction.
+</Accordion>
+
+<Accordion title="How often should you run a schedule validation sweep?">
+Run it after any bulk data change, after any migration, and on a weekly cadence in normal operation. The highest-yield moment is immediately after an import, because that is when hundreds of records change at once and a single mapping error repeats across every row. In steady state a weekly plant-wide pass with the criticals cleared is enough to keep the schedule trustworthy.
+</Accordion>

@@ -1,0 +1,118 @@
+---
+title: "E2 Shoptech Scheduling Gaps (And How EDGEBIC Fills Them)"
+description: "E2 Shoptech finite capacity scheduling gaps that shops report: infinite-capacity dates, flat work center capacity, sequence-dependent setups, and slow what-if answers."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - E2 Shoptech finite capacity scheduling
+  - E2 Shop scheduling gaps
+  - E2 scheduling add-on
+  - E2 production scheduling integration
+  - sequence dependent setup E2
+  - job shop bottleneck scheduling
+targetPhrase: "E2 Shoptech finite capacity scheduling"
+wordCount: 1810
+readingTime: 9
+faqQuestions:
+  - question: "Why do E2 shops still schedule on a whiteboard or spreadsheet?"
+    answer: "Because the daily sequencing decision is a constraint problem, not a record-keeping problem. E2 is built to be right about quotes, costs, and jobs; a scheduler is built to be right about which machine runs what, in what order, on which shift. When the second question is answered off to the side, the whiteboard becomes the real schedule and the promised dates drift away from it. That is a category gap rather than a product flaw."
+  - question: "Do we have to replace E2 to get finite capacity scheduling?"
+    answer: "No. The standard pattern is a scheduling layer beside the ERP rather than instead of it. E2 stays the system of record for quoting, purchasing, inventory, and invoicing. A finite capacity tool reads the parts, work centers, routings, and open jobs E2 already holds, builds an executable schedule, and hands dates back. No E2 process has to be redesigned."
+  - question: "How does EDGEBIC get data out of E2?"
+    answer: "Through reusable import masks fed by the Excel or CSV exports your E2 environment already produces. You map an export's columns to EDGEBIC fields once; every later run is two clicks, and each row reports back as Created, Updated, Reused, or Failed with a per-run log. There is no certified connector, no middleware, and nothing installed inside E2, so an upgrade has nothing to break."
+  - question: "What changes first when a small shop adds finite capacity scheduling?"
+    answer: "Bottleneck visibility, usually in the first scheduling run. Loading every open job against real shift hours and real machine counts turns an overloaded week from a surprise three weeks out into a number you can see today. The second change is what-if speed: quoting a rush job becomes a scheduler run rather than a gut call at the counter."
+qaQuestions:
+  - question: "We run E2 in a 20-person machine shop, the schedule is technically in the system, but the foreman runs from a printed sheet one person maintains. What would actually be different?"
+    answer: "Three things become computed instead of estimated. First, capacity: every open job loads against the actual shift hours and machine counts of your work centers, so an overloaded week shows as a number rather than as late jobs a month later. Second, sequence: with a setup matrix in place the engine runs compatible work together, which returns changeover hours you are currently paying for without seeing. Third, cascade math: dropping in a hot job and pressing reschedule recomputes every downstream operation with the routing intact, while operations that already have logged hours are preserved exactly. The printed sheet loses its reason to exist because the system now answers the questions it was invented to answer."
+  - question: "Our shop shares one big five-axis across most jobs and E2 treats it as one capacity figure. Does modeling it more precisely really change the schedule that much?"
+    answer: "On the machine that gates the whole shop, it changes everything, because that is the machine every date depends on. E2 telling you the five-axis has capacity this week says nothing about whether the four jobs fighting for it can all clear by Friday. Flag it as the bottleneck and EDGEBIC anchors the schedule around it, scheduling backward into it and forward out of it with protective buffers, and shows its load by day so an overloaded Tuesday is visible while you can still move something. For a shop with one obvious constraint, that single change is usually the whole payback."
+---
+
+**E2 Shoptech is a strong system of record for quoting, jobs, and shop paperwork, but many machine shops report that the day-to-day sequencing decision still happens on a whiteboard or a spreadsheet, because the questions a planner answers each morning are finite capacity questions: which jobs fit this week, what a hot job displaces, and when the shared machine actually runs out of hours.** The fix is not replacing E2. It is adding a finite capacity layer beside it that reads the data E2 already holds and hands executable dates back.
+
+EDGEBIC by User Solutions is that layer. This post walks the gaps shops report, why they exist in any quoting-first ERP, and how each one is filled with a specific mechanism rather than a brochure claim. For the data-flow mechanics, the companion post is the [complete E2 Shoptech integration guide](/blog/edgebic-e2-shoptech-integration-guide).
+
+## Why the gaps exist at all
+
+An ERP's job is to be right about money and jobs: what was quoted, what was committed, what it cost. A scheduler's job is to be right about time: what runs where, when, in what order, on which machine, with which operator. Those are different computational problems, and the second one grows hard fast. Sequencing a few hundred open jobs across a couple dozen work centers with shifts, changeovers, and a shared bottleneck is a constraint problem a transactional data model was never designed to solve.
+
+So the gap is structural rather than a defect. It shows up as a familiar pattern: dates come from lead-time offsets, the floor runs from a document one person maintains, and the two drift until a customer call reconciles them. The discipline distinction between running a job shop and scheduling its capacity is standard in the operations management body of knowledge maintained by [ASCM](https://www.ascm.org), and the general version of the story is in [where ERP falls short on scheduling](/blog/where-erp-falls-short-scheduling). Here is the E2-shop version, gap by gap. The wider set of job-shop problems is in [job shop scheduling challenges](/blog/job-shop-scheduling-challenges).
+
+## Gap 1: dates that assume capacity exists
+
+The first question, [finite versus infinite capacity](/blog/finite-vs-infinite-capacity-scheduling), decides whether a date means anything. Infinite-capacity logic stacks work into a week without asking whether the hours exist. Finite-capacity logic refuses to plan 60 hours onto a machine with 40 available and pushes the overflow to when capacity is real.
+
+**How EDGEBIC fills it:** every schedule is finite capacity by construction. Work centers carry instance counts, shift calendars, efficiency, utilization caps, holidays, and downtime, and the engine resolves available hours day by day before it allocates anything. A job that does not fit this week lands where it fits, and the date it produces is one the floor can hit. When you want the just-in-time answer instead of the safe one, [backward scheduling](/blog/forward-vs-backward-scheduling) from the due date is a per-job choice.
+
+## Gap 2: work center capacity flattened into one number
+
+Most ERP data models describe a work center as a capacity figure. Two identical machining centers become one resource with a bigger number, which is right in a weekly total and wrong every day, because it will plan one job that occupies the whole cell where two could run side by side.
+
+**How EDGEBIC fills it:** machine instances are first-class. A work center holding two machines means two simultaneous jobs, and the engine chooses between load balancing across instances and dedicating one machine per job per day when long changeovers make that the correct rule. Work center groups go further: a named pool of interchangeable machines that the engine re-shops on every reschedule, with a per-member efficiency factor so a slower older machine takes proportionally longer. The mechanics are in [how EDGEBIC picks the best machine in a pool](/blog/how-edgebic-picks-the-best-machine-in-a-pool).
+
+## Gap 3: no sequence-dependent setup logic
+
+One setup time per operation cannot express the reality that changeover cost depends on what ran immediately before. Shops running tooling families, materials, or fixtures lose whole afternoons to sequencing nobody can see, and no single column in any export can capture it.
+
+**How EDGEBIC fills it:** a sequence-dependent setup matrix per work center, organized by setup families so you maintain dozens of entries rather than thousands of part-to-part pairs. The optimizer then sequences compatible work together and orders families to reduce total changeover, using mathematical optimization with a proven optimality gap plus a multi-run layer guaranteed never worse than the baseline schedule. Recovered setup time is capacity you have already paid for. The concept post is [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+## Gap 4: the constraint is invisible until it is late
+
+Every shop has a constraint machine. Without finite loading, its overload appears only as a wave of late jobs weeks later, by which point the decision window has closed. Finding and protecting the constraint is the highest-return move in scheduling, and the method is covered in [production bottleneck identification](/blog/production-bottleneck-identification).
+
+**How EDGEBIC fills it:** flag the work center as a bottleneck and the engine anchors schedules around it, scheduling backward into the constraint and forward out of it with protective buffers, which is the Theory of Constraints pattern applied to a real routing. Capacity views then show the constraint's load by day, so an overloaded Tuesday is visible while there is still time to move something.
+
+## Gap 5: reschedule churn nobody trusts
+
+The complaint that quietly kills adoption is not a missing feature, it is churn: a re-run that moves jobs already set up, restarts work that is halfway done, or produces a plan the floor recognizes as fiction. Once that happens twice, the foreman stops reading the system.
+
+**How EDGEBIC fills it:** two guarantees, both structural. Completed work is never moved by a reschedule, because an operation with logged actual start and end is historical fact and no mode or setting will shift it. And every scheduled job runs from a frozen snapshot of the routing it was planned with, so a mid-stream change never silently rewires work in progress. On top of both, [scheduling modes](/blog/edgebic-scheduling-modes-explained) let you re-plan only new jobs and leave everything else untouched.
+
+## Gap 6: what-if answers that hold up a quote
+
+Quoting a rush job means knowing what it displaces, and inserting one hot job displaces others, which displaces others. A person cannot recompute a hundred downstream operations at the counter, so the honest answer to "can we hit that date?" is a guess, and the guess is usually optimistic.
+
+**How EDGEBIC fills it:** rescheduling is a computed operation, and quote simulation lets you test a promise date before you make it. Insert the candidate job, run the scheduler, and read the displaced dates. The whole what-if loop is minutes, which changes who gets to ask the question: the estimator can ask it during the call rather than after it.
+
+## The integration question, answered honestly
+
+The objection to any layer beside the ERP is the data bridge. This product line answered that decades ago, and the answer is deliberately unglamorous: reusable import masks that read the Excel, CSV, and database exports E2 already produces. You map columns once, and every later run is two clicks. Routings import in two passes so operation sequences wire themselves. Unit conversion (minutes to hours at `0.016667`, hours per 100 pieces at `0.01`) lives inside the mask. Every row reports Created, Updated, Reused, or Failed with a per-run log.
+
+There is no certified connector, no middleware server, and nothing installed inside E2, which means there is nothing to re-certify at upgrade. The full architecture is on the [ERP integration page](/edgebic-erp-integration), and the same method applied to other platforms is covered in the [ProShop](/blog/proshop-scheduling-gaps-and-how-edgebic-fills-them) and [SAP](/blog/sap-scheduling-gaps-and-how-edgebic-fills-them) versions of this post.
+
+This is not a new bet. User Solutions has integrated scheduling with ERPs this way since 1991, including a Fourth Shift integration at Plastilite Corporation that ran Monday to Friday with the ERP vendor itself recommending the add-on, plus Cummins across 33 locations and BAE Systems.
+
+## Three checks that predict how fast this pays off
+
+Each takes minutes and none requires buying anything.
+
+**Routing coverage.** Pull routings for your ten highest-volume parts. Do they carry an operation sequence, a work center, hours per unit, and a setup time? If yes, you can schedule on day one. Missing setup times are survivable: a zero-setup step simply contributes no changeover time, and the gap becomes visible in the results.
+
+**Machine truth.** Count real machines per work center and compare with what E2 records. Every center where the counts disagree is capacity you are currently misrepresenting in both directions.
+
+**Date honesty.** Sample 20 recently shipped jobs and compare promised dates with actual ship dates. That spread is your current scheduling error and becomes the baseline you measure against. Shops that skip this step cannot prove the improvement they can feel.
+
+## A 30-minute test
+
+Export three files: work centers, routings for your five highest-volume parts, and this week's open jobs. [Bring them to a demo](/contact-us). Mapping the columns live takes minutes, and the first finite capacity schedule from your own data answers the only question that matters: do these dates look like your shop? The [EDGEBIC product overview](/edgebic) and the [ERP scheduling add-on page](/erp-scheduling-add-on) cover the rest.
+
+<Accordion title="Why do E2 shops still schedule on a whiteboard or spreadsheet?">
+Because the daily sequencing decision is a constraint problem, not a record-keeping problem. E2 is built to be right about quotes, costs, and jobs; a scheduler is built to be right about which machine runs what, in what order, on which shift. When the second question is answered off to the side, the whiteboard becomes the real schedule and the promised dates drift away from it. That is a category gap rather than a product flaw.
+</Accordion>
+
+<Accordion title="Do we have to replace E2 to get finite capacity scheduling?">
+No. The standard pattern is a scheduling layer beside the ERP rather than instead of it. E2 stays the system of record for quoting, purchasing, inventory, and invoicing. A finite capacity tool reads the parts, work centers, routings, and open jobs E2 already holds, builds an executable schedule, and hands dates back. No E2 process has to be redesigned.
+</Accordion>
+
+<Accordion title="How does EDGEBIC get data out of E2?">
+Through reusable import masks fed by the Excel or CSV exports your E2 environment already produces. You map an export's columns to EDGEBIC fields once; every later run is two clicks, and each row reports back as Created, Updated, Reused, or Failed with a per-run log. There is no certified connector, no middleware, and nothing installed inside E2, so an upgrade has nothing to break.
+</Accordion>
+
+<Accordion title="What changes first when a small shop adds finite capacity scheduling?">
+Bottleneck visibility, usually in the first scheduling run. Loading every open job against real shift hours and real machine counts turns an overloaded week from a surprise three weeks out into a number you can see today. The second change is what-if speed: quoting a rush job becomes a scheduler run rather than a gut call at the counter.
+</Accordion>

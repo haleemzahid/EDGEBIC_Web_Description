@@ -1,0 +1,62 @@
+---
+title: "What Is an Inferred Completion in Rescheduling?"
+description: "An inferred completion is a step the scheduler concludes must have run because a later step was logged. Learn how backfilled actuals keep a reschedule honest."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - inferred completion
+  - backfilled actuals
+  - reschedule missing actuals
+  - implied completed step
+  - downstream step logged first
+  - actuals gap rescheduling
+targetPhrase: "inferred completion"
+wordCount: 1150
+readingTime: 6
+faqQuestions:
+  - question: "What is an inferred completion in rescheduling?"
+    answer: "An inferred completion is a routing step that has no recorded actuals of its own, but sits before a step that does. Because work cannot skip a predecessor, the scheduler concludes the earlier step must have run and backfills its actual start and end from its scheduled dates. The step is then treated as completed and preserved rather than re-planned."
+  - question: "Why would a step have no actuals when a later one does?"
+    answer: "Most often because logging happens somewhere that only captures recent steps, such as a kiosk at the last station in a cell, or because an operator logged the operation they were on and nobody went back to close the earlier ones. It also happens when actuals are entered in bulk after the fact and the person entering them starts from where the job is now rather than where it began."
+  - question: "Does an inferred completion invent hours that never happened?"
+    answer: "It fills the dates from the plan, not from a guess about effort. The engine copies the step's scheduled start and end into its actual start and end so the step reads as finished, and marks it as backfilled so the origin is visible. It is a statement that the work happened, not a claim about precisely how long it took, which is why a shop that cares about variance should still log the real figures."
+qaQuestions:
+  - question: "We rescheduled a job and steps one and two suddenly show actual dates nobody entered. Did the system fabricate them?"
+    answer: "Not fabricate, infer. Someone logged actuals on step three, and step three cannot physically run before steps one and two, so the engine concluded they had run and copied their planned dates into their actuals. They are marked as backfilled so you can tell them apart from typed figures. The behavior exists because the alternative is worse: without it the engine would try to schedule steps one and two into the future while step three is already complete, producing a plan that contradicts itself. If the dates matter for variance, correct them through the normal actuals path and they become real entries."
+  - question: "A job came back from a reschedule with nothing re-planned at all. Every step reads complete but only the last two were logged. Is that right?"
+    answer: "Yes, and it is the most common way an inferred completion surprises people. Once the backfill runs, every step at or before the last logged one classifies as completed. If that covers the whole routing, there is nothing left to schedule, so the engine preserves the existing rows verbatim and returns without a forward pass. The job looks untouched because it genuinely is. If work really does remain, the fix is to correct the step that was wrongly treated as the last logged one, because that step is what defines how far reality is assumed to have reached."
+---
+
+**An inferred completion is a routing step that carries no recorded actuals of its own but precedes a step that does, so the scheduler concludes it must have run and backfills its actual dates from the plan.** It is the mechanism that keeps a reschedule from trying to place work in the future that the shop floor has already passed. [EDGEBIC by User Solutions](/edgebic) marks these steps as backfilled so a planner can always see which actuals were typed and which were implied.
+
+## How it works
+
+When a reschedule starts, the engine sorts a job's existing operations into their planned order and looks for the last one carrying any actual date at all. That position marks how far shop-floor reality has reached on this job.
+
+Every step at or before that position is expected to have actuals. Any that do not are backfilled: the engine copies the step's scheduled start and end into its actual start and end, and stamps the row so the origin is recorded rather than lost. From that point the step classifies as completed, which means it is preserved exactly as it stands and never re-planned.
+
+The reasoning is dependency logic, not optimism. A routing is a chain. If step three ran, step two must have finished first, because step three could not have started otherwise. Leaving step two blank would tell the engine it is still outstanding, and the engine would dutifully look for capacity to run it after step three had already finished. The resulting plan would be self-contradicting, and the job's resume point would be computed from the wrong place.
+
+Steps after the last logged position are untouched. They have no actuals and nothing implies they ran, so they are re-planned normally from the job's resume point.
+
+## A concrete example
+
+A four-step job runs through a cell where the kiosk sits at the last station. The operator at that station logs what passes through it. Nobody logs the first two operations, because there is no terminal there.
+
+The rows read like this. Steps one and two are blank. Step three shows a start on Wednesday morning and an end on Wednesday afternoon. Step four shows a start Wednesday afternoon and an end Thursday morning.
+
+On the next reschedule the engine finds step four as the last row with any actual. Steps one and two sit before it and are blank, so both are backfilled from their planned dates and flagged as inferred. All four steps now classify as completed. There is nothing left to place, so the engine preserves every row verbatim and returns without running a forward pass at all.
+
+The alternative, without inference, would be a plan claiming steps one and two are still to come, scheduled some days after step four finished. Anyone reading that board would stop trusting it immediately.
+
+## How EDGEBIC uses it
+
+Inference runs before the classification pass on every reschedule, so it applies to any job where the logged actuals have a gap earlier in the routing. The wider rule it serves is that finished work is never rewritten, which is covered in [actuals preservation on reschedule](/blog/what-is-actuals-preservation-on-reschedule) and in [why actuals are immutable in EDGEBIC](/blog/why-actuals-are-immutable-in-edgebic).
+
+Because backfilled dates come from the plan rather than from the floor, they are a placeholder rather than a measurement. A shop that reports on variance should close the gap properly, which is what [how to backfill actuals for earlier steps in EDGEBIC](/blog/how-to-backfill-actuals-for-earlier-steps-in-edgebic) walks through. The system marks system-filled entries distinctly, and that badge has its own explanation in [the auto-filled actuals badge explained](/blog/the-auto-filled-actuals-badge-explained).
+
+Once every step at or before the last logged one is treated as complete, the job's remaining work starts from a computed resume point, which is described in [how EDGEBIC preserves completed work on reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule). For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and to see reschedules handle real shop-floor data, explore [EDGEBIC](/edgebic).

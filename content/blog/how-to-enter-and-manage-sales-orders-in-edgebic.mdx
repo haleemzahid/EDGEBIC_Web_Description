@@ -1,0 +1,183 @@
+---
+title: "How to Enter and Manage Sales Orders in EDGEBIC"
+description: "Manage sales orders in manufacturing: create the header, add lines with due dates, confirm to activate demand, record shipments, and link jobs to the order."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - manage sales orders manufacturing
+  - create a sales order
+  - confirm sales order demand
+  - record partial shipment
+  - link job to sales order
+  - import sales orders excel
+targetPhrase: "manage sales orders manufacturing"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "What is required to create a sales order?"
+    answer: "A reference number, and nothing else. It must be non-empty and unique for that customer, up to 100 characters. The customer link is optional, so an order can exist without one. New orders are created with Draft status by default, which means they are visible in the order grid but contribute nothing to demand until someone confirms them."
+  - question: "How do you make a sales order count as demand?"
+    answer: "Change its status from Draft to Confirmed and save. From that point every non-deleted line on the order contributes its open balance as firm demand, bucketed by each line's own due date. Verification takes one screen: open the demand view for a product on one of the lines and refresh, and the firm column should show the line's open balance in the matching bucket."
+  - question: "How do you record a partial shipment on a sales order?"
+    answer: "Edit the line and set quantity shipped to the new cumulative total, not the increment. Open quantity is computed as ordered minus shipped and floored at zero, so raising shipped from 150 to 350 on a 500-unit line drops open quantity from 350 to 150 immediately. No separate planning adjustment is needed, because demand reads the open balance rather than the original order quantity."
+  - question: "Can sales orders be imported in bulk?"
+    answer: "Yes. EDGEBIC loads sales orders from Excel or CSV through configurable import masks, mapping your file's columns to reference number, customer, and dates. Imported orders arrive with Draft status, so confirm them individually or in bulk to activate demand. Duplicate reference numbers for the same customer are rejected row by row rather than failing the whole batch, so review the import log for per-row errors."
+qaQuestions:
+  - question: "We re-import our order book nightly. How do we avoid duplicating lines every night?"
+    answer: "Purge the lines for the order before re-importing them rather than letting a second load stack on top of the first. There is no service-level uniqueness rule on product plus date within an order, which means two lines naming the same product and the same due date are both accepted and both accumulate as demand. That flexibility is deliberate for staged releases against one purchase order, and it is exactly what turns a repeated import into double demand. A purge-then-load cycle per order keeps the picture clean, and it is worth testing on one order before you automate the whole book."
+  - question: "A customer re-issued their purchase order under the same number after a revision. Will the system reject it?"
+    answer: "Not if the original was deleted, because the uniqueness check ignores deleted records. Reference numbers are unique per customer among live orders, so a removed order releases its number for reuse and the re-issued purchase order goes in cleanly. If the original is still live and you want to keep it, the reference has to differ: a common convention is a suffix such as -R1 for the revision. If the revision genuinely supersedes the original, cancel the old order first so its lines stop counting as demand, then decide whether to delete it and reuse the number."
+---
+
+**To manage sales orders in manufacturing you enter a header, add a line per product with its own due date, and confirm the order when the commercial terms are locked.** In EDGEBIC by User Solutions that sequence is short by design, because the fields that matter for planning are few and the status change is the only decision with consequences. This guide walks it in order, including the operations planners get wrong.
+
+For what sales orders are, read [sales orders explained](/blog/edgebic-sales-orders-explained). For how the demand math works once an order is confirmed, see [how sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic).
+
+## Step 1: Create the order header
+
+Open the sales order management screen and click **New**. The order dialog opens.
+
+| Field | Required | What to enter |
+|---|---|---|
+| **Reference number** | Yes | The customer's purchase order number, or a generated internal one. Max 100 characters |
+| **Customer** | No | Select from the dropdown, or use the **+** button to create a customer inline |
+| **Order date** | No | Defaults to now |
+| **Requested date** | No | A header-level delivery ask used for display and defaulting |
+
+Click **Save**. The order appears in the grid with **Draft** status, which means it exists and contributes nothing to demand yet.
+
+Two notes on reference numbers. They are unique **per customer**, not globally, so two customers can both send a purchase order numbered `ORD-2026-001`. And the uniqueness check ignores deleted orders, so a removed order releases its reference for reuse.
+
+If you would rather use an internal sequence, the dialog can generate one. It scans existing references of the form `SO-{year}-NNNN` and returns the next, for example `SO-2026-0047`. The generated value is a prefill, so you can override it with the customer's own number.
+
+## Step 2: Add a line per product
+
+Open the order and click **Add line** on the lines grid.
+
+| Field | Required | Notes |
+|---|---|---|
+| **Product** | Yes | The item being ordered |
+| **Quantity** | Yes | Must be greater than zero; zero-quantity lines are rejected |
+| **Due date** | Yes | The bucket key for this line's demand. The header's requested date does not replace it |
+| **Unit price** | No | Per-unit selling price |
+| **Quantity shipped** | No | Starts at zero; raised as you ship |
+| **Notes** | No | Free text, max 500 characters |
+
+Save. If the parent order is confirmed, the line's open balance appears as firm demand for that product in the next planning refresh.
+
+The due date belongs on the line for a reason. One purchase order routinely covers products with different needs: 200 brackets for July 15 and 50 fixtures for August 30. A header-level date would collapse those into one wrong bucket.
+
+One behavior to know before you automate anything: there is no rule preventing two lines on the same order naming the same product and the same date. Both are accepted and both accumulate as demand. That is useful for staged releases and dangerous for repeated imports.
+
+## Step 3: Confirm the order
+
+This is the only status change with planning consequences. Open the order, change **Status** from Draft to **Confirmed**, and save.
+
+From that moment, every non-deleted line on the order contributes its open balance as firm demand, bucketed by the line's own due date.
+
+Verify it in one screen. Open the demand view for a product on one of the lines, refresh, and the firm column should show the line's open balance in the matching bucket. If it shows zero, the [demand deep dive](/blog/how-sales-orders-drive-demand-in-edgebic) has the diagnostic sequence.
+
+The discipline is simple and worth writing into your process: confirm when the order is commercially locked, not when it is typed. Confirming before prices and quantities are agreed puts unagreed demand into the pipeline, and unwinding that after material has been issued is expensive.
+
+## Step 4: Link jobs to the order
+
+The link between a sales order and a manufacturing order is optional and can be set two ways.
+
+**At job creation.** The job form offers a sales order to attach to.
+
+**Afterwards.** Open the job, find the sales order field, search and select the target order, and save. The job now appears under that order in the grouped view.
+
+One order can own many jobs, which covers both a multi-line order with a job per line, and a single large line split across several jobs. The [quote-to-order conversion flow](/blog/quote-to-ship-in-edgebic) sets the link automatically when a quote is accepted.
+
+## Step 5: Watch progress in the grouped view
+
+In the schedule's order view, toggle **sales order group view mode**. The flat job list becomes a tree with sales orders as parent rows and their linked jobs as children.
+
+Each child shows job number, product, quantity, status, whether it has actually been through the engine, scheduled start and end, estimated hours, and actual hours.
+
+Two reading notes:
+
+- **Actual hours show a dash, not zero,** until at least one operation has logged real start and end times. That is correct rather than missing data.
+- **Trust the scheduled flag, not the status word,** for whether a job has been through the engine. A freshly created job reads as "Scheduled" by status before the engine has touched it, which is why the dedicated flag exists.
+
+At the bottom of the tree sits an **Unassigned** grouping: jobs with no sales order link. Replenishment jobs and jobs firmed from a master production schedule live there legitimately, because neither has a customer order behind it. It is a category, not an error list.
+
+## Step 6: Record shipments as they happen
+
+Edit the line and set **quantity shipped** to the new **cumulative** total, not the increment. Open quantity recomputes automatically:
+
+```
+Open quantity = max(0, quantity − quantity shipped)
+```
+
+A 500-unit line tracks like this:
+
+| Date | Event | Shipped | Open |
+|---|---|---|---|
+| Jun 01 | Line created | 0 | 500 |
+| Jun 15 | First partial shipment | 150 | 350 |
+| Jul 01 | Second shipment | 350 | 150 |
+| Jul 20 | Final shipment | 500 | 0 |
+
+Because demand reads the open balance rather than the ordered quantity, firm demand drops by itself as you ship. No separate planning adjustment is needed. Shipped quantity cannot be negative, and setting it above the ordered quantity floors open quantity at zero rather than raising an error.
+
+## Step 7: Know the difference between cancel and delete
+
+These two operations look similar and are not.
+
+**Cancel** (set status to Cancelled) stops the lines counting as firm demand and leaves everything else intact: the linked jobs remain, the schedules remain, the history remains.
+
+**Delete** marks the order as deleted and marks every linked job as deleted in the same operation. Those jobs disappear from the scheduling queue. Their historical schedule rows and logged hours stay in the database for cost and time analysis, but the jobs are gone from working views.
+
+The rule that saves grief: **when in doubt, cancel**. Cancelling achieves the demand outcome with none of the job removal. Reserve delete for orders entered in error that have no real work behind them, and take a backup before any bulk cleanup.
+
+Note also that deleting an order does not reverse any inventory movements already posted against its jobs. If material was issued, run the inventory integrity check afterwards.
+
+## Step 8: Import in bulk when the volume justifies it
+
+Sales orders load from Excel or CSV through configurable import masks. Map your file's columns to reference number, customer, and dates, and run the import.
+
+Three things to expect:
+
+- Imported orders arrive with **Draft** status, so confirm them to activate demand.
+- Duplicate reference numbers for the same customer are rejected **row by row**, not as a batch failure, so review the import log for per-row errors.
+- If your file names customers or products that do not exist yet, the import can create them, depending on how the mask is configured.
+
+Because EDGEBIC integrates through masks rather than a fixed connector, the layout your ERP already exports is the layout you map. The [ERP integration hub](/edgebic-erp-integration) covers the architecture.
+
+If you re-import an order book on a schedule, purge the existing lines for each order before loading rather than letting a second load stack on top. There is no service-level uniqueness on product plus date within an order, so repeated imports accumulate rather than replace. Test the cycle on one order before automating the whole book.
+
+## A short end-to-end sequence
+
+1. Create order `AC-8812` for the customer, Draft.
+2. Add a line: 50 custom brackets, due July 20, at the agreed unit price.
+3. Confirm the order once terms are locked.
+4. Create the manufacturing order for 50 brackets due July 20 and link it to `AC-8812`.
+5. Run the scheduler. The job's operations land across work centers and appear under the order in the grouped view.
+6. As the shop logs hours, actual hours fill in beside the estimate on the same row.
+7. When the brackets ship, set shipped quantity to 50. Open quantity drops to zero and the demand clears.
+8. Set the order status to Shipped.
+
+Nothing in that sequence deletes a row. Every state is recorded, which is what makes the order history worth having later.
+
+For the mistakes that break this flow, see [sales order mistakes](/blog/sales-order-mistakes-edgebic). For the platform overview, read the [complete EDGEBIC guide](/blog/edgebic-complete-guide) or start at the [product hub](/edgebic).
+
+<Accordion title="What is required to create a sales order?">
+A reference number, and nothing else. It must be non-empty and unique for that customer, up to 100 characters. The customer link is optional, so an order can exist without one. New orders are created with Draft status by default, which means they are visible in the order grid but contribute nothing to demand until someone confirms them.
+</Accordion>
+
+<Accordion title="How do you make a sales order count as demand?">
+Change its status from Draft to Confirmed and save. From that point every non-deleted line on the order contributes its open balance as firm demand, bucketed by each line's own due date. Verification takes one screen: open the demand view for a product on one of the lines and refresh, and the firm column should show the line's open balance in the matching bucket.
+</Accordion>
+
+<Accordion title="How do you record a partial shipment on a sales order?">
+Edit the line and set quantity shipped to the new cumulative total, not the increment. Open quantity is computed as ordered minus shipped and floored at zero, so raising shipped from 150 to 350 on a 500-unit line drops open quantity from 350 to 150 immediately. No separate planning adjustment is needed, because demand reads the open balance rather than the original order quantity.
+</Accordion>
+
+<Accordion title="Can sales orders be imported in bulk?">
+Yes. EDGEBIC loads sales orders from Excel or CSV through configurable import masks, mapping your file's columns to reference number, customer, and dates. Imported orders arrive with Draft status, so confirm them individually or in bulk to activate demand. Duplicate reference numbers for the same customer are rejected row by row rather than failing the whole batch, so review the import log for per-row errors.
+</Accordion>

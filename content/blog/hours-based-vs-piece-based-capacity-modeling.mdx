@@ -1,0 +1,101 @@
+---
+title: "Hours-Based vs Piece-Based Capacity Modeling"
+description: "Hours-based vs piece-based capacity modeling: when to size a work center by time, when by output rate, when by both, and worked capacity numbers."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - hours-based vs piece-based capacity
+  - capacity modeling manufacturing
+  - pieces per hour scheduling
+  - output rate capacity
+  - work center capacity type
+  - throughput capacity planning
+targetPhrase: "hours-based vs piece-based capacity modeling"
+wordCount: 1510
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between hours-based and piece-based capacity?"
+    answer: "Hours-based capacity sizes a work center by the time it is available: shift hours times machine instances times utilization. Piece-based capacity sizes it by an output rate, a number of pieces per hour, so the constraint is throughput rather than clock time. Hours-based fits time-driven machines where a job takes as long as it takes, like a CNC mill. Piece-based fits rate-driven resources where the limit is how many units come off per hour, like an assembly or packaging line."
+  - question: "When should a work center be modeled in pieces instead of hours?"
+    answer: "Model a work center in pieces when its true constraint is an output rate rather than the run time on a routing. A packaging line that produces a steady number of units per hour is naturally piece-based: the schedule should reflect throughput, not a per-job time estimate that may not match the line's real rate. Model in hours when the operation's duration is what matters, such as a machining step whose time is driven by the part geometry, not a units-per-hour figure."
+  - question: "What does modeling capacity as both hours and pieces do?"
+    answer: "Modeling capacity as both applies whichever limit binds first, so a resource constrained by time on some jobs and by output rate on others is scheduled correctly in either case. The engine checks the hours available and the pieces available and lets the tighter one govern. This suits a hybrid resource, such as a line that is time-limited on complex products but rate-limited on simple high-volume ones, where neither a pure time model nor a pure rate model alone would be honest."
+qaQuestions:
+  - question: "My assembly line is scheduled in hours from the routing, but the real limit is that it does 120 units an hour no matter what. How should I model it?"
+    answer: "Model it as a piece-based work center with an output rate of 120 pieces per hour, so the schedule reflects the line's real throughput instead of a routing time estimate that may be optimistic or stale. A 600-unit order then loads as 5 hours of line time, computed from the rate, regardless of what the per-job hours field says. If the rate is the honest constraint on the floor, letting it drive capacity keeps the plan matched to what the line can actually deliver."
+  - question: "I set a work center to pieces but jobs are not scheduling at all. What went wrong?"
+    answer: "The most common cause is a zero output rate: if a piece-based work center has no pieces-per-hour value, the engine has no throughput to divide the order quantity by, and capacity computes as effectively nothing. Check that the pieces-per-hour figure is set to a real number. A piece-based model is only as good as its rate, so an unset or zero rate makes the resource look like it can never do any work, which stalls every job routed to it."
+---
+
+**Hours-based capacity sizes a work center by the time it is available, while piece-based capacity sizes it by an output rate in pieces per hour.** The choice is a modeling decision, not a setting you flip casually: it determines whether the schedule reflects how long a job runs or how many units a resource pushes out per hour. EDGEBIC by User Solutions lets a work center be hours-based, piece-based, or both, and matching the model to the resource's real constraint is what keeps the plan honest about what the floor can deliver.
+
+## Two ways to say "how much can this resource do"
+
+Every finite capacity plan needs to know each work center's capacity so it never books more than exists. There are two honest ways to express that capacity, and they suit different equipment.
+
+Hours-based capacity comes from the clock. A machine is available for a number of shift hours, has some number of instances, and runs at some utilization, and the product of those is its hours per day. A job consumes hours from that pool. This fits time-driven machines: a CNC mill takes as long as the geometry requires, and the natural unit is time.
+
+Piece-based capacity comes from a rate. A resource produces a steady number of units per hour, and its capacity is that throughput. A job of N units consumes N divided by the rate in line time. This fits rate-driven resources: a packaging or assembly line where the constraint is units per hour, not a per-job time estimate.
+
+## The capacity formula in each model
+
+Hours-based capacity is a plain product:
+
+```
+capacity = shift hours x instances x utilization
+```
+
+A milling center with two instances on an 8-hour shift at 80 percent utilization offers 12.8 hours per shift. A job's routing gives hours per unit and setup, and the engine draws those hours from the pool.
+
+Piece-based capacity replaces the routing hours with a rate. A line at 120 pieces per hour turns a 600-unit order into 5 hours of line time, computed from throughput regardless of what a per-job hours field says. The output rate is the honest constraint, so it governs.
+
+| | Hours-based | Piece-based | Both |
+|---|---|---|---|
+| Sized by | Available time | Output rate | Whichever binds |
+| Natural unit | Hours per unit | Pieces per hour | Either |
+| Fits | Machining, one-off jobs | Assembly, packaging lines | Hybrid resources |
+| Risk if wrong | Rate ignored | Time ignored | none |
+
+## When to model both
+
+Some resources are time-limited on some jobs and rate-limited on others. A line might crawl through a complex product where geometry drives the time, then fly through a simple high-volume product where the units-per-hour rate is the real cap. For those, model capacity as both, and the engine applies whichever limit binds first. Neither a pure time model nor a pure rate model alone would be honest for such a resource, because the constraint genuinely changes with the product.
+
+The both model is the safe default when you are unsure, because it lets the tighter of the two limits govern rather than forcing one lens onto every job.
+
+## A worked comparison
+
+A single line, two ways to model it, and the difference it makes on a 600-unit order.
+
+**Modeled in hours.** The routing says 0.02 hours per unit, so the engine plans 600 times 0.02 equals 12 hours of line time. If that per-unit figure is optimistic or stale, the plan is optimistic or stale with it.
+
+**Modeled in pieces at 120 per hour.** The engine plans 600 divided by 120 equals 5 hours of line time, straight from the rate. If 120 units per hour is what the line actually delivers, the plan matches reality no matter what the routing hours say.
+
+The two disagree because they measure different things. The right one is whichever reflects the true constraint on the floor. If the line's limit is genuinely throughput, the piece model is the honest one; if it is per-job time, the hours model is.
+
+## The one trap to avoid
+
+A piece-based model is only as good as its rate. If you set a work center to pieces but leave the pieces-per-hour value at zero, the engine has no throughput to divide the order by, and capacity computes as effectively nothing. Every job routed to that resource stalls, because it looks like the line can never do any work. Always set a real rate on a piece-based resource. The mechanism and the exact fields for hours, pieces, and both are covered in [when to schedule in pieces instead of hours](/blog/pieces-based-vs-hours-based-capacity-edgebic).
+
+## How capacity feeds the rest of the engine
+
+Whichever model you pick, the capacity number flows into the same [finite capacity](/blog/finite-vs-infinite-capacity-scheduling) allocator that searches shift by shift for real hours, then decides which machine within the work center gets the work. That downstream choice, splitting a job across identical machines or dedicating one per job, is [load balancing vs dedicated instance scheduling](/blog/load-balancing-vs-dedicated-instance-scheduling), and it composes cleanly on top of either capacity model. The full pipeline, from the capacity formula to instance selection, lives in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+## Choosing the model
+
+Model in hours when duration drives the work, in pieces when an output rate is the constraint, and in both when the binding limit changes with the product. The decision is worth making deliberately per resource, because a mismatched model does not error; it quietly plans against the wrong constraint. See how each model schedules your own lines in [EDGEBIC](/edgebic).
+
+<Accordion title="What is the difference between hours-based and piece-based capacity?">
+Hours-based capacity sizes a work center by the time it is available: shift hours times machine instances times utilization. Piece-based capacity sizes it by an output rate, a number of pieces per hour, so the constraint is throughput rather than clock time. Hours-based fits time-driven machines where a job takes as long as it takes, like a CNC mill. Piece-based fits rate-driven resources where the limit is how many units come off per hour, like an assembly or packaging line.
+</Accordion>
+
+<Accordion title="When should a work center be modeled in pieces instead of hours?">
+Model a work center in pieces when its true constraint is an output rate rather than the run time on a routing. A packaging line that produces a steady number of units per hour is naturally piece-based: the schedule should reflect throughput, not a per-job time estimate that may not match the line's real rate. Model in hours when the operation's duration is what matters, such as a machining step whose time is driven by the part geometry, not a units-per-hour figure.
+</Accordion>
+
+<Accordion title="What does modeling capacity as both hours and pieces do?">
+Modeling capacity as both applies whichever limit binds first, so a resource constrained by time on some jobs and by output rate on others is scheduled correctly in either case. The engine checks the hours available and the pieces available and lets the tighter one govern. This suits a hybrid resource, such as a line that is time-limited on complex products but rate-limited on simple high-volume ones, where neither a pure time model nor a pure rate model alone would be honest.
+</Accordion>

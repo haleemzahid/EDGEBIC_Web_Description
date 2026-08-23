@@ -1,0 +1,146 @@
+---
+title: "A Multi-Day Job Spanning Day and Night Shifts in EDGEBIC"
+description: "Follow one 40-hour milling job across a day shift and a night shift and into a second day in EDGEBIC, with the capacity formula, shift priority, and load balancing shown."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - multi-shift scheduling walkthrough
+  - day and night shift scheduling
+  - job spanning multiple shifts
+  - shift capacity formula
+  - overnight shift scheduling
+  - load balancing instances
+targetPhrase: "multi-shift scheduling walkthrough"
+wordCount: 1750
+readingTime: 9
+faqQuestions:
+  - question: "How does EDGEBIC schedule a job that is too big to finish in one shift?"
+    answer: "It spans the job across shifts and days automatically. The engine builds a capacity slot for every work center, date, and shift, then fills them in priority order: earlier and immediately available shifts first. A job larger than one shift's capacity consumes the first shift fully, then the next, then the next, crossing from day shift to night shift to the following morning until every hour is placed. Shift boundaries are respected, so no operation is interrupted mid-shift."
+  - question: "How does EDGEBIC handle an overnight shift that crosses midnight?"
+    answer: "An overnight shift whose end time is at or before its start time, such as 16:00 to 00:00 or 22:00 to 06:00, is treated as ending on the next calendar day. The engine computes its duration as the wall-clock span across midnight, so a 16:00 to 00:00 shift correctly yields eight hours. Both the capacity calculation and the slot's end-time property use the same rule, so hours are never computed as zero or negative for a shift that wraps past midnight."
+  - question: "How is a shift's capacity calculated in EDGEBIC?"
+    answer: "Capacity for a shift slot is shift duration minus downtime minus partial-holiday hours, multiplied by the number of instances, multiplied by utilization percent. A 16:00 to 00:00 night shift with two machines at 100 percent utilization offers 8 hours times 2 instances, or 16 hours. Daily capacity overrides take priority over the formula when set, and a load-balanced job splits its hours evenly across the instances so they finish together."
+qaQuestions:
+  - question: "We run a day shift and a night shift on the same machines. Will a 40-hour job just flow from one into the other, or do I have to split it manually?"
+    answer: "It flows automatically. In this walkthrough a 40-hour job on a two-instance work center fills the Monday day shift (16 hours), the Monday night shift (16 hours), and 8 hours of the Tuesday day shift, finishing Tuesday at 12:00. You do not split anything. The hour-display column reads 16,16,8 so you can see the three shift groups at a glance, and each instance carries half the load in each shift because load balancing is on."
+  - question: "Why did the day shift get filled before the night shift on the same day even though both had capacity?"
+    answer: "Because of the shift priority score. A shift that can start at or before the job's earliest start earns a large priority bonus, and among candidates the engine sorts by date first, then shift, so the earlier-starting day shift is filled before the later night shift on the same date. That is why the Monday day shift takes the first 16 hours and the Monday night shift the next 16, rather than the reverse. Earlier, immediately available capacity is always preferred."
+---
+
+**A multi-day, multi-shift job in [EDGEBIC by User Solutions](/edgebic) flows from one shift into the next and across days on its own: the engine fills a day shift, then the night shift on the same machines, then the following morning, until every hour is placed.** This walkthrough follows one 40-hour milling job across exactly that path, showing the capacity formula, the shift priority that decides fill order, and the load balancing that splits hours across two machines. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so the mechanics are visible in numbers.
+
+For the concept behind it, [multi-shift scheduling explained](/blog/edgebic-multi-shift-scheduling-explained) is the companion, and [EDGEBIC for machine shops: multi-shift scheduling](/blog/edgebic-for-machine-shops-multi-shift-scheduling) shows the industry fit.
+
+## The Cast: One Work Center, Two Shifts, One Big Job
+
+Ridgeline Manufacturing runs its milling cell around the clock on two machines:
+
+| Item | Value |
+|---|---|
+| Work center | CNC-Center, 2 instances, 100 percent utilization |
+| Day Shift | 08:00 to 16:00, Monday to Friday (8 h) |
+| Night Shift | 16:00 to 00:00, Monday to Friday (8 h) |
+| Job | 40 hours of work, earliest start Monday 08:00 |
+| Load balancing | On |
+
+Before the engine touches the calendar, it computes each shift slot's capacity with one formula: shift duration minus downtime minus partial-holiday hours, times instances, times utilization. For this cell:
+
+- Day Shift: 8 h x 2 instances x 100 percent = **16 h** per day
+- Night Shift: 8 h x 2 instances x 100 percent = **16 h** per day
+
+The night shift crosses midnight (16:00 to 00:00). Because its end time is at or before its start time, the engine treats it as ending on the next calendar day and computes the duration as the span across midnight, which is exactly eight hours. This one rule keeps overnight shifts from ever computing as zero or negative capacity.
+
+## Step 1: Build the Slots and Score Them
+
+Before any order is scheduled, the engine pre-builds a capacity slot for every work center, date, and shift on the calendar. For CNC-Center it now has, among others:
+
+| Slot | Total capacity | Used |
+|---|---|---|
+| Mon Day | 16 h | 0 |
+| Mon Night | 16 h | 0 |
+| Tue Day | 16 h | 0 |
+| Tue Night | 16 h | 0 |
+
+Each candidate slot gets a priority score. Three ingredients: a large bonus when the slot can start at or before the job's earliest start, a bonus proportional to available capacity, and a small bonus for earlier start times in the day. The engine then sorts the survivors by date ascending, then shift, then capacity.
+
+For a job starting Monday 08:00:
+
+| Slot | Immediate start? | Available | Score |
+|---|---|---|---|
+| Mon Day | yes | 16 h | high |
+| Mon Night | no | 16 h | lower |
+| Tue Day | no | 16 h | lower |
+
+The date-first sort settles the fill order: Mon Day, then Mon Night, then Tue Day. The day shift is filled before the night shift on the same day because it starts earlier and is immediately available.
+
+## Step 2: Fill the Shifts
+
+The engine walks the sorted slots and pours the 40 hours in, taking the smaller of the remaining requirement and the slot's available capacity each time:
+
+| Pass | Slot | Hours placed | Remaining |
+|---|---|---|---|
+| 1 | Mon Day | min(40, 16) = 16 | 24 |
+| 2 | Mon Night | min(24, 16) = 16 | 8 |
+| 3 | Tue Day | min(8, 16) = 8 | 0 |
+
+Three passes, and the job is placed. It started Monday 08:00, ran the full day shift, continued straight into the night shift, paused at midnight, resumed Tuesday morning, and finished Tuesday 12:00.
+
+Within each shift, load balancing splits the hours evenly across the two machines so they finish together:
+
+- **Mon Day:** each instance 8 h, 08:00 to 16:00
+- **Mon Night:** each instance 8 h, 16:00 to 00:00
+- **Tue Day:** each instance 4 h, 08:00 to 12:00
+
+The hour-display column reads 16,16,8, one number per shift group, so a planner can see at a glance that the job took two full shifts and part of a third.
+
+## Step 3: Read the Result
+
+```
+      Mon Day (08-16)   Mon Night (16-00)   Tue Day (08-16)
+Inst1 [==== 8h ====]    [==== 8h ====]      [== 4h ==]
+Inst2 [==== 8h ====]    [==== 8h ====]      [== 4h ==]
+```
+
+- Total start: Monday 08:00
+- Total end: Tuesday 12:00
+- Total hours: 40, all placed
+- Span: two shift types across two calendar days
+
+The whole span is real calendar time, but only working hours cost machine capacity. If this cell had no night shift, the same 40 hours would take five day shifts (Monday through Friday), and a weekend in the middle would cost zero machine hours because Saturday and Sunday carry no shift. The night shift is what compresses this job into a day and a half.
+
+## A Variation Worth Trying
+
+Change the earliest start to Monday 14:00 and rerun. The Monday day shift now offers only its remaining window: from 14:00 to 16:00 is two clock hours, times two instances, or 4 hours of capacity. The engine places 4 h there, then 16 h on the Monday night shift, then 16 h on Tuesday day, then the final 4 h on Tuesday night, finishing Tuesday around 18:00. One field changed, and the whole cascade shifted, because the first partial shift now offers less. This is the habit that makes a scheduling system stick: change one number, predict the outcome, verify.
+
+## What This Walkthrough Proves
+
+1. **Jobs span shifts automatically.** A job larger than one shift consumes the next, and the next, with no manual splitting.
+2. **The capacity formula is arithmetic.** Duration times instances times utilization, computed once per slot, and the night shift's 16 hours are exactly 8 hours times two machines.
+3. **Overnight shifts are handled correctly.** A 16:00 to 00:00 shift ends the next day and yields its full eight hours, never zero.
+4. **Shift priority decides fill order.** Immediately available, earlier shifts fill first, so the day shift takes the first block and the night shift the second.
+5. **Load balancing splits within each shift.** Both machines carry half the hours in every shift so the operation finishes as early as capacity allows.
+6. **Only working hours cost capacity.** Nights, weekends, and holidays are calendar time that consume no machine-hours.
+
+If a booking ever lands outside the shift hours you expected, or an overnight shift logs its hours on the wrong day, those are known symptoms with documented fixes: [a booking falls outside its shift hours](/blog/a-booking-falls-outside-its-shift-hours-edgebic) and [a shift that crosses midnight logged hours on the wrong day](/blog/a-shift-that-crosses-midnight-logged-hours-on-the-wrong-day-edgebic).
+
+## From One Job to a Round-the-Clock Plant
+
+Multi-shift flow is the reason a round-the-clock plant can promise realistic dates: the engine sees the night shift as real capacity, not a footnote. When you need more of that capacity to break a constraint, [adding a second shift to break a bottleneck](/blog/adding-a-second-shift-to-break-a-bottleneck-edgebic) is the direct next step, and to understand how the shift calendar itself is built, [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained) is the reference. For the deeper finite-capacity discipline behind all of it, [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) is the starting point.
+
+User Solutions has scheduled multi-shift plants since 1991, work that includes the US Navy Nimitz program with its 26,000-plus tasks. [Contact us for a demo](/contact-us) and bring one long job: we will run it across your shifts.
+
+<Accordion title="How does EDGEBIC schedule a job that is too big to finish in one shift?">
+It spans the job across shifts and days automatically. The engine builds a capacity slot for every work center, date, and shift, then fills them in priority order: earlier and immediately available shifts first. A job larger than one shift's capacity consumes the first shift fully, then the next, then the next, crossing from day shift to night shift to the following morning until every hour is placed. Shift boundaries are respected, so no operation is interrupted mid-shift.
+</Accordion>
+
+<Accordion title="How does EDGEBIC handle an overnight shift that crosses midnight?">
+An overnight shift whose end time is at or before its start time, such as 16:00 to 00:00 or 22:00 to 06:00, is treated as ending on the next calendar day. The engine computes its duration as the wall-clock span across midnight, so a 16:00 to 00:00 shift correctly yields eight hours. Both the capacity calculation and the slot's end-time property use the same rule, so hours are never computed as zero or negative for a shift that wraps past midnight.
+</Accordion>
+
+<Accordion title="How is a shift's capacity calculated in EDGEBIC?">
+Capacity for a shift slot is shift duration minus downtime minus partial-holiday hours, multiplied by the number of instances, multiplied by utilization percent. A 16:00 to 00:00 night shift with two machines at 100 percent utilization offers 8 hours times 2 instances, or 16 hours. Daily capacity overrides take priority over the formula when set, and a load-balanced job splits its hours evenly across the instances so they finish together.
+</Accordion>

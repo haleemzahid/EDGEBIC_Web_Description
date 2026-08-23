@@ -1,0 +1,108 @@
+---
+title: "How a Synchronized Group Buffer Differs From Queue Time"
+description: "A parallel group can carry its own buffer after the machines finish together. How that padding differs from queue time and transfer delay, and which one to use when."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - parallel work center buffer
+  - queue time scheduling
+  - transfer delay
+  - synchronized machines scheduling
+  - routing step timing
+  - finite capacity scheduling
+targetPhrase: "parallel group buffer time"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "What is a buffer time on a parallel group?"
+    answer: "It is padding added after a group of machines finishes a synchronized operation and before any downstream step is allowed to start. EDGEBIC reads the buffer inside the parallel scheduling context and adds it to the group's computed end time, so the successor's earliest start moves out by that amount. It defaults to zero, which means no padding, and it exists to model the physical work of unclamping, unloading, or re-fixturing a part that several machines were holding at once."
+  - question: "How is it different from queue time on a routing step?"
+    answer: "Queue time is shift-aware, so it is consumed against the working calendar and can stretch across a night or a weekend before the downstream step becomes eligible. A parallel group buffer is padding attached to the group's end and applied to the group as a whole rather than to a single step's successor gate. Use queue time for an ordinary wait before a normal operation, and the group buffer for the physical handling window that follows a synchronized multi-machine step."
+  - question: "Is it the same as transfer delay?"
+    answer: "No. Transfer delay belongs to lot streaming and applies after a transfer batch of pieces is ready, before the downstream step may begin on that batch. It models material handling between overlapping operations. A parallel group buffer applies once, after the whole synchronized group completes. A routing step can carry both, and they answer different questions: transfer delay is about moving pieces mid-operation, the group buffer is about releasing the part from a multi-machine setup."
+qaQuestions:
+  - question: "My three-spindle drilling step finishes at 16:00 and the next operation still starts at 16:30. Where does the half hour come from?"
+    answer: "That is almost certainly a buffer time of 0.5 hours on the parallel group. The three spindles are scheduled to start and finish together, the group's computed end is 16:00, and the buffer pushes the earliest start of every downstream step to 16:30. It is deliberate padding for the physical work of releasing the part from a fixture that three machines were working on at once. If you no longer need it, set the buffer to zero and reschedule. If the half hour is real, leave it, because a plan that pretends the part is instantly free will run late every time by exactly that amount."
+  - question: "Should I model the unload window as buffer time or as queue time on the next step?"
+    answer: "Prefer the group buffer when the wait belongs to the group's own teardown and applies no matter which step comes next, and prefer queue time when the wait belongs to the downstream operation, such as a cure or cool-down that a particular successor requires. There is also a practical difference in behavior worth knowing: queue time is consumed against the working calendar, so a queue that starts at the end of a shift finishes in the next working window rather than overnight. If your padding should follow the calendar that way, queue time is the better model."
+---
+
+**A parallel group buffer is padding that a synchronized multi-machine operation carries after its machines finish together, before any downstream step may begin. EDGEBIC by User Solutions reads the buffer inside the parallel scheduling context and adds it to the group's computed end time, so every successor's earliest start moves out by that amount. It defaults to zero, and it is distinct from both queue time and transfer delay, which are consumed on different rules.** Three different waits, three different behaviors, and choosing the wrong one produces a plan that is quietly wrong by the size of the wait.
+
+Shops that run synchronized machines nearly always have this window in real life. The part is held by three heads at once, and when the last head stops, someone still has to unclamp it.
+
+## Why a synchronized group needs its own padding
+
+A dependent parallel step is not several operations that happen to overlap. It is one operation performed by several machines that must start together and finish together. That is what makes multi-spindle drilling, coordinated welding, and multi-head coating possible to plan honestly.
+
+The consequence is that the release of the part is also a single event that belongs to the group rather than to any one machine. Unbolting a fixture that three heads were sharing is not work that any single machine's teardown time describes, and it is not work that belongs to the next operation either. It belongs to the group.
+
+The buffer is where that time lives. Set it to 0.5 and the group's effective end, for successor purposes, is half an hour after the machines stop. Set it to zero, the default, and the successor is eligible the moment the group finishes.
+
+## The three waits and how each behaves
+
+The reason this setting is worth understanding is that EDGEBIC composes several different kinds of wait after an operation, and they are not interchangeable.
+
+**Queue time** sits on the routing step and is shift-aware. It is consumed against the working calendar, so two hours of queue starting at 15:00 on an eight-hour day shift ending at 16:00 does not simply land at 17:00 in a closed plant. The calendar carries it forward into the next working window. Queue time answers the question of how long a part must wait before the next operation may claim it.
+
+**Transfer delay** belongs to lot streaming. When an operation is overlapped so a downstream step can begin on a partial batch, the transfer delay is the flat material-handling lag applied after that batch of pieces is ready and before the downstream step may start on it. It is about moving pieces mid-operation, not about finishing an operation.
+
+**Parallel group buffer time** is padding on the group's end. It applies once, to the group, and it exists because a synchronized operation has a release event that no single-machine concept covers.
+
+The full composition order for the ordinary step-level waits is covered in [how queue, flow, and transit stack after an operation](/blog/how-queue-flow-and-transit-stack-after-an-operation). The group buffer is the parallel-specific addition to that picture.
+
+## A worked example: three spindles and a fixture
+
+A drilling operation runs on three synchronized spindles. The routing calls for 6 hours of drilling, the group is scheduled on a day shift running 08:00 to 16:00, and the part is mounted in a heavy fixture that takes roughly 30 minutes to release and stage.
+
+With buffer time at zero:
+
+- The three spindles start together at 10:00 and finish together at 16:00.
+- The downstream inspection step becomes eligible at 16:00.
+- Inspection is planned to start at 16:00 and, in reality, cannot, because the part is still bolted down. The plan is 30 minutes optimistic on this job and on every job that uses this routing.
+
+With buffer time set to 0.5:
+
+- The three spindles still start at 10:00 and finish at 16:00.
+- The group's effective end for successors becomes 16:30.
+- The day shift ends at 16:00, so inspection does not start at 16:30 on a closed shift. It becomes eligible at 16:30 and then waits for the next working window, landing at the start of the following shift.
+
+That second outcome looks worse on the Gantt and is better in the plant. The 30 minutes was always being spent. The only question was whether the schedule knew about it. A plan that hides a recurring half hour on a high-volume routing accumulates a real deficit, and the shape of that deficit is described in [the cost of an unrealistic due date](/blog/the-cost-of-an-unrealistic-due-date).
+
+## Choosing between the group buffer and queue time
+
+Ask who owns the wait.
+
+If the wait belongs to the group's own teardown and would happen regardless of what comes next, it belongs on the group. Unclamping, releasing a shared fixture, and staging a part off a multi-machine cell are all group events.
+
+If the wait belongs to the downstream operation, it belongs in queue time on that step. A cool-down that only matters because the next operation is a coating step, a rest period required before inspection, or a deliberate buffer in front of a busy machine are all successor-owned waits. Queue time is also the right model when you want the wait to be consumed against the working calendar rather than as flat padding, which is often what a planner actually means by "let it sit overnight."
+
+If the wait is about moving pieces between overlapping operations, it is transfer delay, and it belongs with your lot streaming configuration rather than with either of the other two. The choice between the two streaming models is covered in [piece count versus time lag lot streaming](/blog/piece-count-vs-time-lag-lot-streaming-which-to-use).
+
+Modeling one wait twice is the common mistake. If you add 30 minutes of group buffer and also 0.5 hours of queue time on the successor to describe the same unclamping, the plan carries an hour of padding for half an hour of work, and every routing that uses the pattern drifts.
+
+## Where it fits in the engine
+
+The buffer is applied after the group's placement is decided, so it never changes which machines were selected or when they could start. It moves the successor gate only. That keeps it clean: the capacity search, the simultaneous-availability checks, and the instance selection all run as normal, and the buffer is arithmetic on the resulting end time.
+
+Because it is per-step configuration rather than a plant-wide policy, you can apply it exactly where the physical release window exists and leave it at zero everywhere else. A cell with a quick-change fixture carries no buffer. The cell with the heavy tooling carries the real number.
+
+The wider mechanics of synchronized scheduling are in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the general problem of one physical asset constraining several machines is covered in [shared equipment scheduling](/blog/shared-equipment-scheduling).
+
+To model your own release windows on synchronized cells and see how they change the plan, [bring a routing to a demo](/edgebic).
+
+<Accordion title="What is a buffer time on a parallel group?">
+It is padding added after a group of machines finishes a synchronized operation and before any downstream step is allowed to start. EDGEBIC reads the buffer inside the parallel scheduling context and adds it to the group's computed end time, so the successor's earliest start moves out by that amount. It defaults to zero, which means no padding, and it exists to model the physical work of unclamping, unloading, or re-fixturing a part that several machines were holding at once.
+</Accordion>
+
+<Accordion title="How is it different from queue time on a routing step?">
+Queue time is shift-aware, so it is consumed against the working calendar and can stretch across a night or a weekend before the downstream step becomes eligible. A parallel group buffer is padding attached to the group's end and applied to the group as a whole rather than to a single step's successor gate. Use queue time for an ordinary wait before a normal operation, and the group buffer for the physical handling window that follows a synchronized multi-machine step.
+</Accordion>
+
+<Accordion title="Is it the same as transfer delay?">
+No. Transfer delay belongs to lot streaming and applies after a transfer batch of pieces is ready, before the downstream step may begin on that batch. It models material handling between overlapping operations. A parallel group buffer applies once, after the whole synchronized group completes. A routing step can carry both, and they answer different questions: transfer delay is about moving pieces mid-operation, the group buffer is about releasing the part from a multi-machine setup.
+</Accordion>

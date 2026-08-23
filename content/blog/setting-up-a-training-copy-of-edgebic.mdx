@@ -1,0 +1,100 @@
+---
+title: "Setting Up a Training Copy of EDGEBIC"
+description: "How to run a training or test copy of EDGEBIC beside production: a second database name on the DataSource tab, what a fresh database starts with, and how to reset it between classes."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - training environment scheduling software
+  - test database manufacturing software
+  - sandbox scheduling system
+  - separate training database
+  - safe upgrade testing
+  - scheduling software training
+targetPhrase: "training environment scheduling software"
+wordCount: 1590
+readingTime: 8
+faqQuestions:
+  - question: "How do you create a training copy of EDGEBIC?"
+    answer: "Point an installation at a second database. On the DataSource tab in Settings, keep the same SQL Server and enter a different database name such as a training catalog. The database does not have to exist beforehand: it is created with a full schema on the first connection. Switching requires a restart, and the database you left is untouched, so you can move between production and training from the same screen whenever you need to."
+  - question: "Does a fresh training database start with your master data?"
+    answer: "No. A new database starts empty, and that includes user accounts and import masks, because those are stored in the database rather than in the application. On first launch it asks you to create an administrator and runs the setup wizard. Plan to rebuild training data by running your import masks against a copy of your data files, or by restoring a backup of production into the training database if your team supports that path."
+  - question: "Can you use the In-Memory option as a sandbox?"
+    answer: "No, not for anything you want to keep. The In-Memory option exists for testing and demos: nothing is saved, all data is lost when the application exits, and it cannot be exported because there is no file to copy. A real training environment needs a database that persists between sessions so a class can pick up where the last one stopped. Use a separate SQL Server database name, or a separate local database on a training machine."
+qaQuestions:
+  - question: "We want to test an upgrade before it touches production. What is the safe sequence?"
+    answer: "Restore a recent production backup into a separate training database, upgrade the training installation, and run your real workflow against it. The schema updates itself on first launch against the older data, which is the exact step you want to observe somewhere harmless. Then check the parts that break quietly: sign in as a planner rather than as an administrator, because new permissions land automatically on the Administrator role only and custom roles need them granted explicitly. Run the scheduler on a real job set and compare the plan against what production produces today. Only when both look right does the production upgrade get scheduled."
+  - question: "Our training database ends every class full of nonsense jobs. How do we reset it?"
+    answer: "Use the Clear Data Tables utility, which exists for exactly this: resetting a training database, wiping a demo, or starting a new planning year. Open Data Management in Settings, pick Clear Selected Tables, and tick the scopes you want gone. Expand each row first, because clearing one area cascades into others: clearing products also takes orders, quotes, and routings with it. User accounts survive unless you separately tick the option to clear users and sign-in audit. Type the confirmation word, clear, and let it restart. There is no undo, which is why this belongs on the training database and never on production."
+---
+
+**Run a training copy of EDGEBIC by pointing an installation at a second database rather than installing a second product: same server, a different database name, created automatically on first connection.** In [EDGEBIC by User Solutions](/edgebic) the database you leave behind is untouched, so moving between production and training is a settings change and a restart. This post covers when a training copy earns its keep, how to build one, and how to reset it between classes.
+
+The deployment choices behind this sit in [choosing a database as an IT decision](/blog/choosing-a-database-for-edgebic-the-it-decision) and [deployment options explained](/blog/edgebic-deployment-options-explained). This post assumes production already exists and you want somewhere harmless to work.
+
+## Four Reasons a Training Copy Pays for Itself
+
+**Rehearsing an upgrade.** The schema updates itself on first launch against an older database. That is a step worth watching somewhere that does not matter, especially if your backup is a few weeks old.
+
+**Training new planners.** A new planner learning the loop will create jobs that make no sense, reschedule things twice, and clear something they should not have. All of that is good learning and none of it belongs in the live plan.
+
+**Testing a policy change.** Site scheduling policy changes what the engine produces: the default direction, how a backward job that does not fit is handled, how a short confirm is replanned, whether sub-assemblies get scheduled with their parent. Seeing the difference on real data before it lands on a live plan is worth an afternoon.
+
+**Reproducing a problem.** "The plan looks wrong" is far easier to investigate on a copy where you can run the scheduler repeatedly without disturbing anyone.
+
+## How to Build One
+
+The switch lives on the DataSource tab in Settings.
+
+1. Keep the provider on SQL Server and the same server your production database sits on. Ask IT whether a second database on that instance is acceptable; usually it is, since the scheduling data is small next to an ERP.
+2. Enter a different database name. It does not have to exist: the connection test will say the server is reachable, sign-in succeeded, and the database will be created on first launch. That is the expected message, not an error.
+3. Use Windows authentication where you can. It stores no password and ties access to the network identity IT already manages.
+4. Click Test connection, read the status, then apply and restart.
+
+On first launch against the empty database the application asks you to create an administrator account, then runs the setup wizard through data source, shifts, products, work centers, routings, and a first order. That prompt is the confirmation you are somewhere new. The full walkthrough of the same screen is in [switching the datasource](/blog/switching-the-edgebic-datasource).
+
+To go back to production, you use the same tab and the same restart. The database you left keeps everything.
+
+## What a Fresh Database Does Not Have
+
+This is where most training environments disappoint the person who built them, so it is worth being blunt.
+
+A new database starts empty, and empty includes things people do not expect to be data:
+
+| What people assume is carried over | Where it actually lives |
+|---|---|
+| User accounts and roles | In the database, so a fresh one has none |
+| Import masks | In the database, so a fresh one has none |
+| Master data (shifts, work centers, products, routings) | In the database |
+| Grid layouts and scheduler display settings | Per user, so those do follow the person |
+
+The practical consequence is that populating a training copy is a small project, not a click. Two paths work. Run your import masks against a copy of the same files you feed production, which has the pleasant side effect of proving those masks still work. Or restore a production backup into the training database through whichever restore path your IT team supports, which gives you realistic volume and history at once. That second path pairs naturally with [running a restore drill](/blog/running-a-restore-drill-for-your-edgebic-database), since it is the same exercise with a different purpose.
+
+## Two Traps Worth Naming
+
+**Do not reach for the In-Memory option.** It appears in the provider list and it is meant for testing and demos only: nothing is saved, everything is lost when the application exits, and it cannot be exported because there is no file behind it. A class that has to rebuild its data every morning will not use the training system twice.
+
+**One installation points at one database at a time.** Switching requires a restart, so a planner cannot have production and training open side by side on the same machine. If you want both available at once, use a second workstation for training. That constraint also protects you: nobody has two windows open and demonstrates on the wrong one.
+
+## Resetting Between Classes
+
+The Clear Data Tables utility, under Data Management in Settings, exists for this exact job: resetting a training database, wiping a demo, or starting a new planning year.
+
+It opens under a red banner because it permanently removes rows with no recycle bin. Two modes: clear selected tables, where you tick the areas and expand each row to see what else it cascades to, or a full database wipe. Clearing is not independent per area. Clearing products also clears orders, quotes, and routings, because those reference products. User accounts survive unless you additionally tick the option that also clears users and the sign-in audit, and if you do tick it, the administrator has to be created again on next start.
+
+Type the confirmation word, clear, and let it restart. Everything about that utility is documented in [the data clear tool and when to use it](/blog/the-edgebic-data-clear-tool-when-to-use-it), including the reason the same dialog is reachable from a toolbar button that sounds like a layout reset. On a training database, that mistake costs an afternoon of rebuilding. On production it costs the plan, which is the whole argument for having a training database at all.
+
+## The Standing Rules
+
+| Rule | Why |
+|---|---|
+| Never point a training installation at the production database | The point of the copy is that mistakes are cheap |
+| Take an export backup before switching either way | The switch dialog offers it in one click |
+| Rebuild training data by running your real masks | It doubles as a mask health check |
+| Reset with Clear Data Tables, never by hand | Cascades are handled for you |
+| Keep the training database name obviously different | The active connection card shows it, so people can tell where they are |
+
+A separate place to be wrong is one of the cheapest things an administrator can build, and it is what lets you say yes to an upgrade, a policy change, or a new planner without holding your breath. For the full administrator reference, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide); for the routine that keeps production itself healthy, [keeping the database healthy over time](/blog/keeping-the-edgebic-database-healthy-over-time); and for the upgrade this environment is usually built to rehearse, [upgrading safely](/blog/upgrading-edgebic-safely).

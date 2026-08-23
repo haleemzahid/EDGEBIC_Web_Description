@@ -1,0 +1,92 @@
+---
+title: "What Is an Optimality Gap in Production Scheduling?"
+description: "The optimality gap measures how far a schedule can possibly be from the best one: proven within X% of optimal. What the number means and how a solver earns it."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - optimality gap scheduling
+  - optimality gap definition
+  - proven optimal schedule
+  - mathematical optimization production scheduling
+  - lower bound scheduling solver
+  - schedule optimization certificate
+targetPhrase: "optimality gap scheduling"
+wordCount: 1090
+readingTime: 5
+faqQuestions:
+  - question: "What is an optimality gap in production scheduling?"
+    answer: "The optimality gap is the proven maximum distance between the schedule a solver returned and the best schedule that could possibly exist for the same goal. A gap of 3% means no schedule can beat the returned one by more than 3%; a gap of 0% means the schedule is proven optimal. It is the difference between 'the best plan we tried' and 'a plan nothing can beat by more than X'."
+  - question: "How is an optimality gap calculated?"
+    answer: "The solver tracks two numbers: the objective value of the best schedule found so far, and a mathematical lower bound, the best value any schedule could theoretically achieve. The gap is the difference between them divided by the objective, expressed as a percentage. When the two numbers meet, the gap is zero and the schedule is proven optimal."
+  - question: "Can a heuristic scheduler report an optimality gap?"
+    answer: "No. A heuristic search, such as trying many job orderings and keeping the best, can honestly say 'best of 40 schedules tried' but cannot bound how good the untried schedules might be, so no gap exists. Only a solver that computes a mathematical lower bound on the objective can prove a gap, which is why the claim 'proven within X% of optimal' is reserved for exact methods."
+  - question: "Does a 0% optimality gap mean the schedule cannot be improved at all?"
+    answer: "It means no schedule scores better under the goal you optimized, with the constraints as modeled. Change the goal (from due-date protection to setup minimization, say), change the constraints, or improve the input data, and a different schedule may win. The proof is exact but conditional: optimal for this problem, as stated."
+qaQuestions:
+  - question: "The badge says 'proven within 4% of optimal' after 30 seconds. Is it worth running longer to shrink the gap?"
+    answer: "Sometimes. An interrupted solve returns its best schedule plus its current bound, and more time lets the solver tighten both ends: it may find a better schedule, prove the current one closer to optimal, or both. If the 4% represents meaningful hours on your bottleneck, re-run at 60 seconds. If 4% of your objective is minutes of tardiness across a week, the schedule is effectively settled and the remaining gap is bookkeeping. The gap tells you the maximum possible prize for more effort, which is exactly the number you need for that decision."
+  - question: "How do I know the solver's proof means anything for my real shop, not just its internal model?"
+    answer: "Two protections apply in EDGEBIC. First, jobs using features the exact model does not represent (multi-machine instances, lot streaming, operator constraints, and others) are locked to the standard engine's schedule, so the proof is only ever claimed over work the model fully describes, and the explanation panel lists each locked job with its reason. Second, the solver stack is anchored against public benchmarks: it re-proves the known optimal makespan of 55 on the classic ft06 six-by-six job shop instance as a standing correctness check."
+---
+
+**An optimality gap is the proven maximum distance between the schedule a solver returned and the best schedule that could possibly exist for the same goal: "proven within 3% of optimal" means no schedule, tried or untried, can beat this one by more than 3%, and a gap of 0% means the schedule is mathematically proven optimal.** The gap is what separates mathematical optimization from sophisticated guessing: a heuristic can report the best plan it found, but only a solver with a lower bound can tell you how good the plans it never examined might have been.
+
+This entry belongs to the EDGEBIC glossary; the general dictionary is at the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## How It Works
+
+An exact solver works both ends of the problem at once:
+
+1. **From above**, it searches for better and better real schedules. Each one it finds becomes the incumbent, with a measurable objective value: total weighted lateness, overall finish time, whatever goal the planner chose.
+2. **From below**, it computes a lower bound: a value provably better than or equal to every schedule that could exist, derived from relaxations of the problem's mathematics rather than from trying candidates.
+
+The gap is the distance between the two, divided by the objective value, as a percentage. The two numbers squeeze toward each other as the solve runs: better incumbents pull the top down, tighter bounds push the floor up. When they meet, the incumbent is proven optimal, and the search can stop with certainty rather than exhaustion.
+
+The crucial property: the gap is a statement about *all* schedules, including the astronomically many the solver never constructed. "Best of 40 tried" and "proven within 3%" sound similar and are categorically different claims.
+
+## A Worked Example
+
+From the [EDGEBIC by User Solutions](/edgebic) documentation, a three-job problem small enough to see whole. Two machines (cut, then mill), one shared 8-hour day shift. Job A: 6 hours cut, 2 mill, due Tuesday noon. Job B: 2 cut, 6 mill, due Tuesday noon. Job C: 3 cut, 3 mill, due Tuesday 16:00.
+
+The standard engine dispatches A first, and A's long cut blocks the saw all Monday morning while the mill sits idle for 6 hours. Result: B finishes 2 hours late, C late as well, 3 total hours of tardiness.
+
+The solver finds the ordering B, A, C: the short cut feeds the mill by 10:00, all three jobs finish on time, and the overall span shrinks 18%. Then comes the part a heuristic cannot do: the solver's bound confirms zero tardiness is the floor, so the result is **proven optimal, gap 0%**. Not "we tried 6 orderings and this won," but "no ordering beats this." The [optimizer guide](/blog/edgebic-optimizer-guide) walks the same example with the full comparison table.
+
+## How EDGEBIC Implements It
+
+EDGEBIC ships two optimizer layers, and the gap is exactly what separates their claims:
+
+| Layer | Search | Certificate |
+|---|---|---|
+| Multi-run search (default) | Runs the production engine over many complete job orderings and keeps the lexicographic best | "Best of N schedules tried in X seconds." No gap: honest heuristic |
+| Mathematical solver | Encodes the problem for an exact constraint solver, warm-started from the standard plan | "Proven within X% of optimal," 0% reading "Proven optimal." A real bound, computed, not asserted |
+
+Details that keep the number honest:
+
+- **The certificate is data.** Every result carries whether a gap is available, the bound, and the percentage; the badge in the comparison screen reads those fields directly. Switching engines upgrades the badge automatically because the certificate changes, not because the wording does.
+- **Never worse, either way.** Both layers compare their candidate directly against the baseline schedule and return the baseline unless the candidate strictly wins, so chasing a gap can never cost you your current plan. When the baseline stands, that can itself be the correct answer; see [why the optimizer returns the same schedule](/blog/why-the-optimizer-returned-the-same-schedule-edgebic).
+- **The proof covers what the model covers.** Jobs using features outside the exact model are locked to the standard engine's schedule and listed with reasons; when everything is locked, no optimality is claimed at all.
+- **Interruptions keep their meaning.** A solve stopped at its time budget still returns the incumbent plus the current bound, so a 10-second run reports a wider, but still true, gap.
+- **External anchors.** The solver stack re-proves the published optimum of 55 on the classic ft06 job-shop benchmark as a standing correctness check, tying the internal math to results the scheduling literature has verified for decades.
+
+For a planner, the gap converts optimization from faith to arithmetic: it is the maximum prize still on the table, which is precisely the number that tells you whether to keep searching, and it turns "trust the algorithm" into "read the certificate."
+
+<Accordion title="What is an optimality gap in production scheduling?">
+The optimality gap is the proven maximum distance between the schedule a solver returned and the best schedule that could possibly exist for the same goal. A gap of 3% means no schedule can beat the returned one by more than 3%; a gap of 0% means the schedule is proven optimal. It is the difference between 'the best plan we tried' and 'a plan nothing can beat by more than X'.
+</Accordion>
+
+<Accordion title="How is an optimality gap calculated?">
+The solver tracks two numbers: the objective value of the best schedule found so far, and a mathematical lower bound, the best value any schedule could theoretically achieve. The gap is the difference between them divided by the objective, expressed as a percentage. When the two numbers meet, the gap is zero and the schedule is proven optimal.
+</Accordion>
+
+<Accordion title="Can a heuristic scheduler report an optimality gap?">
+No. A heuristic search, such as trying many job orderings and keeping the best, can honestly say 'best of 40 schedules tried' but cannot bound how good the untried schedules might be, so no gap exists. Only a solver that computes a mathematical lower bound on the objective can prove a gap, which is why the claim 'proven within X% of optimal' is reserved for exact methods.
+</Accordion>
+
+<Accordion title="Does a 0% optimality gap mean the schedule cannot be improved at all?">
+It means no schedule scores better under the goal you optimized, with the constraints as modeled. Change the goal (from due-date protection to setup minimization, say), change the constraints, or improve the input data, and a different schedule may win. The proof is exact but conditional: optimal for this problem, as stated.
+</Accordion>

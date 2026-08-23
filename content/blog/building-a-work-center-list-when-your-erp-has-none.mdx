@@ -1,0 +1,133 @@
+---
+title: "Building a Work Center List When Your ERP Has None"
+description: "How to create a scheduling-grade work center list when your ERP has no resource master: what to include, how many instances to declare, and how to import it into EDGEBIC."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - build work center list scheduling
+  - ERP with no work center master
+  - work center import mask
+  - machine instances capacity
+  - EDGEBIC work center setup
+  - resource list for finite scheduling
+targetPhrase: "build a work center list for scheduling"
+wordCount: 1590
+readingTime: 8
+faqQuestions:
+  - question: "What if my ERP has no work center or resource master at all?"
+    answer: "Build the list yourself in a spreadsheet and import it through the work center mask. Most shops need between eight and thirty entries, so the list takes an afternoon. Start from the machines and cells that actually constrain output, give each an identifier, an instance count, a shift assignment, and a default setup, then let routings reference those identifiers by name."
+  - question: "How granular should a work center be?"
+    answer: "One work center per group of interchangeable capacity, not one per physical machine. Three identical mills that any job can run on are one center with three instances. Two mills with different capabilities are two centers. The test is simple: if a planner would not care which of them a job lands on, they belong in one center with an instance count."
+  - question: "Can EDGEBIC create work centers from my routing file?"
+    answer: "Yes, the routing import auto-creates any work center it names that does not exist yet, which is a fast way to stand up a skeleton on day one. Those auto-created centers arrive empty, with no shifts, no instance count, and no default setup, so they schedule against defaults until you configure them. Treat them as placeholders to complete, not as a finished list."
+qaQuestions:
+  - question: "We have 40 machines on the floor and no resource list anywhere. Where do we stop, and how do we avoid a two-month data project?"
+    answer: "Stop at the constraints. Of 40 machines, typically eight to twelve actually decide when work finishes, and the rest have enough slack that modeling them in detail changes nothing. Start with those, plus one catch-all center for the everything-else operations so routings stay complete. Give each real center an identifier, an honest instance count, a shift, and a default setup, and you are done in an afternoon. Then schedule, and look at where the plan disagrees with what the floor knows. The disagreements point straight at the two or three centers that need more detail, and you refine those rather than all 40. This is the same order the first week checklist follows, and it gets a usable schedule out in days instead of months."
+  - question: "Our three lathes are nominally identical but one is older and slower. One center with three instances, or three centers?"
+    answer: "One center with three instances, then handle the slow one where it belongs. Splitting them into three centers forces every routing to pick a specific lathe, which throws away the load balancing that makes a pool useful and doubles your maintenance work every time a routing changes. Keep them pooled. If the speed difference is large enough to matter, a work center group lets you model a pool of interchangeable machines with a per-member factor, so the older lathe carries a factor that stretches its run time while still being a valid choice for the job. If the difference is small, ignore it: the shift calendar and instance count already carry most of the truth, and over-modeling a minor speed gap adds precision you cannot maintain."
+---
+
+**When your ERP has no work center or resource master, build the list yourself: one entry per group of interchangeable capacity, each with an identifier, an honest instance count, a shift assignment, and a default setup, then import it through the work center mask.** Most shops need between eight and thirty entries, which is an afternoon of work rather than a data project. The list is the single highest-leverage piece of scheduling data you will create, because it is what turns a routing into a finite capacity plan.
+
+EDGEBIC by User Solutions has been building this list with shops since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the pattern holds: ERPs built around orders and financials frequently have no usable resource master, and the ones that do often model departments rather than machines.
+
+## Why the ERP usually cannot help
+
+Plenty of manufacturing ERPs record which department an operation belongs to and what it costs, without ever recording how many machines that department holds or what hours they run. Those are accounting facts, not capacity facts. Some ERPs, particularly the order-and-inventory ones common in smaller shops, have no resource concept at all.
+
+That gap is exactly why a finite capacity layer sits beside the ERP. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the related case where routings are missing too is in [scheduling when your ERP has no routing data](/blog/scheduling-when-your-erp-has-no-routing-data).
+
+## What a work center actually needs
+
+A scheduling-grade work center carries a short list of facts. Everything else is optional refinement.
+
+| Field | Why it matters | How to decide |
+|---|---|---|
+| Identifier | The key routings reference and imports match on | Short, stable, no spaces if you can help it |
+| Description | Readability on dispatch lists | The name the floor uses |
+| Number of instances | How many identical machines the center holds | Count the machines a job could actually run on |
+| Shift assignment | The hours the center is available | Start with your standard shift pattern |
+| Default setup hours | Setup when a routing step does not specify one | A typical changeover for that machine |
+| Efficiency | Scales available hours against nominal | Leave at your standard unless you know better |
+| Bottleneck flag | Marks the constraints for reporting and analysis | Only the centers that genuinely constrain |
+| Hourly rate | Feeds cost rollups | Optional, add when you need costed reports |
+
+The identifier is the one to get right on day one, because routings reference it by name and matching is case-insensitive. `MILL-2` finds `mill-2`, but it will not find `Mill 2`. Pick a convention, write it down, and use it in both files.
+
+## Granularity: pool, do not split
+
+The most common modeling mistake is one work center per physical machine.
+
+The correct unit is a **group of interchangeable capacity**. Three identical mills that any job can run on are one center with three instances, not three centers. Two mills with genuinely different capabilities are two centers.
+
+The test: if a planner would not care which of them a job lands on, they belong together. Pooling gives the scheduler load balancing across the instances for free. Splitting forces every routing to name a specific machine, which is more data to maintain and a worse plan.
+
+Where machines are interchangeable but not identical, a [work center group](/blog/edgebic-work-center-groups-explained) models the pool with a per-member factor, so a slower member stretches the run time while remaining a valid choice. Use that rather than splitting.
+
+## Start with the constraints
+
+You do not need all 40 machines on day one. In most shops, eight to twelve resources decide when work finishes and the rest have enough slack that modeling them changes nothing.
+
+Build in this order:
+
+1. **The obvious constraints.** The machines with a queue in front of them, the ones the floor complains about, the ones overtime gets scheduled on.
+2. **Anything a hot job routes through.** Even if it is not busy, it appears on every critical path.
+3. **One catch-all center** for miscellaneous operations, so routings stay complete without inventing thirty entries.
+4. **Everything else, later,** driven by where the schedule disagrees with what the floor knows.
+
+Identifying the constraints is worth doing deliberately rather than by memory. [Production bottleneck identification](/blog/production-bottleneck-identification) covers the general method.
+
+## Instance counts: be honest, not optimistic
+
+The instance count is the number that most directly controls whether the schedule is believable. Two rules keep it honest:
+
+- **Count machines a job could really run on**, not machines that exist. A mill down for a rebuild is not an instance this quarter.
+- **Do not use instances to model operators.** If a cell has four machines and two people, the machine count is four and the labor constraint belongs in operator scheduling, where a person's available hours are modeled explicitly.
+
+Inflating instance counts is how a schedule ends up promising dates the floor cannot hit, and it is very hard to spot afterward because nothing looks wrong.
+
+## Two ways to get the list in
+
+**Build the file, then import it.** A spreadsheet with one row per center, mapped through the work center mask. This is the right order, because the routing import then matches existing centers instead of creating new ones.
+
+**Let the routing import seed it.** The routing pass auto-creates any work center it names that does not exist. That is genuinely useful on day one: import routings and you get a complete center list instantly, matched exactly to what the routings reference.
+
+The catch is that auto-created centers arrive empty. No shifts, no instance count, no default setup. They will still schedule, against defaults, and the resulting dates will look plausible and be wrong. Treat auto-created centers as a to-do list: sort by shift assignment and complete every center that has none. The [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist) covers the check.
+
+A hybrid works well: let routings create the list, export it, fill in instances and shifts in a spreadsheet, then re-import through the work center mask as an update run. Blank cells on an update keep existing values, so a partial file is safe.
+
+## Shifts come next, and they do most of the work
+
+A work center list without shifts is a list of names. The shift calendar is what turns an instance count into available hours per day, including weekends off, holidays, and any center that runs different hours from the plant standard.
+
+Start with one standard shift applied to everything, schedule, and then override the centers that differ. That order gets you a working plan on day one and refines it from evidence rather than from a survey.
+
+## Validate against a week you already know
+
+The fastest way to prove the list is right: schedule a week that has already happened, and compare. If the plan says a center was at 70 percent and the floor worked Saturday to finish, the instance count or the shift hours are wrong. If the plan shows a center swamped that nobody noticed, a routing is pointing at the wrong center.
+
+Every correction you make from a real week is worth ten made from a spreadsheet review. The [first week checklist](/blog/a-first-week-erp-integration-checklist) builds this validation into day four.
+
+## Then the engine takes over
+
+With honest centers, instances, and shifts, the full engine applies: finite capacity across multiple shifts and machine instances, sequence-dependent setups, lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps it, and the [ERP integration architecture](/edgebic-erp-integration) shows how the same import layer feeds every ERP, including the ones with nothing to export.
+
+## Build yours in an hour
+
+Bring a machine list, even a handwritten one, to [a demo](/contact-us). Turning it into a scheduling-grade work center list live usually takes under an hour, and you leave with a mask that keeps it current.
+
+<Accordion title="What if my ERP has no work center or resource master at all?">
+Build the list yourself in a spreadsheet and import it through the work center mask. Most shops need between eight and thirty entries, so the list takes an afternoon. Start from the machines and cells that actually constrain output, give each an identifier, an instance count, a shift assignment, and a default setup, then let routings reference those identifiers by name.
+</Accordion>
+
+<Accordion title="How granular should a work center be?">
+One work center per group of interchangeable capacity, not one per physical machine. Three identical mills that any job can run on are one center with three instances. Two mills with different capabilities are two centers. The test is simple: if a planner would not care which of them a job lands on, they belong in one center with an instance count.
+</Accordion>
+
+<Accordion title="Can EDGEBIC create work centers from my routing file?">
+Yes, the routing import auto-creates any work center it names that does not exist yet, which is a fast way to stand up a skeleton on day one. Those auto-created centers arrive empty, with no shifts, no instance count, and no default setup, so they schedule against defaults until you configure them. Treat them as placeholders to complete, not as a finished list.
+</Accordion>

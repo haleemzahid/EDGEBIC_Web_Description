@@ -1,0 +1,141 @@
+---
+title: "Quoting a Multi-Item Order in EDGEBIC: One Quote per Line, Held Together by the Sales Order"
+description: "A quote holds one product. See how to quote a customer's multi-line enquiry as a set, read the package date and margin correctly, and where the sum of the lines misleads."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Quoting & Promising
+author: user-solutions
+cluster: edgebic-quoting
+pillarSlug: edgebic-quoting-guide
+keywords:
+  - multi line quote manufacturing
+  - quoting several products together
+  - package delivery date quote
+  - sales order grouping quotes
+  - multi item enquiry job shop
+  - EDGEBIC quote per product
+targetPhrase: "multi line quote manufacturing"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "Can one EDGEBIC quote cover several products?"
+    answer: "No. A quote in EDGEBIC by User Solutions names one Product (BOR) and one quantity, because the simulation schedules that product's routing. A customer enquiry with five line items therefore becomes five quotes. Hold them together by giving every one the same Customer Id, the same Customer Reference, which is usually the customer's PO number, and where you use them, the same Sales Order link. The grid filters on all three, so the package behaves as a set even though it is stored as separate rows."
+  - question: "What is the delivery date for a multi-line package?"
+    answer: "The latest end date among the lines, since the customer is waiting on the whole shipment. Read each line's End Date after simulating and take the maximum, not the average and not the largest line's date, because a small item on a busy machine can easily finish after a large item on a free one. Treat that maximum as a floor rather than a promise, for the reason in the next answer."
+  - question: "Why is the sum of the line dates optimistic?"
+    answer: "Because each quote is simulated independently against the same current load, and a quote reserves nothing. When line one is simulated it does not see line two, and when line two is simulated it does not see line one. If two lines route through the same work center, each has been told that machine is freer than it will be once both orders are real. The lines that share a bottleneck are the ones to add allowance to."
+qaQuestions:
+  - question: "A customer sent a PO with three line items and wants one delivery date and one price. Walk me through it end to end."
+    answer: "Create one quote per line, all carrying the same Customer Id and the same Customer Reference so they filter together. Give each its product, quantity, and unit price, then simulate them as a batch by ticking the rows and clicking Simulate. Read the grid: each row now shows Start Date, End Date, Est. Hours, Est. Cost, Profit, and Margin. The package price is the sum of the line totals, the package cost is the sum of Est. Cost, and the package margin is package profit over package price, which you compute yourself because the grid reports margin per line. The package delivery date is the latest End Date. Then do the check that matters: look at which work centers the lines share. If two of them route through the same mill, each was simulated as though the other did not exist, so add allowance on the shared machine before you commit. Send the checked rows, and when the customer accepts, tick the same set and use Convert All, which produces one Manufacturing Order per quote."
+  - question: "Would it not be simpler if one quote could hold all the lines?"
+    answer: "It would be simpler to send and worse to manage, and the trade is worth understanding before you fight it. Because each line is its own quote, each carries its own simulated dates, its own cost, its own margin, and its own status. A customer who accepts three of five lines leaves you converting three and marking two Rejected, with no unpicking. A customer who doubles the quantity on one line means re-simulating one row rather than the whole package. A line that needs a scenario, such as a second shift on the constraint, gets its own scenario without disturbing the others, and the margin color on the grid tells you which specific item is dragging the package down rather than hiding it in a blended average. What you give up is a single consolidated document with a package total, which you assemble yourself, and the ability to simulate the lines as one competing block, which is the real limitation and the one to plan around."
+---
+
+**A quote in EDGEBIC names one product. A customer PO usually names five.** That mismatch is not a gap so much as a design choice, and working with it rather than against it produces a package quote that is easier to negotiate, easier to partially accept, and easier to convert.
+
+EDGEBIC by User Solutions holds the lines together through the customer and sales order links rather than inside a single record. This post covers the method, the arithmetic for a package price and date, the one place where summing the lines genuinely misleads you, and what you assemble by hand. It sits under the [EDGEBIC quoting guide](/blog/edgebic-quoting-guide).
+
+## Why a quote holds one product
+
+The quote's central field is **Product (BOR)**, and the reason is the simulation. When you click Simulate, the engine builds a temporary job for that product and that quantity, schedules its routing against your real current capacity, reads off the dates and the allocated work hours, prices them, and deletes the temporary job. That machinery is built around one routing.
+
+So a five-line enquiry becomes five quotes. Three fields are what turn those five rows back into a package:
+
+| Field | What it does for a package |
+|---|---|
+| **Customer Id** | Links every line to the same customer record and drives the grid's customer filter |
+| **Customer Reference** | Carries the customer's PO number, which is the identifier they will use when they call |
+| **Sales Order** | Optionally ties the lines to one order, filtered by the selected customer, with a plus button to create one inline |
+
+Set all three the same on every line and the grid's filters will bring the package back as a set whenever you need it. The full linking mechanics are in [linking a quote to a customer and sales order](/blog/linking-a-quote-to-a-customer-and-sales-order-in-edgebic).
+
+## Simulating the set
+
+You do not simulate five quotes one at a time. Tick the **Select** checkbox on the rows you want and click **Simulate**, and the run covers all of them. If nothing is ticked, Simulate runs on every not-yet-simulated quote in the current filter, which is why filtering to the customer first is a good habit before you press it.
+
+Each row then fills in Start Date, End Date, Est. Hours, Est. Cost, Profit, and Margin against the load you have right now.
+
+## Reading the package numbers
+
+Take a three-line enquiry from Acme on PO ACME-PO-4471. The first line is the documented Widget-A simulation; the other two are computed on the same documented routings and rates, with illustrative dates.
+
+| Line | Product | Qty | Hours | Est. Cost | Price | End Date |
+|---|---|---|---|---|---|---|
+| 1 | Widget-A | 200 | 151.50 | $9,230 | $17,000 | Aug 14 |
+| 2 | Bracket-B | 50 | 10.00 | $760 | $950 | Jul 24 |
+| 3 | Widget-A | 40 | 31.50 | $1,910 | $3,400 | Aug 20 |
+| | **Package** | | **193.00** | **$11,900** | **$21,350** | **Aug 20** |
+
+Four things to read from that.
+
+**The package price is a sum.** $21,350 across the three lines.
+
+**The package cost is a sum.** $11,900, which is labor plus material only on every line, with no overhead component anywhere in it.
+
+**The package margin is computed, not displayed.** Profit is $21,350 minus $11,900, so $9,450, and margin is $9,450 over $21,350, which is 44.3 percent. The grid paints a margin color per line. It does not paint one for the package, so this is your arithmetic. It is worth doing, because a package can sit comfortably green while one line inside it is amber and quietly funded by the others.
+
+**The package date is the maximum, not the sum and not the largest line.** August 20, and notice that it comes from the 40-piece line rather than the 200-piece one. A small item behind a booked machine routinely finishes after a large item that had a clear run. Anyone eyeballing the biggest line for the delivery date will get this wrong regularly.
+
+## The one place the sum misleads
+
+Here is the check that separates a package quote you can defend from one you cannot.
+
+Every line was simulated independently against the same picture of current load, and **a quote reserves nothing**. When line one was simulated, lines two and three did not exist. When line three was simulated, line one still did not exist. All three were told the same machines were free.
+
+In the example above, all three lines route through CNC-Mill-1. Line one alone puts 101 hours on that mill. The August 20 package date was computed as though those hours were not there for the other two lines, so it is a floor rather than a forecast.
+
+Three ways to handle it, in increasing order of effort:
+
+**Stagger the target start dates.** Each quote has its own Target Start Date, which on a forward quote is where the simulation begins. Setting them to reflect the order you would actually run the lines approximates the sequencing, and the resulting dates are noticeably more honest than three simulations all starting the same morning.
+
+**Identify the shared machine and add allowance on that line only.** You do not need to pad the whole package. Only the lines competing for the same work center are understated, and usually only one machine is doing the damage.
+
+**Re-check after conversion.** Once the lines are real orders, a Drive Schedule run plans them against each other properly, and the resulting dates are the ones production will work to. Building in a short gap between accepting the order and confirming the acknowledgment date is a cheap habit that catches this.
+
+Scenarios do not solve it, and it is worth saying so plainly: scenarios belong to one parent quote and the comparison charts compare siblings only, so there is no way to model the three lines competing as a block. The wider version of this behavior is covered in [why a quoted date can move](/blog/why-a-quoted-date-can-move-in-edgebic).
+
+## Sending, accepting, and converting
+
+**Sending.** The Send action produces the quote summary for the rows you have checked, so the package can go out together. Consolidating those into one customer-facing document with a package total and a single delivery date is yours to do, and the total and date you use are the ones computed above.
+
+**Partial acceptance.** This is where one quote per line earns its keep. A customer taking three of five lines means converting three and setting two to Rejected. Nothing has to be unpicked, and the two rejected lines keep their simulated numbers for reference.
+
+**Converting.** Tick the accepted rows and use Convert All. Already-converted rows are skipped automatically, and you get one Manufacturing Order per quote, each named MO followed by the quote number, each carrying its product, quantity, dates, cost estimate, markup, unit price, scheduling direction, and customer link. Conversion is one-way and guarded, so a quote cannot produce a second order.
+
+**Managing them afterward.** The orders arrive as separate jobs. Grouping them by their shared sales order is how they stay a package on the production side too, which is covered in [how to group orders by sales order](/blog/how-to-group-orders-by-sales-order-in-edgebic).
+
+## Housekeeping worth doing on a package
+
+**Keep the expiry dates aligned.** They default to 30 days from the quote date. Lines with different expiry dates on the same PO produce an awkward conversation when the customer accepts in week five.
+
+**Watch the refresh banner.** If work center rates or capacity change after simulation, the quote view warns that estimates are stale. On a package that means re-simulating the whole set, not the one line you happened to open.
+
+**Re-simulate the set together after any line changes.** A quantity change on one line does not alter the others' stored numbers, but it does alter the real competition between them, so the package date deserves another look.
+
+**Check the per-line margin colors, not just the package.** Green above 20 percent, amber above 10, red when negative. A package average can conceal a line you are losing money on, and finding that after conversion is expensive.
+
+For the broader picture of quoting in a job shop, see [job shop quoting and scheduling](/blog/job-shop-quoting-scheduling).
+
+## The takeaway
+
+One product per quote, held together by the customer, the customer reference, and the sales order. Simulate the set in one action, sum the price and cost, compute the package margin yourself, take the latest end date, and then add allowance where lines share a machine, because each was simulated as though the others did not exist. Bring a real multi-line PO to a [walkthrough of EDGEBIC](/edgebic) and we will quote it as a package against your actual load.
+
+<Accordion title="Can one EDGEBIC quote cover several products?">
+No. A quote in EDGEBIC by User Solutions names one Product (BOR) and one quantity, because the simulation schedules that product's routing. A customer enquiry with five line items therefore becomes five quotes. Hold them together by giving every one the same Customer Id, the same Customer Reference, which is usually the customer's PO number, and where you use them, the same Sales Order link. The grid filters on all three, so the package behaves as a set even though it is stored as separate rows.
+</Accordion>
+
+<Accordion title="What is the delivery date for a multi-line package?">
+The latest end date among the lines, since the customer is waiting on the whole shipment. Read each line's End Date after simulating and take the maximum, not the average and not the largest line's date, because a small item on a busy machine can easily finish after a large item on a free one. Treat that maximum as a floor rather than a promise, for the reason in the next answer.
+</Accordion>
+
+<Accordion title="Why is the sum of the line dates optimistic?">
+Because each quote is simulated independently against the same current load, and a quote reserves nothing. When line one is simulated it does not see line two, and when line two is simulated it does not see line one. If two lines route through the same work center, each has been told that machine is freer than it will be once both orders are real. The lines that share a bottleneck are the ones to add allowance to.
+</Accordion>
+
+<Accordion title="A customer sent a PO with three line items and wants one delivery date and one price. Walk me through it end to end.">
+Create one quote per line, all carrying the same Customer Id and the same Customer Reference so they filter together. Give each its product, quantity, and unit price, then simulate them as a batch by ticking the rows and clicking Simulate. Read the grid: each row now shows Start Date, End Date, Est. Hours, Est. Cost, Profit, and Margin. The package price is the sum of the line totals, the package cost is the sum of Est. Cost, and the package margin is package profit over package price, which you compute yourself because the grid reports margin per line. The package delivery date is the latest End Date. Then do the check that matters: look at which work centers the lines share. If two of them route through the same mill, each was simulated as though the other did not exist, so add allowance on the shared machine before you commit. Send the checked rows, and when the customer accepts, tick the same set and use Convert All, which produces one Manufacturing Order per quote.
+</Accordion>
+
+<Accordion title="Would it not be simpler if one quote could hold all the lines?">
+It would be simpler to send and worse to manage, and the trade is worth understanding before you fight it. Because each line is its own quote, each carries its own simulated dates, its own cost, its own margin, and its own status. A customer who accepts three of five lines leaves you converting three and marking two Rejected, with no unpicking. A customer who doubles the quantity on one line means re-simulating one row rather than the whole package. A line that needs a scenario, such as a second shift on the constraint, gets its own scenario without disturbing the others, and the margin color on the grid tells you which specific item is dragging the package down rather than hiding it in a blended average. What you give up is a single consolidated document with a package total, which you assemble yourself, and the ability to simulate the lines as one competing block, which is the real limitation and the one to plan around.
+</Accordion>

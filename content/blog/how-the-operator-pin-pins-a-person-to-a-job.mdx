@@ -1,0 +1,85 @@
+---
+title: "How the Operator Pin Ties a Named Person to a Job in EDGEBIC"
+description: "An operator pin hard-assigns a routing step to one named, qualified person. Learn why a pinned step slides through their vacation instead of using a substitute."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - operator pin scheduling
+  - named operator assignment
+  - pin step to person
+  - labor constraint scheduling
+  - required operator
+  - hard operator assignment
+targetPhrase: "operator pin scheduling"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "What is an operator pin in EDGEBIC?"
+    answer: "An operator pin is a hard assignment of a routing step to one named, qualified person, set on the step alongside its required skill. When a step is pinned, the scheduler staffs it only from that person's hours; the rest of the qualified pool is never used as a fallback. It is the planner-side answer to 'this operation must be run by this specific person,' whether for a customer sign-off requirement or the one hand you trust with a fixture."
+  - question: "What happens to a pinned step when the pinned person is on vacation?"
+    answer: "The step slides through their absence to their first day back. It does not quietly hand the work to another qualified person. A named person's time off becomes visible schedule movement, which is exactly the point: if the pin exists for a real reason, you want their absence to move the date, not to silently substitute someone the pin was meant to exclude."
+  - question: "Is the operator pin the same as a kiosk login?"
+    answer: "No. The kiosk has no login, PIN, or badge scan; its Operator box is a trusted free-text name. The operator pin is a planner-side scheduling concept: it tells the engine which named, qualified person must staff a routing step. The two are unrelated. One is about who is allowed to type at a terminal (nobody is gated), the other is about who the schedule commits to for a given operation."
+qaQuestions:
+  - question: "I pinned a step to Joe but the schedule stops with an error naming the skill. Why?"
+    answer: "A pin requires the pinned person to hold an active, unexpired certification for the step's required skill. If Joe is inactive, or his certification for that skill expired or was removed, the run fails fast with a message naming the problem rather than scanning for weeks and ending in a vague no-capacity error. Recertify Joe or reactivate him, or re-pin to someone qualified, then reschedule. A pin also requires a required skill to be set on the step in the first place."
+  - question: "I changed a pinned step's required skill and the pin disappeared on the next run. Expected?"
+    answer: "A pin is cleared only when you remove the required skill entirely, never on a skill A-to-B change. Changing the skill keeps the pin. If the pinned person does not hold the new skill, the next run fails fast and names the mismatch, so you fix it deliberately rather than having the pin silently vanish. If the pin truly went away, the skill was cleared to none, which is the one action that also clears the pin."
+---
+
+**An operator pin in EDGEBIC by User Solutions hard-assigns a routing step to one named, qualified person, so the scheduler staffs that step only from their hours and never falls back to anyone else.** It is the planner's way of saying "this operation must be run by this person," and its defining behavior is that a pinned step slides through the pinned person's vacation rather than quietly handing the work to a substitute. This is a labor-constraint feature that ships and works today, and it lives alongside the wider [shop floor execution](/blog/edgebic-shop-floor-guide) model.
+
+Most scheduling decisions are about capacity: is there a machine and a qualified person free? A pin is different. It is about identity. Some operations genuinely need a specific individual, whether because a customer requires that person's sign-off, or because one hand is the only one you trust with a particular fixture. The pin makes that requirement explicit and enforces it honestly.
+
+## Pin Is Not Kiosk Login
+
+First, a clarification that saves confusion. The shop-floor kiosk has [no login, PIN, or badge scan](/blog/why-the-edgebic-kiosk-has-no-login): its Operator box is a trusted free-text name. The operator pin described here is a completely separate, planner-side scheduling concept. It does not gate who can type at a terminal. It tells the scheduling engine which named, qualified person must staff a routing step. Keep the two ideas apart and everything below is straightforward.
+
+## How a Pin Is Set
+
+A pin lives on the routing step, next to its required skill. In the routing editor, once a step has a required skill, an Operator picker becomes available, and it shows only operators qualified for that skill. Choosing a person pins the step to them; leaving it at Auto lets the scheduler staff from the whole qualified pool.
+
+There is a second way to pin: on the Schedule View Gantt in Operator view, dragging a bar onto a person's lane pins the step to that person, checked against their qualification. Dragging to the Unassigned lane clears the pin. Both paths write the same result. For the drag mechanics, see [reassigning an operator with a replacement drag](/blog/reassigning-an-operator-with-a-replacement-drag).
+
+## The Hard Semantics
+
+A pin is deliberately strict, because a soft pin that quietly substitutes people would defeat its own purpose:
+
+- **One person, no fallback.** With a pin set, only that person's hours count for the step. The rest of the qualified pool is never used, even when a colleague is free.
+- **It slides through absence.** If the pinned person is on time off, the step moves to their first day back. Their vacation becomes visible schedule movement, not a silent hand-off.
+- **It fails fast on a bad pin.** If the pinned person is inactive or not certified for the step's skill, the run stops immediately with a message naming the problem, rather than scanning weeks of calendar and ending in a vague no-capacity error.
+- **It survives reschedules.** The pin is written to both the global routing and the job's preserved routing snapshot in one save, so a preserved-routing reschedule cannot silently revert it.
+
+## Why Sliding Beats Substituting
+
+The instinct to "just use someone else when the pinned person is out" is exactly the behavior a pin exists to prevent. If a customer requires a named welder's sign-off, or a specific machinist is the only one trusted with a fixture, substituting quietly produces a plan that violates the very requirement the pin encoded. By sliding the step to the pinned person's return, EDGEBIC keeps the plan truthful: the date moves, the planner sees it move, and no one downstream is misled into thinking the work ran with the wrong hands. Use pins sparingly, though; the Auto setting load-balances across everyone qualified and gives the scheduler more room to hold dates.
+
+## A Worked Example
+
+Weld-A runs a step that requires the TIG-Inconel skill. Joe and Mia are both certified and rostered Monday through Friday.
+
+**Unpinned (Auto).** If Joe's Monday hours are booked, the scheduler staffs the step with Mia and it runs Monday. Capacity, not identity, drives the choice.
+
+**Pinned to Joe.** Now suppose the customer requires Joe's sign-off, so the step is pinned to him, and Joe takes time off Monday through Wednesday.
+
+- The qualified pool for the step narrows to Joe alone; Mia is filtered out of every consideration.
+- Monday through Wednesday, Joe's available hours are zero, so the step cannot be placed.
+- The step slides to Thursday, Joe's first day back, and runs there.
+
+The slip is visible on the Gantt, which is the feature working. Mia's free Monday hours are not used, because the pin means "this person, visibly, or wait."
+
+## The Clear Rule
+
+A pin is cleared only when the required skill is removed from the step entirely, never on a skill change from one to another. Changing a step's skill keeps the pin. If the pinned person does not hold the new skill, the next run fails fast and names the mismatch, so you fix it on purpose. This rule exists because property updates during import and data loading happen in an uncontrolled order, and a clear-on-any-change rule would wipe legitimate pins during innocent processing. The shipped behavior is safe: only a deliberate "skill set to none" clears the pin.
+
+## Where the Pin Shows Up
+
+A pinned or skill-required step carries a person glyph on the Schedule View Gantt and a person icon beside its name in the Job View, with a required-skill column. The [Dispatch tab](/blog/how-supervisors-use-the-edgebic-dispatch-view) shows the current plan's crew per person and date. These crew surfaces show the plan, not a record of who actually worked; that record still comes from kiosk punches and actual dates. For how skills themselves gate placement, see [how operator skills gate work center assignment](/blog/how-operator-skills-gate-work-center-assignment).
+
+## The Bottom Line
+
+The operator pin ties a routing step to one named, qualified person and enforces it hard: no fallback, a visible slide through their absence, a fast failure on a bad pin, and survival across reschedules. It is a planner-side scheduling constraint, entirely separate from the kiosk's trusted free-text name, and it exists so that "this person must run this" is a promise the plan actually keeps. Used sparingly, it trades a little flexibility for certainty about who. See the whole labor model in the [shop floor execution guide](/blog/edgebic-shop-floor-guide) and the platform at [EDGEBIC](/edgebic), and compare the flexible default in [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).

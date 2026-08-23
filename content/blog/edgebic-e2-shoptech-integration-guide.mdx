@@ -1,0 +1,147 @@
+---
+title: "EDGEBIC + E2 Shoptech: The Complete Scheduling Integration Guide"
+description: "E2 Shoptech production scheduling integration with EDGEBIC step by step: export parts, work centers, routings and jobs, map columns once, schedule at finite capacity."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - E2 Shoptech production scheduling integration
+  - E2 Shop finite capacity scheduling
+  - E2 scheduling add-on
+  - EDGEBIC E2 Shoptech integration
+  - E2 routing export scheduling
+  - import mask ERP integration
+  - job shop finite capacity scheduling
+targetPhrase: "E2 Shoptech production scheduling integration"
+wordCount: 2040
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC have a certified E2 Shoptech connector?"
+    answer: "No, and that is a deliberate design choice. EDGEBIC integrates with E2 through reusable Excel, CSV, and database import masks rather than a certified connector. You map the columns of an E2 export once, and every later run is two clicks. Nothing is installed inside E2, no schema is extended, and no interface object enters your ERP's upgrade path. The same file-based method has fed schedules in this product line since 1991."
+  - question: "What E2 data does EDGEBIC need to build a finite capacity schedule?"
+    answer: "Four exports carry a complete scheduling model: parts, work centers with machine counts, routings with operation sequence and run and setup times, and open jobs with quantities and dates. A fifth optional export carries logged hours from the floor. Each one goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed with a per-run log."
+  - question: "Will adding EDGEBIC change how our shop uses E2?"
+    answer: "No. E2 stays the system of record for quoting, estimating, purchasing, inventory, and invoicing. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machine counts, and hands dates and dispatch lists back as Excel files. Order entry, quoting, and shipping keep running exactly as they do today, so no E2 process has to be redesigned."
+  - question: "We are a small job shop. Is this overkill?"
+    answer: "No. The four exports and the masks that read them take a few days to set up, and after that a full finite capacity reschedule is a two-click routine. Small shops feel the change fastest because one shared bottleneck machine drives the whole floor, and seeing its true daily load is often the first time the promise dates stop being guesses."
+qaQuestions:
+  - question: "Our E2 estimates quote run time per job rather than per piece, and the numbers already assume a lot size. How do we bring those into EDGEBIC without rebuilding every routing?"
+    answer: "Put a conversion factor on the hours column in the routing import mask and the division happens during import. A time quoted per lot of 100 pieces lands as per-piece hours with a factor of 0.01, so a cell of 2.5 hours per 100 becomes 0.025 per piece. If your setup times are quoted in minutes, use 0.016667 on the setup column in the same mask, so one file can carry two different units and land correctly in both. The factor is saved with the mask, so every future routing import converts identically, and the per-run log records every row so the math is auditable after the fact. You never touch the E2 estimate itself."
+  - question: "We run two identical machining centers but E2 treats the department as one capacity bucket. Does modeling that separately really change the dates?"
+    answer: "It changes them by a factor. A work center modeled as one resource with a doubled capacity number can look right in a weekly total while being wrong every single day, because it will plan one long job that occupies the whole cell when two jobs could physically run side by side. In the work center import you set the instance count to 2, and the engine then plans two simultaneous jobs, load balancing across them or dedicating one machine per job per day when changeovers make that the right rule. On a shared bottleneck, that difference is often several days of apparent lead time that were never real."
+---
+
+**Integrating E2 Shoptech with EDGEBIC means exporting the parts, work centers, routings, and open jobs E2 already holds to Excel or CSV, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then export back for E2 and your customers. There is no middleware server, no interface object inside the ERP, and no certified connector to maintain through an upgrade.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with shop-floor ERPs this way since 1991. Across 35+ years the same approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins, including Cummins scheduling across 33 locations from AS400-era data. This guide covers the E2 case: what to export, how the masks work, what the engine does with the result, and what a realistic first two weeks looks like on a job-shop floor.
+
+## Where E2 stops and detailed scheduling starts
+
+E2 is built for the front and back of a job shop: quoting, estimating, purchasing, inventory, shipping, and invoicing. That is where it earns its keep, and it should stay there. The gap most E2 shops report is in the middle, in the questions a working planner answers every morning:
+
+- Which of these open jobs actually fits on the constraint machine this week?
+- If the hot job jumps the queue, which promised dates slip and by how much?
+- Is the shared five-axis loaded to 80 percent or 140 percent next Tuesday?
+
+Those are finite capacity questions. Answering them means modeling shifts, machine counts, changeover sequences, and operator skills against every open job at once, which is a different problem from estimating a quote. That is why a dedicated scheduling layer beside the ERP is the standard pattern rather than a knock on E2. The general argument is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the job-shop version of the problem is in [job shop scheduling challenges](/blog/job-shop-scheduling-challenges). The gap-by-gap version for this ERP is the companion post on [E2 Shoptech scheduling gaps and how EDGEBIC fills them](/blog/e2-shoptech-scheduling-gaps-and-how-edgebic-fills-them).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, E2 included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| E2 → EDGEBIC | Parts | Excel or CSV export → Product import mask |
+| E2 → EDGEBIC | Work centers | Export → Workcenter import mask |
+| E2 → EDGEBIC | Routings / operations | Export → BOR (bill of routing) import mask, two-pass |
+| E2 → EDGEBIC | Open jobs | Export → SalesOrder import mask |
+| E2 → EDGEBIC | Logged hours (optional) | Export → Actuals import mask |
+| EDGEBIC → E2 | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (an Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row carries headings, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks: pick the mask, press Do It.
+
+Every row in your file produces exactly one outcome: **Created**, **Updated**, **Reused** (found and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row. Nothing half-imports silently, which matters the first time someone asks what a run actually changed.
+
+## Step 1: the four exports
+
+You do not need everything E2 knows. Four exports carry a complete scheduling model.
+
+1. **Parts.** The part number, description, unit of measure, and any cost or lead-time columns you want visible. The identifier is the natural key and matching is case-insensitive, so `BRKT-12` in the file finds `Brkt-12` in the database.
+2. **Work centers.** The work center identifier, how many identical machines it holds, default setup hours, efficiency, and an hourly rate if you want cost rollups. Bottleneck and shift assignment flags can ride along in the same file.
+3. **Routings.** One row per operation: end part, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open jobs.** Part, quantity, job reference, and dates.
+
+Any report, list, or query in your E2 environment that saves to Excel or CSV is a valid source. You are not writing scripts, not touching the database directly, and not asking anyone for a custom interface. The file is the interface, which is exactly why nothing here enters your ERP's upgrade path.
+
+## Step 2: map the columns once
+
+Build one mask per file. Name it after the routine rather than the file: `Weekly E2 Jobs` outlives `jobs-week29.xlsx`. Mandatory fields are flagged in the mask editor, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row rather than half-way through.
+
+Two mask features carry most of the weight in an E2 integration:
+
+**Unit conversion.** Estimating systems and schedulers disagree about units constantly. Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`. Seconds to hours is `0.000278`. A standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in one file can carry different factors, so a routing export mixing per-lot run times with per-changeover setup minutes lands correctly in one run.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value instead of wiping it. A file carrying only part number and price refreshes prices and touches nothing else. Note the rule: a zero is a value, not a blank, so leave a column out rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move between systems because operations reference each other: op 10 feeds op 20 feeds op 30. A naive row-by-row import cannot wire those links, because op 20 does not exist yet when op 10 is written.
+
+EDGEBIC's routing import therefore runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or part the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end part, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished part so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Three conventions save time later:
+
+- **Number sequences in gaps of 10.** When engineering inserts a deburr op next quarter it becomes 25 and nothing renumbers.
+- **Keep all of one part's steps in one file.** A routing import wipes and recreates that part's steps once per run, which is what makes re-imports idempotent. Splitting one part across two runs means the second run's wipe deletes the first run's steps.
+- **Re-importing is safe for running jobs.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: jobs in, then run the scheduler
+
+The job import maps part, quantity, reference, and dates. When your export carries a job reference, rows sharing that reference group under one order and their jobs auto-number as `{Ref}-{line}`, which keeps a multi-line release together instead of scattering it.
+
+One rule matters more than any other: **imports never schedule anything.** After the run, imported jobs sit as unscheduled demand. You then run the scheduler, which states its scope before it plans (how many jobs are new and how many existing jobs are being rescheduled), and the new work slots around everything already committed on the floor. Data movement and planning stay separate on purpose, so an import can never silently rearrange a shop.
+
+Once the data is in, the whole engine applies to your E2 work: finite capacity across multiple shifts and machine instances, [work center groups that re-shop the machine pool on every reschedule](/blog/edgebic-work-center-groups-explained), a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending executable dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet. The work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved, which turns a dispatch list into a saved report rather than a document someone rebuilds each morning.
+
+From there, revised dates go back into E2 through the job-maintenance path your team already uses. There is no automated write-back, which is deliberate: your ERP data stays under your team's control and inside your existing process. The category framing for this split is on the [ERP scheduling add-on page](/erp-scheduling-add-on).
+
+## A realistic first two weeks
+
+The method behind this guide has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. A shop juggling more part numbers usually wants a little more runway for cleanup rather than for the technical work.
+
+| Days | Work |
+|---|---|
+| 1 to 2 | Export parts and work centers; build and run those two masks; verify counts against E2 |
+| 3 to 4 | Export routings; build the routing mask with unit conversions; import and review the routing designer |
+| 5 | Export open jobs; import; run the first full finite capacity schedule |
+| 6 to 8 | Compare EDGEBIC dates to current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 9 to 10 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+If you are starting from an empty database, the [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the sequence in detail, and the [E2 Shoptech to EDGEBIC data mapping reference](/blog/e2-shoptech-to-edgebic-data-mapping-reference) is the field-level lookup you keep open while building masks.
+
+## Prove it with your own export
+
+The fastest evaluation is not a feature list, it is your own file. Export this week's open jobs and a routing file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity. Shops comparing several ERPs at once can also read the [ProShop](/blog/edgebic-proshop-integration-guide), [SAP](/blog/edgebic-sap-integration-guide), and [ECI M1](/blog/edgebic-eci-m1-integration-guide) versions of this guide: the method is identical, which is the point.
+
+<Accordion title="Does EDGEBIC have a certified E2 Shoptech connector?">
+No, and that is a deliberate design choice. EDGEBIC integrates with E2 through reusable Excel, CSV, and database import masks rather than a certified connector. You map the columns of an E2 export once, and every later run is two clicks. Nothing is installed inside E2, no schema is extended, and no interface object enters your ERP's upgrade path. The same file-based method has fed schedules in this product line since 1991.
+</Accordion>
+
+<Accordion title="What E2 data does EDGEBIC need to build a finite capacity schedule?">
+Four exports carry a complete scheduling model: parts, work centers with machine counts, routings with operation sequence and run and setup times, and open jobs with quantities and dates. A fifth optional export carries logged hours from the floor. Each one goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed with a per-run log.
+</Accordion>
+
+<Accordion title="Will adding EDGEBIC change how our shop uses E2?">
+No. E2 stays the system of record for quoting, estimating, purchasing, inventory, and invoicing. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machine counts, and hands dates and dispatch lists back as Excel files. Order entry, quoting, and shipping keep running exactly as they do today, so no E2 process has to be redesigned.
+</Accordion>
+
+<Accordion title="We are a small job shop. Is this overkill?">
+No. The four exports and the masks that read them take a few days to set up, and after that a full finite capacity reschedule is a two-click routine. Small shops feel the change fastest because one shared bottleneck machine drives the whole floor, and seeing its true daily load is often the first time the promise dates stop being guesses.
+</Accordion>

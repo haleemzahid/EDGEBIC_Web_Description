@@ -1,0 +1,142 @@
+---
+title: "EDGEBIC + xTuple: The Complete Scheduling Integration Guide"
+description: "xTuple production scheduling integration with EDGEBIC: export items, work centers, bills of operations and work orders, map columns once, schedule at finite capacity."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - xTuple production scheduling integration
+  - xTuple finite capacity scheduling
+  - xTuple scheduling add-on
+  - EDGEBIC xTuple integration
+  - xTuple database export scheduling
+  - open source ERP scheduling integration
+targetPhrase: "xTuple production scheduling integration"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC connect to xTuple through an API or a database link?"
+    answer: "Neither is required. EDGEBIC reads the CSV or Excel files xTuple produces, or optionally a read-only view of a database, through reusable import masks. There is no API integration to build and no connector to certify. Because xTuple runs on PostgreSQL, a shop that prefers it can point a mask at a saved query or view instead of a file, but the file path works the same way and needs no database access at all."
+  - question: "What xTuple data does EDGEBIC need to schedule?"
+    answer: "Four sets carry a complete scheduling model: items, work centers with a real machine count, bills of operations (the routing) with sequence and run and setup times, and open work orders with quantities and dates. A fifth optional set carries posted labor from the floor. Each goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed."
+  - question: "Do imported xTuple work orders schedule themselves?"
+    answer: "No, and that separation is deliberate. An import changes data, the scheduler changes the plan. Imported work orders appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor."
+qaQuestions:
+  - question: "We run xTuple on our own PostgreSQL server and our team writes SQL comfortably. Should we skip files and read the database directly?"
+    answer: "You can, and for a SQL-comfortable team it is often the cleaner option, but be deliberate about it. An EDGEBIC import mask accepts a database source as well as a file, so you can point it at a read-only view that returns the item, work center, bill-of-operations, and work order columns in the shape EDGEBIC expects. The advantage is that the export step disappears: the view is the export. The discipline is that the view must stay read-only and its column list must stay fixed, because a mask maps to columns by name or position and a renamed or reordered column silently maps the wrong data. Many shops still prefer a file because a file is inspectable before it is imported, and the choice is per mask rather than global."
+  - question: "Our bills of operations reference standard operations shared across many items. Does that break the routing import?"
+    answer: "No, because EDGEBIC stores the routing per end item rather than as a shared library. When you export a bill of operations, expand it so every item's routing appears as its own set of rows, one row per operation, naming the work center and the run and setup times for that step. A shared standard operation simply appears in each item's rows with the same numbers, which is exactly what the engine needs. The one rule is that all of an item's steps travel in one file, because a routing import wipes and recreates one item's steps at a time; the shared origin in xTuple does not matter once the rows are expanded."
+---
+
+**Integrating xTuple with EDGEBIC means exporting the items, work centers, bills of operations, and open work orders xTuple already holds to CSV or Excel (or a read-only database view), mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no API project, nothing installed in the database, and no certified connector to version-match when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERP systems this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the xTuple case, including the database-source option that an open-source, PostgreSQL-backed ERP makes easy.
+
+## Why an open-source ERP still needs a finite capacity layer
+
+xTuple is a capable ERP: inventory, purchasing, manufacturing records, and a database you own and can query. What most xTuple manufacturers report is that the daily sequencing decision against real machine constraints still happens in a spreadsheet, because the questions a planner asks each morning are finite capacity questions:
+
+- Which of these 60 open work orders fit on the two machining cells this week?
+- If this rush order jumps the queue, which promise dates move and by how much?
+- Is the weld booth loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open order at once. It is a different computational problem from recording transactions, which is why a dedicated finite capacity layer beside the ERP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every system, xTuple included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| xTuple to EDGEBIC | Items | CSV, Excel, or database view to Product import mask |
+| xTuple to EDGEBIC | Work centers | Export to Workcenter import mask |
+| xTuple to EDGEBIC | Bills of operations (routing) | Export to BOR (bill of routing) import mask, two-pass |
+| xTuple to EDGEBIC | Open work orders | Export to SalesOrder import mask |
+| xTuple to EDGEBIC | Posted labor (optional) | Export to Actuals import mask |
+| EDGEBIC to xTuple | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (Excel workbook, delimited text, or a database source), whether the first row is headings, whether text values are quoted, and how each column maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks.
+
+Every row produces exactly one outcome: **Created**, **Updated**, **Reused** (matched and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row individually.
+
+## The file or the view: your choice, per mask
+
+xTuple's open, PostgreSQL foundation gives you a second option most ERPs do not: a mask can read a read-only database view instead of a file. For a SQL-comfortable team this removes the export step, because the view is the export. The trade-off is inspectability: a file can be opened and eyeballed before it is imported, while a view is trusted to be right. The choice is per mask, so you can read items from a view and still hand-run work orders from a file. Either way, the same three properties hold:
+
+- **Nothing is installed in xTuple.** No trigger, no stored procedure driving the integration, no scheduled job inside the database. A view is read-only and self-contained.
+- **No write path exists back into the ERP.** EDGEBIC never writes to xTuple, so nothing it does can corrupt a transaction.
+- **Scheduling keeps working offline.** The plan is computed locally, so a connectivity or database-availability problem stops the refresh, not the shop's dispatch list.
+
+## Step 1: the four data sets
+
+Four sets carry a complete scheduling model.
+
+1. **Items.** The item number, description, unit of measure, and any cost or lead-time columns worth having visible. The item number is the natural key, matched case-insensitively.
+2. **Work centers.** Identifier, how many identical machines the center really holds, default setup hours, efficiency, and an hourly rate for cost rollups.
+3. **Bills of operations.** One row per operation: end item, work center, sequence number, hours per unit, setup time, queue time. Expand shared standard operations so each item carries its own rows.
+4. **Open work orders.** Item, quantity, order reference, and dates.
+
+## Step 2: map the columns once
+
+Build one mask per set and name it after the routine rather than the source: `Weekly xTuple Work Orders` outlives `wo-week29.csv`. Mandatory fields are flagged, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row.
+
+Two mask features carry most of the weight:
+
+**Unit conversion.** Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`, seconds to hours `0.000278`, and a standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in the same file can carry different factors.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value rather than wiping it, so a partial refresh file is safe. A zero is a value and will be written, so leave a column out rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+A bill of operations cannot be written row by row, because step 10 must point at step 20 and step 20 does not exist yet. The import therefore runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or item the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end item, sorts them by sequence number, writes them, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished item, so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Conventions that pay off immediately:
+
+- **Number sequences in gaps of 10** so a later insert becomes 25 and nothing renumbers.
+- **Keep all of one item's steps in one file.** A routing import wipes and recreates that item's steps once per run, which is what makes re-imports idempotent.
+- **Re-importing is safe for running work orders.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: work orders in, then run the scheduler
+
+The order import maps item, quantity, reference, and dates. When your export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as `{Ref}-{line}`.
+
+**Imports never schedule anything.** Imported work orders sit as unscheduled demand until you run the scheduler, which states its scope in plain numbers before it plans. The choice of run is covered in [EDGEBIC scheduling modes explained](/blog/edgebic-scheduling-modes-explained).
+
+Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, the work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved. Revised dates then go back into xTuple through the order-maintenance path your process already uses. There is no automated write-back, which keeps your ERP data under your team's control. The category framing is on the [ERP scheduling add-on page](/erp-scheduling-add-on).
+
+## A realistic first week
+
+The method has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. An xTuple shop usually follows the same shape.
+
+| Day | Work |
+|---|---|
+| 1 | Export items and work centers (or build read-only views); run those masks; verify counts |
+| 2 | Export bills of operations; build the routing mask with unit conversions; review the designer |
+| 3 | Export open work orders; import; run the first full finite capacity schedule |
+| 4 | Compare EDGEBIC dates to current promises; correct instance counts, shifts, and setups |
+| 5 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+The [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the from-empty sequence.
+
+## Test it with your own export
+
+Export this week's open work orders and a bill of operations, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity. If you are comparing tools, the [ERPNext](/blog/edgebic-erpnext-integration-guide) and [Odoo](/blog/edgebic-odoo-integration-guide) versions of this guide follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to xTuple through an API or a database link?">
+Neither is required. EDGEBIC reads the CSV or Excel files xTuple produces, or optionally a read-only view of a database, through reusable import masks. There is no API integration to build and no connector to certify. Because xTuple runs on PostgreSQL, a shop that prefers it can point a mask at a saved query or view instead of a file, but the file path works the same way and needs no database access at all.
+</Accordion>
+
+<Accordion title="What xTuple data does EDGEBIC need to schedule?">
+Four sets carry a complete scheduling model: items, work centers with a real machine count, bills of operations (the routing) with sequence and run and setup times, and open work orders with quantities and dates. A fifth optional set carries posted labor from the floor. Each goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="Do imported xTuple work orders schedule themselves?">
+No, and that separation is deliberate. An import changes data, the scheduler changes the plan. Imported work orders appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor.
+</Accordion>

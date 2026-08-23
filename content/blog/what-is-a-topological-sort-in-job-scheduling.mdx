@@ -1,0 +1,66 @@
+---
+title: "What Is a Topological Sort in Job Scheduling?"
+description: "A topological sort orders routing steps so every predecessor is scheduled before its dependent step. Learn how it keeps branching routings in the right order."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - topological sort job scheduling
+  - topological sort definition
+  - routing step ordering
+  - dependency graph scheduling
+  - predecessor before successor
+  - scheduling order manufacturing
+targetPhrase: "topological sort in job scheduling"
+wordCount: 1120
+readingTime: 6
+faqQuestions:
+  - question: "What is a topological sort in job scheduling?"
+    answer: "A topological sort is an ordering of routing steps so that every predecessor is scheduled before the step that depends on it. It turns a network of operations linked by predecessor relationships into a single sequence the engine can process one step at a time, guaranteeing no step is scheduled before the work it waits on. It is the ordering that makes a routing schedulable, even when it branches and rejoins."
+  - question: "Why does a scheduler need a topological sort?"
+    answer: "Because a routing is a network, not a straight line: steps can branch into parallel paths and rejoin, so there is no obvious single order to process them. A topological sort produces a valid order where predecessors always come first, so when the engine schedules a step it already knows every predecessor's finish time. Without it, a step could be scheduled before the work it depends on, producing an impossible plan."
+  - question: "What is in-degree in a topological sort?"
+    answer: "In-degree is the number of steps that point into a given step, meaning the number of predecessors it waits on. A step with in-degree zero has no prerequisites and can be scheduled immediately. As each step is scheduled, its successors' in-degrees drop by one, and when a successor reaches zero it becomes ready. This is how the sort walks the routing from its starting steps through to its final ones."
+  - question: "How does a topological sort handle a routing that branches and joins?"
+    answer: "It handles branching naturally. When two paths feed the same join step, that step waits until both predecessors are scheduled and takes the later of their two finish times. The sort will not release the join step until every path leading into it is done, so the assembly correctly waits for the slower of two preparation paths rather than starting when only the faster one finishes."
+qaQuestions:
+  - question: "We have two sub-assemblies that both run through the same mill, and sometimes the second one schedules against the wrong finish time. Is that a dependency ordering problem?"
+    answer: "It is exactly the kind of problem a correct topological sort prevents. When two sub-assemblies share a work center, the engine has to keep their step chains separate and read each step's real predecessors, not just match on the work center name. A proper sort identifies each step by its own identity in the dependency graph, so a step in one sub-assembly reads its own predecessor's finish, not the other sub-assembly's. If steps sharing a machine appear to schedule against each other's times, the routing links are what to check: make sure each step's next-step pointer names the correct following step, so the dependency graph is built accurately and the sort orders each chain independently."
+  - question: "Our assembly step starts too early, before one of its two feeder paths is finished. What causes that?"
+    answer: "That points to a break in the dependency graph feeding the sort. An assembly step that joins two feeder paths should wait for the later of the two finishes, because the engine records each predecessor's end time against the join and keeps the latest one. If assembly starts before a feeder is done, the graph probably does not know that feeder points to the assembly step, so the join was released too early. Check that the feeder path's final step names the assembly step as its successor. Once both feeders link to the join, the sort holds assembly until both are scheduled and it starts at the later finish, which is the whole point of the max-predecessor logic."
+---
+
+**A topological sort is an ordering of routing steps so that every predecessor is scheduled before the step that depends on it, turning a network of linked operations into a single sequence the engine can process one step at a time.** It is the quiet foundation under forward scheduling. A routing is rarely a straight line: steps branch into parallel paths and rejoin at an assembly, and the sort is what guarantees the engine always schedules the feeding work before the work that waits on it.
+
+[EDGEBIC by User Solutions](/edgebic) builds a dependency graph from each step's next-step links and sorts it before scheduling. This article defines the term and why it matters. The full step-timing mechanism is in [how EDGEBIC does forward scheduling](/blog/edgebic-forward-scheduling-explained).
+
+## How It Works
+
+Each routing step names its successor, and from those links the engine builds a dependency graph: a network where an arrow from step A to step B means A must finish before B can start. The topological sort walks that network and emits a valid processing order.
+
+It works by in-degree, the count of predecessors pointing into each step. Steps with in-degree zero have no prerequisites and are scheduled first. As each step is scheduled, the engine decrements its successors' in-degrees; a successor that reaches zero has all its predecessors placed and becomes ready. The sort repeats until every step is emitted, always predecessor before successor, regardless of the order the steps happened to be entered.
+
+When the engine schedules a step, it looks up the finish times of that step's predecessors and starts no earlier than the latest of them. At a join, where two paths feed one step, both predecessors record their finish against the join, and the later time wins. That is how an assembly correctly waits for the slower of two feeding paths.
+
+## A Concrete Example
+
+Think of a to-do list where you sort tasks so "buy ingredients" always comes before "cook dinner," and "cook" comes before "serve." You cannot cook before shopping, so the order is forced by the dependencies, not by the order you jotted the tasks down.
+
+Take a routing with two preparation steps that feed one assembly. Material-Prep-A runs four hours per unit on Mill-1, Material-Prep-B runs six hours per unit on Mill-2, and both point at Assembly. The graph shows both prep steps feeding Assembly, and the sort emits the order: both prep steps first, then Assembly, because Assembly has in-degree two and only becomes ready once both preps are placed.
+
+For a ten-unit order starting Monday, Prep-A finishes after forty hours and Prep-B after sixty. Both record their finish against Assembly, and the max logic keeps the later one, sixty hours out. Assembly starts then, not when the faster Prep-A finished. The sort ensured Assembly waited for the slower path, which is exactly what a correct plan requires.
+
+## What Depends on an Accurate Dependency Graph
+
+A topological sort is only as good as the dependency graph it walks, and that graph is built entirely from each step's successor links. If a step does not correctly name the step that follows it, the graph misses an edge, and the sort can release a step before its true predecessor is scheduled. The symptom on the floor is a step that starts too early or a join that fires before one of its feeders is done.
+
+Two conditions keep the sort correct. First, every predecessor link must be present and accurate, so the graph reflects the real routing. Second, each step must be identified by its own place in the graph rather than by its work center name, so two sub-assemblies that share a machine do not read each other's finish times. When both hold, the sort orders each chain independently and every step waits for exactly the work it depends on. A routing must also have no cycles: a genuine dependency graph is acyclic, because a step cannot depend on work that depends on it. If the links accidentally form a loop, there is no valid order, which is a signal that the routing itself needs correcting.
+
+## How EDGEBIC Uses It
+
+The sort runs at the start of scheduling each job, so every step is placed against real predecessor finish times rather than a guessed order. Because each step is identified by its own place in the graph, two sub-assemblies that share a work center keep their chains separate: a step reads its own predecessor's finish, not a same-named step in a different chain.
+
+The same sorted graph drives both directions of scheduling. A [backward-scheduled](/blog/forward-vs-backward-scheduling) job reverses the order, right-aligning the last step to the due date and working upstream, but it uses the same dependency structure. The [manufacturing glossary](/blog/manufacturing-glossary) covers the related terms, [what is an anchor step](/blog/what-is-an-anchor-step-in-scheduling) shows how the sorted routing splits around a constraint, and [the forward scheduling guide](/blog/edgebic-forward-scheduling-explained) walks through the step-timing arithmetic in full.

@@ -1,0 +1,99 @@
+---
+title: "Job Priorities Versus the Schedule Optimizer"
+description: "Good priorities set the queue, but no fixed priority order fixes every interleaving problem. Here is what each tool does and why you still need both."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - job priority scheduling
+  - dispatch order versus optimization
+  - production scheduling priorities
+  - schedule optimization software
+  - job sequencing rules
+  - finite capacity scheduling
+targetPhrase: "job priorities versus optimization"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "If I set job priorities well, do I still need a schedule optimizer?"
+    answer: "Yes, sometimes. Priorities decide the queue, but no single fixed queue order fixes every interleaving problem. A long first operation on an important job can starve a downstream machine while a short job that would have fed it waits its turn. That failure is invisible to any rule that takes jobs whole, in order, which is exactly the case the optimizer is built to find."
+  - question: "Does the optimizer ignore my job priorities?"
+    answer: "No. Priority stays in the picture in two ways. It is one of the orderings the search tries, alongside earliest due date, shortest work content, longest work content, and critical ratio. And it weights the lateness measure, so a lateness hour on a top priority job counts for more than a lateness hour on a low priority one. Priority shapes what counts as a better plan, it just no longer decides the sequence by itself."
+  - question: "How does priority weight the lateness numbers?"
+    answer: "Weighted lateness scales each job's late hours by the inverse of its priority, so a priority one job carries full weight, a priority two job carries half, and so on down to a floor. The result is a single number where being late on your most important job hurts more than being late on a filler job. It sits beside unweighted total lateness in the comparison table so you can read both."
+qaQuestions:
+  - question: "I reordered priorities three times this week and still have a late job. What is happening?"
+    answer: "You are probably fighting an interleaving problem that no priority order solves. In the documented worked example, three jobs on two machines produce a late job under the priority order and zero late jobs when the shortest cut runs first, because the mill stops starving. Trying priority permutations by hand tests a handful of orders. The optimizer builds and measures complete schedules for many orders in seconds and shows you the best."
+  - question: "Should I stop maintaining priorities and just run the optimizer?"
+    answer: "No. Priorities still drive the baseline plan, still supply one of the candidate orderings, and still weight the lateness math that decides which proposal wins. A plant with meaningless priorities gives the optimizer a poor starting point and a distorted scoring rule. Keep priorities meaningful and treat the optimizer as the second pass that catches what a fixed order cannot."
+---
+
+**Priorities decide the order jobs enter the plan, but no fixed priority order fixes every interleaving problem, which is the specific gap the optimizer closes.** Both matter, and they are not substitutes. Priority is how you tell the system what is important. The optimizer is how you find out whether a different sequence would serve those same importances better.
+
+EDGEBIC by User Solutions uses your priorities in three separate places: to build the baseline plan, as one of the candidate orderings the search tries, and as the weighting in the lateness math that decides which proposal wins. This post explains what each tool does well, where priority alone runs out of road, and how to keep both working together.
+
+## What priorities actually control
+
+The scheduling engine takes jobs in a defined order, most important first, and commits each job's entire routing before moving to the next. Priority is the primary key of that sort, followed by start time and due date. Every step of a job is placed at its earliest feasible slot given the capacity already consumed by the jobs ahead of it.
+
+This is a good design. It is fast, it always respects capacity, shifts, calendars, and routing constraints, and it is completely predictable. When you raise a job's priority, it moves up the queue and gets first claim on the machines it needs. Most days that is exactly the behavior you want, and it is why priorities remain the first tool to reach for.
+
+## Where a fixed order runs out
+
+The limitation is structural, not a defect. Because each job is committed whole before the next is considered, the engine cannot notice that taking a different job first would have fed a downstream machine sooner.
+
+The documented example makes the failure visible. Three jobs, two work centers, one day shift:
+
+| Job | Routing | Due |
+|---|---|---|
+| A | Cut 6 hours, then mill 2 hours | Tuesday noon |
+| B | Cut 2 hours, then mill 6 hours | Tuesday noon |
+| C | Cut 3 hours, then mill 3 hours | Tuesday 16:00 |
+
+In the order A, B, C, job A's six hour cut holds the saw all Monday morning and the mill sits idle. B's mill work then backs up and finishes two hours late. C finishes late too. Total lateness across the plan is three hours and only one job of three is on time.
+
+Reorder to B, A, C and B's two hour cut feeds the mill by ten o'clock Monday. Every job finishes on time, total lateness is zero, and the plan span drops from seventeen working hours to fourteen.
+
+Now ask which priority assignment produces B, A, C. You could set it, once, for this exact set of three jobs. Tomorrow the job mix changes and the right order changes with it. That is the point: the correct sequence depends on how routings interlock, not on how important the jobs are, and importance is the only thing priority can express.
+
+## How the optimizer uses priority anyway
+
+The optimizer does not discard your priorities. It uses them in three ways.
+
+**As a candidate ordering.** Among the orderings the search tries is priority followed by due date, which is close to the engine's own sort. Your priority order gets a fair hearing against the alternatives.
+
+**As the lateness weighting.** Weighted lateness scales each job's late hours by the inverse of its priority, so a priority one job carries full weight, priority two carries half, and so on down to a floor value. That means a plan which makes a top priority job late is penalized harder than one that makes a filler job late by the same amount. Your priority ranking becomes the definition of what counts as a better plan. See [weighted versus total tardiness](/blog/weighted-versus-total-tardiness-in-optimization).
+
+**As the baseline.** The plan the optimizer must beat is the plan your priorities produced. If your priorities are good, that is a high bar, and the honest answer is often that no alternative beats it.
+
+## Which tool for which problem
+
+| Situation | Reach for |
+|---|---|
+| A customer escalates and one job must jump the queue | Priority |
+| A job is late and you do not know why | Priority review first, then the optimizer |
+| Machines are idle while other machines are saturated | The optimizer |
+| The plan is long and you need capacity freed | The optimizer, Fastest overall finish goal |
+| Mid-week and the floor is committed | The optimizer, Fewest changes goal |
+| Priorities are guesses nobody maintains | Fix priorities before optimizing |
+
+That last row is the one people skip. The optimizer scores plans using priority-weighted lateness. If your priorities are stale, the scoring rule is stale, and the optimizer will confidently rank plans against a definition of importance that nobody believes. Master data quality decides optimizer quality.
+
+## Reading a result through the priority lens
+
+When you run the optimizer, the comparison table shows both total lateness and weighted lateness. Read them together. If weighted lateness improves more than total lateness, the proposal shifted lateness away from your important jobs onto less important ones, which is usually what you want. If total improves more than weighted, the proposal reduced overall lateness but did not particularly protect your top jobs.
+
+The move list then tells you which jobs moved and by how many hours. A high priority job that moved later deserves a look even when the overall numbers improved. Nothing is committed until you press Accept, so reading the list carefully costs nothing and Discard leaves your plan untouched. See [reading the optimizer move list](/blog/reading-the-optimizer-move-list).
+
+## The practical routine
+
+Set priorities to express business importance and keep them current. Run the schedule. Then run the optimizer with On-time first as the default goal and read the verdict. Either it finds a better sequence for the importances you already declared, or it tells you your plan survived the search. Both answers take seconds, and neither can change anything until you Accept.
+
+User Solutions has been building finite capacity scheduling since 1991, across plants at organizations including the US Navy, GE, BAE Systems, and Cummins. The recurring pattern in those installations is not that planners set bad priorities. It is that they spend hours permuting priorities by hand to chase an interleaving problem that priority was never the right tool for.
+
+## The bottom line
+
+Priorities set the queue and define what importance means, and they remain the first tool to reach for when business urgency changes. The optimizer finds the sequences that no fixed priority order can express, using your priorities as both a candidate and the scoring weight. Keep both. To try it, open the Optimizer tab in Schedule Jobs, pick On-time first, and run. For more, read the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide), [how a greedy schedule leaves capacity on the table](/blog/how-a-greedy-schedule-leaves-capacity-on-the-table), and [what production scheduling is](/blog/what-is-production-scheduling), and explore the platform at [EDGEBIC](/edgebic).

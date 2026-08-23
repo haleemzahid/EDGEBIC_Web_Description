@@ -1,0 +1,174 @@
+---
+title: "A Make-to-Stock Replenishment Cycle in EDGEBIC, Step by Step"
+description: "Make to stock replenishment scheduling walkthrough: a safety-stock breach, a firmed build order, a 4.5-hour press run, and the receipt that restores stock."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - make to stock replenishment scheduling
+  - safety stock breach replenishment
+  - projected available balance
+  - reorder point scheduling
+  - inventory projection manufacturing
+  - build to inventory order
+  - replenishment planning walkthrough
+targetPhrase: "make to stock replenishment scheduling"
+wordCount: 2190
+readingTime: 11
+faqQuestions:
+  - question: "How does EDGEBIC know a stocked product needs replenishment before it runs out?"
+    answer: "It projects the balance forward instead of waiting for the stockout. The inventory calendar rolls projected available balance week by week: opening stock plus scheduled receipts minus forecast demand. In this walkthrough a product with 60 on hand and a safety stock of 50 shows a projected balance of 20 in week one and negative 35 in week two, so the breach is flagged weeks before the shelf is actually empty."
+  - question: "What happens when a planner firms a replenishment suggestion?"
+    answer: "Firming turns a suggestion into a real build order in one step. The planner types the quantity and clicks Firm, and the system creates a manufacturing order flagged as build-to-inventory, with the due date from the plan and a start date backed off by the product's lead time. The projection immediately shows the incoming quantity as a scheduled receipt, and the safety-stock warning clears for the covered weeks."
+  - question: "When does on-hand inventory actually change during a replenishment cycle?"
+    answer: "Only at the end, when the build order is marked complete. Firming the order changes nothing in the ledger, and scheduling it changes nothing either; both stages only affect the projection. The on-hand quantity moves in one auditable step when completion posts a receipt to the inventory ledger. In this walkthrough that single entry of +200 takes the balance from 60 to 260."
+  - question: "Does the inventory ledger keep history when a completed build order is reopened?"
+    answer: "Yes, nothing is ever deleted. Reopening a completed build order posts a reversal entry rather than erasing the original receipt. In this walkthrough reopening the 200-piece order marks the +200 receipt as reversed and adds a matching negative 200 entry, returning on-hand to 60. Both rows remain in the ledger permanently, so an auditor can reconstruct every movement."
+qaQuestions:
+  - question: "My projection suggests building 400 pieces but my standard lot is 200. Why the difference, and can I override it?"
+    answer: "The suggestion targets your reorder point plus one reorder quantity, which in this walkthrough is 80 + 200 = 280 pieces of projected balance. With the projection at 20, the raw need is 260, and fixed-lot rounding takes that up to two lots of 200, hence 400. You can type 200 and firm just one lot; the walkthrough does exactly that, accepting a brief dip in the near week because the build completes before the deeper demand arrives. The suggestion is advice, not a mandate."
+  - question: "How much press time does a 200-piece replenishment actually cost me?"
+    answer: "In this walkthrough, 4.5 hours: 0.5 hours of setup plus 200 pieces at 0.02 hours each. The scheduling engine places it as one block on the press, Monday 08:00 to 12:30, inside a single 8-hour shift, and the operator actually finishes at 12:25. That is the useful discipline of running replenishment through the same finite capacity schedule as customer orders: stock builds compete for real machine time and appear on the same Gantt as everything else."
+---
+
+**Make to stock replenishment scheduling is a loop, not an event: project the balance, catch the breach early, firm a build order, schedule it against real capacity, and let the completion receipt restore the stock.** This walkthrough follows one stocked product through that entire loop in [EDGEBIC by User Solutions](/edgebic), with every quantity and every ledger entry shown. It is part of our [worked examples series](/blog/edgebic-worked-examples), and it describes EDGEBIC's inventory planning capability the same way the rest of the series treats scheduling: numbers first.
+
+The product is a standard bracket, BRACKET-STD, and its planning policy is the whole story in nine fields:
+
+| Policy field | Value |
+|---|---|
+| Build method | Make-to-stock, stocked item |
+| On hand today | 60 |
+| Safety stock | 50 |
+| Reorder point | 80 |
+| Reorder quantity (fixed lot) | 200 |
+| Lead time | 5 days |
+| Unit cost | $4.50 |
+| Routing | One press operation: 0.5 h setup + 0.02 h per piece |
+| Press | PRESS-1, 8-hour day shift, Monday to Friday |
+
+Demand is a simple forecast: 40 pieces expected the week of June 15, and 55 the week of June 22. Today is Saturday, June 13. On hand (60) is above safety stock (50), so nothing looks wrong if you only glance at the shelf. The projection says otherwise.
+
+## Stage 1: The Projection Catches the Breach Before It Happens
+
+The planner opens the inventory calendar for BRACKET-STD, set to four weekly buckets. The system rolls the **projected available balance** forward: each week's opening stock, plus scheduled receipts, minus that week's demand.
+
+| Week | Opening | Receipts | Forecast demand | Projected balance | Vs safety stock 50 | Suggested build |
+|---|---|---|---|---|---|---|
+| Jun 13 | 60 | 0 | 40 | **20** | Below | 400 |
+| Jun 20 | 20 | 0 | 55 | **-35** | Below | 400 |
+| Jun 27 | -35 | 0 | 0 | **-35** | Below | 400 |
+| Jul 4 | -35 | 0 | 0 | **-35** | Below | 400 |
+
+Week one ends at 20, already under the 50-piece safety stock, and week two goes 35 pieces negative: a genuine projected stockout. The first breached week lights up red, and the projected stockout date reads June 13.
+
+The suggestion column deserves a close look, because the arithmetic is exactly the kind of thing a planner should be able to verify by hand. The replenishment target is reorder point plus one reorder quantity: 80 + 200 = 280. Week one's projected balance is 20, so the raw need is 280 minus 20 = 260. The product uses a fixed order quantity of 200, and 260 does not fit in one lot, so the system rounds up to two lots: **400 suggested**. A suggestion is advice, though. In this walkthrough the planner firms a single lot of 200, accepting that week one will dip briefly because the build will complete before the deeper week-two demand lands. Both choices are legitimate; the point is that the math behind the recommendation is visible, not buried.
+
+## Stage 2: One Click Turns the Suggestion Into a Build Order
+
+In the suggestion row the planner types 200 and clicks **Firm**. One manufacturing order appears:
+
+- An auto-generated replenishment job number tied to the product.
+- Quantity 200, due June 20, start date June 15 (due date minus the 5-day lead time).
+- Flagged **build-to-inventory**, with its demand source recorded as replenishment.
+
+Nothing else changes. The inventory ledger is untouched, on hand is still 60, and no machine time is reserved yet. Firming is a planning commitment, not a physical one, and the system keeps those layers separate on purpose.
+
+The projection refreshes immediately and shows why the planner can now relax:
+
+| Week | Opening | Scheduled receipts | Forecast | Projected balance | Vs safety stock |
+|---|---|---|---|---|---|
+| Jun 13 | 60 | 0 | 40 | **20** | Below (accepted) |
+| Jun 20 | 20 | **200** | 55 | **165** | OK |
+| Jun 27 | 165 | 0 | 0 | **165** | OK |
+| Jul 4 | 165 | 0 | 0 | **165** | OK |
+
+The 200-piece receipt lands in the June 20 bucket (the order's due date, since it has no schedule yet), and weeks two through four turn healthy. Week one still shows its dip to 20, which the planner accepts knowingly: the build is due before the big demand hits.
+
+## Stage 3: The Build Order Competes for Real Press Time
+
+Next the planner runs Generate Schedule. This is where make to stock replenishment scheduling differs from a spreadsheet reorder report: the build order goes through the **same finite capacity engine** as every customer order, on the same calendar, against the same machines. If you are new to why that matters, the primer on [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) is the background.
+
+Two details of engine behavior are worth knowing:
+
+1. **Producers schedule before consumers.** Because this order builds stock rather than consuming it, the engine sorts it ahead of any order for the same product that might want to be satisfied from stock. A stock-builder never eats its own output.
+2. **A build order never nets itself from stock.** The engine's consume-from-stock shortcut applies to demand orders; a build-to-inventory order always runs its routing.
+
+The workload is 0.5 hours of setup plus 200 x 0.02 = 4.0 hours of run time: **4.5 hours total**. PRESS-1 has 8 free hours on Monday, June 15, so the engine places one clean block:
+
+| Operation | Work center | Start | End | Hours |
+|---|---|---|---|---|
+| Press | PRESS-1 | Mon Jun 15, 08:00 | Mon Jun 15, 12:30 | 4.5 |
+
+The order flips to scheduled with those dates. And here is a subtle, satisfying knock-on: the projection now knows the build completes June 15, which falls in the **first** week, not the second. The scheduled receipt migrates from the June 20 bucket into the June 13 bucket, and even week one's dip disappears:
+
+| Week | Opening | Scheduled receipts | Forecast | Projected balance |
+|---|---|---|---|---|
+| Jun 13 | 60 | **200** | 40 | **220** |
+| Jun 20 | 220 | 0 | 55 | **165** |
+| Jun 27 | 165 | 0 | 0 | 165 |
+| Jul 4 | 165 | 0 | 0 | 165 |
+
+The whole four-week horizon is now above safety stock. Still no ledger movement; on hand remains 60 until parts physically exist.
+
+## Stage 4: The Floor Runs It, Five Minutes Early
+
+On Monday morning the press operator opens the shop-floor kiosk, taps Start at 08:00, and taps Complete at 12:25. The operation records its actual start and end alongside the planned times, and the operation's status computes to Completed. The order itself stays open: confirming that 200 good pieces exist is a supervisor decision, not a punch. The kiosk workflow is the same one used for customer jobs in the [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic).
+
+## Stage 5: Completion Posts the Receipt That Restores Stock
+
+The supervisor selects the order and clicks **Mark Complete**. Three things happen in sequence, and the sequence is the audit story:
+
+1. The order's status flips to Completed with the date and the supervisor's name, and an audit row lands in the schedule change log.
+2. Because the product is stocked and the order is build-to-inventory, the system posts a **receipt of +200** to the inventory ledger, commented "Build to Inventory," tied to the order, at $4.50 unit cost.
+3. The on-hand cache updates to 260, and the moving average cost recalculates (unchanged here at $4.50, since the receipt cost matches the existing cost).
+
+The ledger now reads like a bank statement, which is exactly the intent:
+
+| Entry | Type | Qty | Balance after |
+|---|---|---|---|
+| Opening balance (January) | Receipt | +200 | 200 |
+| Issue to job 88 (May) | Issue | -80 | 120 |
+| Issue to job 99 (June) | Issue | -60 | 60 |
+| **Build to Inventory (Jun 15)** | **Receipt** | **+200** | **260** |
+
+The receipt posting is also deliberately idempotent: if the completion is retried after a hiccup, the system sees an active receipt already exists for this order and refuses to post it twice. No double-counted stock.
+
+## Stage 6: The Loop Closes
+
+The receipt triggers a projection refresh. The completed order no longer appears as a planned receipt; instead the +200 shows as an actual ledger movement in week one. Projected balance: 220, 165, 165, 165 across the four weeks. Suggested builds: zero everywhere. Days of cover work out to roughly 38 days at the forecast rate. The safety-stock breach that started this story is gone, and every step of its resolution is reconstructable from the ledger, the order, the schedule, and the change log.
+
+## Variations Worth Trying
+
+**Scrap-adjusted lots.** Set the product's yield to 90 percent and the same 200-piece suggestion inflates to 223 (200 divided by 0.9, rounded up), because the system plans for what survives inspection, not what starts. Press time grows to 4.96 hours, still one shift.
+
+**Min-max instead of reorder point.** Switch the reorder method to min-max with a minimum of 60 and maximum of 300, and the trigger and target change: the suggestion becomes the quantity that refills to the maximum, rounded up to whole lots.
+
+**A rejected batch.** QC finds a material defect after completion. Reopening the order posts a reversal: the +200 receipt is flagged as reversed, a matching -200 entry is added, and on hand returns to 60. Five ledger rows now exist and all five stay forever. History is appended, never edited.
+
+**Forward netting with a customer order.** Add a 150-piece make-to-order demand for the same bracket dated one day after the build completes. With forward netting active, the engine sees 260 available by that date, satisfies the customer order entirely from stock, consumes zero press hours for it, and posts a -150 issue at persist time. On hand after both: 110. Stock building and stock consuming reconcile inside one scheduling run. When the two also compete for the same machine rather than only the same stock, [a stock build and a customer order sharing one laser](/blog/a-stock-build-and-a-customer-order-share-one-machine-edgebic) follows both routings to the end.
+
+## Why Run Replenishment Through the Scheduler at All?
+
+Plenty of shops run reorder reports in a spreadsheet and toss build orders over the wall. The cost of that habit is invisible until the press is busy: a reorder report assumes capacity, while make to stock replenishment scheduling in EDGEBIC proves it. The 4.5-hour press block in this walkthrough occupied real capacity that a customer order could not silently double-book, and the projection updated from the scheduled completion date rather than a hopeful lead-time offset. That is the same finite-capacity honesty User Solutions has built scheduling tools around since 1991, for manufacturers from Cummins (33 locations) to BAE Systems. If your forecasts and item policies live in an ERP today, the [import-export masks](/edgebic-erp-integration) bring them across from Excel, CSV, or database extracts without retyping.
+
+Want to see your own reorder policies projected this way? [Contact US](/contact-us) with one stocked item's history and we will walk the loop with your numbers.
+
+<Accordion title="How does EDGEBIC know a stocked product needs replenishment before it runs out?">
+It projects the balance forward instead of waiting for the stockout. The inventory calendar rolls projected available balance week by week: opening stock plus scheduled receipts minus forecast demand. In this walkthrough a product with 60 on hand and a safety stock of 50 shows a projected balance of 20 in week one and negative 35 in week two, so the breach is flagged weeks before the shelf is actually empty.
+</Accordion>
+
+<Accordion title="What happens when a planner firms a replenishment suggestion?">
+Firming turns a suggestion into a real build order in one step. The planner types the quantity and clicks Firm, and the system creates a manufacturing order flagged as build-to-inventory, with the due date from the plan and a start date backed off by the product's lead time. The projection immediately shows the incoming quantity as a scheduled receipt, and the safety-stock warning clears for the covered weeks.
+</Accordion>
+
+<Accordion title="When does on-hand inventory actually change during a replenishment cycle?">
+Only at the end, when the build order is marked complete. Firming the order changes nothing in the ledger, and scheduling it changes nothing either; both stages only affect the projection. The on-hand quantity moves in one auditable step when completion posts a receipt to the inventory ledger. In this walkthrough that single entry of +200 takes the balance from 60 to 260.
+</Accordion>
+
+<Accordion title="Does the inventory ledger keep history when a completed build order is reopened?">
+Yes, nothing is ever deleted. Reopening a completed build order posts a reversal entry rather than erasing the original receipt. In this walkthrough reopening the 200-piece order marks the +200 receipt as reversed and adds a matching negative 200 entry, returning on-hand to 60. Both rows remain in the ledger permanently, so an auditor can reconstruct every movement.
+</Accordion>

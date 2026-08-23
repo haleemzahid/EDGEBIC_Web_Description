@@ -1,0 +1,156 @@
+---
+title: "Operator and Skill Scheduling in EDGEBIC: Labor as a Real Constraint"
+description: "Operator skill based scheduling in EDGEBIC: how certifications, rosters, and time off turn labor into a finite constraint so one welder is never promised twice."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - operator skill based scheduling
+  - labor constrained scheduling
+  - certification scheduling manufacturing
+  - operator roster scheduling
+  - skilled labor capacity planning
+  - shop floor labor constraint
+targetPhrase: "operator skill based scheduling"
+wordCount: 1850
+readingTime: 9
+faqQuestions:
+  - question: "What is operator and skill scheduling in EDGEBIC?"
+    answer: "Operator and skill scheduling adds the human constraint to machine scheduling. A routing step can name a required skill, and EDGEBIC then places that operation only where a certified, rostered, present operator still has unbooked hours. People are budgeted in hours per shift per day, so one welder cannot be silently promised to two machines in the same shift the way a machine-only scheduler would allow."
+  - question: "Do you have to configure operators for EDGEBIC to schedule?"
+    answer: "No. The labor constraint is opt-in, step by step. With no operators configured, or on any routing step that names no required skill, EDGEBIC schedules exactly as it does without the feature. That means you can introduce skills on the handful of operations where certification genuinely gates the work, and leave the rest of the plant unchanged."
+  - question: "What happens when the machine is free but nobody qualified is working?"
+    answer: "The operation slides to the next window where a qualified person has hours. For a skill-gated step, an unstaffed shift is unusable capacity: the machine may show eight free hours, but if the only certified operator is on leave that day, the step will not be placed there. Nothing announces that the machine was idle, because for that step it was not genuinely available."
+  - question: "How does EDGEBIC choose which qualified person gets the work?"
+    answer: "Least loaded first. The scheduler books whoever has the most free hours in that shift, and it may split one operation's hours across several qualified people, because it accounts for hours rather than assigning a named crew. If the identity of the person matters, pin the routing step to that operator and the rest of the qualified pool is never used as a fallback."
+qaQuestions:
+  - question: "We have one Inconel-certified welder and five welding machines. What does the schedule look like before and after configuring skills?"
+    answer: "Before, five Inconel jobs can be planned on five machines in the same shift, and the schedule is fiction before the first arc strikes. After, the certified welder holds one budget of hours per shift per day, so the first job books his hours and the second job finds an empty qualified pool for that day and slides to the next staffed window. The engine's diagnostics name the skill in the skip, so you can see exactly which day was rejected and why. Certify a second welder and roster them the same day, and both jobs run in parallel, exactly as a supervisor would staff it by hand."
+  - question: "Our certifications expire on fixed dates. Will the schedule notice?"
+    answer: "Yes, on the next scheduling run. Each certification carries an optional expiry date, and an expired certification stops qualifying that operator, so they simply stop appearing in the qualified pool. The practical detail worth knowing is that a certification expiring in the middle of your planning horizon is treated as expired for the whole run, so if the person really is qualified through part of the window, renew the date before rescheduling. Discovering an expiry from your scheduler beats discovering it from an auditor."
+---
+
+**EDGEBIC by User Solutions can treat people as a finite resource, not an assumption: a routing step that names a required skill is scheduled only into a window where a certified, rostered, present operator still has unbooked hours.** That single rule closes the oldest gap in machine-only scheduling, where a plant with one certified welder can be shown five simultaneous jobs on five machines and nobody notices until the shift starts.
+
+This post covers what the labor constraint is and when you need it. For the buttons, see [setting up operators, skills, and rosters](/blog/how-to-set-up-operators-skills-and-rosters-in-edgebic). For the arithmetic, see [how EDGEBIC books operator hours](/blog/how-edgebic-books-operator-hours).
+
+## The Failure This Exists to Kill
+
+A machine-only scheduler asks one question: does this work center have free hours? If Weld-A and Weld-B both have eight free hours on Monday, two Inconel jobs both get Monday. The schedule prints, the supervisor prints it, and at 08:00 one certified welder discovers he is expected in two places.
+
+Nothing in that sequence is a software defect. The scheduler answered the question it was asked. The problem is that the question was incomplete, and the cost shows up as silent slip: the plan degrades quietly, dates move without anyone deciding they should, and after a few weeks the shop stops trusting the printed schedule and runs from memory instead. Skilled-labor availability is one of the constraints that separates a plan from a wish, and it is a standard concern in the [job shop labor scheduling](/blog/job-shop-labor-scheduling) literature.
+
+With the labor constraint configured, [EDGEBIC](/edgebic) asks both questions at once: is the machine available, **and** is there a qualified person with hours left to stand at it.
+
+## The Model in Six Pieces
+
+| Piece | What it is |
+|---|---|
+| **Skill** | A named certification such as TIG-Weld or CMM Inspection. A routing step requires exactly one |
+| **Operator** | A shop-floor person with a name, a badge or payroll code, and an active flag |
+| **Certification** | The link between an operator and a skill, with an optional certification date, an optional expiry date, and an optional proficiency level |
+| **Roster** | A weekly pattern: which operator works which shift on which weekday. Rostered on global shifts, so a work center calendar derived from a shift inherits its roster |
+| **Time off** | Absence ranges, inclusive on both ends. The person equivalent of a work center holiday |
+| **The step's labor fields** | Required skill, operator attention, and an optional pin to one named person |
+
+Two design choices are worth naming because they explain most of the behavior downstream.
+
+**People carry hours, not presence.** Each operator holds a budget of hours per shift per day. Not a yes-or-no availability flag, and not a pool of hours per skill. A person certified in three skills still has one budget: booking them through TIG work leaves fewer hours for their inspection work, exactly like reality. A per-skill pool would sell the same person into three pools at once, which is the same double-count in a new costume.
+
+**The roster is a weekly pattern with absences as exceptions.** That mirrors how machines are modeled, with weekly shift hours and holidays as exceptions, and it mirrors how plants actually roster. Per-date rosters would mean thousands of rows per planning horizon and no better answer.
+
+## Machine and Human Compose on One Step
+
+A routing step can carry both a machine target and a labor requirement, and they answer different questions:
+
+- The work center, or the [work center group](/blog/edgebic-work-center-groups-explained), answers **which machine**.
+- The required skill answers **which qualified person**.
+
+They are deliberately separate dimensions. A "Certified Welders" machine pool is the classic modeling mistake here: a pool has no concept of certification, roster, or leave, so a people-shaped pool constrains nothing at all.
+
+When both sit on one step, machine selection accounts for staffing. A pool member whose shifts cannot be staffed for the step's skill loses its bid instead of winning on machine capacity and then sliding when no operator can be found. Picking the machine first and discovering the staffing problem afterwards produces schedules that look right on the machine calendar and fail on the floor.
+
+## Attention: Not Every Machine Needs a Person All Day
+
+The one field that surprises people is **operator attention**, the fraction of a person a running machine consumes. Setup always books one full person, because somebody has to set the machine up. The fraction describes only what happens after that:
+
+| Attention | Meaning |
+|---|---|
+| `0.0` (the default) | Setup only, lights out. A person sets the machine up and it then runs itself |
+| `0.5` | One person tends two machines |
+| `1.0` | Fully attended, one operator-hour per machine-hour |
+| `2.0` | A two-person crew |
+
+This matters more than it first appears, because it is what lets one setter start a cell of seven machines without the schedule pretending they are in seven places. The full explanation, including the seven-machine worked example, is in [the attend fraction](/blog/what-is-attend-fraction-operator-scheduling).
+
+The default deserves one warning here: it is `0.0`, not `1.0`. A step with a required skill and untouched attention gates operators on **setup only**. If your welders must stand at the machine for the whole run, set attention to `1.0` explicitly. The default was chosen so that a forgotten field under-books visibly rather than silently overselling people, which is the safer direction to be wrong in.
+
+## Naming the Person: The Pin
+
+Leaving the operator field on automatic lets the scheduler staff from the whole qualified pool and load-balance across it. Setting it to a named person is a **hard pin** with deliberate consequences:
+
+- The step schedules **only** when that person has hours. The rest of the qualified pool is never a fallback.
+- If the pinned person is on leave, the step **slides through their absence** to their first day back instead of quietly going to a colleague.
+- Clearing the skill from the step clears the pin.
+
+That sliding behavior is the feature, not a limitation. A pin exists for a reason: a customer requirement, a sign-off authority, the one person you trust with that fixture. When such a person is away, the honest answer is a visible schedule slip, not a silent substitution nobody approved. Use pins sparingly and the automatic setting most of the time.
+
+## The Rule to Internalize: Unstaffed Capacity Is Unusable
+
+For a skill-gated step, a shift with nobody qualified rostered is not partially available. It is unavailable.
+
+The documented walkthrough makes it concrete. A weld step needs 6.5 hours on Weld-1 on Thursday. Weld-1 has eight free machine-hours Thursday. But the step requires TIG-Weld, and the only certified welder is on leave that day. The step does not get Thursday. It moves to Friday 08:00 to 14:30, and Thursday's Weld-1 hours go to a job with no skill requirement. Nothing flags the machine as idle, because for this step it was not genuinely free.
+
+Planners who come from machine-only scheduling read this as the schedule "wasting" a machine day. It is the opposite: the machine day was never real for that operation, and the plan now says so before the shift rather than after it.
+
+## Where the Crew Plan Shows Up
+
+| Surface | What you see |
+|---|---|
+| **Dispatch tab** | The printable answer to who does what and when: a read-only list grouped by operator and date, with shift, job, work center, operation window, and hours |
+| **Resource Calendar, operator lens** | Per-operator and per-skill-pool availability against booked hours over time, the human mirror of machine capacity |
+| **Schedule Gantt** | Skill-required bars carry a person glyph, and the tooltip adds the required skill plus the crew line, for example "Operators: Joe Alvarez 4h, Mary Chen 2h" |
+| **Job View** | A person icon beside skill-required step names and a required skill column, with job rows rolling up the distinct skills |
+
+One clarification prevents a whole category of misunderstanding: these are **plan data**. Crew assignments are regenerated wholesale on every scheduling run, so they answer who is planned to do this work, not who actually did it. Recorded work still comes from the [shop-floor kiosk](/blog/edgebic-shop-floor-guide) and actual dates, which are the surfaces that never move.
+
+## Opt-In by Design
+
+The labor constraint is per step. With no operators configured, or on any step with no required skill, scheduling behaves exactly as it does without the feature. That property is worth using deliberately during rollout: start with the two or three operations where certification genuinely gates the work, get the roster right for those, and expand only when the first set is trustworthy. A plant-wide skills model built in one weekend from half-remembered certifications produces slipping dates nobody believes.
+
+The optimizer takes the same conservative stance. Jobs whose routings carry a skill or a pin are reproduced exactly as the standard engine scheduled them rather than rearranged by a model that does not represent labor, which is the rule described in [locked jobs and the never-worse guarantee](/blog/locked-jobs-and-the-never-worse-guarantee-in-edgebic). An optimizer that does not model a constraint should never move work subject to it.
+
+## What the Labor Constraint Deliberately Does Not Do
+
+Three boundaries are worth knowing up front, because each one is a design decision rather than a gap waiting to be filled.
+
+**It does not replan by itself.** Entering a vacation on Friday changes nothing until somebody runs a schedule. EDGEBIC never moves a live plan in response to a master data edit, because silent replanning is how planners stop trusting a tool. Enter the leave, run the schedule, read the result.
+
+**It does not schedule people to exact minutes.** Operators are budgeted in hours per shift per day, the same fidelity the engine uses for machines. Two of one person's bookings can overlap on the wall clock inside a shift, and no day can ever oversell their hours. Promising exact clock intervals three weeks out would be precision nobody can execute against.
+
+**It does not change the shop-floor kiosk.** Punching is untouched, and crew assignments are the plan rather than a record of who worked. Keeping planned crew and recorded labor in separate places is what stops a planning artifact from quietly becoming a payroll input.
+
+## Getting Started
+
+The practical order is: create the skills you certify against, add operators, certify them with real expiry dates, roster them on the global shifts they work, record known leave, then set the required skill and attention on the routing steps that need them. [Setting up operators, skills, and rosters](/blog/how-to-set-up-operators-skills-and-rosters-in-edgebic) walks each screen. The traps worth knowing before you start, from expiry surprises to unstaffable custom shifts, are in [operator and skill mistakes](/blog/operator-and-skill-mistakes-edgebic).
+
+For where labor sits among the other constraints, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) covers the full pipeline, and [what production scheduling is](/blog/what-is-production-scheduling) connects it to the general discipline. Scheduling skilled labor is a recurring theme in defense and aerospace work in particular, where certification records and schedule records have to agree: [EDGEBIC by industry](/blog/edgebic-by-industry) covers those cases.
+
+<Accordion title="What is operator and skill scheduling in EDGEBIC?">
+Operator and skill scheduling adds the human constraint to machine scheduling. A routing step can name a required skill, and EDGEBIC then places that operation only where a certified, rostered, present operator still has unbooked hours. People are budgeted in hours per shift per day, so one welder cannot be silently promised to two machines in the same shift the way a machine-only scheduler would allow.
+</Accordion>
+
+<Accordion title="Do you have to configure operators for EDGEBIC to schedule?">
+No. The labor constraint is opt-in, step by step. With no operators configured, or on any routing step that names no required skill, EDGEBIC schedules exactly as it does without the feature. That means you can introduce skills on the handful of operations where certification genuinely gates the work, and leave the rest of the plant unchanged.
+</Accordion>
+
+<Accordion title="What happens when the machine is free but nobody qualified is working?">
+The operation slides to the next window where a qualified person has hours. For a skill-gated step, an unstaffed shift is unusable capacity: the machine may show eight free hours, but if the only certified operator is on leave that day, the step will not be placed there. Nothing announces that the machine was idle, because for that step it was not genuinely available.
+</Accordion>
+
+<Accordion title="How does EDGEBIC choose which qualified person gets the work?">
+Least loaded first. The scheduler books whoever has the most free hours in that shift, and it may split one operation's hours across several qualified people, because it accounts for hours rather than assigning a named crew. If the identity of the person matters, pin the routing step to that operator and the rest of the qualified pool is never used as a fallback.
+</Accordion>

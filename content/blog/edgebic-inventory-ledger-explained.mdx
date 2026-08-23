@@ -1,0 +1,135 @@
+---
+title: "The Manufacturing Inventory Ledger in EDGEBIC: Stock as History, Not a Number"
+description: "A manufacturing inventory ledger stores every stock movement as a signed permanent entry. Here is why EDGEBIC computes on-hand that way, and what it buys you."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - manufacturing inventory ledger
+  - inventory transaction history
+  - append only inventory
+  - on hand quantity calculation
+  - inventory audit trail manufacturing
+  - inventory reversal entry
+  - moving average cost inventory
+targetPhrase: "manufacturing inventory ledger"
+wordCount: 1918
+readingTime: 10
+faqQuestions:
+  - question: "What is a manufacturing inventory ledger?"
+    answer: "A manufacturing inventory ledger is an append-only list of signed stock movements, where a positive quantity is a receipt into stock and a negative quantity is an issue out of it. On-hand for any part is the sum of its entries rather than a number stored in a field. Because nothing is ever edited or deleted, the ledger doubles as a permanent audit trail of who moved what, when, and why."
+  - question: "Why calculate on-hand instead of storing it?"
+    answer: "A stored on-hand number has no history, so when it is wrong you cannot tell which movement went astray. Summing a ledger gives you the same figure plus the evidence behind it. EDGEBIC still keeps a fast display cache of the quantity for grids, but that cache is recomputed from the ledger inside the same transaction as every post, and an integrity check flags any product where the two disagree."
+  - question: "How do you correct a mistake in an inventory ledger?"
+    answer: "You post an equal and opposite entry, not a deletion. Reversing a receipt marks the original as reversed and appends a matching negative entry that references it, so both rows survive and net to zero. The running balance returns to where it was, and an auditor can still reconstruct the original posting, the correction, and the moment each happened."
+  - question: "What information does each ledger entry carry?"
+    answer: "Each entry records the product, the signed quantity, the movement type, the planning date it applies to, the wall-clock time it was posted, the running balance after it, and the unit cost captured at post time. Entries can also peg to the manufacturing order, schedule row, or routing step that caused them, plus a demand source and a free-text comment, so every movement traces back to its origin."
+qaQuestions:
+  - question: "Our ERP shows 240 of a part and the shop counted 212. How does a ledger help us find the difference instead of just overwriting it?"
+    answer: "It turns a disagreement into a search. With a ledger you can list every movement since the last count and look for the shape of the error: a receipt posted twice, an issue never posted for a job that clearly consumed material, or a build order marked complete for the full quantity when the floor scrapped 28 pieces. Once you find the cause, you post a signed adjustment of minus 28 with a comment naming the count date, and both the original entries and the correction stay on the record. Overwriting the number would fix the display and destroy the only evidence you had."
+  - question: "We reschedule constantly. Won't a permanent ledger fill up with junk entries every time we rerun the schedule?"
+    answer: "It gets more rows, and that is the point. When a job that had consumed stock is rescheduled, the previous consumption is reversed first, then re-decided against restored availability, so the ledger shows an issue, a reversal, and a fresh issue. Three rows, one net effect, and no phantom balance: the running balance after those three entries is exactly what it was after the first one. The alternative, editing the original row in place, would give you a tidier table and no way to prove the number is right."
+---
+
+**A manufacturing inventory ledger records every stock movement as one immutable, signed entry, and computes on-hand by adding them up.** Positive quantities are receipts into stock. Negative quantities are issues out of it. Nothing is ever edited or deleted, so the balance you see always comes with the evidence behind it. That is the foundation the planning layer of [EDGEBIC by User Solutions](/edgebic) is built on, and it is a deliberate design choice rather than an accounting habit.
+
+Most shop systems store on-hand as a number on the item record. It is fast to read and impossible to defend. When the number is wrong (and it always eventually is) there is nothing to investigate. This post explains what a ledger is, what each entry carries, and what the design buys you once demand netting and projected balances start reading it. For the full planning picture including projected balances, forecasts, and the master schedule, start with the [inventory and planning pillar](/blog/edgebic-planning-guide).
+
+## Why a Ledger Instead of a Stock Number
+
+Think of the difference between a bank balance and a bank statement. The balance answers one question. The statement answers every question you will actually be asked: where did the money go, when, on whose authority, and does the total add up.
+
+Stock behaves the same way. In EDGEBIC, on-hand for a product is the sum of that product's ledger entries. Full stop. There is also a cached quantity on the item record so grids and dropdowns can render instantly, but that cache is never written on its own: it is recomputed from the ledger sum inside the same database transaction as every posting. An integrity check exists precisely to catch any product where the cache and the ledger sum have drifted apart, which is the signature of code (or a person) writing the number directly.
+
+This gives you three things a stored number cannot:
+
+- **Traceability.** Every movement names its cause. A receipt from a completed build order carries that order's identity. A consumption posted by the scheduler carries the order it satisfied.
+- **Reconstructability.** You can rebuild the balance at any past date by summing entries up to that date, which is what the projection uses to anchor a historical view.
+- **Correction without erasure.** A wrong entry is cancelled by an opposite entry, so the record of the mistake and the record of the fix both survive.
+
+If your inventory discipline today is a spreadsheet plus a monthly count, the concepts in [inventory management for manufacturers](/blog/inventory-management-manufacturers) map cleanly onto this model, with the ledger doing the part the spreadsheet cannot.
+
+## What One Entry Actually Contains
+
+A ledger entry is not just a quantity and a date. Each row carries enough context to answer "why did this happen" without opening another screen.
+
+| Field on the entry | What it holds | Why a planner cares |
+|---|---|---|
+| Product | The part the movement affects | The unit of the balance |
+| Quantity | Signed: positive receipt, negative issue | The movement itself |
+| Transaction type | Receipt, issue, adjustment, reversal, opening balance | Separates real movement from correction |
+| Effective date | The planning date the movement belongs to | Decides which projection bucket it lands in |
+| Transaction time | Wall-clock time the entry was posted | Audit ordering, independent of effective date |
+| Balance after | Running balance at that point | Read a statement without re-adding it |
+| Unit cost | Cost captured at post time | Historical valuation stays correct later |
+| Pegged order and step | The manufacturing order, schedule row, or routing step behind it | Traces a movement to a job |
+| Demand source | Customer, sales order, replenishment, forecast, manual, master schedule | Separates engine activity from manual activity |
+| Comment | Canonical text such as "Build to Inventory" or your own note | Human explanation |
+| Reversal link | Points a correction back at the original | Makes the correction chain readable |
+
+The distinction between **effective date** and **transaction time** matters more than it looks. Effective date is the planning bucket: a receipt keyed to the day the material actually landed. Transaction time is when someone told the system. Backdating a receipt to the correct planning day does not falsify when it was entered, because both are on the row.
+
+Cost rides along too. Each receipt updates the product's moving average cost using the standard weighted-average calculation, and the entry stores the unit cost that applied at that moment. A valuation report run against last quarter therefore uses last quarter's costs rather than today's.
+
+## The Two Directions Stock Moves
+
+Only two things ever happen to stock, and both come from a clear cause.
+
+**Receipts (stock in).** The headline case is a make-to-stock build finishing. When a planner marks a build-to-inventory order complete, a receipt posts for the order quantity with the comment "Build to Inventory", and it commits in the same save as the status change. There is a guard against posting twice: if a live receipt already exists for that order, the second attempt is skipped, so clicking Complete twice cannot double your stock. Manual receipts (a purchase arriving, a customer return) post the same way from the Adjustments pane.
+
+**Issues (stock out).** The headline case here is the scheduler deciding that existing stock covers a demand. That decision posts a single issue for the consumed quantity with the comment "Schedule Transaction", pegged to the order it satisfied. Manual issues cover the rest: a kit pull, a scrap disposal, a sample draw.
+
+Adjustments sit alongside both as a third type for count corrections, and opening balances give a new product its starting position exactly once. The mechanics of each, including which fields to fill and which sign convention applies, are covered in [how to record receipts, issues and adjustments](/blog/how-to-record-receipts-issues-and-adjustments-in-edgebic).
+
+## Reversal: How the Ledger Handles Being Wrong
+
+Nothing in the ledger is deleted, so corrections take a specific shape. Reversing an entry does two things at once: it marks the original as reversed, and it appends an inverse entry that references the original by number, with a comment naming what it cancels.
+
+Both rows stay forever. They net to zero. The running balance returns to where it was before the mistake, and the history shows the mistake and its repair as separate, dated facts.
+
+This runs automatically at the points where it matters:
+
+- **Reopening a completed build order** reverses its receipt, so stock drops back to the pre-completion level.
+- **Deleting an order** reverses everything pegged to it, receipts and issues alike, before the order row goes. The ledger rows survive the deletion with their order link cleared, which means an order can vanish from the job list while its inventory history remains readable.
+- **Rescheduling an order that consumed stock** reverses only its consumption (never its build receipt) before the engine re-decides. That ordering is what makes rescheduling repeatable: however many times you rerun, at most one live consumption exists for an order at any moment.
+
+That last point is the quiet workhorse. It is explained in full, with the entry-by-entry arithmetic, in [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock).
+
+## What the Ledger Makes Possible Downstream
+
+A ledger is not an end in itself. Three capabilities read from it directly, and none of them would be trustworthy against a stored number.
+
+**Netting.** Before committing machine hours to an order, the engine asks whether stock already covers the demand. It seeds its availability from the ledger sum, and decrements as each order consumes, so two orders in one run can never claim the same units. The narrative version with three orders and 80 units on hand is in the [consume-from-stock walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic).
+
+**Projection.** The projected available balance calendar anchors its opening figure on the ledger sum before the window starts, then rolls forward. For buckets entirely in the past, it uses realised ledger movement rather than the plan, which keeps history honest even when the plan has since changed. See [projected available balance explained](/blog/edgebic-projected-available-balance-explained).
+
+**Promising.** Available-to-promise starts from physical on-hand now, which is again the ledger sum, not a planning figure. That is what makes an ATP answer defensible to a salesperson.
+
+Whether a movement was posted by hand or by the scheduler is recorded on the entry, so you can separate the two when you audit. The [transaction history and integrity checks](/blog/inventory-tracking-mistakes-edgebic) post covers the misconfigurations that make a ledger stop matching the shop floor, and how each one announces itself.
+
+## Where Build Policy Fits
+
+Whether a completed order posts a receipt at all depends on its build policy. A make-to-stock order posts into inventory. A make-to-order order ships to the customer and touches inventory only if it consumed stock on the way in. The policy is set per product and can be overridden on any single order, which is covered in [make to stock vs make to order](/blog/make-to-stock-vs-make-to-order-in-edgebic).
+
+There is one configuration trap worth naming here because it is invisible: a product can be set to make-to-stock and still have its stocked flag switched off. It then looks configured, but no receipt posts, no netting happens, and on-hand stays at zero indefinitely. The integrity report flags exactly that combination.
+
+## What the Ledger Deliberately Does Not Do
+
+Knowing a system's edges is as useful as knowing its capabilities, and two are worth stating plainly.
+
+**It is not a warehouse management system.** Each entry carries a bin location, defaulted from the product's own default location, and a lot code. That is enough to record where stock nominally lives and to stamp a lot reference on a receipt. It is not per-transaction bin and lot control with directed putaway, pick paths and lot genealogy. If your compliance regime requires full lot traceability through assemblies, treat that as a separate question and raise it early rather than assuming the field name implies the capability.
+
+**It is not a purchasing module.** Ledger entries can peg to a manufacturing order, a schedule row and a routing step, and a purchase order reference exists on the record. What creates and manages those purchase orders sits outside the planning layer today, so a receipt from a supplier is entered as a movement with the purchase reference in its comment rather than raised from an approved order.
+
+Neither limit stops the ledger doing its job for scheduling, which is to give netting, projection and promising a figure they can defend. Both are worth naming so that nobody discovers them in month three.
+
+## The Practical Takeaway
+
+Ask three questions of any system that claims to track inventory. Can it tell you what the balance was on a date two months ago? Can it show you which job consumed a given quantity? Can it prove that a correction happened without hiding what it corrected? A ledger answers all three by construction. A number in a field answers none of them.
+
+If your parts move through both stock and the shop floor, and you want the schedule to know which is which, the ledger is where that starts. Bring an export of your item master and a month of stock movements to a demo and ask User Solutions to show the netting and projection running against your own data.
+
+For the broader platform picture, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). For how planned inventory turns into real machine time, the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) picks up where this post ends.

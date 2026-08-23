@@ -1,0 +1,91 @@
+---
+title: "Packaging Lines: Scheduling Machines That Must Run in Lockstep"
+description: "Packaging multi-machine line scheduling runs filler, capper, and labeler in synchronized lockstep, or splits a job across duplicate lines to finish in half the time."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - packaging line scheduling
+  - multi-machine line scheduling
+  - synchronized parallel work centers
+  - dependent parallel scheduling
+  - packaging throughput scheduling
+  - parallel line scheduling
+targetPhrase: "packaging multi-machine line scheduling"
+wordCount: 1950
+readingTime: 10
+faqQuestions:
+  - question: "How does the scheduler keep machines on a line running in lockstep?"
+    answer: "Configure the line as a dependent parallel step: one machine is the parent that earns the time slot, and the others are mirrors that copy its exact start and end times. The scheduler places the parent through normal capacity checking, then writes a mirrored schedule onto each dependent machine with identical timestamps. All the machines on the line start together and finish together, which is what a filler, capper, and labeler feeding one conveyor physically require."
+  - question: "How is that different from splitting a job across two identical lines?"
+    answer: "Splitting across lines is independent parallel, not dependent. There, each line has its own capacity checked and consumed, and the scheduler only commits when it finds a window where all the lines are simultaneously free. The work divides across them so the job finishes faster. A sixteen-hour job across two identical lines finishes in eight hours of wall-clock time, with each line consuming its own eight hours. Dependent parallel synchronizes machines on one line; independent parallel multiplies throughput across lines."
+  - question: "What happens if one machine on a synchronized line is down?"
+    answer: "For independent parallel across lines, the scheduler will not start any line until it finds a date and shift where every machine in the group is free at the same time, so a machine down for maintenance slides the whole group to the next simultaneous window rather than starting some lines without the rest. This is an all-or-nothing rule: either the machines run together or none start. It prevents committing a plan that physically cannot run because one machine on the line is unavailable."
+  - question: "Do the synchronized machines need to share a shift?"
+    answer: "Yes. Machines that must run together have to share at least one common shift on each candidate day, matched by the same shift record, not just the same hours. The scheduler intersects the machines' shifts and only looks for a start time inside a shift they all work. If one machine is on a different shift, even with identical hours, they share no common shift and no synchronized window is found, so align them to the same shift record when they belong to one line."
+qaQuestions:
+  - question: "Our fill-cap-label line is really three machines feeding one conveyor, but the schedule treats them as three independent work centers and the plan never lines them up. How do we model the line as one thing?"
+    answer: "Model it as a dependent parallel step. Pick one machine as the parent, usually the filler that sets the pace, and mark the capper and labeler as dependent mirrors of it. The scheduler schedules the parent normally against its capacity, then mirrors that exact window onto the capper and labeler with the same start and end times. Now the three machines appear on the plan as one synchronized block that starts and finishes together, which is how the line actually runs. If a machine runs at a different rate, a factor scales its hours without changing the shared timing, so a slower or faster unit is represented honestly."
+  - question: "We added a second identical line to double output but the schedule still runs jobs on one line at a time. Can it actually split a job across both?"
+    answer: "Yes, with independent parallel. Configure the second line as an independent parallel alternative with its own capacity checked, and the scheduler will look for a window where both lines are free and split the work across them. A sixteen-hour run then finishes in about eight hours of wall-clock time, each line doing eight, instead of sixteen hours on one line. The catch worth knowing is that it is all-or-nothing on availability: the scheduler waits for a window where both lines are open together rather than starting one and leaving the other idle, so you get true simultaneous throughput or a clean slide to when both are free."
+---
+
+**Packaging multi-machine line scheduling runs the machines on one line in synchronized lockstep, and splits a job across duplicate lines to multiply throughput, and EDGEBIC by User Solutions models both directly through dependent and independent parallel work centers.** For a packaging operation, a line is rarely one machine. It is a filler, a capper, and a labeler that must move together, or two identical lines you want to load at once. This post is about scheduling machines that must run together, and machines that can share the work.
+
+The single-machine version of loading jobs against capacity is [what is production scheduling](/blog/what-is-production-scheduling). The everyday struggle of coordinating machines that interact is part of [job shop scheduling challenges](/blog/job-shop-scheduling-challenges). Packaging adds a specific twist: some machines are welded together in time, and some are interchangeable in space.
+
+## Two different multi-machine problems
+
+Packaging shops actually face two distinct multi-machine situations, and confusing them is where plans go wrong.
+
+The first is a line of different machines that must run in lockstep. A filler, a capper, and a labeler feeding one conveyor cannot run at different times; they start together and finish together because they are physically one flow. Scheduling them as three independent work centers produces a plan that never lines them up, and the floor ignores it.
+
+The second is duplicate identical lines you want to load together to hit a rush. Two matched lines can split a run so it finishes in half the wall-clock time, but only if the scheduler commits both together rather than running one and idling the other. These need opposite treatments, and the routing model has a mode for each.
+
+## Synchronized lockstep: dependent parallel
+
+For machines that must run together, one machine is the parent and the others are dependents that mirror it. The scheduler places the parent through normal capacity checking, finding a real slot on its shift calendar. Then, for each dependent machine, it writes a mirrored schedule with the exact same start and end times as the parent. The whole line appears on the plan as one synchronized block.
+
+Take a fill-cap-label line where the filler sets the pace. Schedule the filler for a block, say Monday 08:00 to 16:00 plus a spillover to Tuesday, and the capper and labeler receive mirrored blocks with identical timestamps. All three start together, run together, and finish together. If a machine runs at a different effective rate, a factor scales its hours without touching the shared timing, so a slower labeler is represented as fewer or more hours on the same clock window rather than a broken sequence. This is exactly the mechanism a multi-spindle drilling head or a synchronized robotic cell uses, applied to a packaging line.
+
+The important property is that the mirror keeps the same routing identity as the parent, so the line reads as one operation across three machines rather than three unrelated jobs that happen to overlap. On the plan and on the floor dispatch, the line is a unit.
+
+## Multiplying throughput: independent parallel
+
+For duplicate lines that share a job, the mode is independent parallel. Here each line's capacity is checked and consumed on its own, and the work divides across them. The scheduler's job is to find a single date, shift, and start time where every line in the group is simultaneously free, then start them together and split the hours.
+
+Take a 16-hour packaging run and two identical lines, each offering 8 hours on the day shift.
+
+| Line | Hours | Runs |
+|---|---|---|
+| Line A | 8 | Monday 08:00 to 16:00 |
+| Line B | 8 | Monday 08:00 to 16:00 |
+
+The job finishes in 8 hours of wall-clock time instead of 16, with each line consuming its own 8 hours of capacity. Two lines, half the time, which is the entire reason you bought the second line.
+
+The behavior worth understanding is the all-or-nothing rule. The scheduler will not start Line A alone and leave Line B for later; it waits for a window where both are free and commits them together. If one line is down for maintenance Monday and Tuesday, the group slides to Wednesday when both are open, rather than producing a lopsided plan that only uses half the capacity you were counting on.
+
+| Day | Line A | Line B | Result |
+|---|---|---|---|
+| Monday | Free | Down | No simultaneous window |
+| Tuesday | Free | Down | No simultaneous window |
+| Wednesday | Free | Free | Both start together |
+
+That guarantee is what keeps the plan honest: either the lines run together as intended, or they wait until they can, never a half-committed plan that falls apart on the floor.
+
+## Common shifts are required
+
+Machines that must run together, in either mode, have to share at least one common shift on each candidate day. The scheduler matches shifts by the actual shift record, not merely by identical hours. Two shifts that both run 08:00 to 16:00 but are separate records do not count as common, and no synchronized window will be found between machines assigned to them.
+
+The fix is simple: assign every machine that belongs to one line, or every duplicate line in a group, to the same shift record. This is a five-minute setup detail with an outsized effect, because it is the difference between the scheduler finding a shared window instantly and never finding one at all. It is worth checking first whenever a synchronized line refuses to schedule.
+
+## Where line scheduling meets the rest of packaging
+
+Synchronized and parallel lines are one layer of a packaging plan. On top of them, lot streaming lets a downstream operation start after a batch of finished packs is ready rather than waiting for the whole run, which compounds the throughput gain, covered in [lot streaming for packaging](/blog/edgebic-for-packaging-lot-streaming). Quick changeover shortens the time between runs on the same line, covered in [quick changeover for packaging](/blog/edgebic-for-packaging-quick-changeover). And the base scheduling of a single line, sequencing runs on it and hitting due dates, is [packaging line scheduling](/blog/edgebic-for-packaging-line-scheduling), which this post extends to the multi-machine case.
+
+Together they let a packaging operation model the line as it physically is: machines locked in time where they must be, and interchangeable capacity where they can be. That is the kind of shop-floor realism User Solutions has delivered since 1991, from high-volume consumer lines to defense programs coordinating tens of thousands of tasks.
+
+See your line scheduled as one synchronized block. [Bring a fill-cap-label line or a pair of duplicate lines to a demo](/edgebic) and watch the plan run them together. When you are ready to feed it your line and order data, EDGEBIC reads it through flexible [import and export masks](/edgebic-erp-integration), and the [EDGEBIC by industry guide](/blog/edgebic-by-industry) puts it alongside the rest of a packaging plant's needs.

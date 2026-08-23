@@ -1,0 +1,86 @@
+---
+title: "How a Reschedule Frees Stale Capacity Reservations"
+description: "Why EDGEBIC releases a rescheduled job's not-yet-started reservations before re-planning, so old slots do not block the new plan and push steps needlessly late."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - reschedule capacity
+  - stale reservation
+  - rescheduling with actuals
+  - capacity release
+  - finite capacity scheduling
+  - schedule stability
+targetPhrase: "stale capacity reservations"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "What is a stale reservation in scheduling?"
+    answer: "A stale reservation is a capacity booking left over from a previous scheduling run for a step that has not started yet. When EDGEBIC reschedules a job, those old bookings must be released before re-planning; if they stay, the engine sees the old slot as taken and pushes the new allocation to a later date, delaying the job for no real reason. Releasing them lets the step reclaim its natural slot."
+  - question: "Does rescheduling release all of a job's reservations?"
+    answer: "No. EDGEBIC releases only the reservations for steps that have not started. Steps with recorded actuals keep their capacity, because that work really happened and its slot is real. So a three-step job where step one is done keeps step one's reservation and frees steps two and three, letting the not-started steps re-plan cleanly while the completed step stays fixed in place."
+  - question: "Why does the filter work at the step level, not the whole job?"
+    answer: "Because a single job usually has a mix of done and not-done steps. A whole-job filter would either keep every reservation, blocking the not-started steps, or drop every reservation, discarding the real capacity that completed steps rightly hold. EDGEBIC filters one schedule row at a time: keep rows with actuals, release rows without. That row-level rule is what lets a partly-run job reschedule without stale slots dragging it late."
+qaQuestions:
+  - question: "After a reschedule, a step that could have moved earlier stayed several days late. What causes that?"
+    answer: "The classic cause is a stale reservation that was not released. On a prior run the engine booked that step, or one of its siblings, into a work center slot. If that booking survives into the reschedule and the step has no actuals, the engine sees the slot as occupied by its own ghost and pushes the fresh allocation past it, producing a multi-day gap with no real reason behind it. EDGEBIC prevents this by releasing every not-started row of a rescheduled job from the capacity map before re-planning, so each step competes for its natural slot rather than against its own leftover booking. If you see an unexplained delay after a reschedule, that released-versus-retained distinction is the first thing to check in the diagnostics."
+  - question: "I rescheduled one job and I am worried it disturbed everyone else's capacity. Did it?"
+    answer: "No. When you reschedule a single job, EDGEBIC releases only that job's not-started reservations from the capacity map. Every other job's bookings are preserved, so their capacity stays exactly as it was and their placements do not move. The released job then re-plans against a map that still shows all the real load from other jobs, so it fits around them honestly rather than pretending the plant is empty. This surgical release is what makes a single-job reschedule safe to run without a full regeneration and without collateral movement elsewhere."
+---
+
+**When EDGEBIC by User Solutions reschedules a job, it first releases that job's not-yet-started capacity reservations from the in-memory capacity map, so the steps re-plan against their real, natural slots. If those old bookings stayed, the engine would see a step's own leftover reservation as occupied capacity and push the fresh allocation to a later date, delaying the job for no reason at all. The release is surgical: reservations for steps that have actuals are kept, because that work really happened.** This one rule is the difference between a reschedule that tightens a plan and one that mysteriously pushes steps days into the future.
+
+Rescheduling in EDGEBIC is not a wipe-and-redo. It is a careful operation that distinguishes work that is done, work that is running, and work that has not started, and stale reservations are the trap that lives at the seam between them.
+
+## Where stale reservations come from
+
+Every scheduling run books capacity. When a step is placed on a work center, the hours it will use are marked as consumed in the capacity map, so later steps and later jobs see that slot as taken. That is exactly how finite capacity works, and it is correct while the plan is live.
+
+The problem appears on the next run. Suppose you reschedule the job. Its steps still have their bookings from last time sitting in the capacity map. If the engine re-plans a step without first clearing that step's old booking, it looks at the slot the step wants, sees it occupied by the step's own ghost reservation, and pushes the new allocation past it. The step ends up later than it needs to be, and the delay has no cause on the shop floor. It is the plan colliding with its own history.
+
+The fix is to release the stale reservations before re-planning, so each step competes for its natural slot rather than against its own leftover booking.
+
+## Release the not-started, keep the actuals
+
+The release cannot be indiscriminate, because a job usually has a mix of states. Some steps are finished, some may be running, and some have not started. Their reservations do not all mean the same thing.
+
+A reservation for a step that has recorded actuals represents real work. That step ran on that machine at that time; the capacity it consumed is genuine and must be kept, or the engine would forget that the resource was busy. A reservation for a step with no actuals is a plan, and on a reschedule that plan is exactly what you are redoing, so its old booking is stale and should be released.
+
+EDGEBIC applies this one schedule row at a time. For each of a rescheduled job's existing rows, it keeps the row's reservation if the row has a start or end actual, and drops it otherwise. A three-step job where step one is complete keeps step one's reservation and frees steps two and three. Steps two and three then re-plan against a clean map, while step one stays fixed exactly where it really happened.
+
+This row-level filter is the crucial detail. A whole-job filter would be wrong in both directions: keep everything, and the not-started steps stay blocked by their ghosts; drop everything, and the completed step loses the real capacity it should hold, potentially letting another job over-book the resource it actually used. Only a per-row rule handles a partly-run job correctly.
+
+## A worked reasoning
+
+Picture a job whose step one is done and whose steps two and three were planned last week onto a milling center. You edit the routing and reschedule.
+
+If the engine did nothing about the old bookings, steps two and three would each find their prior milling slots still marked occupied. The engine would push the new step two past its own last-week booking, then push step three past step two, and the job would land several days later than the routing actually requires, with a diagnostic showing a large gap that no queue time or transit explains.
+
+With the release rule, steps two and three are dropped from the capacity map before re-planning, because neither has actuals. Step one's reservation stays, because it really ran. Steps two and three now find their natural milling slots open and schedule as early as the routing and the rest of the plant's real load allow. The completed step never moves. The result is a tight plan, not a ghost-inflated one.
+
+## Rescheduling one job without disturbing the rest
+
+The same rule is what makes a single-job reschedule safe. When you reschedule just one job, EDGEBIC releases only that job's not-started reservations. Every other job's bookings stay in the capacity map untouched, so their placements do not move and their capacity is preserved.
+
+The released job then re-plans against a map that still shows all the real load from other jobs. It fits around them honestly, competing for open time exactly as a new job would, rather than pretending the plant is empty. Nothing else shifts. This is why you can reschedule one order surgically, without a full regeneration and without collateral movement rippling through unrelated jobs. Which orders a run touches in the first place is set by the scheduling mode, and [what each scheduling mode rebuilds](/blog/what-each-scheduling-mode-rebuilds) lays the five choices out side by side.
+
+If you ever do see an unexplained delay after a reschedule, the released-versus-retained distinction is the first thing to check. A step that stayed late when it could have moved earlier is the signature of a reservation that should have been released and was not, and the scheduling diagnostics show which rows were kept and which were freed.
+
+Stale-reservation release is one part of the larger reschedule pipeline, which also decides where a partly-run step resumes and which completed work is preserved. Those pieces are covered in [how a job resumes from where actuals left off](/blog/how-a-job-resumes-from-where-actuals-left-off) and [how a scheduler preserves completed work](/blog/how-a-scheduler-preserves-completed-work). Recovering from an unplanned event mid-shift leans on the same machinery, described in [how a scheduler recovers from a mid-shift disruption](/blog/how-a-scheduler-recovers-from-a-mid-shift-disruption). The whole pipeline sits inside the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the reason freeing a slot matters at all is that EDGEBIC treats capacity as [genuinely finite](/blog/finite-vs-infinite-capacity-scheduling).
+
+To see a reschedule release the right slots and keep the right ones on your own jobs, [bring your data to a demo](/contact-us).
+
+<Accordion title="What is a stale reservation in scheduling?">
+A stale reservation is a capacity booking left over from a previous scheduling run for a step that has not started yet. When EDGEBIC reschedules a job, those old bookings must be released before re-planning; if they stay, the engine sees the old slot as taken and pushes the new allocation to a later date, delaying the job for no real reason. Releasing them lets the step reclaim its natural slot.
+</Accordion>
+
+<Accordion title="Does rescheduling release all of a job's reservations?">
+No. EDGEBIC releases only the reservations for steps that have not started. Steps with recorded actuals keep their capacity, because that work really happened and its slot is real. So a three-step job where step one is done keeps step one's reservation and frees steps two and three, letting the not-started steps re-plan cleanly while the completed step stays fixed in place.
+</Accordion>
+
+<Accordion title="Why does the filter work at the step level, not the whole job?">
+Because a single job usually has a mix of done and not-done steps. A whole-job filter would either keep every reservation, blocking the not-started steps, or drop every reservation, discarding the real capacity that completed steps rightly hold. EDGEBIC filters one schedule row at a time: keep rows with actuals, release rows without. That row-level rule is what lets a partly-run job reschedule without stale slots dragging it late.
+</Accordion>

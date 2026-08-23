@@ -1,0 +1,107 @@
+---
+title: "A Monthly Capacity Override Was Ignored: Causes and Fixes"
+description: "When a date-range capacity override does not change the plan, the cause is usually a daily override on the same date, a stale run, or a share split you did not expect."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - monthly capacity override ignored
+  - date range capacity override not working
+  - capacity resolution chain
+  - daily override beats monthly
+  - override hours spread across days
+  - capacity budget not applied
+targetPhrase: "monthly capacity override was ignored"
+wordCount: 1290
+readingTime: 6
+faqQuestions:
+  - question: "Why was my monthly capacity override ignored on one day?"
+    answer: "The capacity chain is strict and the daily override sits above the monthly one. If any applicable shift on that date carries a per-day override, the monthly budget is completely ignored for that date, and the day uses the daily number instead. This is the most common reason a range override appears to work all week and then does nothing on a single day, because someone entered a one-off daily number inside the same window."
+  - question: "How does a monthly capacity override spread its hours?"
+    answer: "The total is divided by the number of available days inside the range, then divided again by the number of shifts active on the date being scheduled. Available means days not blocked by a holiday or an idle window, so a five-day range containing one plant holiday spreads across four days rather than five. A 60-hour budget over five available days with two shifts a day gives 12 hours a day and 6 hours per shift slot."
+  - question: "Can a monthly override open a day the work center does not normally work?"
+    answer: "Yes, and this is the main behavioral difference from a per-day override. A date-range override creates schedulable slots across the days it covers, so a weekend inside the range becomes usable capacity. A per-day override only adjusts a day the shift already works, which is why a zero-hour daily entry on a closed Saturday does nothing at all. Use the range override when the goal is to open time that does not otherwise exist."
+qaQuestions:
+  - question: "I budgeted 60 hours for a retooling week and the plan only used about 6 hours on Tuesday's day shift. Did the override apply?"
+    answer: "It applied, and 6 hours is the arithmetic working correctly. The budget is spread across the available days in the range and then split across the shifts running on the date. Sixty hours over five available days is 12 hours a day, and a work center running two shifts that day gets 6 hours per shift slot. If you meant 60 hours per shift rather than 60 hours for the week, the range total is the number to change, because the engine treats it as a whole-window budget."
+  - question: "The override covers Monday through Friday but Wednesday used its normal capacity. What breaks the range?"
+    answer: "Look for a per-day override on Wednesday first, because a daily entry on any applicable shift that date makes the range override completely inactive for the whole day. If there is no daily entry, check that the range genuinely covers Wednesday, since the start and end dates are inclusive and an off-by-one end date is easy to miss. If both check out, re-run scheduling: the engine reads capacity overrides once at run start, so an override saved after the last run is only picked up on the next one."
+---
+
+**When a date-range capacity override does not change the plan, the usual cause is a per-day override on the same date, which outranks it completely, followed by a scheduling run that predates the override and a share split that produced a smaller number than expected.** [EDGEBIC by User Solutions](/edgebic) resolves available hours through one strict chain: a per-day override first, a date-range override second, and the shift-hours formula last. The first match wins, so a range override is never partly applied. It is either the winning entry for that date or it is not consulted at all.
+
+This post is the detailed version of the ignored-range-override symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanics of the feature, [monthly capacity overrides explained](/blog/edgebic-monthly-capacity-overrides-explained) covers what the budget means, and [a daily capacity override was ignored](/blog/a-daily-capacity-override-was-ignored-edgebic) covers the same symptom one level up the chain.
+
+## What You Are Seeing
+
+You entered a total-hours budget for a date range, the range shows on the calendar, and the schedule either used the machine's normal capacity anyway or used a number well below what you thought you had authorized.
+
+## Why It Happens
+
+### Cause 1: A Per-Day Override on the Same Date Wins Outright
+
+This is the first thing to check and the most common answer. If any applicable shift on a date carries a per-day override, the range override is completely ignored for that date. The day is resolved from the daily number, and the range budget stops applying to it entirely.
+
+**How to tell:** the range works on most days in the window and does nothing on one or two, and those days have a per-day entry someone added for a one-off.
+
+### Cause 2: The Run Was Built Before You Saved the Override
+
+The scheduling engine reads capacity overrides once, when a run starts. An override saved after that run began is invisible to the plan on screen. The capacity views read live and update immediately, so the calendar and the plan can disagree until the next run.
+
+**How to tell:** the calendar shows the budget, the plan predates your edit, and nothing else in the chain explains the difference.
+
+### Cause 3: The Number Is Smaller Than You Expected, Not Missing
+
+A range override is a whole-window budget, not a per-day figure. The engine divides the total by the number of available days inside the range, then divides again by the number of shifts active on the date being scheduled. A 60-hour week across five available days with two shifts a day yields 12 hours a day and 6 hours in each shift slot.
+
+**How to tell:** the plan clearly changed but the per-slot hours look like a fraction of the number you entered, and the fraction matches days times shifts.
+
+### Cause 4: The Range Covers Fewer Available Days Than You Counted
+
+Days blocked by a holiday or an idle window are not counted when the budget is divided. A five-day range containing one plant holiday spreads across four days, so each remaining day receives a larger share than the arithmetic you did by hand. That is correct behavior and it can make the per-day number look wrong in either direction.
+
+**How to tell:** the range includes a closure, and the daily share equals the total divided by the days that actually remain.
+
+### Cause 5: The Range Does Not Cover the Date
+
+The start and end dates are inclusive, and an end date one day short is easy to miss when the window was typed rather than picked. A date outside the range falls straight through to the shift-hours formula.
+
+**How to tell:** the date in question sits at one edge of the window.
+
+## How to Fix It
+
+- **For a competing per-day override:** remove the daily entry for that date, or accept it as the intended number for the day. The two cannot both apply, and the daily one always wins.
+- **For a stale run:** run scheduling again. The engine reloads overrides at run start, and the plan then agrees with the calendar.
+- **For a smaller-than-expected share:** change the total, not the day. The value is a budget for the whole window, so multiply the per-day figure you want by the available days in the range before entering it.
+- **For an unexpected day count:** check the window for holidays and idle periods, and either extend the range or adjust the total so the remaining days carry the load you intend.
+- **For a range that misses the date:** correct the start or end date, remembering both ends are included.
+
+## How to Diagnose It, in Order
+
+1. **Look for a per-day override on the failing date.** It outranks the range completely, and finding one ends the investigation.
+2. **Confirm the range covers the date,** including both boundary days.
+3. **Divide the total by the available days, then by the shifts on that date.** If the answer matches the plan, the override applied correctly and the total is the thing to change.
+4. **Count the closures inside the window,** since blocked days are excluded from the division.
+5. **Re-run scheduling** before judging the plan, because overrides are read once at run start.
+
+## How to Prevent It
+
+- **Pick one tool per date.** Use a range override for a budgeted window and per-day overrides for one-off days, and avoid mixing them inside the same window where the daily entry will silently take over.
+- **Enter budgets as totals.** The range value is the whole window, so treat it the way you would treat an approved overtime budget rather than a daily rate. [How to set a monthly capacity override](/blog/how-to-set-a-monthly-capacity-override-in-edgebic) walks the entry screen.
+- **Re-run scheduling after any capacity edit** before comparing the plan against it.
+- **Use the range override when you need to open closed days,** because that is the tool that creates schedulable slots where none existed. If a work center shows no capacity at all, [capacity shows zero for a work center](/blog/capacity-shows-zero-for-a-work-center-edgebic) walks the earlier gates, and [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) explains why these limits drive the whole plan.
+
+<Accordion title="Why was my monthly capacity override ignored on one day?">
+The capacity chain is strict and the daily override sits above the monthly one. If any applicable shift on that date carries a per-day override, the monthly budget is completely ignored for that date, and the day uses the daily number instead. This is the most common reason a range override appears to work all week and then does nothing on a single day, because someone entered a one-off daily number inside the same window.
+</Accordion>
+
+<Accordion title="How does a monthly capacity override spread its hours?">
+The total is divided by the number of available days inside the range, then divided again by the number of shifts active on the date being scheduled. Available means days not blocked by a holiday or an idle window, so a five-day range containing one plant holiday spreads across four days rather than five. A 60-hour budget over five available days with two shifts a day gives 12 hours a day and 6 hours per shift slot.
+</Accordion>
+
+<Accordion title="Can a monthly override open a day the work center does not normally work?">
+Yes, and this is the main behavioral difference from a per-day override. A date-range override creates schedulable slots across the days it covers, so a weekend inside the range becomes usable capacity. A per-day override only adjusts a day the shift already works, which is why a zero-hour daily entry on a closed Saturday does nothing at all. Use the range override when the goal is to open time that does not otherwise exist.
+</Accordion>

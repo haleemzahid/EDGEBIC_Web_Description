@@ -1,0 +1,97 @@
+---
+title: "How to Make Two Operations Run in Parallel in EDGEBIC"
+description: "Make a routing step run on two machines at once in EDGEBIC: configure independent parallel to split the work and halve the wall-clock, or dependent for synchronized mirrors."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - run operations in parallel
+  - independent parallel work center
+  - dependent parallel machines
+  - split a batch across machines
+  - parallel factor scheduling
+  - EDGEBIC parallel processing
+targetPhrase: "run two operations in parallel"
+wordCount: 1114
+readingTime: 6
+faqQuestions:
+  - question: "How do you make two operations run in parallel in EDGEBIC?"
+    answer: "Right-click the routing step and choose Add as Parallel Processing to open the Configure Parallel Processing dialog. Pick a parallel type: Independent Parallel splits one operation's work across machines to shorten it, and Dependent Parallel mirrors the primary onto machines locked to the same cycle. Add the extra machine, set the parallel factor or finite-capacity flag, click Apply, and save the routing. The extra machine runs at the same time as the primary on the next scheduling run."
+  - question: "What is the difference between independent and dependent parallel?"
+    answer: "Independent parallel splits the work, so the operation finishes faster because each machine does a share. Dependent parallel mirrors the primary onto a second machine that runs in exact lockstep, same start and same end, which adds synchronized effort but does not shorten the operation. Choose independent when you want throughput on interchangeable machines, and dependent only when the physics demands machines run together, like a multi-spindle head."
+  - question: "Does dependent parallel check the mirror machine's capacity?"
+    answer: "No. A dependent mirror is booked without checking the second machine's own calendar, because it is locked to the primary's cycle by design. That means a mirror machine also carrying independent work can end up committed twice in the same window, which the Resource Load view will show above 100 percent. Keep machines used as synchronized mirrors clear of other work in those periods, and watch the Scheduler Anomalies report for over-allocation."
+qaQuestions:
+  - question: "Milling takes 51 hours on one mill for a 100-unit order. We have a second identical mill. How much do we actually save?"
+    answer: "Roughly half the wall-clock, if you use Independent Parallel. The 51 hours split across two mills starting together become about 25.5 hours each, so the operation finishes in about half the calendar time. The catch is the all-or-nothing rule: the group only starts when both mills are free at the same time. If the second mill is busy Monday, the whole operation waits for the first day both are simultaneously open, rather than starting one mill alone."
+  - question: "We set up two machines as parallel and the job now refuses to schedule with a no-simultaneous-capacity message. What happened?"
+    answer: "The two machines share no common shift record, or one of them is fully booked across the search window. An independent parallel group can only start in a shift that every member actually has, and EDGEBIC matches shifts by record, not by identical-looking hours. Two look-alike shifts saved as separate records do not count as common. Assign the same shift record to both machines, and check that neither is booked solid, then reschedule."
+---
+
+**To make two operations run in parallel in EDGEBIC by User Solutions you right-click the step, choose Add as Parallel Processing, pick a parallel type, and add the second machine.** Independent parallel splits the work and shortens the operation. Dependent parallel mirrors the primary onto a machine locked to the same cycle. Choosing the right one is the entire decision.
+
+Parallel machines run at the same time as the primary, which is what separates them from an alternate that runs instead of it. For the concept side, read [parallel and alternate work centers explained](/blog/edgebic-parallel-work-centers-explained). This post is the configuration task.
+
+## Before You Start
+
+- Both machines exist as work centers, and machines meant to run together share the **same** shift record. Two look-alike shifts saved separately do not count as common, and the scheduler only starts a parallel group in a shift every member actually has.
+- You know which mode you need. Splitting a batch to go faster is independent. Machines physically locked together, like a multi-spindle head or paired presses, is dependent.
+- You have the extra machine's own hours if it differs from the primary, for the independent case.
+
+## Configuring the Parallel Machines
+
+1. Open the **BOR** tab, select the routing in **Data Grid** mode, and right-click the step row. Choose **Add as Parallel Processing**. The **Configure Parallel Processing** dialog opens. (The same list is managed on the **Parallel Work Centers** tab of the step detail panel.)
+2. Under **Parallel Type:**, choose **Independent Parallel (Finite Capacity)** or **Dependent Parallel (Factor Based)**.
+3. Click **Add Work Center**, pick the machine in the **Select a Work Center:** popup, and click **OK**.
+4. Fill the row for the mode you chose:
+
+| Column | Applies to | What it does |
+|---|---|---|
+| **Work Center Name** | both | The extra machine |
+| **Parallel Factor** | Dependent | Multiplier on the primary's hours booked onto the mirror. 1.0 is equal work; 0.5 credits the mirror half; a slower machine at 70% output takes 1.43 |
+| **Finite Capacity?** | both | Ticked is independent (capacity checked and consumed); unticked is dependent (mirrored, no check) |
+| **Setup Time** / **Hours Req'd** | Independent | The independent machine's own setup and per-unit hours, when they differ from the primary |
+
+5. Click **Apply**, then save the routing with **Update Standard BOR**.
+
+In the grid, parallel machines appear as child rows marked **↳**, and the parent's **Work Center Option** column shows the step's parallel mode. In **Designer** mode they are nodes joined with a **Parallel (Dashed)** connector, and a parallel child's **Properties** panel edits only **Parallel Factor** and **Finite Capacity?**, because everything else inherits from the parent.
+
+## What Changes When You Save
+
+| Configuration | What the next scheduling run does |
+|---|---|
+| **Independent Parallel** | The step books simultaneously on all group machines and the wall-clock shortens; the group waits for a slot where every member is free at once |
+| **Dependent Parallel** | Mirror rows appear on the extra machines with identical start and end and factor-scaled hours; the primary's dates are unchanged |
+
+Worked through, independent: milling is 51.0 hours for 100 units on one mill. Add a second identical mill as **Independent Parallel (Finite Capacity)** and each mill takes about 25.5 hours, both starting together, so the operation's wall-clock roughly halves. The all-or-nothing rule holds: if the second mill is busy Monday, the whole group waits for the first day both are simultaneously free rather than starting one mill alone.
+
+Worked through, dependent: a long profile machined from both ends needs the second mill in exact lockstep. Configure it as **Dependent Parallel (Factor Based)** with **Parallel Factor** 1.0, and the mirror copies the primary's start and end and books 51.0 hours on the second machine. The operation does not finish sooner; it records that a second machine is committed for the same window.
+
+The parallel factor is the knob that makes dependent mirroring honest about unequal machines. At 1.0 the mirror books the same hours as the primary, which is right when the two machines contribute equally. A newer, faster mirror can be credited at less than 1.0 so it books fewer hours for the same window, and a slower one at more than 1.0. The factor changes the hours recorded on the mirror, not the start and end, because the whole point of a dependent pair is that they run to the same clock. Reach for the factor only when the machines genuinely differ in output, and leave it at 1.0 when they match.
+
+## How to Check It Worked
+
+In the grid, the extra machine should show as a **↳** child row under the step. Independent rows carry their own hours; dependent rows carry a factor.
+
+Schedule a test order and read the Job View Gantt. For independent parallel, both machines should show bars that start together and each run about half the original length. For dependent parallel, both bars should be identical in start and end. If an independent group produced only one bar, the members likely share no common shift.
+
+For dependent mirrors, open **Resource Load**. A mirror machine that also carries independent work can read above 100% in the mirrored window, which is the flag to move that other work.
+
+## Common Mistakes
+
+**Look-alike shifts instead of the same shift record.** Common shifts are matched by record. Two identical-looking shifts saved separately quietly prevent any simultaneous slot, and the group never starts.
+
+**Choosing dependent when you wanted faster.** A dependent mirror does not shorten the operation. It commits a second machine to the same window. Use independent to split the work and cut wall-clock.
+
+**Ignoring the mirror over-booking risk.** Dependent mirrors are booked without a capacity check on the mirror machine. Keep those machines clear of independent work in the affected periods, and watch the **🛠 Scheduler Anomalies** report for over-allocation findings.
+
+**Expecting a busy member not to block the group.** Independent parallel is all-or-nothing. If one machine is booked, the whole operation waits for the first slot where both are free.
+
+**Reaching for parallel when a pool is meant.** If any of several machines could take the step, that is a Work Center Group, not a hand-built parallel group on every step. Reserve parallel for machines that genuinely run together on one operation.
+
+## Next Steps
+
+If you actually wanted a choice between machines rather than both at once, [how to add an alternate work center to a step](/blog/how-to-add-an-alternate-work-center-to-a-step-in-edgebic) is the task. Common parallel setup errors are collected in [parallel work center mistakes](/blog/parallel-work-center-mistakes-edgebic). The full task library is at [the EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and the platform overview is at [EDGEBIC](/edgebic).

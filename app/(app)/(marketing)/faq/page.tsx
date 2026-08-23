@@ -14,105 +14,130 @@ import { createPageMetadata } from '@/lib/seo/metadata';
 export const metadata = createPageMetadata({
   title: 'Frequently Asked Questions',
   description:
-    'Get answers to common questions about Resource Manager DB (RMDB) production planning and scheduling software. Learn about features, pricing, implementation, ERP integration, and more.',
+    'Get answers to common questions about EDGEBIC finite capacity planning and scheduling software. Learn about editions, features, implementation, ERP integration, and the upgrade path from RMDB and EDGEBI.',
   path: '/faq',
   keywords:
-    'RMDB FAQ, production planning FAQ, scheduling software questions, Resource Manager DB help, manufacturing software FAQ, EDGEBI questions, finite capacity planning FAQ, MRP software FAQ'
+    'EDGEBIC FAQ, EDGEBIC questions, EDGEBIC editions, production planning FAQ, scheduling software questions, manufacturing software FAQ, finite capacity planning FAQ, MRP software FAQ, RMDB FAQ, EDGEBI questions'
 });
 
 const GENERAL_FAQS = [
   {
-    question: 'What is Resource Manager DB (RMDB)?',
+    question: 'What is EDGEBIC?',
     answer:
-      'Resource Manager DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations. It features finite capacity planning, MRP, drag-and-drop scheduling, Excel integration, and much more. RMDB has been trusted by manufacturers worldwide for over 35 years.'
+      'EDGEBIC by User Solutions is our next-generation finite capacity planning and scheduling platform, the successor to both RMDB and EDGEBI. It combines the proven RMDB scheduling engine with the EDGEBI graphical experience in one modern Windows application: a drag-and-drop graphical routing designer, forward and backward scheduling, Theory of Constraints bottleneck anchoring, operator and skill constraints, a shop-floor kiosk, and a two-layer schedule optimizer.'
   },
   {
-    question: 'What is the difference between RMDB and EDGEBI?',
+    question: 'What editions is EDGEBIC available in?',
     answer:
-      'RMDB (Resource Manager DB) is our core production planning and scheduling database application. EDGEBI is the advanced graphical extension that adds interactive Gantt charts, visual drag-and-drop scheduling, and enhanced graphical reporting capabilities on top of RMDB. EDGEBI is bundled with RMDB to provide a complete visual production management experience.'
+      'EDGEBIC comes in two editions. EDGEBIC APS delivers the full finite capacity scheduling and optimization platform: graphical routing designer, forward and backward scheduling, TOC anchoring, parallel and alternate work centers, sequence-dependent setup, lot streaming, operator skills, and the two-layer optimizer. EDGEBIC Complete adds MRP, inventory, purchasing, and material pegging on top, so material availability constrains the schedule alongside machines and labor.'
   },
   {
-    question: 'What types of manufacturing operations does RMDB support?',
+    question: 'How is EDGEBIC related to RMDB and EDGEBI?',
     answer:
-      'RMDB supports a wide range of manufacturing operations including discrete manufacturing, batch processing, job shops, make-to-order, make-to-stock, and mixed-mode environments. It handles complex routings, alternate workcenters, sub-assemblies, multiple constraints (labor, machines, materials), and concurrent resource scheduling.'
+      'EDGEBIC is the direct successor to both products. RMDB (Resource Manager DB) contributed the finite capacity scheduling depth proven over 35 years, and EDGEBI contributed the interactive graphical scheduling experience. EDGEBIC unifies them in a single application and adds a new engine generation: TOC anchor scheduling, backward (just-in-time) scheduling, work center groups, operator and skill constraints, sequence-dependent setup matrices, lot streaming, and a two-layer schedule optimizer. Both legacy products remain fully supported.'
+  },
+  {
+    question: 'What types of manufacturing operations does EDGEBIC support?',
+    answer:
+      'EDGEBIC supports a wide range of manufacturing operations including discrete manufacturing, batch processing, job shops, make-to-order, make-to-stock, and mixed-mode environments. It handles complex routings, parallel and alternate work centers, work center groups (machine pools), sub-assemblies, multiple constraints (labor, machines, materials), and sequence-dependent setup times.'
   },
   {
     question: 'How long has User Solutions been in business?',
     answer:
-      'User Solutions has been providing production planning and scheduling software since 1991 — over 35 years of helping manufacturers improve their operations. Our software has won multiple awards from Capterra, G2, and other review platforms.'
+      'User Solutions has been providing production planning and scheduling software since 1991, over 35 years of helping manufacturers improve their operations. Our software has won multiple awards from Capterra, G2, and other review platforms, and EDGEBIC builds directly on that lineage.'
   }
 ];
 
 const FEATURES_FAQS = [
   {
-    question: 'Does RMDB include MRP (Material Requirements Planning) functionality?',
+    question: 'Does EDGEBIC include MRP (Material Requirements Planning) functionality?',
     answer:
-      'Yes, RMDB includes full MRP functionality. It handles material requirements planning, purchasing and receiving, inventory management, bill of materials (BOM) explosion, and lead time calculations. It can complement or replace MRP modules in your existing ERP system.'
+      'Yes, through the EDGEBIC Complete edition, which adds MRP, inventory management, purchasing, and material pegging on top of the scheduling platform. With Complete, material availability constrains the schedule alongside machines and labor, so a job is never scheduled to start before its materials can be there. EDGEBIC APS focuses on finite capacity scheduling and optimization without the material layer.'
   },
   {
-    question: 'How does finite capacity scheduling work in RMDB?',
+    question: 'How does finite capacity scheduling work in EDGEBIC?',
     answer:
-      'RMDB uses true finite capacity scheduling that considers all real-world constraints — machines, labor, materials, tools, and more — simultaneously. It creates realistic, achievable schedules by never over-allocating resources. You can perform "what-if" analysis to evaluate different scenarios and optimize production flow.'
+      'EDGEBIC uses true finite capacity scheduling that considers real-world constraints simultaneously: machines, labor skills, shifts, holidays, downtime, and sequence-dependent setup times. It schedules forward from a start date or backward (just-in-time) from a due date, and can anchor around a flagged bottleneck the Theory of Constraints way. Because resources are never over-allocated, every order gets dates the shop can actually hit.'
   },
   {
-    question: 'Can RMDB handle drag-and-drop scheduling?',
+    question: 'Does EDGEBIC support drag-and-drop scheduling?',
     answer:
-      'Yes, RMDB with the EDGEBI extension provides intuitive drag-and-drop scheduling on interactive Gantt charts. You can visually move, split, and adjust production orders in real-time, with the system automatically recalculating downstream impacts and flagging any constraint violations.'
+      'Yes. EDGEBIC provides drag-and-drop rescheduling on an interactive Gantt with planned-versus-actual timelines, safety prompts before risky moves, and color and label rules you control. Routings themselves are also built graphically: steps are nodes on a drag-and-drop flow chart, so the way your factory flows is the way you draw it.'
   },
   {
-    question: 'Does RMDB support what-if analysis?',
+    question: 'Does EDGEBIC support what-if analysis?',
     answer:
-      'Absolutely. RMDB makes it easy to perform what-if scenario analysis. You can duplicate schedules, adjust parameters (priorities, capacity, order quantities), and compare outcomes side by side. This helps you make data-driven decisions about production changes before committing to them.'
+      'Absolutely. EDGEBIC lets you simulate a prospective order against current finite capacity to get a realistic promise date and cost before you commit, and compare scenarios side by side: an extra shift, a skipped step, boosted capacity. This helps you make data-driven decisions about production changes before committing to them.'
+  },
+  {
+    question: 'Does EDGEBIC include a schedule optimizer?',
+    answer:
+      'Yes, EDGEBIC includes a two-layer schedule optimizer. The first layer evaluates dozens of complete schedules and returns the best one found, guaranteed never worse than your baseline. The second layer uses Google OR-Tools CP-SAT mathematical optimization and reports a proven optimality gap. You review a side-by-side comparison and accept or discard the result; nothing changes without the planner pressing Accept.'
   }
 ];
 
 const INTEGRATION_FAQS = [
   {
-    question: 'Can RMDB integrate with my existing ERP system?',
+    question: 'Does EDGEBIC replace my ERP system?',
     answer:
-      'Yes, RMDB is designed to integrate with virtually any ERP system. It can import data from Excel spreadsheets, CSV files, databases, and direct ERP connections. Many customers use RMDB as a powerful scheduling add-on to their existing ERP (SAP, Oracle, Epicor, Sage, etc.) without replacing it.'
+      'No. EDGEBIC complements your ERP rather than replacing it. Your ERP keeps owning financials, purchasing, and transactions. EDGEBIC imports items, work centers, routings, and orders through flexible Excel, CSV, and database import masks, applies the finite capacity scheduling your ERP cannot, and exports realistic dates and schedules back out.'
   },
   {
-    question: 'What data formats does RMDB support for import and export?',
+    question: 'Can EDGEBIC integrate with my existing ERP system?',
     answer:
-      'RMDB supports Excel (XLS, XLSX), CSV, and direct database connections for data import and export. It can work with your existing data in its current form — no data migration or reformatting required. This makes initial setup fast and ongoing data synchronization straightforward.'
+      'Yes. EDGEBIC works with any ERP that can exchange data through Excel, CSV, or a database connection, which in practice is virtually all of them: JobBOSS, Epicor, Fourth Shift, SAP, Oracle, Sage, and more. The flow is simple: export from your ERP to a file, import through a saved mask, schedule in EDGEBIC, and export the plan back. This is the same proven approach behind 35 years of User Solutions ERP integrations.'
   },
   {
-    question: 'Can RMDB work with Excel-based data?',
+    question: 'What data formats does EDGEBIC support for import and export?',
     answer:
-      'Yes, deep Excel integration is a core strength of RMDB. If you currently manage production data in Excel spreadsheets, RMDB can directly import that data and transform it into actionable production schedules. You can also export schedules and reports back to Excel for sharing.'
+      'EDGEBIC supports Excel (XLS, XLSX), CSV, and database connections for data exchange. Saved import masks map your columns once and reuse that mapping on every subsequent import, so ongoing synchronization is a repeatable routine rather than a project. Schedules, dates, and reports export back out to Excel and CSV for sharing.'
+  },
+  {
+    question: 'Can EDGEBIC work with Excel-based data?',
+    answer:
+      'Yes, deep Excel integration is a core strength of EDGEBIC. If you currently manage production data in Excel spreadsheets, EDGEBIC can directly import that data through its import masks and turn it into a finite capacity schedule. You can also export schedules and reports back to Excel for sharing.'
   }
 ];
 
 const IMPLEMENTATION_FAQS = [
   {
-    question: 'How long does it take to implement RMDB?',
+    question: 'How long does it take to implement EDGEBIC?',
     answer:
-      'Most RMDB implementations can be completed in days to weeks, not months. Because RMDB works with your existing data and adapts to your processes (rather than forcing you to change), the setup is significantly faster than traditional production planning software. We focus on resolving your most pressing issues first for immediate ROI.'
+      'Days, not months. EDGEBIC follows the same rapid-implementation methodology User Solutions has used for 35 years: start from your existing data in whatever form it is in, configure the model around your most pressing scheduling problem first, and expand from there. A first-time setup wizard connects the database and walks through initial master data.'
   },
   {
-    question: 'Is RMDB suitable for small and mid-size manufacturers?',
+    question: 'Is EDGEBIC suitable for small and mid-size manufacturers?',
     answer:
-      'Absolutely. RMDB was specifically designed to be accessible and affordable for small to mid-size manufacturers who need powerful scheduling capabilities without the cost and complexity of enterprise-level systems. From 5-person job shops to 500+ employee factories, RMDB scales to fit.'
+      'Absolutely. EDGEBIC was designed to be accessible and affordable for small to mid-size manufacturers who need powerful scheduling capabilities without the cost and complexity of enterprise-level systems. From small job shops to multi-shift factories, the two editions let you start with scheduling (EDGEBIC APS) and add materials later (EDGEBIC Complete).'
   },
   {
-    question: 'Can I try RMDB before purchasing?',
+    question: 'Can I try EDGEBIC before purchasing?',
     answer:
-      'Yes, we offer live demonstrations where we can even use your own data to show exactly how RMDB will work for your specific operations — risk free. Contact us to schedule a personalized demo and see the difference RMDB can make for your production planning.'
+      'Yes, we offer live demonstrations where we can even use your own data to show exactly how EDGEBIC will work for your specific operations, risk free. Contact us to schedule a personalized demo and see the difference EDGEBIC can make for your production planning.'
   },
   {
     question: 'What training and support is available?',
     answer:
-      'User Solutions provides comprehensive training and ongoing support for all RMDB customers. This includes initial setup assistance, user training, Quick Start guides, video tutorials, and responsive technical support. Our consulting services can also help optimize your production planning processes.'
+      'User Solutions provides comprehensive training and ongoing support for all EDGEBIC customers. This includes initial setup assistance, user training, Quick Start guides, video tutorials, and responsive technical support. Our consulting services can also help optimize your production planning processes.'
   },
   {
-    question: 'What operating systems does RMDB run on?',
+    question: 'What operating systems does EDGEBIC run on?',
     answer:
-      'RMDB runs on Windows operating systems and can be deployed as a standalone application or on a network for multi-user access. The EDGEBI web extension provides browser-based access to scheduling visualizations and dashboards.'
+      'EDGEBIC is a modern Windows application built on .NET 8. It runs on SQLite for single-user installs and SQL Server for multi-user enterprise deployments. A dedicated shop-floor kiosk app lets operators start work, count pieces, pause with a reason, and complete, with actuals flowing straight into the schedule.'
+  },
+  {
+    question: 'I use RMDB or EDGEBI today. What is the upgrade path to EDGEBIC?',
+    answer:
+      'Your investment carries forward. Master data such as items, work centers, routings, and calendars moves into EDGEBIC through the built-in import masks, your scheduling concepts translate directly, and both legacy products remain fully supported while you transition on your own timeline. See our step-by-step guide at /rmdb-to-edgebic for details.'
   }
 ];
 
-const ALL_FAQS = [...GENERAL_FAQS, ...FEATURES_FAQS, ...INTEGRATION_FAQS, ...IMPLEMENTATION_FAQS];
+const ALL_FAQS = [
+  ...GENERAL_FAQS,
+  ...FEATURES_FAQS,
+  ...INTEGRATION_FAQS,
+  ...IMPLEMENTATION_FAQS
+];
 
 export default function FAQPage(): React.JSX.Element {
   return (
@@ -132,9 +157,9 @@ export default function FAQPage(): React.JSX.Element {
               Frequently Asked Questions
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-slate-600">
-              Get answers to common questions about Resource Manager DB (RMDB)
-              production planning and scheduling software. Can&apos;t find what
-              you&apos;re looking for?{' '}
+              Get answers to common questions about EDGEBIC, our next-generation
+              finite capacity planning and scheduling platform. Can&apos;t find
+              what you&apos;re looking for?{' '}
               <Link
                 href={Routes.Contact}
                 className="font-medium text-cyan-600 underline hover:text-cyan-700"
@@ -230,8 +255,8 @@ export default function FAQPage(): React.JSX.Element {
               Still Have Questions?
             </h2>
             <p className="mb-6 text-slate-600">
-              Schedule a free live demo and see RMDB in action — we can even use
-              your own data.
+              Schedule a free live demo and see EDGEBIC in action; we can even
+              use your own data.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
@@ -241,10 +266,10 @@ export default function FAQPage(): React.JSX.Element {
                 Contact Us
               </Link>
               <Link
-                href="/resource-manager-db-2"
+                href="/edgebic"
                 className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-6 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
               >
-                Learn More About RMDB
+                Explore EDGEBIC
               </Link>
             </div>
           </section>

@@ -1,0 +1,148 @@
+---
+title: "Work Center Groups in EDGEBIC: Machine Pools for Planners"
+description: "Machine pool scheduling software in EDGEBIC: how work center groups differ from alternates, instances, and departments, and which one your shop should use."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - machine pool scheduling software
+  - work center groups
+  - resource group scheduling
+  - interchangeable machines scheduling
+  - alternate work centers
+  - capacity aware machine selection
+  - EDGEBIC work centers
+targetPhrase: "machine pool scheduling software"
+wordCount: 1850
+readingTime: 9
+faqQuestions:
+  - question: "When should you use a work center group instead of alternate work centers?"
+    answer: "Use a work center group when the same list of interchangeable machines appears on many routing steps. The pool is defined once and every bound step follows it, so adding or retiring a machine is one edit instead of dozens. Per-step alternates still make sense for a one-off fallback on a single special step, or when each step needs its own factors."
+  - question: "What is the difference between a work center group and multiple instances?"
+    answer: "Instances model identical units inside one work center, sharing one calendar, one utilization percentage, and one speed. A group models different-but-interchangeable machines, each keeping its own calendar, speed factor, and setup time. Three mills of different vintages belong in a group. Three identical mills bought together can be one work center with three instances, and a group member can itself be a multi-instance work center."
+  - question: "Does a work center group hold capacity of its own?"
+    answer: "No. A group is a routing choice, not a machine, so every scheduled hour lands on a member work center with that member's own shifts, holidays, instances, and utilization. The pool totals shown on the Resource Calendar are live sums of member cells, computed for display. This is deliberate: a pool that held its own hours would offer capacity no physical machine backs."
+  - question: "Can a machine belong to more than one work center group?"
+    answer: "Yes. Membership is many to many, so a versatile mill can serve both a MILLING pool and a HEAT-TREAT-PREP pool. Its hours are booked once, on the machine, and both groups' calendar rows display them. The pool rows are views of the same underlying capacity, not additional capacity, which matters when you read a Resource Calendar with overlapping pools."
+qaQuestions:
+  - question: "We have three mills that can all run the same brackets, but one is much newer. Do we set up a group or just list alternates on the routing?"
+    answer: "Set up a group if more than one or two routing steps use that same trio. The test is maintenance: with per-step alternates, buying a fourth mill means editing every step that carries the list, and the lists drift the first time somebody forgets one. With a group, you add the member once and every bound step in every routing considers it on the next scheduling run. The newer machine's speed lives on its member row as an efficiency factor, so a step planned at 0.5 hours per unit runs at 0.625 on a member with factor 1.25, and the scheduler compares real finish times rather than assuming the machines are equal."
+  - question: "Our supervisor wants milling to always go to the qualified machine unless it is full. Does a pool force us to give that up?"
+    answer: "No. That behavior is the PrimaryFirst selection strategy: flag the qualified machine as Primary on its member row, set the group's strategy to PrimaryFirst, and the scheduler books that machine whenever it has capacity on the target day, spilling to the others only when it is full. You trade some lead time for predictable routing, which is often the right trade when one machine is validated for a customer and the rest are overflow. You can also pin one specific job to one specific member without leaving the pool, and the pin survives reschedules."
+---
+
+**EDGEBIC by User Solutions gives you four different ways to say "any of these machines can run this operation," and choosing the wrong one is the most common modeling mistake in a multi-machine shop.** A work center group is the newest and usually the right one: a named pool of interchangeable machines that a routing step targets instead of one machine, with the scheduler picking the member on every run based on real load. This post is about the choice itself, and about what changes on your floor once you make it.
+
+If you want the plain definition first, read [what a work center group is](/blog/what-is-a-work-center-group-machine-pool). If you already know and want the buttons, go straight to [creating a group step by step](/blog/how-to-create-work-center-groups-in-edgebic). This post covers when a pool earns its place, and when it does not.
+
+## Four Ways to Model Interchangeable Machines
+
+Every shop with more than one similar machine faces the same modeling question. [EDGEBIC](/edgebic) supports four answers, and they are not interchangeable with each other:
+
+| Model | What it says | Right when |
+|---|---|---|
+| **Pin the step to one work center** | "This operation runs on Mill-1." | Only one machine can genuinely do the work, or the process is validated on one machine and nowhere else |
+| **Per-step alternative work centers** | "Mill-1, and if it is full, Mill-2 or Mill-3." | One or two special steps need a one-off fallback, with factors specific to that step |
+| **One work center with several instances** | "Mill Cell has 3 identical spindles." | The units are truly identical: same shift calendar, same utilization, same speed, one capacity formula |
+| **A work center group (machine pool)** | "Any active member of MILLING." | The same list of different-but-interchangeable machines appears on many routing steps |
+
+A fifth structure exists and does not belong in this list: the **department**. Departments in EDGEBIC are an organizational and reporting rollup. The scheduler ignores them completely, so grouping machines by department does nothing to routing. If you have been trying to make a department behave like a pool, that is why nothing happens when you run a schedule.
+
+## What a Group Is Made Of
+
+A group has three parts, and understanding them makes every later behavior predictable.
+
+**The group itself** carries a unique name (the name appears on routing steps, so `MILLING` beats `Vertical milling machines, general purpose`), an optional code for imports and reports, an active flag, and one selection strategy.
+
+**Members** are the machines. Each membership row carries its own scheduling knobs:
+
+- **Efficiency factor**: a run-time multiplier against the step's base hours inside this pool. 1.0 is baseline, 0.5 runs the work twice as fast, 1.25 runs it 25 percent slower. It applies to run time only and never to setup.
+- **Setup override**: the setup hours used when this member runs the step, or blank to inherit the step's own setup time. A machine can run fast and still set up slowly, and the two knobs are independent for exactly that reason.
+- **Primary flag and priority**: at most one member per group is the designated primary, and priority orders the rest and breaks ties.
+- **Active flag**: an inactive member drops out of every bound step's candidate list on the next scheduling run, which is how you take a machine out of rotation for a retrofit without deleting anything.
+
+**The binding** is the routing step pointing at the group instead of a machine. Until the step is scheduled it displays a pool badge showing the group name and its member count. After scheduling, every screen shows the real machine the scheduler picked.
+
+One rule ties it together: **a group has no capacity of its own**. Every hour the scheduler books lands on a member work center, with that member's shifts, holidays, instances, and utilization percentage. The pool totals on the Resource Calendar are live sums of the member cells, and [the resource calendar](/blog/edgebic-resource-calendar-explained) is where a planner reads that pool supply day by day. That design is not a limitation, it is the safeguard: a pool holding its own hours would offer capacity that no physical machine backs, and jobs would land "on the group" while the machines underneath were already full.
+
+## Groups, Instances, and Departments Side by Side
+
+| Question | Group | Instances | Department |
+|---|---|---|---|
+| Do the machines share one calendar? | No, each member keeps its own | Yes, one calendar for all units | Not applicable |
+| Can members differ in speed? | Yes, per-member factor | No, one capacity formula | Not applicable |
+| Can one machine belong to several? | Yes, membership is many to many | No | No, one department per work center |
+| Does the scheduler use it for routing? | Yes | Yes | **No**, reporting only |
+| Maintained where? | Once, centrally | On the work center | On the work center |
+
+The two mechanisms compose rather than compete. A group member can itself be a multi-instance work center, so a pool of three cells where one cell holds two identical machines is modeled exactly as it sounds.
+
+## The Signals That You Need a Pool
+
+Four situations tell you a group is the answer:
+
+1. **You are pasting the same alternate list onto a tenth routing step.** That is the moment the maintenance cost of per-step alternates exceeds the cost of defining a pool.
+2. **You bought or retired a machine and had to hunt through routings.** With a pool, that is one member row.
+3. **Your "identical" machines are not identical.** Different vintages have different speeds, different fixturing, sometimes different shift patterns. Instances cannot express that; member factors and setup overrides can.
+4. **Work queues on one machine while a capable one idles.** Pinning caused this, and capacity-aware pooling is the direct fix. A pooled step compares real projected finish times, so an available slower machine legitimately beats a faster machine that is booked until Thursday.
+
+That last behavior is the whole point, and it surprises planners the first time they see it. There is nothing wrong with the schedule when the slower machine wins: waiting for the fast machine simply cost more than its speed saved. The full arithmetic is in [how EDGEBIC picks the best machine in a pool](/blog/how-edgebic-picks-the-best-machine-in-a-pool).
+
+## When a Group Is the Wrong Tool
+
+Pools answer "which machine". They do not answer anything else, and stretching them causes real problems.
+
+**Do not model people as a pool.** A "Certified Welders" group is skill data wearing a machine costume. EDGEBIC has a separate labor dimension for that: skills, certifications, rosters, and time off, described in [operator and skill scheduling](/blog/edgebic-operator-and-skill-scheduling-explained). The two compose on the same routing step, where the group answers which machine and the skill answers which qualified person. Since the two features shipped together, member selection is even staffability-aware: a member whose shifts cannot be staffed for the step's skill loses its bid instead of winning on machine capacity and then sliding.
+
+**Do not bind a group to a step that also needs parallel processing.** In this release a group-bound step is a normal sequential step. Dependent and independent parallel configurations stay per-step. The same applies to material steps, which point at a product rather than a machine.
+
+**Do not expect a group binding to coexist with hand-maintained alternates on the same step.** Binding a step to a pool replaces its manual alternate list, because the group *is* the alternate list. Two competing sources of alternates on one step would have no defined meaning, so EDGEBIC picks one.
+
+## What Changes on the Floor
+
+Master data edits never move a live schedule by themselves, and that is true here too. Adding a member changes nothing on the Gantt until you run Drive Schedule. On that run:
+
+- **Not-yet-started pooled operations re-shop the pool** against the current capacity picture and can legitimately land on a different member than last time. When that happens the step carries a replacement indicator, so a supervisor asking "why is this on Mill-2 now" gets an answer on the screen instead of a shrug.
+- **Started and completed operations keep their machine.** Recorded work is never moved by a reschedule, which is the same contract that protects every other actuals-bearing operation in the system.
+- **A deactivated member stops being considered** from the next run onward, and work already running on it stays put.
+
+That combination is what makes a pool safe to introduce mid-stream. You are not rewriting history, you are changing how future work gets shopped.
+
+## How to Tell a Pool Is Earning Its Place
+
+Pools are cheap to create and easy to over-apply, so it is worth knowing what success looks like. Three signals, all readable on screens you already use:
+
+**Load evens out across the members.** Open the Resource Calendar for the pool over a two-week window. Before pooling, one machine runs hot while its neighbours show white space. After a few scheduling runs, the members should be carrying comparable load on the days when work exists. If one member still takes everything, check whether the strategy is PrimaryFirst, whether the others are active, and whether their calendars actually cover the days in question.
+
+**Replacement indicators appear, and make sense.** A pool that never moves a job between members is a pool doing nothing. Seeing a handful of steps carry a replacement indicator after a busy week means the engine is genuinely re-shopping against real load. Seeing dozens of them every run in a shop that values predictable routing is a hint to move that group to PrimaryFirst.
+
+**Maintenance stops being a hunt.** The clearest signal is administrative rather than numerical: when a machine arrives or leaves, you edit one member row instead of searching routings. That was the reason to build the pool, and it is the reason it keeps paying after the novelty wears off.
+
+## Where Pools Sit in the Wider Engine
+
+Once the scheduler resolves a pooled step onto a member, everything downstream behaves exactly as if the routing had always named that machine: [finite capacity](/blog/finite-vs-infinite-capacity-scheduling) checks, multi-shift allocation, instance selection, holidays, and capacity overrides all use the chosen member's own configuration. Nothing about pooling relaxes a capacity rule.
+
+The optimizer treats pools carefully. The default multi-run search re-runs the real scheduling engine for every candidate job ordering, so every candidate honors pools fully. The mathematical solver keeps pooled jobs exactly as the standard engine planned them rather than rearranging a feature it does not model natively, which is the same conservative rule described in [locked jobs and the never-worse guarantee](/blog/locked-jobs-and-the-never-worse-guarantee-in-edgebic).
+
+For the bigger picture of where machine selection sits between routings and the Gantt, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) walks the whole pipeline, and [production bottleneck identification](/blog/production-bottleneck-identification) is the natural companion for deciding which pools are worth building in the first place. The mistakes that trip up new pools, from invented factors to deactivated groups, are collected in [work center group mistakes](/blog/work-center-group-mistakes-edgebic).
+
+Ready to build one? [Contact US for a demo](/contact-us) and bring the routing where the same three machines keep showing up.
+
+<Accordion title="When should you use a work center group instead of alternate work centers?">
+Use a work center group when the same list of interchangeable machines appears on many routing steps. The pool is defined once and every bound step follows it, so adding or retiring a machine is one edit instead of dozens. Per-step alternates still make sense for a one-off fallback on a single special step, or when each step needs its own factors.
+</Accordion>
+
+<Accordion title="What is the difference between a work center group and multiple instances?">
+Instances model identical units inside one work center, sharing one calendar, one utilization percentage, and one speed. A group models different-but-interchangeable machines, each keeping its own calendar, speed factor, and setup time. Three mills of different vintages belong in a group. Three identical mills bought together can be one work center with three instances, and a group member can itself be a multi-instance work center.
+</Accordion>
+
+<Accordion title="Does a work center group hold capacity of its own?">
+No. A group is a routing choice, not a machine, so every scheduled hour lands on a member work center with that member's own shifts, holidays, instances, and utilization. The pool totals shown on the Resource Calendar are live sums of member cells, computed for display. This is deliberate: a pool that held its own hours would offer capacity no physical machine backs.
+</Accordion>
+
+<Accordion title="Can a machine belong to more than one work center group?">
+Yes. Membership is many to many, so a versatile mill can serve both a MILLING pool and a HEAT-TREAT-PREP pool. Its hours are booked once, on the machine, and both groups' calendar rows display them. The pool rows are views of the same underlying capacity, not additional capacity, which matters when you read a Resource Calendar with overlapping pools.
+</Accordion>

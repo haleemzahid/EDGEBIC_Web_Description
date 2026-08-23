@@ -1,0 +1,90 @@
+---
+title: "A Schedule Points to a Deleted Work Center"
+description: "When a schedule references a work center that was deleted, reports cannot resolve it. Restore the machine or reassign the routing step, then re-run scheduling."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - schedule references deleted work center
+  - deleted work center orphan schedule
+  - work center missing from reports
+  - deactivate vs delete work center
+  - reassign routing step
+  - orphan schedule anomaly
+targetPhrase: "schedule references deleted work center"
+wordCount: 1330
+readingTime: 7
+faqQuestions:
+  - question: "What happens when a schedule references a deleted work center?"
+    answer: "The schedule becomes an orphan: capacity and utilization reports cannot resolve the work center's name or instances, and the anomaly report flags it as critical. The schedule was created while the work center was active, then the machine was deleted without rescheduling the affected jobs. The fix is to restore the work center or reassign the routing step to an active one, then re-run scheduling."
+  - question: "What is the difference between deactivating and deleting a work center?"
+    answer: "A deactivated work center still exists in the database and is simply excluded from new scheduling, so existing schedules that reference it still resolve cleanly. A deleted work center is gone, so any schedule still pointing to it becomes an unresolvable orphan flagged as critical. When a machine has schedule history, always deactivate rather than delete, because deactivation preserves the references while stopping new work."
+  - question: "How do I fix a schedule that points to a missing work center?"
+    answer: "Pick one of two paths. Restore the work center by clearing its deleted state if it was removed by mistake, then re-run scheduling. Or reassign the routing step to a different active work center and re-run scheduling, which rebuilds the schedule on a machine that exists. Either path clears the critical flag once a fresh scheduling pass replaces the orphaned rows."
+qaQuestions:
+  - question: "We retired an old press last month and now three jobs throw critical errors that reports cannot open. What is the cleanest fix?"
+    answer: "Those jobs still reference the deleted press, so their schedule rows are orphans. If the press is truly gone, reassign the affected routing steps to the machine that replaced it, or to an alternate that can do the work, then re-run scheduling for those three jobs. That rebuilds their schedules on a live machine and clears the flag. In future, deactivate a retired machine instead of deleting it: deactivation stops new scheduling while keeping historical references resolvable, which avoids orphaning the jobs that already ran on it."
+  - question: "A work center shows as inactive but its schedules still open fine. Is that the same problem as a deleted one?"
+    answer: "No, and that is the point of deactivating. An inactive work center still exists, so its schedules resolve names and instances normally and reports open without error; it is only excluded from new scheduling. The deleted-work-center flag fires only when the machine is actually removed and a schedule still points at nothing. If your reports open cleanly, you have the safe case: the machine is out of rotation for new work but its history is intact."
+---
+
+**A schedule that points to a deleted work center is an orphan: reports cannot resolve the machine's name or instances, and the anomaly report flags it as critical.** It happens when a schedule is created while the work center is active, then the machine is deleted without rescheduling the affected jobs. The fix is to restore the work center or reassign the routing step to an active one, then re-run scheduling. The deeper lesson is to deactivate machines with history rather than delete them.
+
+[EDGEBIC by User Solutions](/edgebic) flags any schedule whose work center is soft-deleted or absent as a critical consistency-drift issue, because downstream capacity and utilization views rely on resolving that work center's name and instance data. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), covers the two fixes and how to avoid the problem entirely.
+
+## Why a Deleted Work Center Breaks Schedules
+
+A schedule row carries the identity of the work center it runs on. Reports look that identity up to show the machine name, resolve its instances, and roll up utilization. When the machine is deleted, the lookup finds nothing, and the row becomes an orphan that the report cannot render. The anomaly check that flags this is critical precisely because the failure is silent until someone opens a report that cannot resolve the reference.
+
+The sequence is almost always the same: a job schedules on a machine, the machine is later deleted (retired, merged, or removed in a cleanup), and the job's existing schedule is never regenerated. The row keeps pointing at a machine that no longer exists.
+
+This is different from [a work center that shows zero capacity](/blog/capacity-shows-zero-for-a-work-center-edgebic), where the machine exists but has no schedulable time. Here the machine is gone. It is also different from [a booking that points to a machine unit that is gone](/blog/a-booking-points-to-a-machine-unit-that-is-gone-edgebic), where the work center is still there and only one of its numbered instances was removed.
+
+## How to Tell
+
+Run the anomaly report and look for the critical consistency-drift chip that names a deleted or missing work center. The Detail field carries the work center identifier the schedule still references. You will also see the symptom when a capacity or utilization report fails to open or shows a blank machine where a name should be.
+
+Confirm it is a deletion, not a deactivation. A deactivated work center still exists, so its schedules resolve fine and its reports open; only new scheduling excludes it. If reports open cleanly and the machine still appears in the work center list marked inactive, you have the safe case and there is nothing to fix.
+
+## Fix 1: Restore the Work Center
+
+If the machine was deleted by mistake, restore it by clearing its deleted state so it exists again in the active list. The existing schedules that reference it resolve immediately, and reports open. Re-run scheduling for the affected jobs to regenerate their rows cleanly against the restored machine.
+
+This is the right path when the deletion was accidental and the machine is still real.
+
+## Fix 2: Reassign the Routing Step
+
+If the machine is genuinely gone (retired and replaced, or consolidated into another), reassign the affected routing steps to a live work center that can do the work, then re-run scheduling for those jobs. The fresh pass rebuilds their schedules on a machine that exists, and the orphan rows are replaced.
+
+If the work could go to more than one machine, consider adding the alternatives as an alternate work center or a machine pool on the step, so future retirements route around the gap automatically. See [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic).
+
+## Confirming the Fix
+
+After restoring or reassigning and re-running scheduling, re-open the anomaly report and confirm the deleted-work-center chip returns zero rows for the affected jobs. Open the capacity or utilization report that failed before; it should now resolve every machine name and roll up cleanly.
+
+## Prevention: Deactivate, Do Not Delete
+
+The single habit that prevents this entirely is to deactivate machines with schedule history rather than delete them:
+
+- **Deactivation** stops new scheduling from using the machine while keeping every existing reference resolvable. Reports still open, history stays intact, and no job is orphaned. See [how to deactivate a work center](/blog/how-to-deactivate-a-work-center-in-edgebic).
+- **Deletion** removes the machine outright, which orphans any schedule still pointing at it.
+
+Reserve deletion for machines that were created in error and never carried real schedules. For any machine that has run work, deactivate it. When a machine is replaced, reassign its open routing steps to the successor before deactivating, so no job is left mid-plan on a machine going out of rotation.
+
+- **Reschedule after retirements.** When a machine leaves the floor, run one scheduling pass over the jobs that used it, so their rows move to live machines before anyone opens a report.
+- **Audit after imports.** If work centers [sync from your ERP](/edgebic-erp-integration) and a machine is dropped from the source, a scheduling pass and an anomaly-report read catch the orphaned references immediately.
+
+<Accordion title="What happens when a schedule references a deleted work center?">
+The schedule becomes an orphan: capacity and utilization reports cannot resolve the work center's name or instances, and the anomaly report flags it as critical. The schedule was created while the work center was active, then the machine was deleted without rescheduling the affected jobs. The fix is to restore the work center or reassign the routing step to an active one, then re-run scheduling.
+</Accordion>
+
+<Accordion title="What is the difference between deactivating and deleting a work center?">
+A deactivated work center still exists in the database and is simply excluded from new scheduling, so existing schedules that reference it still resolve cleanly. A deleted work center is gone, so any schedule still pointing to it becomes an unresolvable orphan flagged as critical. When a machine has schedule history, always deactivate rather than delete, because deactivation preserves the references while stopping new work.
+</Accordion>
+
+<Accordion title="How do I fix a schedule that points to a missing work center?">
+Pick one of two paths. Restore the work center by clearing its deleted state if it was removed by mistake, then re-run scheduling. Or reassign the routing step to a different active work center and re-run scheduling, which rebuilds the schedule on a machine that exists. Either path clears the critical flag once a fresh scheduling pass replaces the orphaned rows.
+</Accordion>

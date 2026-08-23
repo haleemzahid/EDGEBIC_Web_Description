@@ -1,0 +1,155 @@
+---
+title: "Production Routing Snapshots: Why a Scheduled Job Freezes Its Routing"
+description: "A production routing snapshot freezes the routing a job was scheduled with. Here is what gets captured, when it is written, and the three ways it is read back."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - production routing snapshot
+  - per job routing copy
+  - routing freeze manufacturing
+  - engineering change scheduled order
+  - bill of routing version
+  - routing stability shop floor
+targetPhrase: "production routing snapshot"
+wordCount: 1885
+readingTime: 9
+faqQuestions:
+  - question: "What is a production routing snapshot?"
+    answer: "A production routing snapshot is an exact copy of the routing a job was scheduled with, stored on the job itself. In EDGEBIC by User Solutions it is captured the first time an order is scheduled and holds every step, work center assignment, timing value, alternate, and parallel setting in force at that moment. Later reschedules read the copy rather than the live master routing, so a job's plan stays consistent with the paperwork on the floor."
+  - question: "Why would a scheduler use an old routing instead of the current one?"
+    answer: "Because the fixtures, programs, and operator instructions on the floor were set up against the old one. If an engineer reroutes a step from one machine to another mid-order, silently re-planning a job that is 60 percent finished onto the new machine invalidates the setup that is physically in place. Adopting a routing change on a live job is treated as a decision a planner makes, one job at a time, rather than a side effect of an engineering edit."
+  - question: "When is a job's routing snapshot written?"
+    answer: "On the first scheduling run for that job, and after that only when someone explicitly asks. New orders have no snapshot, so their first run reads the master routing and the copy is written from what was actually used. Every subsequent reschedule carries the existing copy forward untouched unless the planner ticks the option to follow the master routing or edits the job's copy directly."
+  - question: "Does a routing snapshot stop me changing the master routing?"
+    answer: "No. The master routing stays fully editable and every new order scheduled after your edit picks it up immediately. The snapshot only governs jobs that were already scheduled when the change landed. That split is the point: engineering keeps improving the standard, and orders already on the floor keep running the routing their paperwork describes until a planner decides otherwise."
+qaQuestions:
+  - question: "We revised a routing to cut two hours out of a machining step. Forty open orders are already scheduled. Do they all keep the old time?"
+    answer: "Yes, until you say otherwise, and that is usually what you want for the ones already released to the floor. New orders scheduled after the revision use the new time automatically.\n\nFor the open ones, decide by status rather than in bulk. Jobs that have not started at all are safe to refresh onto the master routing: tick Use Global BOR on Reschedule and run. Jobs already running should generally keep their copy, because the two hours you saved are on a step whose fixture may already be set. If a running job genuinely should adopt the change, refresh that one deliberately and re-issue its paperwork. Completed steps are preserved either way."
+  - question: "How is this different from routing revision control in our ERP?"
+    answer: "They answer different questions. ERP revision control governs the product standard: which revision is current, who approved it, what changed between revisions. That is engineering's system of record and the routing snapshot does not replace it.\n\nThe snapshot governs what a specific job was actually planned against. It is captured automatically at schedule time, carries the scheduling context alongside the steps, and is what the engine reads on every reschedule. In practice you want both: the ERP tells you the approved standard, and the snapshot tells you what job 2026-0125 was really committed to. EDGEBIC pulls the standard in through its Excel, CSV, or database import masks, so the two stay connected without either owning the other."
+---
+
+**A production routing snapshot is an exact copy of the routing a job was scheduled with, stored on the job.** In EDGEBIC by User Solutions that copy is captured the first time an order is scheduled and read back on every reschedule after it. The master routing stays free to evolve. Orders already on the floor keep running the version their paperwork describes until a planner decides, job by job, to adopt something newer.
+
+This is one of those mechanisms nobody asks for by name and everybody wants the first time an engineering change lands mid-order. This post covers what is captured, when it is written, the three ways it can be read, and where the boundaries of the idea sit.
+
+## The Problem It Solves
+
+A routing is not a static document. Engineers improve cycle times, add a deburr operation, reroute a step to a newer machine, and correct a setup estimate that was always optimistic. Those edits are how a shop gets better.
+
+Meanwhile, twenty jobs are open against that routing. Some are queued, some are half done, some have a fixture bolted to a specific machine and a traveler in the operator's hand naming that machine.
+
+A scheduling system with one shared routing has to pick a side. Either it re-plans every open job onto the new routing, which invalidates setups and paperwork that are physically in place, or it refuses engineering edits until the shop is empty, which never happens.
+
+The snapshot dissolves the conflict. Engineering edits the master. Open jobs keep the copy they were planned against. Adoption becomes a per-job decision with a visible trail rather than an invisible side effect. The same principle drives formal [change control in scheduling](/blog/change-control-scheduling).
+
+## What Gets Captured
+
+The copy is not a summary. It holds the full routing structure as it stood at scheduling time.
+
+| Captured | Detail |
+|---|---|
+| Steps | Every operation, in sequence, with its sequence number |
+| Work center assignment | The work center identity and name on each step |
+| Dependency links | What each step feeds, and whether the next node is an operation or a product |
+| Timing | Setup time, run time, queue time, and required quantity per step |
+| Yield | The step's yield value at capture time |
+| Step type | Normal, independent parallel, or dependent parallel |
+| Status flags | Optional, skippable, parallel, and completion markers |
+| Alternates | Every alternative work center, with its setup and run multipliers, capacity factor, and selection priority |
+
+Alongside the routing itself, the snapshot records the scheduling context: when the job was scheduled, the order quantity used, the scheduling mode, the original due date, and the work center utilization, instance count, and efficiency factor that were in force. That context is what makes a snapshot readable a year later, when the question is not just "what routing did we use" but "what were we assuming when we committed to that date".
+
+Each copy carries a version number, a snapshot date, and a reason, so a job that has been refreshed more than once leaves a legible sequence rather than a single mystery.
+
+## When It Is Written
+
+Three moments, and only three.
+
+1. **The first scheduling run for the job.** A new order has no copy, so the run reads the master routing. What the engine actually used is then copied onto the job.
+2. **A run where the planner explicitly ticked the option to follow the master routing.** The job reads the master, and its copy refreshes to match what was used.
+3. **A direct edit through the job's own routing view.** The planner changed this job's copy on purpose.
+
+Every other reschedule carries the existing copy forward unchanged. That invariant is what makes the mechanism trustworthy: the planner's copy cannot be quietly rewritten by a routine run.
+
+There is one subtlety worth internalizing. A brand new job's *first* run uses the master routing, because it has no copy yet. So an engineering change made before that first run is picked up automatically. The freeze applies from the first schedule onward, not from order entry.
+
+## Three Ways the Copy Is Read
+
+| Mode | What the reschedule uses | When to choose it |
+|---|---|---|
+| Preserved (default) | The job's own copy, unchanged | Almost always. The floor's setup and paperwork stay valid |
+| Global | The live master routing, and the copy refreshes to match | The change genuinely should apply to this job |
+| Hybrid | The copy's structure with selected timing improvements pulled from the master | You want validated cycle-time gains without structural rerouting |
+
+Preserved is the default and the right answer for most live jobs. Global is a deliberate opt-in per job. Hybrid is the interesting middle: it keeps the work center assignments the floor is set up for while adopting timing values that have moved materially, under fixed rules rather than judgment. The rules and the arithmetic behind hybrid are covered in [why frozen routings protect in-flight jobs](/blog/why-frozen-routings-protect-in-flight-jobs-edgebic).
+
+## Master Routing and Job Copy, Side by Side
+
+The two objects look identical on screen and behave nothing alike, which is the source of most confusion around them.
+
+| | Master routing | Job's frozen copy |
+|---|---|---|
+| Scope | The product standard, shared by every order | One specific job |
+| Editable by | Engineering, at any time | The planner, through the job's own routing view |
+| Who reads it | New orders on their first scheduling run | That job, on every reschedule after its first |
+| Effect of editing it | All future orders pick it up | Only that job changes |
+| Version history | Governed by your engineering system of record | None. Each write overwrites the previous state |
+| How a change reaches a live job | It does not, until somebody says so | It is the live job |
+
+Read that table once and the behavior that surprises people stops being surprising. Editing the master is a change to the standard. Editing a job's copy is a change to one commitment.
+
+## What a Snapshot Does Not Freeze
+
+The word "frozen" invites an assumption worth heading off. Freezing the routing does not freeze the plan.
+
+Dates still move on every reschedule, because dates come from current capacity, current calendars, and the job's resume point. Which alternate work center gets selected is still decided at run time from live availability. Actuals still flow in from the floor. Quantities, priorities, and due dates are all still live.
+
+What is frozen is the definition of the work: which steps exist, in what order, on which stations, with which standard times. Everything about *when* that work happens stays fully dynamic. A job with a two-month-old routing copy still gets scheduled against today's shift calendar and today's machine load.
+
+## What It Looks Like in Practice
+
+A three-step routing for a valve: lathe at 4.0 hours with 0.5 setup, mill at 6.0 hours with 1.0 setup, then a QC bay at 1.0 hours.
+
+The order is scheduled. The copy is written holding those three steps, their machines, their timings, and the context of that run.
+
+Two weeks later the job is 60 percent complete, with the lathe and mill steps carrying actuals. An engineer then edits the master routing: QC moves from the QC bay to a test cell, and its time drops from 1.0 to 0.75 hours.
+
+Reschedule now, with the default preserved mode, and the QC step is planned on the QC bay at 1.0 hours, exactly as originally committed. The operator whose tooling is set up for the QC bay is not surprised on Thursday morning.
+
+If the planner decides the change should apply, they tick the option on that job, run, and the QC step moves to the test cell at 0.75 hours while the copy refreshes to match. Either way the completed lathe and mill steps are preserved verbatim, because [completed work never moves on a reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule) regardless of which routing is in play.
+
+## Two Things It Is Not
+
+**It is not product revision control.** The snapshot does not manage which revision of a routing is approved, who signed it, or what changed between revisions. That is engineering's system of record, and EDGEBIC reads it in through the same Excel, CSV, or database import masks it uses for products and work centers. The snapshot answers a narrower question: what was this specific job planned against.
+
+**It is not a version history of itself.** Each refresh overwrites the previous copy rather than stacking a new version behind it. If you are about to refresh a job onto the master routing and the result might be wrong, export or note the current copy first. The comparison report against the live master is the practical tool here, and it is covered in [working with frozen routings](/blog/how-to-work-with-frozen-routings-in-edgebic).
+
+## Where It Touches the Rest of the System
+
+**The shop floor terminal.** A terminal compares the live routing against the job's copy and raises a banner when the work center, setup time, cycle time, or queue time differ. The operator sees the discrepancy before starting rather than discovering it mid-run.
+
+**Actuals.** The two mechanisms are complementary. Actuals freeze what happened; the snapshot freezes what was planned. Together they let you answer "did we do what we said, against the routing we said" rather than comparing today's reality to today's standard, which is a comparison that flatters everyone.
+
+**The graphical designer.** A job's copy can be edited on the same canvas as the master routing, with steps added, retimed, or rerouted for that one order. See [the graphical routing designer tour](/blog/edgebic-graphical-bor-designer-tour) for how the canvas works, and [editing a live job's routing](/blog/editing-a-live-jobs-routing-in-edgebic) for the safe procedure.
+
+## When This Matters Most
+
+Four situations where a shop notices the absence of routing snapshots immediately.
+
+- **Long-running orders.** A job on the floor for three weeks will outlive at least one engineering edit.
+- **Regulated work.** When you have to demonstrate what a job was built to, "the current routing" is not an answer. See [audit-ready scheduling](/blog/audit-ready-scheduling).
+- **Continuous improvement programs.** The faster engineering iterates, the more open orders each edit touches.
+- **Shops where the traveler is printed.** Paper on the floor cannot be updated by a database write, so the plan has to match the paper until somebody reprints it deliberately.
+
+If your routings are stable and your jobs clear in a day, you will barely notice the mechanism working. That is the correct outcome. It is insurance, and insurance is boring right up until the week it is not.
+
+## Where to Go Next
+
+[Working with frozen routings](/blog/how-to-work-with-frozen-routings-in-edgebic) is the operating procedure: where to look, how to compare against the master, and which of the three controls to use. [Why frozen routings protect in-flight jobs](/blog/why-frozen-routings-protect-in-flight-jobs-edgebic) covers the mechanism and the hybrid merge rules with worked numbers. [Routing snapshot mistakes](/blog/routing-snapshot-mistakes-edgebic) covers the traps.
+
+For routing as a general concept, [production routing](/blog/production-routing) is the primer. The platform overview is the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). Bring a routing you revise often to a demo of [EDGEBIC](/edgebic) and we will show you what happens to the open orders.

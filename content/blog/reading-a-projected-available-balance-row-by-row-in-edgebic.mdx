@@ -1,0 +1,125 @@
+---
+title: "Reading a Projected Available Balance Row by Row in EDGEBIC"
+description: "A projected available balance calendar reads like a bank statement for stock. Here is how to trace one row into the next, column by column, with real numbers."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - reading projected available balance
+  - PAB calendar
+  - inventory projection row
+  - gross requirements
+  - scheduled receipts
+  - stock projection
+targetPhrase: "reading projected available balance"
+wordCount: 1680
+readingTime: 8
+faqQuestions:
+  - question: "What does the opening column of a PAB row mean?"
+    answer: "The opening column is the on-hand you carry into that bucket, and it always equals the projected available balance from the previous bucket. The very first bucket's opening is the ledger sum of every entry effective before the projection window starts. Reading a calendar is mostly a matter of confirming that each row's opening matches the row above it, because that single link is what makes the whole projection a continuous roll-forward rather than a set of disconnected snapshots."
+  - question: "How is the projected available balance in each bucket calculated?"
+    answer: "For a future bucket, projected available balance equals the opening plus scheduled receipts minus gross requirements. Scheduled receipts are open build-to-stock orders completing in that bucket; gross requirements are the effective demand after the forecast consumption rule. For a past bucket the calculation ignores the plan and uses only realized ledger movement, so history stays exactly as it happened while the future rows reflect the current plan."
+  - question: "Why would a projected available balance be negative?"
+    answer: "A negative projected available balance means committed demand in that bucket exceeds projected supply. It is allowed and informative, not an error. It is the earliest warning that a stockout is coming, often weeks before it would actually happen on the floor. The row is also flagged as below safety stock, and if a reorder method is set, a suggested order quantity appears so you can act before the shortfall arrives."
+qaQuestions:
+  - question: "Our week 3 row shows opening 50, receipts 0, gross req 60, PAB minus 10. Is that a data problem?"
+    answer: "No, that row is doing its job. Opening 50 carried down from week 2's projected balance, no build-to-stock order completes in week 3 so receipts are 0, and effective demand of 60 exceeds it, leaving minus 10. That negative figure is the point of the calendar: it shows the shortfall a full bucket before it lands. The row will also flag below safety stock, and a suggested quantity appears if a reorder trigger is set, so you firm a replenishment rather than treat the negative as a bug."
+  - question: "A build-to-stock order slipped and its completion date is in the past. Why is it stacked into this week's receipts?"
+    answer: "Overdue open supply is clamped into today's bucket so it stays visible and actionable rather than disappearing behind the window start. If today's row shows a scheduled receipt larger than any single order you expected, it is usually the sum of overdue build-to-stock orders piled forward. Drill into the order list to find them; the calendar is deliberately surfacing a late backlog as supply you can chase, not hiding it."
+---
+
+**Reading a projected available balance calendar is like reading a bank statement for stock: each row is one time bucket, the opening balance carries down from the row above, receipts add, requirements subtract, and the result becomes the next row's opening.** In EDGEBIC by User Solutions the calendar is one row per bucket (a day, a week, or a 28-day period) for one product, and once you can trace a single row into the next, the whole grid reads at a glance. This post walks the columns in order and traces a real product across four weeks.
+
+For the arithmetic overview and the design behind the roll-forward, see [projected available balance explained](/blog/edgebic-projected-available-balance-explained); this post is the hands-on read. Both sit under the [EDGEBIC planning guide](/blog/edgebic-planning-guide).
+
+## The columns, left to right
+
+A projection row carries a fixed set of figures. Reading them in order tells the whole story of that bucket.
+
+- **Opening.** On-hand carried into the bucket. Equals the previous row's projected available balance (PAB).
+- **Scheduled receipts.** Open build-to-stock orders completing in this bucket. Supply arriving.
+- **Forecast demand.** The forecast entered for this bucket. It participates only for make-to-stock products.
+- **Firm demand.** Committed demand due in this bucket, from open make-to-order orders or confirmed sales order lines.
+- **Gross requirements.** The effective demand after the forecast consumption rule combines forecast and firm.
+- **PAB.** Opening plus scheduled receipts minus gross requirements. The headline number.
+- **Below safety.** A flag that fires when PAB drops under the safety stock level.
+- **ATP discrete and cumulative.** How much is still free to promise.
+- **Suggested.** The replenishment quantity, if a trigger is crossed.
+
+The single rule that ties rows together: this row's opening is the row above's PAB. Confirm that link and the calendar is a continuous ledger, not a set of snapshots.
+
+## Where the opening comes from on row one
+
+The first row's opening is not zero and not the cache on the product grid. It is the sum of every ledger entry with an effective date before the window starts. That figure carries into row one, and from there each row's PAB feeds the next row's opening. Because the number is ledger-derived, it always agrees with what the [inventory ledger](/blog/edgebic-inventory-ledger-explained) records.
+
+## Gross requirements: forecast and firm combined
+
+Gross requirements is where forecast and firm demand merge into one number. For a make-to-order product it is firm demand only, because forecast is irrelevant to custom jobs. For a make-to-stock product a per-product rule decides the combination:
+
+| Rule | Formula | When it fits |
+|---|---|---|
+| Greater-of (default) | max(forecast, firm) | Firm orders replace the forecast that predicted them |
+| Minus-consumed | max(0, forecast − firm) + firm | Firm orders arrive on top of forecast |
+
+Under greater-of, a forecast of 60 and a firm of 40 give gross requirements of 60: the firm order sits inside the forecast. Under minus-consumed, the same inputs still give 60, but if firm rises to 80 the result is 80, because minus-consumed adds firm on top of the leftover forecast.
+
+## A worked read: Widget A across four weeks
+
+Take Widget A, make-to-stock, safety stock 50, greater-of consumption, opening balance 180, in weekly buckets. Forecasts and firm orders:
+
+| Week | Forecast | Firm |
+|---|---|---|
+| 1 | 60 | 40 |
+| 2 | 60 | 70 |
+| 3 | 60 | 0 |
+| 4 | 60 | 0 |
+
+Now read row by row.
+
+**Week 1.** Opening 180. No receipts. Gross requirements = max(60, 40) = 60. PAB = 180 + 0 − 60 = **120**. Above safety (50), so no flag.
+
+**Week 2.** Opening 120 (week 1's PAB). No receipts. Gross requirements = max(60, 70) = 70. PAB = 120 − 70 = **50**. Exactly at safety; not yet below.
+
+**Week 3.** Opening 50. No receipts. Gross requirements = max(60, 0) = 60. PAB = 50 − 60 = **−10**. Below safety: flagged. A suggestion fires here if a reorder trigger is set.
+
+**Week 4.** Opening −10. Gross requirements = 60. PAB = −10 − 60 = **−70**. Deeper below safety.
+
+| Week | Opening | Receipts | Gross req | PAB | Below safety |
+|---|---|---|---|---|---|
+| 1 | 180 | 0 | 60 | 120 | No |
+| 2 | 120 | 0 | 70 | 50 | No |
+| 3 | 50 | 0 | 60 | −10 | Yes |
+| 4 | −10 | 0 | 60 | −70 | Yes |
+
+Read straight down the opening and PAB columns and the story is plain: stock erodes from 180, dips to the safety line in week 2, and goes negative in week 3. The stockout is visible weeks before it lands. That early-warning behavior is the subject of [how a stockout shows up before it happens](/blog/how-a-stockout-shows-up-before-it-happens-in-edgebic).
+
+## Reading a scheduled receipt into the roll
+
+Add one build-to-stock order for 200 completing in week 3. Now week 3 reads opening 50, receipts 200, gross requirements 60, PAB = 50 + 200 − 60 = 190. Week 4 opens at 190 and lands at 130. The receipt lifts every following row, and the negative rows disappear. This is exactly what happens after you firm a suggestion into a real order: the next projection shows the receipt in the roll. The [make-to-stock replenishment walkthrough](/blog/make-to-stock-replenishment-walkthrough-edgebic) traces that firm-to-receipt handoff end to end.
+
+## History rows read differently
+
+If you start the window in the past, the early rows are history buckets. A history row ignores the plan entirely and uses only realized ledger movement. So a history row might show opening 250, a realized net of −130 from issues, and a PAB of 120, with forecast and scheduled receipts both blank. This keeps the past immutable: the projection never rewrites what actually happened. The forward rows pick up from the last history row using the current plan.
+
+## Suggested is a preview, not a commitment
+
+One reading habit saves confusion: the suggested column is display-only. A suggested quantity does not roll into later rows' opening. That is deliberate, so the calendar always shows the honest consequence of doing nothing. A chronically short product shows several suggestion rows in a row, even though firming the first would cover the rest. Nothing changes in the projection until you firm a suggestion into a real order and the next run reads it as a receipt.
+
+Reading the calendar well comes down to three moves: confirm each opening matches the PAB above it, read gross requirements as forecast-and-firm combined by the product's rule, and treat negatives and suggestions as signals to act rather than errors to fix. Everything downstream, including [safety stock decisions](/blog/safety-stock-calculation) and the promise math, stands on rows that read cleanly.
+
+<Accordion title="What does the opening column of a PAB row mean?">
+The opening column is the on-hand you carry into that bucket, and it always equals the projected available balance from the previous bucket. The very first bucket's opening is the ledger sum of every entry effective before the projection window starts. Reading a calendar is mostly a matter of confirming that each row's opening matches the row above it, because that single link is what makes the whole projection a continuous roll-forward rather than a set of disconnected snapshots.
+</Accordion>
+
+<Accordion title="How is the projected available balance in each bucket calculated?">
+For a future bucket, projected available balance equals the opening plus scheduled receipts minus gross requirements. Scheduled receipts are open build-to-stock orders completing in that bucket; gross requirements are the effective demand after the forecast consumption rule. For a past bucket the calculation ignores the plan and uses only realized ledger movement, so history stays exactly as it happened while the future rows reflect the current plan.
+</Accordion>
+
+<Accordion title="Why would a projected available balance be negative?">
+A negative projected available balance means committed demand in that bucket exceeds projected supply. It is allowed and informative, not an error. It is the earliest warning that a stockout is coming, often weeks before it would actually happen on the floor. The row is also flagged as below safety stock, and if a reorder method is set, a suggested order quantity appears so you can act before the shortfall arrives.
+</Accordion>
+
+See the calendar working against your own parts in the [EDGEBIC platform overview](/edgebic), or [contact US for a demo](/contact-us).

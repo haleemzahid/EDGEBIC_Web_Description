@@ -1,0 +1,70 @@
+---
+title: "What Is an Anchor Step in Scheduling?"
+description: "An anchor step is the bottleneck operation a schedule is built around. Learn how anchor scheduling pins the constraint, then plans backward and forward from it."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - anchor step scheduling
+  - anchor step definition
+  - theory of constraints scheduling
+  - bottleneck anchor
+  - anchor scheduling manufacturing
+  - constraint based scheduling
+targetPhrase: "anchor step in scheduling"
+wordCount: 1150
+readingTime: 6
+faqQuestions:
+  - question: "What is an anchor step in production scheduling?"
+    answer: "An anchor step is the bottleneck operation that a whole job is scheduled around. The engine pins that operation to a target start date, then plans every upstream step backward to feed it on time and every downstream step forward from its finish. The anchor is the constraint the plan protects, because the constraint sets the pace for the entire job."
+  - question: "What triggers anchor scheduling?"
+    answer: "Two things together trigger it. A work center on the job's routing must be flagged as the bottleneck, and the job must carry a target start date for that operation. When both are present, the engine schedules backward from the anchor and forward from it. If the bottleneck flag is set but no target date exists, the job falls through to ordinary forward scheduling instead."
+  - question: "Is the anchor step always the slowest operation?"
+    answer: "Not the slowest by raw time, but the one with the highest load: the operation whose required hours come closest to filling the capacity available to it. A four-hour heat treat on a single oven can be the anchor over a twelve-hour mill running four machines, because the oven has nowhere to absorb variation. Load, not duration, decides the constraint."
+  - question: "Can a job have more than one anchor?"
+    answer: "A single job anchors on one operation: the constraint it is built around. Different jobs can anchor on different work centers, and the same work center can be the anchor for many jobs at once. The engine resolves one anchor per manufacturing order, splits the routing into steps before and after it, and plans each side from that fixed point."
+qaQuestions:
+  - question: "We flagged our heat-treat oven as the bottleneck but the scheduler still plans jobs forward from today. What is missing?"
+    answer: "The bottleneck flag alone does not start anchor scheduling. The job also needs a target start date on the oven operation, the date you want that constraint to begin. Without it the engine has nothing to anchor to, so it schedules the whole routing forward from the job's release date instead. Set the target start on the oven step, re-run, and you will see the upstream steps back-calculate to feed it and the downstream steps chain forward from its finish. Think of it as telling the kitchen the roast must come out at 7 PM: only then can it work out when to start the prep."
+  - question: "How is anchoring different from just backward scheduling the whole job?"
+    answer: "Backward scheduling right-aligns every step to the due date. Anchoring right-aligns only the steps before the constraint, pins the constraint to its own target, then forward-schedules everything after it. That split matters because the point you are protecting is the bottleneck, not the ship date. Upstream work finishes just in time to feed the oven, the oven runs at its planned slot with a safety buffer in front, and downstream steps flow forward from the oven's real finish. You get the constraint exploited fully without starving it or letting it sit idle."
+---
+
+**An anchor step is the bottleneck operation that a job is scheduled around: the engine pins it to a fixed target start date, plans every upstream step backward so the constraint is fed on time, and plans every downstream step forward from its finish.** Anchor scheduling comes from the Theory of Constraints. The logic is simple: a plant ships only as fast as its slowest resource allows, so the schedule should be built to protect and fully use that resource rather than to optimize the operations around it.
+
+[EDGEBIC by User Solutions](/edgebic) treats the anchor as the one point in a routing that everything else serves. This article defines the term and shows where it fits. For the full mechanism, worked buffers, and dialogs, read [how EDGEBIC does TOC anchor scheduling](/blog/edgebic-toc-anchor-scheduling-explained).
+
+## How It Works
+
+The engine needs two facts to anchor a job. First, one work center on the routing is marked as the [bottleneck](/blog/production-bottleneck-identification). Second, the job carries a target start date for that constrained operation, the moment you want it to begin. When both are present, the routing splits into two halves at the anchor.
+
+The pre-anchor steps (everything upstream) are scheduled backward. Each one is placed as late as it can be while still finishing in time to feed the constraint. The anchor itself is placed at its target start and runs at full capacity. The post-anchor steps (everything downstream) are scheduled forward from the anchor's finish, chaining one after another to completion.
+
+Between the halves sit the safety buffers. A [constraint buffer](/blog/what-is-a-constraint-buffer) protects the anchor from upstream variation, so a late feeder does not delay it. A shipping buffer protects the due date from variation after the anchor. The buffers turn an optimistic finish date into a committed one.
+
+If the bottleneck is flagged but no target start exists, anchoring never fires. The job schedules forward from its release date like any other, and the constrained work center is simply loaded whenever the next slot opens.
+
+## A Concrete Example
+
+Plan a dinner party backward from the serve time. The roast must come out of the oven at 7 PM, so the oven is the anchor: everything is arranged around it. Prep starts at 4 PM so the meat is seasoned and ready, the oven runs its fixed window, and the plating and garnish happen after it comes out. You do not optimize the salad chopping first and hope the oven fits around it. You fix the oven, then work outward.
+
+A real routing behaves the same way. Take a five-step job that runs through Lathe, Mill, a heat-treat oven, Grind, and Inspect, with the oven flagged as the constraint and a target start of Monday 07:00. The oven load is the highest of the five, so it is the anchor. The Lathe and Mill are back-calculated to their latest acceptable starts, roughly Saturday and Sunday, so their output arrives just before the oven fires. The oven runs its 22 hours starting exactly Monday 07:00. Grind and Inspect then chain forward from the oven's finish. No capacity is wasted at the constraint, and every other step is placed relative to it.
+
+## The Routing Split and the Feeding Buffer
+
+Anchoring divides a routing into two groups by sequence position. Everything before the constraint is a pre-anchor step, scheduled backward. Everything after it is a post-anchor step, scheduled forward. The anchor sits at the boundary, pinned to its target.
+
+Within the pre-anchor group, one step gets special treatment: the direct feeder, the step whose output flows straight into the constraint. It carries a feeding buffer, extra protected time on top of the constraint buffer, because it is the last line of defense before the bottleneck. In a worked five-step job with 30.5 hours of upstream work, the feeding buffer is sized at roughly a tenth of that path and added to the direct feeder's duration, so that step starts a little earlier to guarantee it never leaves the constraint waiting.
+
+The three buffers stack in a deliberate order: the constraint buffer protects the anchor from the whole upstream path, the feeding buffer hardens the single most critical feeder, and the shipping buffer guards the due date against downstream variation. Each protects a different point of failure.
+
+## How EDGEBIC Uses It
+
+Anchoring surfaces the moment you set a target start date on a bottleneck operation. The engine reports the [split of the routing around the anchor](/blog/what-is-a-bor-split-around-an-anchor-step), the buffer sizes, and the back-calculated upstream starts, so you can see why an early operation was pushed to a specific date. The Gantt shows the constraint pinned to its slot with the feeding work arriving just in time.
+
+Because the anchor is resolved fresh on every run, it survives rescheduling. When actuals come in and you re-plan, completed work is never moved, the constraint is re-anchored against the current state, and the buffers are re-sized from where the job actually stands. That keeps the committed date honest as reality changes.
+
+Anchoring is one direction the engine can take. A job with a real due date and no constraint can run [backward from the deadline](/blog/forward-vs-backward-scheduling) instead, and a plain job runs forward. The [manufacturing glossary](/blog/manufacturing-glossary) covers the related scheduling terms, and [the anchor mechanism guide](/blog/edgebic-toc-anchor-scheduling-explained) walks through the buffer arithmetic in full.

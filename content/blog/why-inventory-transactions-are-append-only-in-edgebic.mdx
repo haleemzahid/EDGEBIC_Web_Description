@@ -1,0 +1,101 @@
+---
+title: "Why Inventory Transactions Are Append-Only in EDGEBIC"
+description: "EDGEBIC never edits or deletes a stock entry. Here is why corrections happen through reversals, what that buys an auditor, and how a canceled order unwinds cleanly."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - append only inventory
+  - inventory reversal entry
+  - audit trail inventory
+  - immutable stock ledger
+  - correcting inventory transactions
+  - inventory transaction history
+targetPhrase: "append only inventory"
+wordCount: 1590
+readingTime: 8
+faqQuestions:
+  - question: "What does append-only mean for inventory transactions?"
+    answer: "Append-only means a stock entry is never edited or deleted once posted. A mistake is corrected by appending an inverse reversal entry, not by changing the original. Both the original and its reversal stay in the ledger forever and net to zero. The result is that the entire history of every stock movement, including its corrections, is permanent and readable, and on-hand is always the honest sum of everything that was ever posted."
+  - question: "How do you correct a wrong inventory entry if you cannot delete it?"
+    answer: "You post an offsetting entry. To reverse a receipt you post an inverse issue-type reversal; to reverse an issue you post an inverse receipt-type reversal; to fix a count you post an adjustment for the difference. Each correction is a new entry that references what it corrects, so the ledger reads as original, then correction, rather than a silently altered row. On-hand lands at the right figure and the audit trail shows the full story."
+  - question: "What happens to the ledger when a manufacturing order is deleted?"
+    answer: "Its ledger entries are reversed before the order is removed. Any receipt or issue pegged to the order is marked reversed and paired with an inverse entry, restoring on-hand to its pre-order state. The order link on the surviving entries is then cleared rather than cascaded, so the ledger rows remain even after the order record is gone. Deleting an order never leaves stock overstated or erases the record of what it once moved."
+qaQuestions:
+  - question: "A build-to-stock order was completed by mistake and posted a 200-unit receipt. How do we undo it without corrupting on-hand?"
+    answer: "Reopen or delete the order, which reverses its receipt. The original plus 200 receipt is marked reversed and an inverse minus 200 reversal is appended, so on-hand drops back to its pre-completion level. Both entries stay in the ledger as a matched pair that nets to zero. You never edit the original receipt, and on-hand is correct again because it is recomputed from the full ledger, which now contains the mistake and its cancellation side by side."
+  - question: "An auditor asks why on-hand for a bracket dropped 40 units last Tuesday. How fast can we answer?"
+    answer: "One filter. Open the transaction history for the bracket and read Tuesday's entries. Each issue is tagged with what drove it and pegged to its order or schedule, so a minus 40 issue tagged Schedule Transaction points straight to the order that consumed the stock. Because nothing is ever edited away, the entry that caused the drop is still there to be read. Append-only turns why did on-hand move into a one-query answer instead of a forensic exercise."
+---
+
+**Inventory transactions in EDGEBIC are append-only, meaning no entry is ever edited or deleted; corrections happen by posting an inverse reversal that leaves both the original and its cancellation in the ledger forever.** In EDGEBIC by User Solutions, this is a deliberate choice, not a limitation. An append-only ledger buys a complete audit trail, safe corrections, and clean order cancellation, and it is the reason on-hand can always be trusted as the honest sum of everything that ever happened.
+
+This post explains why append-only matters, how reversals work, and what a canceled order looks like in the ledger. It sits under the [EDGEBIC planning guide](/blog/edgebic-planning-guide) and complements the [inventory ledger explained](/blog/edgebic-inventory-ledger-explained).
+
+## The rule: nothing is ever changed in place
+
+Every stock movement is a signed entry: positive for receipts, negative for issues. Once posted, that entry is permanent. You cannot open it and change the quantity, and you cannot delete it. If it was wrong, you append a new entry that offsets it.
+
+This sounds strict, and it is, but the strictness is the feature. A ledger you can edit is a ledger you cannot trust, because any balance might have been quietly adjusted with no trace. A ledger you can only append to is one where on-hand is provably the sum of a history that no one can rewrite.
+
+## How corrections work: the reversal
+
+Since you cannot edit, you correct with an inverse entry. There are three shapes.
+
+- **Reverse a receipt.** Post an inverse issue-type reversal for the same quantity. The original receipt is marked reversed; the pair nets to zero.
+- **Reverse an issue.** Post an inverse receipt-type reversal. Same idea, opposite sign.
+- **Fix a count.** Post an adjustment for the difference between physical and system, positive or negative.
+
+A reversal references the entry it cancels, so the ledger reads as original, then correction, rather than a mysteriously altered row. On-hand lands at the right figure because it is recomputed across the whole ledger, which now contains both the mistake and its cancellation.
+
+## A worked reversal: a mistaken 200-unit receipt
+
+A planner marks a build-to-stock valve body order complete by mistake. It posts a receipt:
+
+| # | Qty | Type | Tag | Balance |
+|---|---|---|---|---|
+| 1 | +200 | Receipt | Build to Inventory | 200 |
+
+On-hand jumps to 200 units that were not really produced. To undo it, the planner reopens the order, which reverses its entries:
+
+| # | Qty | Type | Tag | Balance |
+|---|---|---|---|---|
+| 1 | +200 | Receipt | Build to Inventory | 200 |
+| 2 | −200 | Receipt reversal | Reversal of #1 | 0 |
+
+Entry 1 is now marked reversed, and entry 2 is its inverse. On-hand is back to 0, and both entries survive. Anyone reviewing the ledger sees exactly what happened: a receipt was posted, then canceled. Nothing was erased, and on-hand is honest because it sums the full history.
+
+## What a deleted order leaves behind
+
+Append-only shapes how order deletion works too. When a manufacturing order is deleted, EDGEBIC reverses its ledger entries before removing the order. Any receipt or issue pegged to that order is marked reversed and paired with an inverse entry, restoring on-hand to its pre-order state.
+
+Then a subtle but important thing happens: the link from the surviving ledger entries back to the deleted order is cleared, not cascaded. The order record disappears, but its ledger rows remain, now unlinked. This means deleting an order never erases the record of what it once moved, and never leaves stock overstated because the reversal ran first. The same pattern covers reopening an order, and it is why [rescheduling stays consistent](/blog/how-a-reschedule-keeps-inventory-consistent-in-edgebic): every path that removes or re-plans an order unwinds its stock cleanly.
+
+## What append-only buys an auditor
+
+The payoff is fastest to feel when someone asks a hard question. "Why did on-hand for the bracket drop 40 units last Tuesday?" On an editable ledger, that answer might be lost, because the entry could have been changed. On an append-only ledger, the entry is still there: a −40 issue, tagged with what drove it, pegged to the order or schedule that consumed the stock. One filter on the transaction history and the answer is on screen.
+
+That pegging is the second half of the value. Every entry carries its effective date, its unit cost at post time, and a link to its cause: which order, which schedule row, which routing step. Combined with the guarantee that nothing was edited away, it turns reconciliation from a forensic exercise into a query. This is why "why did our stock move" has a one-query answer, and it is the audit foundation that [available-to-promise](/blog/available-to-promise-in-edgebic) and the projection calendar both rely on.
+
+## Append-only and idempotent planning
+
+Append-only is also what makes the planning layer safe to re-run. Because a reschedule can mark an old consume issue reversed and append its inverse, the engine can re-net an order as many times as reality demands without ever double-counting or losing history. If the alternative were editing entries in place, a crash mid-reschedule would leave an ambiguous, half-changed ledger. Append-only makes every re-plan a clean transaction: the old commitment is canceled with a visible reversal, the new one is appended, and the sum is always right.
+
+For a planner, the practical consequences are simple. To fix a wrong figure, post an offsetting entry rather than hunting for something to edit. To undo a completed build, reopen or delete the order and let the reversal run. And when a balance surprises you, read the history rather than distrust the number, because the entry that caused the move is still there to explain it. That reliability is a quiet but real part of what makes EDGEBIC's [inventory management for manufacturers](/blog/inventory-management-manufacturers) hold up under audit and under churn alike.
+
+<Accordion title="What does append-only mean for inventory transactions?">
+Append-only means a stock entry is never edited or deleted once posted. A mistake is corrected by appending an inverse reversal entry, not by changing the original. Both the original and its reversal stay in the ledger forever and net to zero. The result is that the entire history of every stock movement, including its corrections, is permanent and readable, and on-hand is always the honest sum of everything that was ever posted.
+</Accordion>
+
+<Accordion title="How do you correct a wrong inventory entry if you cannot delete it?">
+You post an offsetting entry. To reverse a receipt you post an inverse issue-type reversal; to reverse an issue you post an inverse receipt-type reversal; to fix a count you post an adjustment for the difference. Each correction is a new entry that references what it corrects, so the ledger reads as original, then correction, rather than a silently altered row. On-hand lands at the right figure and the audit trail shows the full story.
+</Accordion>
+
+<Accordion title="What happens to the ledger when a manufacturing order is deleted?">
+Its ledger entries are reversed before the order is removed. Any receipt or issue pegged to the order is marked reversed and paired with an inverse entry, restoring on-hand to its pre-order state. The order link on the surviving entries is then cleared rather than cascaded, so the ledger rows remain even after the order record is gone. Deleting an order never leaves stock overstated or erases the record of what it once moved.
+</Accordion>
+
+See the append-only ledger and its audit trail in the [EDGEBIC platform overview](/edgebic), or [contact US for a demo](/contact-us).

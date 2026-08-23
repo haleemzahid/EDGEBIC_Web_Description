@@ -1,0 +1,102 @@
+---
+title: "Machine Shop Multi-Shift Scheduling: One Job Across Day and Night"
+description: "Machine shop multi-shift scheduling lets a single job span day and night shifts and multiple machines, so a 28-hour part finishes in a day, not a guess."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - machine shop multi-shift scheduling
+  - multi-shift production scheduling
+  - job spanning shifts
+  - machine shop capacity planning
+  - shift calendar scheduling
+  - load balancing machines
+targetPhrase: "machine shop multi-shift scheduling"
+wordCount: 1950
+readingTime: 10
+faqQuestions:
+  - question: "How does multi-shift scheduling place one job across two shifts?"
+    answer: "The scheduler walks forward day by day and offers every open shift on a work center as a capacity slot, scoring each one. It fills the earliest, most available slots first, consuming hours shift by shift until the whole operation is placed. A 28-hour operation that cannot fit one 8-hour day is spread across day and night shifts and multiple machines automatically, with the completion time reflecting where the work actually landed."
+  - question: "Does a job stop at the end of a shift or keep running overnight?"
+    answer: "It keeps running if the work center has a night shift configured. Each shift is a named time block on the work center, and the scheduler treats consecutive shifts as continuous capacity. A job that needs more hours than one shift offers flows into the next open shift, whether that is the same day's night shift or the next working day, so the plan matches how the floor actually runs."
+  - question: "How does the scheduler decide which machine in a work center gets the work?"
+    answer: "When a work center has more than one machine, load balancing divides the hours evenly across every instance so they finish together. A 12-hour block on a four-machine cell becomes three hours on each machine, cutting wall-clock time to a quarter. For work centers that must dedicate a machine to one job per day, a one-per-day setting assigns each job its own machine instead of pooling the capacity."
+  - question: "What happens to a job that spans a weekend?"
+    answer: "The scheduler skips days with no configured shift and resumes on the next working day. A 20-hour job starting Friday at noon takes the four hours left in Friday's shift, jumps the weekend, then finishes across Monday and Tuesday. The weekend is real calendar time on the Gantt chart but costs zero machine hours, so the completion date is honest about both the work content and the closed days."
+qaQuestions:
+  - question: "We run a day shift and a skeleton night shift, and our whiteboard only shows the day. Big jobs quietly bleed into overtime nobody planned. What changes?"
+    answer: "The whiteboard is a single-shift view of a two-shift shop, which is exactly why the overtime is a surprise. Configure both shifts on each machine and the scheduler treats them as one continuous stream of capacity. Take a 28-hour milling operation on a two-machine cell with day and night shifts of 8 hours each: starting Monday at 10:00, it books both machines for the six hours left in the day shift (12 machine-hours), then both machines through the night shift (16 machine-hours), and finishes at midnight the same calendar day. You see the night-shift load before it happens, not on the payroll report."
+  - question: "One of our cells has four identical machines but jobs seem to pile onto the first one. Can the scheduler actually spread the load?"
+    answer: "Yes, and that is the default behavior when load balancing is on. Instead of filling machine one before touching machine two, the scheduler divides a shift's worth of hours evenly across all four. A 20-hour block becomes five hours on each machine, all starting at 08:00 and done by 13:00 instead of one machine grinding through 20 hours over two and a half days. If a cell instead needs one dedicated machine per job, for example a fixture that stays set up all day, the one-per-day setting gives each job its own machine rather than pooling them."
+---
+
+**Machine shop multi-shift scheduling is the ability to place a single manufacturing operation across day and night shifts, across multiple machines in a cell, and across the calendar days in between, and EDGEBIC by User Solutions does this automatically from your shift calendars and machine counts.** For a shop that runs more than one shift, this is the difference between a plan that matches the floor and a plan that quietly hides half its work in unplanned overtime. This post walks through how one job gets spread across shifts and machines, with the real numbers the engine uses.
+
+The plain mechanics of loading jobs against real capacity are covered in [what is production scheduling](/blog/what-is-production-scheduling), and the reason a real machine can only do one thing at a time is [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling). Here we stay on the machine shop floor, where the second shift is where the money hides.
+
+## Why single-shift thinking breaks a multi-shift shop
+
+Most manual scheduling tools, whiteboards and spreadsheets alike, are built around one working day. You look at a machine, you look at the hours in a shift, and you slot jobs in until the day is full. That model works right up until a job needs more hours than one shift holds. Then one of two bad things happens. Either the job silently overflows into overtime that nobody costed, or the planner mentally splits it across days and loses track of the pieces.
+
+A machine shop that runs a day shift and a night shift is really running sixteen hours of capacity per machine per day, not eight. A job shop with a four-machine cell has thirty-two machine-hours available in a single day shift, not eight. If your plan cannot see that, it cannot promise dates you can hit, and it cannot tell you when the night shift is about to be swamped. The problem compounds the moment jobs start competing for the same machines, which is the everyday reality described in [job shop scheduling challenges](/blog/job-shop-scheduling-challenges).
+
+## How the scheduler spreads one job across shifts
+
+Before any job is placed, the engine builds a slot for every machine, every date, and every shift in the planning horizon. Each slot carries its capacity, computed as shift duration times the number of machines times the work center's utilization percentage, with any downtime and partial holidays subtracted. That gives the scheduler a complete, precomputed picture of where capacity lives.
+
+When it schedules an operation, it walks forward from the earliest possible start, day by day, and collects every open shift on the target work center as a candidate. Each candidate gets a priority score that rewards three things: whether the shift can start immediately, how much room it has, and how early in the day it begins. A day shift that can start right now beats a night shift that cannot, and the engine fills the best slots first.
+
+Then it consumes hours. It takes the smaller of "hours still needed" and "hours available in this slot," books that, and moves to the next slot until the operation is fully placed. The completion time is wherever the last hour landed, not an estimate.
+
+### A 28-hour job on a two-shift cell
+
+Take a CNC cell with two identical machines, a day shift from 08:00 to 16:00, and a night shift from 16:00 to midnight, each giving 16 machine-hours across the two machines. An operation needs 28 hours and cannot begin before Monday 10:00.
+
+| Pass | Shift | Hours booked | Remaining |
+|---|---|---|---|
+| 1 | Monday day (from 10:00) | 12 (6 h on each machine) | 16 |
+| 2 | Monday night | 16 (8 h on each machine) | 0 |
+
+Because the job starts two hours into the day shift, that first slot only offers the six hours left in the shift on each machine, so 12 hours. The night shift then absorbs the remaining 16. The operation is finished by midnight the same calendar day. A single-shift plan would have shown this job stretching into Tuesday or dumped four hours of overtime on nobody's account.
+
+## Load balancing across the machines in a cell
+
+Inside a work center, the scheduler decides which physical machine gets the hours. With load balancing on, which is the default, it divides the hours evenly across every machine so they finish together rather than filling one machine before touching the next.
+
+Take a 20-hour block landing on a four-machine cell with a clear day shift. Load balancing splits it into five hours on each machine, all starting at 08:00 and done by 13:00. The same 20 hours on a single machine would run two and a half days. Spreading the work is what turns four idle machines into a quarter of the wall-clock time.
+
+Not every cell wants that. A heat-treat furnace or a fixture-heavy setup often needs one job to own one machine for the day. The one-per-day setting handles that: each new job is assigned its own machine, so three jobs of six hours each land on three separate furnace chambers at 08:00 rather than being pooled into one. This is the same instance logic that drives [any-mill machine pools](/blog/edgebic-for-machine-shops-machine-pools), viewed from the shift-capacity side.
+
+## Weekends, holidays, and honest calendar time
+
+A machine shop rarely runs seven days. The scheduler simply skips any day with no configured shift and resumes on the next working day. A 20-hour operation on a single-machine work center with weekdays only, starting Friday at noon, plays out like this:
+
+| Day | Slot | Hours booked | Remaining |
+|---|---|---|---|
+| Friday | Day (from 12:00) | 4 | 16 |
+| Sat / Sun | No shift | Skipped | 16 |
+| Monday | Day | 8 | 8 |
+| Tuesday | Day | 8 | 0 |
+
+The job starts Friday, jumps the weekend, and finishes Tuesday afternoon. The weekend is real elapsed time on the Gantt chart, but it consumes zero machine-hours, so the promised date is honest about both the work content and the days the shop is dark. If you want Saturday overtime for one specific date, a daily capacity override adds capacity to that day without changing the shift pattern, and the scheduler picks it up automatically.
+
+## What this looks like when you run the shop
+
+Once the shift calendars are right, three things change on the floor.
+
+You see the night-shift load before it happens. A job that needs the second shift shows up on the second shift in the plan, so the night supervisor gets a real dispatch list instead of whatever the day crew left behind.
+
+You stop discovering overtime after the fact. Because the plan places every hour against a real slot, a job that will not fit inside planned capacity is visible as a slip or a spillover, not a payroll surprise.
+
+You get shorter completion dates from the machines you already own. A four-machine cell that used to run jobs one at a time finishes them in a quarter of the time when the work genuinely splits, which is capacity you paid for but were not scheduling. That is the same result User Solutions has delivered for manufacturers since 1991, from GE Railcar lifting on-time delivery from 30 percent to 90 percent to defense programs sequencing tens of thousands of tasks.
+
+## Getting your shifts and machines right
+
+Multi-shift scheduling is only as accurate as the calendar behind it. Two setup steps carry most of the value. First, configure every shift each machine actually works, including the night and weekend shifts, so the engine counts the capacity you have. Second, set the machine count on each work center correctly, because that is what load balancing divides across. A cell modeled as one machine will never spread work no matter how many machines are physically there.
+
+From there the plan reflects reality. Rush orders slot into the real capacity picture and show you exactly which shifts and machines absorb them, the way a proper [multi-shift plan for plastics](/blog/edgebic-for-plastics-multi-shift) or a [textile shift pattern](/blog/edgebic-for-textiles-shift-patterns) does for those industries. When you are ready to connect this to the rest of your shop, EDGEBIC reads your machine, routing, and order data through flexible [import and export masks](/edgebic-erp-integration), so the shift calendars live next to the data you already keep.
+
+See how multi-shift scheduling handles your busiest cell. [Bring a real routing and your shift calendar to a demo](/edgebic) and watch a job that spans your night shift land where it actually runs.

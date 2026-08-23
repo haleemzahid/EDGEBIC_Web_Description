@@ -1,0 +1,93 @@
+---
+title: "What EDGEBIC Cannot Import, and How to Handle It"
+description: "Eight kinds of data come in on an import mask. Everything else is built in the interface. Knowing which is which before you plan a migration keeps you from waiting on a bulk load that does not exist."
+published: 2026-08-12T12:00:00.000Z
+modified: 2026-08-13T12:00:00.000Z
+category: Upgrade & Comparison
+author: user-solutions
+cluster: edgebic-migration
+pillarSlug: edgebic-migration-guide
+keywords:
+  - what EDGEBIC cannot import
+  - import entity types list
+  - hand entered configuration migration
+  - grid export does not round trip
+  - migration planning data load
+  - import mask coverage
+targetPhrase: "what EDGEBIC cannot import"
+wordCount: 1460
+readingTime: 8
+faqQuestions:
+  - question: "Which kinds of data can be imported into EDGEBIC?"
+    answer: "Eight entity types have import masks in EDGEBIC by User Solutions: Product, Workcenter, Customer, SalesOrder, BOR, Actuals, PlantHoliday and Shift. Between them they cover the high-volume master data and demand that a migration actually needs moved in bulk, which is your items, machines, customers, routings, jobs, recorded hours, plant holidays and shift patterns. Files arrive as xlsx, csv, txt or tsv, and each import matches existing records by a natural business key rather than an internal identifier."
+  - question: "What has to be entered by hand instead of imported?"
+    answer: "The configuration layers on top of the master data: departments, work center groups and their members, operators with their skills, certifications, rosters and time off, the sequence-dependent setup matrix, and quotes with their scenarios. The pattern is consistent and reassuring once you see it. What cannot be imported is low-volume configuration measured in tens of rows, not the thousands-of-rows master data that would make hand entry impossible. A plant has a handful of groups and a few dozen people; it has thousands of parts and routing steps."
+  - question: "Can I export data from EDGEBIC, edit it, and import it back?"
+    answer: "No, and this is worth knowing before you build a workflow around it. Grid and report exports are a snapshot of what you see, meant for sharing and analysis, and they are deliberately not in the import file format, so they do not round-trip. If you want a repeatable edit-and-reload cycle, keep the source file you imported from as the master, change it there, and re-run the mask with updates enabled. The one export built for record-keeping rather than reloading is the setup matrix CSV, which exists so you can document what you entered."
+qaQuestions:
+  - question: "Our migration plan assumed we could bulk load everything. How much does this change the schedule?"
+    answer: "Less than it appears, because the two lists are split along the right line. Everything with real volume has a mask: products, work centers, customers, sales orders, routings, actuals, plant holidays and shifts. Everything without a mask is configuration you would want to think about anyway rather than transcribe blindly, and it is measured in tens of rows. Building a work center group is one dialog plus a member checklist. Adding an operator is a name and a badge code. Entering a setup matrix for one machine is a couple of families and four cells. The realistic effect on a plan is to move those items from a data-loading phase into a configuration phase that runs after the plant already schedules, which is a better sequence anyway, since you can then verify each piece against a working plan instead of hoping it was right in a spreadsheet."
+  - question: "Is there anything we should deliberately not try to move across at all?"
+    answer: "Yes, two categories. The first is historical records that a forward-looking plan cannot use, most obviously old quotes. A quoted date from a system that planned against infinite capacity is not a fact worth re-creating, and there is no quote import in any case, so the right move is to leave the old records where they are as history and re-enter only quotes still live enough to win. The second is anything your old system computed rather than stored, such as its own plan. A migrated schedule is produced by scheduling your migrated data, not by importing the old dates, which is exactly why validation compares the new plan against the old one instead of copying it. Deciding this early is what stops a migration from carrying dead weight into a new system, and it pairs with knowing what you do not need to migrate at all."
+---
+
+**EDGEBIC imports eight kinds of data through masks, Product, Workcenter, Customer, SalesOrder, BOR, Actuals, PlantHoliday and Shift, and everything else is built in the interface.** In EDGEBIC by User Solutions that split falls along a useful line: bulk master data and demand are importable, while the low-volume configuration on top of it is entered by hand. Knowing which is which before you write a migration plan stops you from scheduling a phase around a bulk load that does not exist.
+
+## The eight importable entity types
+
+Each has its own mask, and each matches existing records by a natural business key rather than an internal identifier, so a row for `WIDGET-A` finds the existing `Widget-A` without case-sensitivity getting in the way.
+
+| Entity type | What it loads | Matched by |
+| --- | --- | --- |
+| Product | Item master data | Product id |
+| Workcenter | Machines and stations | Work center id |
+| Customer | Customer master data | Name |
+| SalesOrder | Jobs and demand | Product, quantity and date |
+| BOR | Routing steps | End product and step |
+| Actuals | Daily hours and pieces per operation | Job, work center and date |
+| PlantHoliday | Plant-wide holidays | Holiday name and date |
+| Shift | Global shifts with weekly hours | Shift name |
+
+Files can be xlsx, csv, txt or tsv. Every row ends as exactly one outcome, Created, Updated, Reused or Failed, with the counts shown after the run and a per-run log recording each row. That is the machinery described in [EDGEBIC import masks explained](/blog/edgebic-import-masks-explained), and it covers the parts of a migration that genuinely need volume: the items, machines, customers, routings, jobs, recorded work, holidays and shift patterns.
+
+## What is built in the interface instead
+
+| Not importable | How to handle it |
+| --- | --- |
+| Departments | Create them before importing work centers, so machines can be assigned as they arrive |
+| Work center groups and members | Import routings with their alternate lists first, then consolidate into pools |
+| Operators, skills, certifications, rosters, time off | Build after the plant schedules, modeling only real labor constraints |
+| Sequence-dependent setup matrix | Enter per machine, families first; the editor exports CSV but has no import |
+| Quotes and their scenarios | Leave old quotes as history and re-enter only live ones |
+
+Look at the volumes and the split stops feeling like a limitation. A plant has thousands of parts and routing steps, and those all have masks. It has a handful of groups, a few dozen people, and one or two machines where changeover order matters, and those are the hand-built items. Tools and fixtures belong to that set as well, and [migrating your tools and fixtures](/blog/migrating-your-tools-and-fixtures-to-edgebic) shows why the list is shorter than it looks and which single field is easy to get wrong.
+
+## Sequence the work to match
+
+The practical consequence is a two-phase migration rather than one big load.
+
+**Phase one, the bulk load.** Departments first, since work centers reference them, then everything with a mask in [the usual dependency order](/blog/the-order-to-import-your-data-into-edgebic). At the end of this phase the plant schedules and the plan can be compared against your old system.
+
+**Phase two, the configuration.** Work center groups, operators and skills, and setup matrices, each verified against a plan that already works. This ordering is better than the alternative even if imports existed for all of it, because you can prove each piece changed the schedule the way you expected. Group members change which machine is chosen. A certification moves a step when the certified person is away. A setup matrix shows up as a Matrix reason on the scheduled row.
+
+Splitting it this way also means phase two is not a go-live blocker. A machine with no setup matrix keeps using its flat setup time. A routing step with no required skill plans exactly as it does today.
+
+## Two things not to plan around
+
+**Exports do not round-trip.** Grid and report exports are a snapshot of what is on screen, built for sharing and analysis, and they are deliberately not in the import file format. If you want a repeatable reload cycle, keep the file you imported from as the master, edit it there, and re-run the mask with updates enabled. The setup matrix CSV is an exception in purpose only: it exists so you can document what you typed, not so you can load it back.
+
+**Imports never schedule.** An import changes data, not the plan. After loading orders you run the scheduler yourself, which is the single most common surprise for people expecting a load to produce dates.
+
+## One import rule that catches migrations
+
+The BOR mask deserves a specific warning, because it behaves differently from the others in a way that matters exactly once, during a migration. All steps for one end product must be in a single file, since a re-import replaces that product's routing entirely per run. Split a product's steps across two files and the second run loses the first run's steps.
+
+That is a data-preparation instruction rather than a mapping one: group your routing export by end product before you start, and confirm each product appears in exactly one file. Pair it with the cleanup discipline in [cleaning your data before importing](/blog/cleaning-your-data-before-importing-to-edgebic).
+
+## What to leave behind entirely
+
+Some things should not cross even though someone will ask. Old quoted dates from a system that planned against infinite capacity are not facts worth re-creating, and [migrating quotes and quote history](/blog/migrating-quotes-and-quote-history-to-edgebic) works through which live quotes to re-enter and which to leave as read-only history. Your old system's computed schedule is not migration data either: the new plan comes from scheduling your migrated inputs, which is why validation compares the two plans rather than copying one into the other, as [validating a migrated schedule](/blog/validating-a-migrated-schedule-against-rmdb) sets out. Deciding this explicitly keeps dead weight out of the new system, and it lines up with [what you do not need to migrate](/blog/what-you-do-not-need-to-migrate-to-edgebic).
+
+## The takeaway
+
+EDGEBIC cannot import departments, work center groups, operators and skills, the sequence-dependent setup matrix, or quotes and scenarios; it does import Product, Workcenter, Customer, SalesOrder, BOR, Actuals, PlantHoliday and Shift. Plan a bulk-load phase for the eight masked types and a configuration phase for the rest, remember that exports are snapshots rather than reloadable files and that imports never schedule, and keep each end product's routing steps in one file. See the platform on the [EDGEBIC overview](/edgebic), the upgrade path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and pair this with [an EDGEBIC migration checklist](/blog/an-edgebic-migration-checklist) and [how many import masks your shop actually needs](/blog/how-many-import-masks-your-shop-actually-needs).

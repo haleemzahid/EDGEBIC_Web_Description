@@ -1,0 +1,99 @@
+---
+title: "A Continuous-Process Work Center Is Scheduling in Batches"
+description: "When a reactor, oven, or line that should flow continuously is instead scheduling as discrete piece batches, the cause is almost always one flag or one field. Here is how to find and fix it."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - continuous process work center batches
+  - continuous vs discrete scheduling
+  - transfer batch size ignored continuous
+  - flowstep continuous process
+  - reactor oven scheduling flow
+  - piece count lot streaming continuous
+targetPhrase: "continuous process work center batches"
+wordCount: 1300
+readingTime: 7
+faqQuestions:
+  - question: "Why is my continuous-process work center scheduling as piece batches?"
+    answer: "Because the work center is not actually flagged continuous, or a transfer batch size is set on a routing step that runs through it. The continuous-process flag lives on the work center, not the routing step. When it is on, the engine uses a time-based flow model and ignores piece-count transfer batches. When it is off, the engine uses the piece-count model and the machine schedules in discrete batches."
+  - question: "Where is the continuous-process setting in EDGEBIC?"
+    answer: "It is a property of the work center itself, set once when you configure the machine. It is not a routing-step field, because a reactor is continuous by physical nature no matter what product runs through it. The anomaly report's continuous-process check names the exact work center and the transfer batch size that is conflicting with its flag, so you know which record to open."
+  - question: "What is the difference between flow-step overlap and a transfer batch size?"
+    answer: "Flow-step overlap is a time-based start-to-start lag measured in hours: the downstream step starts a set number of hours after the upstream one starts. A transfer batch size is a piece count: the downstream step starts once a given number of pieces is ready. Continuous-process machines use the time-based flow model. Discrete machines use the piece-count model. Setting a transfer batch size on a continuous machine has no effect."
+  - question: "Does the continuous-process flag affect every routing step on that machine?"
+    answer: "Yes. Because the flag lives on the work center, it changes the overlap model for every routing step that runs through it. That is deliberate: the machine's physical nature does not change per product. If some products through the machine truly are discrete, that is a signal the machine is modeled at the wrong grain, not that the flag should move to the routing step."
+qaQuestions:
+  - question: "Our curing oven runs product continuously, but the schedule shows it starting each downstream step only after a fixed number of pieces. The oven work center has a transfer batch size of 200 on the routing. What is happening?"
+    answer: "The oven work center is not flagged continuous-process, so the engine is using the piece-count model and waiting for 200 pieces before releasing the downstream step. On a genuinely continuous machine that is the wrong model. Set the continuous-process flag on the oven work center and configure a flow-step lag in hours instead of the transfer batch size. Once the flag is on, the engine ignores the transfer batch size and uses the time-based flow, which is how a continuous oven actually behaves. The anomaly report's continuous-process check will have been flagging exactly this conflict."
+  - question: "I set the continuous-process flag on our reactor, but one product that runs through it is truly batch. Should I turn the flag off for that product?"
+    answer: "No, because the flag is a work center property and turning it off changes the model for every product through the reactor. If one product is genuinely discrete on that machine, the cleaner fix is to model that operation as a separate work center, or accept the flow model for it, rather than flipping a plant-wide flag per job. Mixing a continuous machine and a discrete product on one work center is a modeling question, and forcing the flag per product creates ambiguity the engine cannot resolve consistently."
+---
+
+**A continuous-process work center schedules in discrete batches when the machine is not actually flagged continuous, or when a piece-count transfer batch size is set on a routing step running through it.** The continuous-process flag lives on the work center, and it decides which overlap model the engine uses: time-based flow for continuous machines, piece-count batches for discrete ones. [EDGEBIC by User Solutions](/edgebic) has a built-in check that names the exact conflict, so the fix is usually one flag or one field.
+
+This post belongs to the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It explains the two overlap models, why the flag lives where it does, and how to correct a machine that is scheduling against its physical nature.
+
+## Two Overlap Models, One Flag Chooses
+
+A [continuous-process work center](/blog/what-is-a-continuous-process-work-center) (a reactor, a curing oven, a coating line, a battery-electrode line) does not move product in countable pieces. It flows. A discrete machine (a mill, a press, a CNC cell) moves work in pieces you can count and transfer in batches.
+
+EDGEBIC models these differently, and the continuous-process flag on the work center is the switch:
+
+| Flag on the work center | Overlap model the engine uses | What controls the overlap |
+|---|---|---|
+| Continuous-process ON | Time-based flow | Flow-step lag in hours |
+| Continuous-process OFF | Piece-count batches | Transfer batch size in pieces |
+
+When the flag is ON, the engine uses the time-based flow model and silently ignores any transfer batch size you set. When the flag is OFF, the engine uses the piece-count model, and the machine schedules in discrete batches, which is exactly the symptom you are seeing on a machine that should flow.
+
+## Why the Flag Lives on the Work Center
+
+The flag is a property of the machine, not the routing step, and that is deliberate. A reactor is continuous by physical nature regardless of which product runs through it. Putting the setting on the routing step would let a planner declare "this product makes the mill continuous," which is not physically meaningful. Setting it once per machine matches how the equipment actually behaves and never has to be maintained on hundreds of routing steps. To set or confirm it, see [how to mark a work center as continuous process](/blog/how-to-mark-a-work-center-as-continuous-process-in-edgebic).
+
+## The Anomaly Report Names the Conflict
+
+EDGEBIC's built-in Scheduler Anomaly Report carries a continuous-process check. It fires when a routing step has a transfer batch size greater than zero **and** the work center it runs through is flagged continuous-process. The detail line names the work center, its name, the transfer batch size, and the flow-step value the engine fell back to. That is the exact conflict, spelled out.
+
+Because this check evaluates configuration rather than a specific job, run the anomaly report as a full scan, not filtered to one job, when you audit machine setup. The [broader continuous-process work center overview](/blog/continuous-process-work-centers-edgebic) covers the configuration in depth.
+
+## The Fix
+
+There are only two correct outcomes, and the anomaly detail tells you which one you need.
+
+**If the machine truly is continuous:**
+
+1. Open the work center and set the continuous-process flag ON.
+2. Remove the transfer batch size from the routing steps running through it (it has no effect once the flag is on).
+3. Configure a flow-step lag in hours to model the overlap you want.
+4. Re-run scheduling and re-run the anomaly report to confirm the continuous-process check is clean.
+
+**If the machine truly is discrete:**
+
+1. Confirm the continuous-process flag is OFF on the work center.
+2. Keep the transfer batch size, which now drives real piece-count lot streaming.
+
+The one thing you cannot do is set the flag per product. It changes the model for every routing step through the machine, by design. If one product on a continuous machine is genuinely batch, that is a modeling question, not a flag to flip per job.
+
+## The Related Symptoms
+
+This sits next to two other lot-streaming problems worth knowing. When a transfer batch size does nothing on a discrete machine, see [my transfer batch size was ignored](/blog/my-transfer-batch-size-was-ignored-edgebic). When flow-step and queue time collide, see [queue time and flow time are fighting each other](/blog/queue-time-and-flow-time-are-fighting-each-other-edgebic). All three come back to the same principle: one overlap mechanism per step, matched to the machine's physical nature. The [troubleshooting guide](/blog/edgebic-troubleshooting-guide) links the full set.
+
+<Accordion title="Why is my continuous-process work center scheduling as piece batches?">
+Because the work center is not actually flagged continuous, or a transfer batch size is set on a routing step that runs through it. The continuous-process flag lives on the work center, not the routing step. When it is on, the engine uses a time-based flow model and ignores piece-count transfer batches. When it is off, the engine uses the piece-count model and the machine schedules in discrete batches.
+</Accordion>
+
+<Accordion title="Where is the continuous-process setting in EDGEBIC?">
+It is a property of the work center itself, set once when you configure the machine. It is not a routing-step field, because a reactor is continuous by physical nature no matter what product runs through it. The anomaly report's continuous-process check names the exact work center and the transfer batch size that is conflicting with its flag, so you know which record to open.
+</Accordion>
+
+<Accordion title="What is the difference between flow-step overlap and a transfer batch size?">
+Flow-step overlap is a time-based start-to-start lag measured in hours: the downstream step starts a set number of hours after the upstream one starts. A transfer batch size is a piece count: the downstream step starts once a given number of pieces is ready. Continuous-process machines use the time-based flow model. Discrete machines use the piece-count model. Setting a transfer batch size on a continuous machine has no effect.
+</Accordion>
+
+<Accordion title="Does the continuous-process flag affect every routing step on that machine?">
+Yes. Because the flag lives on the work center, it changes the overlap model for every routing step that runs through it. That is deliberate: the machine's physical nature does not change per product. If some products through the machine truly are discrete, that is a signal the machine is modeled at the wrong grain, not that the flag should move to the routing step.
+</Accordion>

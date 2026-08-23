@@ -1,0 +1,104 @@
+---
+title: "The Least-Setup-Time Optimizer Preset Explained"
+description: "The MinSetup optimizer goal in EDGEBIC groups compatible jobs to cut changeover hours. It needs a setup matrix to appear. Here is how it ranks a schedule and when to use it."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - minsetup optimizer goal
+  - least setup time scheduling
+  - changeover reduction preset
+  - setup matrix optimization
+  - production schedule optimization software
+  - campaign scheduling
+targetPhrase: "least setup time preset"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "What does the Least setup time optimizer goal do?"
+    answer: "It groups similar jobs so the machine spends fewer hours changing over between them. In EDGEBIC this preset, MinSetup, ranks total setup first, then weighted tardiness, then makespan. Less time switching between jobs becomes more production from the same shifts. It occasionally holds a job back to run alongside its match, and it only appears in the goal list once sequence-dependent setup data is configured."
+  - question: "Why is the Least setup time goal missing from my Goal dropdown?"
+    answer: "Because no sequence-dependent setup data is configured yet. The MinSetup preset is gated on the setup matrix: without a table of job-to-job or family-to-family changeover costs, the optimizer has no way to know which transitions are cheap, so the goal stays hidden. Populate the setup matrix and the goal appears automatically."
+  - question: "Does the Least setup goal work better with the mathematical solver?"
+    answer: "Yes. The multi-run search reorders whole jobs and scores the setup that results, which helps. The mathematical solver goes further: when every machine in your setup matrix is single-instance with no closed windows in the horizon, it models changeover as a sequence it optimizes directly. For a single changeover-heavy machine like a paint booth, that makes the goal genuinely powerful."
+qaQuestions:
+  - question: "Our changeovers eat two to three hours a day. Will Least setup pay off, and what do we need first?"
+    answer: "It pays off exactly where changeover is the drain. First you need the sequence-dependent setup matrix populated so EDGEBIC knows each transition cost. Then pick Least setup and, if your changeover machine is a single unit with no closed windows, the mathematical solver so setup is modeled natively. On a queue with several expensive transitions, grouping compatible jobs into a campaign can cut the daily changeover from a couple of hours to well under one, and that freed time shows up directly on the setup row of the comparison."
+  - question: "Will grouping jobs to save setup make a job late?"
+    answer: "It can, and the goal manages that trade with its lower tiers. Least setup ranks total setup first but still carries weighted tardiness on the second tier, and the whole plan is clamped never-worse under the setup-first ranking. If holding a job back to save a changeover would lose on the goal by making a more important job late, the optimizer will not choose it. When protecting dates matters more this week, pick On-time first and let setup be secondary."
+---
+
+**The Least setup time goal groups compatible jobs so the machine spends fewer hours changing over between them.** In EDGEBIC this preset, known internally as MinSetup, ranks total setup first, then weighted tardiness, then makespan. Less time switching between jobs becomes more real production from the same shifts, at the cost of occasionally holding a job back to run alongside its match. It only appears in the goal list once sequence-dependent setup data is configured, because without a setup matrix the optimizer cannot know which transitions are cheap.
+
+EDGEBIC by User Solutions makes changeover reduction a first-class optimizer goal for the shops where setup is a genuine drain: paint booths, heat-treat lines, extrusion, any machine where switching jobs costs real time. This post explains what the goal ranks, why it is gated on setup data, how the mathematical solver strengthens it, and when to reach for it. For the underlying mechanism, see [how the optimizer cuts total setup time](/blog/how-the-optimizer-cuts-total-setup-time).
+
+## The three tiers, in order
+
+| Tier | Measure | What it protects |
+|---|---|---|
+| 1 | Total setup hours | The sum of changeover time across the plan |
+| 2 | Weighted tardiness | Total lateness, scaled by job priority |
+| 3 | Makespan | The overall span from first start to last finish |
+
+The optimizer compares two plans by walking this list from the top. If plan A has fewer total setup hours by more than a small tolerance, plan A wins, whatever the lower tiers say. Weighted tardiness breaks the tie when two plans have the same setup, and makespan breaks it after that.
+
+Ranking setup first is what makes this preset build campaigns: runs of similar jobs back to back so the machine changes over as rarely as possible. The second and third tiers keep those campaigns from trampling due dates and throughput entirely.
+
+## Why the goal is gated on setup data
+
+The Least setup goal is the only preset that hides itself until a prerequisite is met. It requires sequence-dependent setup data, a matrix that tells EDGEBIC each job-to-job or family-to-family changeover cost. Without that table, the optimizer has no information about which transitions are cheap and which are expensive, so a setup goal would be meaningless. The goal therefore stays out of the dropdown until the matrix exists, with a note that it becomes available once sequence-dependent setup data is configured.
+
+[Sequence-dependent setup](/blog/sequence-dependent-setup-times) is setup whose cost depends on what ran before, not just what runs next. White to black paint might cost an hour, but black to white might cost four. That asymmetry is exactly what the matrix captures and what the goal optimizes against. For how the matrix fits the wider setup model, see [how EDGEBIC resolves setup time](/blog/how-edgebic-resolves-setup-time-the-five-level-chain).
+
+## The mathematical solver strengthens it
+
+With the multi-run search, Least setup reorders whole jobs and scores the resulting setup. That already delivers savings. The mathematical solver goes further when your matrix qualifies: it models the changeover sequence as part of the problem it solves, constructing the order that minimizes total changeover while honoring capacity and due dates.
+
+Native setup modeling activates only when it is safe: every machine the matrix references must be single-instance, not one-per-day, and free of closed windows in the horizon. For the common single-shift changeover-heavy machine, all of that holds, and the goal becomes genuinely powerful. Where a machine does not qualify, the solver locks the affected jobs exactly as scheduled rather than risk a wrong model. Choosing the engine is covered in [how to choose the optimizer engine in EDGEBIC](/blog/how-to-choose-the-optimizer-engine-in-edgebic).
+
+## A worked example
+
+One paint booth, a single machine on one day shift, six jobs queued by due date to white, black, white, red, black, white. The matrix holds costs like white to black 60 minutes, black to white 240 minutes, white to red 30 minutes, red to black 30 minutes.
+
+The current plan runs the due-date order and charges every changeover as it goes: roughly ten hours of changeover across the day, which makes the "done by end of shift" plan fiction.
+
+Run the optimizer with Least setup and the mathematical solver. It groups the jobs light to dark, white, white, white, red, black, black, so the expensive black-to-white transitions almost disappear.
+
+| Measure | Current | Proposed | Change |
+|---|---|---|---|
+| Setup (h) | ~10 | ~1 | ~9 better |
+| Weighted lateness (h) | present | held or improved | acceptable |
+| Makespan (h) | long | shorter | better |
+
+About nine hours of changeover come off the day, and those hours go straight back into production from the same shift. The move list shows exactly which jobs slid to form the campaign. Read the whole screen in [how to run and read an optimization in EDGEBIC](/blog/how-to-run-and-read-an-optimization-in-edgebic).
+
+## What a campaign actually is
+
+The plans this goal produces are campaigns: runs of compatible jobs grouped so the machine changes over as rarely as possible. It is worth seeing why a campaign beats a due-date order on a changeover-heavy machine. Sorting by due date scatters incompatible jobs through the day, so the machine pays a changeover between almost every pair. A campaign clusters the compatible jobs, so the machine pays one changeover to enter a cluster and then runs several jobs with little or no setup between them.
+
+The trade a campaign makes is timing. To group two compatible jobs, one of them may have to wait for the other rather than run in strict due-date order. Least setup accepts that wait when the changeover saved is worth more than the delay costs, and its lower tiers keep the wait from turning into a missed date that matters. On a plant where changeover is the dominant loss, the arithmetic almost always favors the campaign: an hour of setup avoided is an hour of production gained, and a job that starts an hour later but still lands on time has cost nothing. The optimizer is simply doing the grouping a seasoned planner would do by instinct, but across the whole queue and with the exact changeover numbers in hand.
+
+## Reading the trade honestly
+
+Least setup ranks setup first, so it can hold a job back to run it alongside its match. That may cost a little on a lower tier. The comparison screen shows this: the setup row shows the hours saved, and a lower row may show a job the campaign delayed. The whole proposal is clamped never-worse under the setup-first ranking, so it will never hand you something worse on its own goal.
+
+If holding a job back would make an important job late in a way you cannot accept this week, switch to [On-time first](/blog/the-ontimefirst-optimizer-preset-explained) and setup becomes the secondary consideration instead of the primary one. The goals genuinely trade off, and you choose which wins.
+
+## Where it lives
+
+Once your setup matrix is populated, Least setup appears in the Goal dropdown on the Optimizer tab. Select it, pick a time budget, and select the mathematical solver in Options, Schedule, Optimizer Engine if your changeover machine qualifies for native modeling. Run, read the setup row, check the campaign it built in the move list, and Accept when the trade suits your week. Nothing saves until Accept, and the audit record captures the goal.
+
+For the broader optimizer picture, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide), [job shop setup time reduction](/blog/job-shop-setup-time-reduction), and the wider view of [production schedule optimization](/blog/production-schedule-optimization). To explore the platform, visit [EDGEBIC](/edgebic).
+
+## When Least setup is not the right pick
+
+Least setup is powerful precisely where changeover dominates, and misplaced where it does not. If your machines change over quickly, or the changeover cost barely varies with sequence, ranking setup first buys little and can needlessly delay jobs to form campaigns that save minutes. In those shops, On-time first or Fastest overall finish usually serves you better, and setup falls out acceptably as a side effect of a good order.
+
+The goal also depends entirely on the quality of your setup matrix. If the changeover numbers are guesses, the campaigns the optimizer builds are optimizing against fiction. Populate the matrix from real observed changeover times, keep it current as processes change, and the goal repays that care. Treat the matrix as the source of truth the goal reasons from, not a box to fill once and forget, and Least setup stays honest. Where changeover is genuinely a daily drain and the matrix is trustworthy, no other goal recovers as many hours.
+
+## The bottom line
+
+Least setup is the goal for shops where changeover is the drain. It ranks total setup first, weighted tardiness second, and makespan third, so it builds campaigns of compatible jobs that cut the hours spent switching. It needs a setup matrix to appear and gets genuinely powerful with the mathematical solver on a qualifying machine. Populate the matrix, pick the goal, read the setup row, and turn wasted changeover into production the same shift.

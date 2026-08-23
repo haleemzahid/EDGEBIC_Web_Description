@@ -1,0 +1,179 @@
+---
+title: "Sales Orders in EDGEBIC: Firm Demand, Lines and Job Links"
+description: "Sales orders in production scheduling: how EDGEBIC's header and line structure records customer commitments, tracks open quantity, and groups jobs by order."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - sales orders production scheduling
+  - firm demand manufacturing
+  - sales order line due date
+  - open quantity shipped quantity
+  - sales order to manufacturing order
+  - customer order tracking manufacturing
+targetPhrase: "sales orders production scheduling"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "What is a sales order in production scheduling software?"
+    answer: "A sales order records a customer's commitment to buy a product in a stated quantity by a stated date. In EDGEBIC it is a two-level structure: a header that captures who ordered, when, and what lifecycle status the order is in, and one or more lines that each name a product, a quantity, a unit price, a shipped-to-date figure, and a due date. The line due date is what planning buckets demand against."
+  - question: "When does a sales order become firm demand?"
+    answer: "Only when its status is Confirmed. Lines on Draft, Shipped, Closed, and Cancelled orders are never counted as firm demand, which means a planner controls exactly when a commitment enters the planning pipeline. The practical discipline is to confirm an order when it is commercially locked, not when it is entered, because confirming early puts unagreed quantities into the demand calculation."
+  - question: "What is open quantity on a sales order line?"
+    answer: "Open quantity is ordered quantity minus shipped quantity, floored at zero. It is the amount still owed to the customer, and it is what planning treats as demand rather than the original ordered figure. Recording a partial shipment by raising the shipped quantity therefore reduces demand automatically, with no separate planning adjustment. Shipping more than ordered leaves open quantity at zero rather than raising an error."
+  - question: "Does every manufacturing order need a sales order?"
+    answer: "No. The link is optional in both directions. A manufacturing order carries a nullable sales order reference, and jobs with no link appear under an Unassigned grouping in the grouped order view. Replenishment jobs and jobs firmed from a master production schedule legitimately have no customer order behind them, so that grouping is a normal state rather than an error list."
+qaQuestions:
+  - question: "Sales says they have entered the order, planning says there is no demand. Who is right?"
+    answer: "Both, usually. Entering a sales order creates it with Draft status, and Draft lines are deliberately excluded from firm demand. Until someone changes the status to Confirmed, the order exists, is visible in the order grid, and contributes nothing to the planning calculation. That is the intended safety gate: it stops unpriced or unagreed orders from driving builds. The fix is a process one rather than a technical one, namely deciding who confirms orders and when, and the verification is quick because the demand column for the product shows the line's open balance the moment the status flips."
+  - question: "How do we show a customer the status of every job on their purchase order in one view?"
+    answer: "Turn on the sales order group view mode in the schedule's order view. It presents a tree with each sales order as a parent row and its linked manufacturing orders as children, and each child shows the job number, product, quantity, status, whether it has actually been through the engine, its scheduled start and end, estimated hours, and actual hours. That is the whole answer to a progress call in one expandable row. Note that actual hours read as a dash rather than zero until at least one operation has logged real start and end times, which is correct rather than missing data."
+---
+
+**A sales order is a customer's commitment to buy, and in scheduling terms it is the cleanest source of firm demand a planner can have.** In EDGEBIC by User Solutions a sales order is a two-level record: a header that says who ordered and what state the commitment is in, and lines that say exactly what, how much, and by when. The line due date is the date planning buckets against, and the status on the header decides whether any of it counts.
+
+This is the capability overview. For the entry mechanics see [how to enter and manage sales orders](/blog/how-to-enter-and-manage-sales-orders-in-edgebic), for the demand mechanism see [how sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic), and for the failure modes see [sales order mistakes](/blog/sales-order-mistakes-edgebic).
+
+## The two-level structure
+
+The split exists because one customer order routinely covers several products with different dates.
+
+**The header** carries:
+
+| Field | Purpose |
+|---|---|
+| **Reference number** | The external identifier, typically the customer's purchase order number |
+| **Order date** | When the order was placed |
+| **Requested date** | A header-level delivery ask, used for display and defaulting |
+| **Status** | The lifecycle state that governs whether lines count as firm demand |
+| **Customer** | Optional link to the customer record |
+
+**Each line** carries:
+
+| Field | Purpose |
+|---|---|
+| **Product** | What is being bought |
+| **Quantity** | How much was ordered; must be greater than zero |
+| **Quantity shipped** | How much has been fulfilled to date |
+| **Due date** | The customer-required date for this line, and the bucket key for demand |
+| **Unit price** | The selling price per unit |
+| **Notes** | Free text |
+
+And one derived value that does more work than any of them:
+
+```
+Open quantity = max(0, quantity − quantity shipped)
+```
+
+Open quantity is what the customer is still owed, and it is what planning treats as demand. Because it is computed rather than stored, recording a shipment automatically reduces demand: nobody has to remember to adjust a plan after the truck leaves. Ship more than ordered and it floors at zero rather than raising an error.
+
+## Why the due date lives on the line
+
+Header-level dates are common in order-entry systems and they break down the moment one purchase order covers two products with different needs. A customer ordering 200 brackets for July 15 and 50 fixtures for August 30 has one commercial document and two planning realities.
+
+Putting the due date on the line means each product's demand lands in its own bucket. The header's requested date is still there for display and for defaulting new lines, but the line date is what the planning layer reads. That is also why a line can be edited without touching the header, and why changing the customer on a header deliberately does not re-bucket the existing lines.
+
+## The status lifecycle
+
+Five states, and only one of them produces firm demand:
+
+| Status | Firm demand? | Meaning |
+|---|---|---|
+| **Draft** | No | Entered but not yet committed |
+| **Confirmed** | **Yes** | Commercially locked; lines are firm demand |
+| **Shipped** | No | Fulfilment complete |
+| **Closed** | No | Administratively closed |
+| **Cancelled** | No | Cancelled |
+
+New orders are created as Draft. That default is the safety gate: an order can be entered, priced, discussed, and revised without any of it reaching the planning calculation. When the commercial terms are locked, someone changes the status to Confirmed and the lines enter demand.
+
+The discipline that follows is worth stating plainly. Confirm when the order is commercially locked, not when it is typed. Confirming early puts unagreed quantities into the pipeline, and the resulting builds are difficult to unwind once material has been issued and machines have run.
+
+## Sales orders and manufacturing orders
+
+The relationship is one-to-many and optional in both directions.
+
+A manufacturing order carries a nullable reference to a sales order. The link gets set either at job creation, where the form offers a sales order to attach to, or automatically by the quote-to-order flow when a quote is accepted and converted. The [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic) follows that path end to end.
+
+One sales order can own many jobs. That covers two real situations: one job per product line on a multi-line order, and several jobs covering partial quantities of a single large line.
+
+Jobs with no link are not errors. They appear under an **Unassigned** grouping, and legitimate residents of that grouping include replenishment jobs raised to refill stock and jobs firmed from a master production schedule. Neither has a customer order behind it, by definition.
+
+## The grouped order view
+
+Turning on sales order group view mode in the schedule's order screen changes the flat job list into a tree: sales orders as parent rows, their linked jobs as children.
+
+Each child row shows:
+
+- Job number and product
+- Quantity and status
+- Whether the job has actually been through the scheduling engine
+- Scheduled start and end
+- Estimated hours and actual hours
+
+That last pair is the one planners use most, because the comparison between estimated and actual is the whole conversation about whether a routing is honest. Actual hours read as a dash rather than zero until at least one operation has logged real start and end times, which is correct rather than missing.
+
+The view exists to answer a specific question with one expansion: what is the state of everything on this customer's purchase order? Without it, the answer is a filtered job list and a mental join.
+
+There is one subtlety in that view worth knowing. Whether a job has been scheduled is reported by a dedicated flag rather than by reading its status, because a freshly created job reads as "Scheduled" by status before the engine has ever touched it. The flag tells you the truth; the status word does not, in that one case.
+
+## Reference numbers
+
+The reference number is typically the customer's purchase order number, and it is unique **per customer** rather than globally. Two different customers can both send you a purchase order numbered `ORD-2026-001` and both are accepted. Attempting a second order with the same reference for the same customer is rejected with a clear message.
+
+If you would rather have an internal sequence, adopt a house convention such as `SO-2026-0047` and keep it yourself. The reference is required on every order, so leaving it blank does not produce one for you; it refuses the save. Deciding the convention up front is what stops two people entering the same order under two different labels.
+
+Because the uniqueness check ignores deleted records, a cancelled and removed order releases its reference number for reuse. That matters when a customer re-issues the same purchase order number after a revision.
+
+## Where sales orders sit in the planning picture
+
+Sales orders are one of three demand sources in a planning-capable configuration, and they are the firm one:
+
+| Source | Character |
+|---|---|
+| **Confirmed sales order lines** | Firm demand: contractually committed |
+| **Forecast entries** | Statistical estimate of demand not yet ordered |
+| **Replenishment triggers** | Internally generated demand to refill a buffer |
+
+The three interact through documented rules: a forecast consumption rule decides how firm and forecast demand net against each other within a bucket so nothing is counted twice, and time fences decide how far out firm demand replaces forecast entirely. The [planning guide](/blog/edgebic-planning-guide) covers those interactions, and [dependent versus independent demand](/blog/dependent-vs-independent-demand) covers the underlying concept.
+
+For shops running purely make-to-order, none of that machinery is required. A sales order is still worth entering, because it gives you the customer grouping, the open-quantity tracking, and the progress view described above, even when the planning layer is not the thing driving builds.
+
+## Deletion behaves differently here
+
+Two operations look similar and are not.
+
+**Setting status to Cancelled** stops the order's lines counting as firm demand and leaves everything else alone. Linked jobs remain, schedules remain, history remains.
+
+**Deleting the order** marks the header as deleted and marks every linked job as deleted too, in the same operation. The jobs disappear from the scheduling queue. Their historical schedule rows and logged hours stay in the database for cost and time analysis, but the jobs themselves are gone from the working views.
+
+That cascade is deliberate, because an order that no longer exists should not leave orphan jobs on the floor. It is also the single most consequential button in this module, so it deserves the pause. When in doubt, cancel rather than delete: cancelling achieves the demand outcome with none of the job removal.
+
+## What sales orders do not do
+
+They do not schedule anything by themselves. A confirmed line is demand, and demand becomes work only when a manufacturing order exists, either created directly, converted from a quote, or firmed from a planning suggestion. The engine schedules jobs.
+
+They do not carry priority. Priorities and dates that the engine reads live on the manufacturing order.
+
+They do not enforce a line-level uniqueness rule. Several lines on the same order can name the same product and the same date, and they accumulate as demand rather than conflicting. That is useful for staged releases against one purchase order and confusing if it happens by accident.
+
+For the practical entry sequence, continue to [how to enter and manage sales orders](/blog/how-to-enter-and-manage-sales-orders-in-edgebic). For the platform overview, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) and the [product hub](/edgebic) map the modules, and bulk order loads go through the [configurable import masks](/edgebic-erp-integration).
+
+<Accordion title="What is a sales order in production scheduling software?">
+A sales order records a customer's commitment to buy a product in a stated quantity by a stated date. In EDGEBIC it is a two-level structure: a header that captures who ordered, when, and what lifecycle status the order is in, and one or more lines that each name a product, a quantity, a unit price, a shipped-to-date figure, and a due date. The line due date is what planning buckets demand against.
+</Accordion>
+
+<Accordion title="When does a sales order become firm demand?">
+Only when its status is Confirmed. Lines on Draft, Shipped, Closed, and Cancelled orders are never counted as firm demand, which means a planner controls exactly when a commitment enters the planning pipeline. The practical discipline is to confirm an order when it is commercially locked, not when it is entered, because confirming early puts unagreed quantities into the demand calculation.
+</Accordion>
+
+<Accordion title="What is open quantity on a sales order line?">
+Open quantity is ordered quantity minus shipped quantity, floored at zero. It is the amount still owed to the customer, and it is what planning treats as demand rather than the original ordered figure. Recording a partial shipment by raising the shipped quantity therefore reduces demand automatically, with no separate planning adjustment. Shipping more than ordered leaves open quantity at zero rather than raising an error.
+</Accordion>
+
+<Accordion title="Does every manufacturing order need a sales order?">
+No. The link is optional in both directions. A manufacturing order carries a nullable sales order reference, and jobs with no link appear under an Unassigned grouping in the grouped order view. Replenishment jobs and jobs firmed from a master production schedule legitimately have no customer order behind them, so that grouping is a normal state rather than an error list.
+</Accordion>

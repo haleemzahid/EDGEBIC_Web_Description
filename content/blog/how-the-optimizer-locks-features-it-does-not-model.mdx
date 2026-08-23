@@ -1,0 +1,81 @@
+---
+title: "How the Optimizer Locks Features It Does Not Model"
+description: "When a job uses a feature the mathematical solver does not yet optimize natively, EDGEBIC locks it to the greedy plan exactly. Here is why that makes the solver safe for every dataset."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - job level feature lock
+  - CP-SAT scheduling solver
+  - constraint optimization safety
+  - locked jobs optimizer
+  - production schedule optimization
+  - feasible schedule guarantee
+targetPhrase: "optimizer feature lock"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "What does it mean when the optimizer locks a job?"
+    answer: "A locked job is reproduced exactly as the greedy engine scheduled it: same work center, same start, same duration on every step, and its rows still consume capacity in the model. The solver rearranges only the jobs it fully models and schedules them around the locked ones. The optimizer locks any job whose routing uses a feature the mathematical model does not yet optimize natively, so it can never emit an invalid plan for a feature it does not understand."
+  - question: "Which features cause a job to be locked in the CP-SAT solver?"
+    answer: "A job is locked when its routing uses a multi-instance work center, a one-per-day work center, transit days, FlowStep or transfer-batch lot streaming, parallel processing, alternate work centers, or a setup matrix that is not eligible for native modeling. Each locked job carries its reason, visible in the diagnostics and the Explain dialog. The solver natively optimizes plain single-instance sequential jobs and locks everything else to greedy's decision."
+  - question: "Does locking make the optimizer useless on complex shops?"
+    answer: "No. Locking guarantees correctness first: the solver can never break a feature it does not model, because it copies greedy's decision for those jobs verbatim. On a shop where every job uses a locked feature, the solver verifies the plan and changes nothing, and no optimality claim is made. On a shop with plain sequential jobs mixed in, it optimizes those around the locked work. The multi-run engine, by contrast, optimizes every job because it reruns the full engine."
+qaQuestions:
+  - question: "The Explain dialog says most of my jobs were locked. Should I be worried?"
+    answer: "No, that is the safety design working as intended. Locking means those jobs use features the mathematical solver does not yet optimize natively, so it reproduced the greedy plan for them exactly rather than risk an invalid change. If the count of optimized jobs is zero, the solver tells you plainly that it verified the plan and changed nothing, and it makes no optimality claim. If you want every job considered, switch to the multi-run engine, which reruns the whole engine and optimizes all jobs."
+  - question: "I run a paint booth with sequence-dependent setup. Is that always locked?"
+    answer: "Not necessarily. When your setup matrix references only single-instance work centers with no one-per-day flag and no closed windows in the planning horizon, the solver models the changeovers natively through a sequencing circuit, and the Least setup time goal becomes genuinely powerful. If any referenced work center fails that test, the matrix falls back to locking for safety. For a common single-shift paint booth, native setup modeling usually applies."
+---
+
+**When a job uses a feature the mathematical solver does not yet optimize natively, the optimizer locks it: the job is reproduced exactly as the greedy engine scheduled it, and the solver rearranges only the jobs it fully models around it.** A locked job keeps its work center, start, and duration on every step, and its rows still consume capacity, so optimizable jobs schedule realistically around it. This is the safety design that lets the mathematical solver run on any dataset: because it copies greedy's decision verbatim for anything it does not model, it can never produce an invalid plan for a feature it does not understand. Correctness comes first, optimization scope second.
+
+EDGEBIC by User Solutions applies these job-level locks in the CP-SAT solver, the mathematical engine you can select as an alternative to the default multi-run search. This post explains what triggers a lock, why locking is safer than approximating, and how to read which jobs were left alone. For the two engines side by side, see [the two layers of the EDGEBIC optimizer](/blog/the-two-layers-of-the-edgebic-optimizer), and for the pillar view, the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## Why some features are not modeled yet
+
+The mathematical solver represents your schedule as variables and constraints it can reason about with a proof. Building that representation correctly for every scheduling feature the platform supports is a large, careful job, and it is done feature by feature, each with a test that proves the model agrees with the production engine. Until a feature has that proven agreement, the solver does not pretend to model it. The alternative, approximating a feature it has not verified, is exactly the failure a scheduling tool must never make: a plan that looks optimal on screen but cannot run on the floor.
+
+So the design draws a hard line. The solver natively optimizes plain single-instance, sequential jobs, the common backbone of most routings. Any job whose routing reaches beyond that is locked to the greedy engine's decision, which is always feasible because the greedy engine is the production engine.
+
+## What triggers a lock
+
+Each job is inspected before the solve, and any of these features in its routing locks it:
+
+| Lock reason | Trigger |
+|---|---|
+| Multi-instance work center | A routed work center with more than one instance |
+| One-per-day work center | A routed work center flagged one job per day |
+| Transit days | A step with transit days set |
+| FlowStep lot streaming | A step with FlowStep overlap set |
+| Transfer-batch lot streaming | A step with a transfer batch size set |
+| Parallel processing | A step configured dependent or independent parallel |
+| Alternate work centers | A step with alternate work centers listed |
+| Setup matrix (ineligible) | A setup matrix not eligible for native modeling |
+
+Each locked job carries its specific reason, which appears in the diagnostics and in the Explain dialog. A planner can see exactly why the optimizer left a given job alone, rather than facing a silent decision. This is part of the honesty contract: features are never quietly ignored, they are locked with a recorded reason.
+
+## Locked jobs still consume capacity
+
+A lock is not the same as removing a job from the picture. The locked job's operations sit in the model at their greedy start times and occupy their work centers' capacity, exactly as they will on the floor. This matters because the optimizable jobs must schedule realistically. If a locked job holds a machine Monday morning, an optimizable job cannot be placed there, just as in reality. The solver optimizes the plain jobs in the true remaining space, not in a fantasy where the complex jobs vanished. Either way the lever is only the order jobs are taken: [what the optimizer does not change](/blog/what-the-optimizer-does-not-change) lists the routings, quantities, due dates, calendars, and recorded hours it reads and never rewrites.
+
+## The honesty counter: optimized versus locked
+
+Every result reports how many jobs were optimized and how many were locked. These are the honesty counters. When the optimized count is zero, every job in the run used a feature the solver does not model natively. The solver did the only correct thing: it verified the greedy plan was feasible in its model and changed nothing. In that state the diagnostics print an unambiguous banner saying there was nothing to optimize, and no optimality gap is claimed. You are told plainly that the solver looked and found no plain jobs to rearrange, rather than being shown a hollow "optimal" badge over an unchanged plan.
+
+On a mixed shop, the counters tell you the scope of the run: how much of your work the solver could rearrange and how much it protected as-is. That is useful context for reading the result.
+
+## The one native exception worth knowing
+
+There is one place where a feature that would otherwise lock gets modeled natively: sequence-dependent setup. When your setup matrix references only single-instance work centers, none flagged one-per-day, and none with closed windows inside the planning horizon, the solver models changeovers directly through a sequencing circuit. This is where the mathematical solver earns real setup savings the greedy engine cannot see, and it is why the [Least setup time goal](/blog/the-minsetup-optimizer-preset-explained) becomes powerful on an eligible shop such as a single-shift paint booth. Eligibility is all-or-nothing for safety: if any referenced work center fails the test, the matrix falls back to locking. See [how the optimizer cuts total setup time](/blog/how-the-optimizer-cuts-total-setup-time).
+
+## Why the multi-run engine does not lock
+
+The default multi-run engine never locks a job, and the contrast explains the two engines' division of labor. Multi-run does not build a mathematical model at all. It reruns the full production engine with different job orderings, so every feature is handled exactly as it is in production, by the engine itself. It optimizes every job because it never leaves the engine. What it cannot do is prove how close to optimal the result is. The mathematical solver adds that proof but only for the jobs it models, locking the rest. Both engines share the never-worse clamp, so whichever you pick, the result is never worse than your baseline. Choose between them in [choosing the optimizer engine](/blog/choosing-the-optimizer-engine-multi-run-or-cp-sat).
+
+## The bottom line
+
+The mathematical solver locks any job whose routing uses a feature it does not yet model natively, reproducing the greedy plan for that job exactly and scheduling the plain jobs around it. Locked jobs still consume capacity, each carries a visible reason, and when every job is locked the solver honestly reports it changed nothing. This is what makes the solver safe for every dataset: it can never emit an invalid plan for a feature it does not understand. To see which jobs were locked and why, open the Explain dialog on a solver result. Explore the platform at [EDGEBIC](/edgebic).

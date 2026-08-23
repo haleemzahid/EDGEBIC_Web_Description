@@ -1,0 +1,97 @@
+---
+title: "Heat Treat Furnace Scheduling With One Job Per Day"
+description: "Heat treating scheduling software that models a furnace as one batch load per day per unit, so a long cure cycle books the whole furnace instead of pretending it is hourly capacity."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - heat treating scheduling software
+  - furnace batch scheduling
+  - one per day scheduling
+  - heat treat capacity planning
+  - batch oven scheduling
+  - finite capacity heat treatment
+targetPhrase: "heat treating scheduling software"
+wordCount: 1490
+readingTime: 7
+faqQuestions:
+  - question: "How do you schedule a furnace that runs one long batch load at a time?"
+    answer: "You mark the furnace as a one-per-day resource, so the scheduler treats each unit as capable of a single job for the day rather than a bucket of divisible hours. A ten-hour carburizing cycle then books the whole furnace for that day and the next job waits for a free unit or the next day, which matches how a batch oven physically behaves. Multiple furnaces become multiple one-per-day slots the scheduler fills in parallel."
+  - question: "What is the difference between one-per-day and load-balanced instance selection?"
+    answer: "Load balancing splits a job's hours across several identical units to finish faster, which suits machines that run divisible work. One-per-day dedicates a whole unit to one job for the day, which suits furnaces, ovens, and any batch process where a load occupies the equipment for its full cycle. The flag lives on the work center, so you choose the behavior that matches the physics of each resource rather than forcing one rule on all of them."
+  - question: "Can several furnaces run different jobs on the same day?"
+    answer: "Yes. Each furnace is its own one-per-day slot, so a cell with three furnaces schedules up to three different jobs on the same day, one per unit. The scheduler places the first job on the first free furnace, the second on the next, and so on. When all units are booked for the day, further jobs move to the next day a furnace opens rather than being crammed into a unit that is already committed."
+qaQuestions:
+  - question: "Our furnaces have different maximum load weights and cycle recipes. Can the schedule respect that instead of treating them as identical?"
+    answer: "Group the interchangeable furnaces into a work center group and keep the ones with special recipes separate. A job routed to the group is shopped across only the members that can actually run it, and each member carries its own effective run time, so a slower or lower-capacity furnace books longer than a fast one for the same load. Furnaces that only a specific recipe can use stay as their own work center rather than diluting the pool."
+  - question: "We batch several customer orders into one furnace load. How does the plan reflect that the load, not the order, is the schedulable unit?"
+    answer: "Schedule the load as a single job on the one-per-day furnace and track the constituent orders against it. The furnace books for the full cycle regardless of how many orders share the load, which is exactly the point: a partly full load and a full load both consume one furnace-day. That visibility is what tells a planner to hold a same-recipe order one more day so it rides the next load rather than triggering a second cycle."
+---
+
+**Heat treating scheduling software fails the moment it treats a furnace as a bucket of hourly capacity, because a batch oven does not run half a job and half of the next one, it runs one load for a full cycle and then the next.** EDGEBIC by User Solutions models that reality directly with a one-per-day resource rule, so a long cure or carburizing cycle books the whole furnace for the day and the plan matches what the floor physically does. For a heat-treat cell juggling long cycles across several furnaces, that single behavior is what makes the schedule believable.
+
+## Why Hourly Capacity Is the Wrong Model
+
+A CNC spindle can run four hours of one job and four hours of another in a shift, so dividing its day into hours is fine. A batch furnace cannot. When you load a fixture and start a ten-hour carburize-and-quench cycle, that furnace is committed until the cycle ends. A scheduler that thinks the furnace has "sixteen hours available" on a two-shift day will happily book two jobs into a window only one can occupy, and the second job is late before the first even finishes.
+
+The fix is to describe the furnace the way it actually behaves. Mark it as a one-per-day resource, and the scheduler treats each furnace as capable of a single job for that day. The long cycle books the unit, the next job waits for a free furnace or the next day, and nobody discovers the conflict at second shift.
+
+## One Furnace, One Load, One Day
+
+Consider a heat-treat cell with three carburizing furnaces, each marked one-per-day, and five jobs queued with cycle times between eight and fourteen hours.
+
+| Job | Cycle hours | Assigned furnace | Day |
+|---|---|---|---|
+| A | 12 | Furnace 1 | Monday |
+| B | 10 | Furnace 2 | Monday |
+| C | 14 | Furnace 3 | Monday |
+| D | 9 | Furnace 1 | Tuesday |
+| E | 11 | Furnace 2 | Tuesday |
+
+Three jobs land on Monday, one per furnace, filling every unit for the day. The remaining two roll to Tuesday as furnaces free up. No furnace is asked to run two cycles it cannot physically run, and the plan reads as a real furnace calendar rather than a spreadsheet of hours. This is the same instance logic explained in [how EDGEBIC picks an instance, load balancing versus one per day](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day), applied to a batch process.
+
+## One-Per-Day Versus Load Balancing
+
+The one-per-day rule is a choice, not a global setting. It lives on the work center, so each resource gets the behavior that matches its physics.
+
+- **Load balancing** splits a job's hours across several identical units so it finishes sooner. Right for machining cells, welding banks, and any divisible work.
+- **One-per-day** dedicates a whole unit to one job for the day. Right for furnaces, ovens, autoclaves, and any batch process where a load occupies the equipment for a full cycle.
+
+Because the flag is per work center, a plant can run load-balanced machining upstream and one-per-day heat treat downstream in the same schedule, each honest about how it actually works. That is finite capacity done at the level of the individual resource, which is the whole point of [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## When Furnaces Are Not Identical
+
+Real cells rarely have three perfectly interchangeable furnaces. Loads have weight limits, and some furnaces run recipes others cannot. Group the genuinely interchangeable furnaces into a [work center group](/blog/edgebic-work-center-groups-explained), and keep the special-recipe units as their own work centers.
+
+A job routed to the group is shopped across only the members that can run it, and each member carries its own effective run time. A slower or lower-capacity furnace books longer than a fast one for the same load, so the plan reflects the real cost of using the older unit instead of pretending every furnace is equal. A furnace that only one recipe can use stays out of the pool, so a job that needs that recipe is never sent somewhere it cannot go. The mechanics of pooling are covered in [how a work center group shops a pool of machines](/blog/how-a-work-center-group-shops-a-pool-of-machines).
+
+## The Batch Load, Not the Order
+
+Heat treat almost always batches several customer orders into one furnace load. The schedulable unit is the load, not the order. Schedule the load as a single job on the one-per-day furnace and track the constituent orders against it, and the furnace books for the full cycle regardless of how many orders ride along.
+
+That framing is what makes idle capacity visible. A partly full load and a full load both consume one furnace-day, so when the plan shows a half-empty Tuesday cycle, a planner can decide to hold a same-recipe order one more day and combine it into the next load rather than firing a second cycle for a handful of parts. The furnace calendar makes that trade-off obvious instead of burying it.
+
+## Feeding the Schedule From the Floor
+
+A furnace calendar is only as good as the cycle times behind it, and it matters just as much to the customer sending parts in: [scheduling gear manufacturing across hobbing, heat treat, and grinding](/blog/edgebic-for-gear-manufacturing-hobbing-and-grinding) shows the same window from the other side of the routing. Operators log actual load and unload on a shop-floor kiosk, so a cycle that ran long because of a slow ramp or an extended soak is captured as a measured duration rather than an assumption. Those actuals flow back into the same schedule that planned the loads, and a reschedule around a delayed cycle never moves a load that already ran, it only re-times the loads still waiting. The workflow is described in [shop-floor actuals tracking](/blog/edgebic-for-machine-shops-actuals-tracking).
+
+Heat treat sits in a lineage of demanding, batch-heavy environments. The User Solutions and RMDB scheduling heritage runs across metals and heavy industry, including work with GE, where a railcar operation moved from roughly 30 percent to 90 percent on-time delivery under finite-capacity planning. The same discipline that steadied that flow is what keeps a furnace cell from over-promising loads it cannot physically fit.
+
+For a related batch scheduling application, see [foundries and casting lot scheduling](/blog/edgebic-for-foundries-and-casting-lot-scheduling), for the shop that heats its own billets ahead of a press, [press and furnace scheduling for forging shops](/blog/edgebic-for-forging-press-and-furnace-scheduling), and for the fundamentals, [what is production scheduling](/blog/what-is-production-scheduling). The [industry fit guide](/blog/edgebic-by-industry) maps the rest, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to build a real furnace calendar? [Contact US for a demo](/contact-us) and bring one week of load records for your busiest cell.
+
+<Accordion title="How do you schedule a furnace that runs one long batch load at a time?">
+You mark the furnace as a one-per-day resource, so the scheduler treats each unit as capable of a single job for the day rather than a bucket of divisible hours. A ten-hour carburizing cycle then books the whole furnace for that day and the next job waits for a free unit or the next day, which matches how a batch oven physically behaves. Multiple furnaces become multiple one-per-day slots the scheduler fills in parallel.
+</Accordion>
+
+<Accordion title="What is the difference between one-per-day and load-balanced instance selection?">
+Load balancing splits a job's hours across several identical units to finish faster, which suits machines that run divisible work. One-per-day dedicates a whole unit to one job for the day, which suits furnaces, ovens, and any batch process where a load occupies the equipment for its full cycle. The flag lives on the work center, so you choose the behavior that matches the physics of each resource rather than forcing one rule on all of them.
+</Accordion>
+
+<Accordion title="Can several furnaces run different jobs on the same day?">
+Yes. Each furnace is its own one-per-day slot, so a cell with three furnaces schedules up to three different jobs on the same day, one per unit. The scheduler places the first job on the first free furnace, the second on the next, and so on. When all units are booked for the day, further jobs move to the next day a furnace opens rather than being crammed into a unit that is already committed.
+</Accordion>

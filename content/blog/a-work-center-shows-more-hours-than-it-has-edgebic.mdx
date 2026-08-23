@@ -1,0 +1,101 @@
+---
+title: "A Work Center Shows More Hours Than It Has: The Causes"
+description: "When a work center's daily booking exceeds its physical hours, it is one of three causes: synchronized machines, stale reschedule rows, or an understated instance count."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - work center over-utilization scheduling
+  - daily booking exceeds capacity
+  - work center booked more hours than possible
+  - over-utilization anomaly check
+  - stale resource rows reschedule
+  - machine instance count wrong
+targetPhrase: "work center over-utilization scheduling"
+wordCount: 1420
+readingTime: 7
+faqQuestions:
+  - question: "Why does a work center show more hours booked than it physically has in a day?"
+    answer: "A daily booking above the physical ceiling of 24 hours times the machine-instance count comes from one of three causes: synchronized dependent-parallel machines that mirror a partner's hours by design, stale or duplicate allocation rows left by repeated rescheduling, or an instance count set lower than the number of real machines. The anomaly report separates them so you fix the right one."
+  - question: "What is the physical capacity ceiling for a work center?"
+    answer: "The physical ceiling is 24 hours multiplied by the number of machine instances on the work center. A work center with three instances can book at most 72 hours of work on any single calendar day. When a day's total exceeds that, the over-utilization check flags it as critical, because no set of real machines can run more clock hours than exist in the day."
+  - question: "Will re-running the schedule clear an over-booked work center?"
+    answer: "Usually yes, when the cause is stale or duplicate allocation rows accumulated across several reschedule cycles. A fresh scheduling run deletes and rebuilds the allocations for uncompleted work, collapsing duplicates into one row per operation. If the over-booking survives a clean run, the cause is structural: check the instance count against the real machine count, or confirm the work center is a synchronized dependent-parallel partner where the extra hours are expected."
+qaQuestions:
+  - question: "Our heat-treat station shows 30 booked hours on a Tuesday but it is a single furnace. How is that even possible?"
+    answer: "A single instance cannot exceed 24 hours, so 30 is the per-instance over-24-hour check firing, and the usual source is duplicate allocation rows from repeated reschedules rather than a real double shift. Re-run scheduling for the affected job first; the persist step rebuilds the day's rows and collapses duplicates. If 30 hours survives a clean run, confirm the instance count: if the furnace secretly has two chambers modeled as one instance, the count is wrong and should be 2, which lifts the ceiling to 48 and makes the booking legal."
+  - question: "The report flags our drilling cell for over-utilization, but the cell is a three-machine synchronized group. Is that a real problem?"
+    answer: "Probably not. Dependent-parallel groups mirror the parent machine's hours onto the partners on purpose, so the combined booking can look like it exceeds a single machine's ceiling. The over-utilization check excludes those mirrors when the partner is correctly typed as dependent. If it still fires, check that the parallel relationship is set to dependent rather than independent, and that the speed factor is not so large that one machine alone would exceed 24 hours in a day, which is a genuine physical violation."
+---
+
+**A work center booked for more hours than it physically has in a day is one of three specific causes, not a mystery: synchronized dependent-parallel machines mirroring a partner by design, stale or duplicate allocation rows left over from repeated rescheduling, or a machine-instance count set lower than the real machine count.** The over-utilization checks separate them, and each has a clean fix. A fresh scheduling run resolves the most common one on its own.
+
+[EDGEBIC by User Solutions](/edgebic) computes each work center's physical ceiling as 24 hours times the number of machine instances, then flags any day that exceeds it. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), walks the three causes in order of likelihood.
+
+## What "More Hours Than It Has" Actually Means
+
+Every work center has a hard physical limit: 24 hours in a day per machine, so 24 hours multiplied by the instance count. A three-machine cell can hold at most 72 hours of work on one calendar date. That is different from being fully booked or overloaded, where demand simply exceeds available capacity and jobs get pushed out. Here the number is impossible: the day's total booking is above the physical clock ceiling.
+
+The anomaly report catches this with three related checks:
+
+- **Physical over-utilization** flags a work center whose total daily booking exceeds 24 hours times its instances.
+- **Per-instance over-24-hour** flags a single machine unit booked for more than 24 hours in one day.
+- **Booking exceeds window** flags a schedule whose total allocated hours exceed its own time window times the instance count, which usually means stale rows.
+
+The Detail column shows the arithmetic, for example `BookedHrs=30.00; PhysicalCap=24.00; OverBy=6.00`, so you can see exactly how far over the day runs.
+
+## Cause 1: Synchronized Dependent-Parallel Machines
+
+When several machines must run the same operation at the same time, one is the parent and the others mirror it. This is dependent-parallel scheduling, used for multi-spindle drilling or synchronized welding. The mirror copies the parent's start, end, and hours onto each partner on purpose, so the combined booking across the group can look like it exceeds a single machine's ceiling.
+
+**How to tell:** the flagged work center is a partner in a synchronized group, and the parallel relationship is set to dependent. The over-utilization checks that guard against real bugs already exclude correctly typed dependent mirrors, so a critical flag on a dependent partner usually means the type is set wrong.
+
+**Fix:** confirm the parallel relationship is dependent, not independent, in the routing's parallel configuration. See [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic). If the type is correct and the flag persists, check the speed factor: a factor large enough that one machine alone would book more than 24 hours in a day is a genuine physical violation, and the factor is too high for the instance count.
+
+## Cause 2: Stale or Duplicate Rows From Rescheduling
+
+Each reschedule cycle rebuilds allocations. When the merge step that collapses duplicate rows is skipped, a work center can carry two allocation rows for the same operation on the same day, and the totals double up. This is the most common source of an impossible booking, and the tell is a number that is close to a clean multiple (a 6-hour job showing 12, a 15-hour day showing 30).
+
+**How to tell:** the booking is roughly twice, or a clean multiple, of what the operation should be, and the job has been rescheduled several times. The window check often fires alongside the over-utilization one.
+
+**Fix:** re-run scheduling for the affected job. The persist step deletes and rebuilds the allocation and daily-hour rows for uncompleted work, collapsing duplicates into one row per operation. This clears the overwhelming majority of these cases. If duplicates survive a clean run, the anomaly report's Detail names the schedule so you can raise it with support.
+
+## Cause 3: An Understated Instance Count
+
+The instance count is a straight multiplier on the ceiling. If a work center physically has three machines but its count reads 1, the ceiling is 24 hours instead of 72, and a legitimate day of parallel work looks like a triple over-book. Nothing is wrong with the schedule; the ceiling is set too low.
+
+**How to tell:** the booking is realistic for the number of machines on the floor, but the work center's instance count does not match that number.
+
+**Fix:** open the work center and set the instance count to the real number of machines. See [how to configure instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic) or [how to change the number of machines in a work center](/blog/how-to-change-the-number-of-machines-in-a-work-center-in-edgebic). Re-run scheduling; the higher ceiling makes the booking legal.
+
+## Reading the Report to Pick the Right Cause
+
+Run the anomaly report filtered to the job (leave the filter blank for a plant-wide scan), then work the chips top down:
+
+1. If a **dependent mirror** is involved, check the parallel type first.
+2. If the number is a **clean multiple** and the job was rescheduled repeatedly, re-run and re-check.
+3. If the number is **realistic for the machine count**, fix the instance count.
+
+This is a different symptom from [two jobs sharing the same machine at the same time](/blog/the-same-machine-is-double-booked-across-two-jobs-edgebic), which is an instance collision between two distinct jobs, and from a work center that is simply overloaded, where demand exceeds capacity and the fix is capacity, not correction. When the total is physically impossible, the answer is one of the three causes above.
+
+## Prevention
+
+- **Re-run after heavy rescheduling.** A single clean pass after a burst of reschedules collapses any duplicate rows before they surface as an impossible total.
+- **Set instance counts from the floor.** When a machine is added or a cell gains a second unit, update the count immediately, so the ceiling always reflects reality.
+- **Type parallel machines deliberately.** Use dependent only for machines that must run in lockstep, and independent for machines that share load. A mistyped relationship produces both false over-utilization flags and, in the independent case, missed load balancing.
+- **Audit after imports.** If work centers [arrive via import from your ERP](/edgebic-erp-integration), one scheduling pass and an anomaly-report read surface a wrong instance count before it distorts a plan.
+
+<Accordion title="Why does a work center show more hours booked than it physically has in a day?">
+A daily booking above the physical ceiling of 24 hours times the machine-instance count comes from one of three causes: synchronized dependent-parallel machines that mirror a partner's hours by design, stale or duplicate allocation rows left by repeated rescheduling, or an instance count set lower than the number of real machines. The anomaly report separates them so you fix the right one.
+</Accordion>
+
+<Accordion title="What is the physical capacity ceiling for a work center?">
+The physical ceiling is 24 hours multiplied by the number of machine instances on the work center. A work center with three instances can book at most 72 hours of work on any single calendar day. When a day's total exceeds that, the over-utilization check flags it as critical, because no set of real machines can run more clock hours than exist in the day.
+</Accordion>
+
+<Accordion title="Will re-running the schedule clear an over-booked work center?">
+Usually yes, when the cause is stale or duplicate allocation rows accumulated across several reschedule cycles. A fresh scheduling run deletes and rebuilds the allocations for uncompleted work, collapsing duplicates into one row per operation. If the over-booking survives a clean run, the cause is structural: check the instance count against the real machine count, or confirm the work center is a synchronized dependent-parallel partner where the extra hours are expected.
+</Accordion>

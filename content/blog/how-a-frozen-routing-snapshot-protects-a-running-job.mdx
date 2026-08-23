@@ -1,0 +1,102 @@
+---
+title: "How a Frozen Routing Snapshot Protects a Running Job"
+description: "Why EDGEBIC saves an exact copy of the routing each job was scheduled with, so a mid-order engineering change never silently re-routes an operator's remaining steps."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - routing snapshot
+  - bill of routing preservation
+  - preserved routing
+  - engineering change scheduling
+  - schedule stability
+  - reschedule routing
+targetPhrase: "frozen routing snapshot scheduling"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "What is a routing snapshot in production scheduling?"
+    answer: "A routing snapshot is an exact copy of the bill of routing that a job was scheduled with, saved the first time the job is scheduled. On every later reschedule, EDGEBIC reads this preserved copy rather than the live routing, so the sequence of operations, work-center assignments, and step times stay stable for the life of the order even if engineers change the master routing."
+  - question: "Why does EDGEBIC use the old routing when I reschedule?"
+    answer: "By design. A routing snapshot keeps a running job on the routing it was planned with, so a mid-production engineering change does not silently re-route an operator's remaining steps. If an engineer moves a QC step from one machine to another after the job started, the reschedule still uses the original machine, because the operator's tooling and instructions were set up for it. You can opt in to the new routing per job when you want the change to apply."
+  - question: "How do I force a job to pick up a routing change?"
+    answer: "Tick the Use Global Routing on Reschedule option for that job. The next scheduling run reads the live master routing instead of the preserved snapshot, applies the change, and refreshes the snapshot to match. After the run the flag resets so future reschedules lock to the newly updated routing. This makes the pickup a deliberate, per-job decision rather than an automatic one."
+  - question: "Does a routing snapshot capture alternative work centers too?"
+    answer: "Yes. The snapshot captures the full step hierarchy, including each step's work-center assignment, sequence, timing values, parallel setup, and its alternative work centers with their multipliers. It records the complete routing as it existed at scheduling time, which is what lets a later reschedule reproduce the same plan and lets a change report show exactly which fields differ from today's master routing."
+qaQuestions:
+  - question: "An engineer changed a QC step from QC-Bay to Test-Cell after my job was already 60 percent done. Will my next reschedule move the remaining QC work to Test-Cell?"
+    answer: "Not unless you tell it to. The job carries a routing snapshot taken when it was first scheduled, and by default a reschedule reads that snapshot, so the QC step stays on QC-Bay for this order. That is deliberate: the operator has tooling and instructions set up for QC-Bay, and silently re-routing mid-order would invalidate them without warning. If you decide the change should apply to this job, tick Use Global Routing on Reschedule and run again; the step moves to Test-Cell and the snapshot updates. Otherwise the running job finishes on the routing it started with."
+  - question: "We updated a master routing to halve a cycle time on a machine after finding a better method. How do I get in-flight jobs to benefit without re-routing them?"
+    answer: "You have two clean options. The direct one is to tick Use Global Routing on Reschedule for the specific jobs, which pulls in the whole updated routing including the faster cycle time and refreshes their snapshots. If you want the efficiency gain without adopting any structural routing changes, EDGEBIC also supports a hybrid mode that keeps each step's work center from the preserved snapshot but adopts validated timing improvements from the master routing, so a step whose hours dropped from 10 to 4.8 picks up the faster number while the machine assignment stays put. Either way it is a decision you make, never a silent overwrite."
+---
+
+**A routing snapshot is an exact copy of the bill of routing a job was scheduled with, saved the first time EDGEBIC by User Solutions schedules that job. On every later reschedule the engine reads the preserved copy rather than the live master routing, so the operation sequence, machine assignments, and step times stay stable for the life of the order even when engineers change the master.** The effect is that a change made to a routing halfway through a production run does not quietly re-route an operator's remaining steps, and any change that should apply is a deliberate choice you make per job.
+
+Routings change. Engineers find better methods, swap machines, add an inspection step, correct a cycle time. That is healthy. What is dangerous is when those changes reach through into jobs that are already on the floor and silently rearrange the work an operator has already set up for. The routing snapshot is the mechanism that stops that from happening by default.
+
+## Two versions of a routing, on purpose
+
+At any moment a product has two routings that matter:
+
+- The **global routing** is the live master, what you would see in the routing editor right now. Engineers can change it at any time.
+- The **preserved routing** is the deep copy taken when a specific job was first scheduled. It belongs to that job and does not move when the master changes.
+
+When you schedule a job for the first time, EDGEBIC uses the global routing (a new job has no snapshot yet), then saves an exact copy as that job's snapshot. From then on, every reschedule of that job reads the snapshot. The master can be edited freely, and it will drive the next brand-new job, but it will not reach into a job that already has a plan.
+
+## Why the default is to preserve, not update
+
+The reason preservation is the default comes down to the shop floor. Consider a three-step job that is 60 percent complete: the first two steps have actuals, and only the final QC step remains. An engineer then changes that QC step in the master routing, moving it from QC-Bay to Test-Cell and shaving its cycle time.
+
+If the reschedule silently picked up the master change, the remaining QC work would jump to Test-Cell. But the operator's tooling, fixtures, and work instructions were set up for QC-Bay. Re-routing mid-order without warning would invalidate all of that, and the first anyone would learn of it is when the operator finds a job on the wrong machine. So EDGEBIC keeps the snapshot: the QC step stays on QC-Bay, exactly as originally planned, and the job finishes on the routing it started with.
+
+This pairs naturally with the rule that a [reschedule preserves completed work](/blog/how-a-scheduler-preserves-completed-work). Actuals protect the operations that are already done; the routing snapshot protects the plan for the operations that are not yet done. Together they keep a running job coherent from both ends.
+
+## Opting in to a change, per job
+
+Preservation is the default, not a lock. When you decide a routing change should apply to a specific job, you tick Use Global Routing on Reschedule for that job. The next run reads the live master routing, applies the change, and refreshes the snapshot to match. After the run the flag resets, so future reschedules lock to the newly updated routing. The important property is that the pickup is a per-job, deliberate act. Nothing is overwritten behind your back.
+
+There is also a middle path for the common case where you want a validated efficiency gain but not a structural re-route. A hybrid mode keeps each step's work center from the preserved snapshot but adopts significant timing improvements from the master. So a step whose hours dropped from 10 to 4.8 after a method change would pick up the faster number while its machine assignment stays exactly where the operator expects it. Small, noise-level changes are ignored so the snapshot does not drift against every trivial edit.
+
+## What the snapshot actually captures
+
+A snapshot is not a shallow date stamp. It records the full routing hierarchy as it existed at scheduling time: every step's sequence number, work-center assignment, setup, run, and queue times, its parallel configuration, and its alternative work centers with their multipliers. It also carries metadata such as when the job was scheduled and the order quantity it was scheduled for.
+
+Because the whole routing is captured, EDGEBIC can do two useful things. First, a later reschedule can reproduce the same plan step for step. Second, a change report can compare the preserved snapshot against today's master routing and show exactly which fields differ, so a planner can see what has changed since the job was scheduled before deciding whether to adopt it. The [routing snapshots explainer](/blog/edgebic-routing-snapshots-explained) covers reading that report and the opt-in controls in more detail.
+
+## A short worked trace
+
+A new job MO-7001 for a valve is scheduled with a three-step routing: Lathe, Mill, QC. On the first run EDGEBIC uses the global routing, schedules the job, and saves the three steps as the snapshot. The database now holds the job with its preserved routing and the preserve flag set.
+
+Weeks later, with the job partway done, an engineer changes the QC step's machine and cuts its hours. On the next reschedule:
+
+- With the preserve flag left as-is (the default), the job reads its snapshot. QC still runs on the original machine for its original hours. The completed Lathe and Mill steps are preserved; only remaining work re-plans.
+- With Use Global Routing on Reschedule ticked, the job reads the master. QC moves to the new machine at the new hours, and the snapshot refreshes so the change is now the job's baseline.
+
+Same job, same engine, two outcomes, and the planner chose which one applied.
+
+## Why this is a stability feature, not a limitation
+
+It is tempting to read "uses the old routing" as the system being out of date. It is the opposite: it is the system refusing to let a change you made for future jobs disturb a job that is already running. Audit integrity comes along for free, because you can always see which routing a job was actually scheduled with rather than guessing from whatever the master says today. And schedule stability, the thing operators quietly depend on, is preserved because their instructions and the plan agree.
+
+The routing snapshot sits inside the broader reschedule behavior described in the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and it is the reason a [reschedule that preserves completed work](/blog/how-a-scheduler-preserves-completed-work) can also promise that the not-yet-done steps stay on their original routing unless you say otherwise.
+
+To see a routing change land on new jobs while a running job holds its original plan, [bring your data to a demo](/contact-us).
+
+<Accordion title="What is a routing snapshot in production scheduling?">
+A routing snapshot is an exact copy of the bill of routing that a job was scheduled with, saved the first time the job is scheduled. On every later reschedule, EDGEBIC reads this preserved copy rather than the live routing, so the sequence of operations, work-center assignments, and step times stay stable for the life of the order even if engineers change the master routing.
+</Accordion>
+
+<Accordion title="Why does EDGEBIC use the old routing when I reschedule?">
+By design. A routing snapshot keeps a running job on the routing it was planned with, so a mid-production engineering change does not silently re-route an operator's remaining steps. If an engineer moves a QC step from one machine to another after the job started, the reschedule still uses the original machine, because the operator's tooling and instructions were set up for it. You can opt in to the new routing per job when you want the change to apply.
+</Accordion>
+
+<Accordion title="How do I force a job to pick up a routing change?">
+Tick the Use Global Routing on Reschedule option for that job. The next scheduling run reads the live master routing instead of the preserved snapshot, applies the change, and refreshes the snapshot to match. After the run the flag resets so future reschedules lock to the newly updated routing. This makes the pickup a deliberate, per-job decision rather than an automatic one.
+</Accordion>
+
+<Accordion title="Does a routing snapshot capture alternative work centers too?">
+Yes. The snapshot captures the full step hierarchy, including each step's work-center assignment, sequence, timing values, parallel setup, and its alternative work centers with their multipliers. It records the complete routing as it existed at scheduling time, which is what lets a later reschedule reproduce the same plan and lets a change report show exactly which fields differ from today's master routing.
+</Accordion>

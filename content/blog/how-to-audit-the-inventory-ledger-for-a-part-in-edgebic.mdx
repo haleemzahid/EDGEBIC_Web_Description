@@ -1,0 +1,98 @@
+---
+title: "How to Audit the Inventory Ledger for a Part in EDGEBIC"
+description: "Audit the inventory ledger for a part in EDGEBIC: open Transaction History, read the running balance, filter to manual movements, and confirm on-hand matches the ledger."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - audit the inventory ledger
+  - transaction history edgebic
+  - balance after column
+  - manual only movements
+  - on-hand cache drift
+  - inventory audit trail
+targetPhrase: "audit the inventory ledger for a part"
+wordCount: 1126
+readingTime: 6
+faqQuestions:
+  - question: "How do you audit the inventory ledger for a part in EDGEBIC?"
+    answer: "Open the Inventory tab, select the part, and open the Transaction History pane. It shows every ledger entry in chronological order with a running balance after each one. Toggle Show Manual Only to separate hand-entered movements from engine-posted ones, and compare the final balance to the current on-hand KPI. If they disagree, the anomaly report will flag an on-hand cache drift for the part."
+  - question: "What does the balance-after column show, and can I trust it on old rows?"
+    answer: "The balance-after column shows the on-hand immediately after that specific entry was posted. It is a snapshot taken at post time, so it does not recompute if a later reversal changes an earlier balance retroactively. For a live current figure always read the authoritative on-hand rather than the balance-after on an old row, because a reversal posted after that row leaves its snapshot unchanged."
+  - question: "How do you tell manual movements apart from engine-posted ones in the ledger?"
+    answer: "Engine-posted entries carry a manufacturing order reference; manual ones do not. Toggle Show Manual Only in the Transaction History pane to hide everything with an order reference, which leaves hand-entered receipts, issues, adjustments, and opening balances. Turn it off to see the full picture including consume issues from scheduling and finished-goods receipts from completed builds. The order reference is the dividing line."
+qaQuestions:
+  - question: "On-hand for a part looks wrong. How do I trace where it went off?"
+    answer: "Open Transaction History for the part with all entries shown and read down the balance-after column. Each row shows the on-hand right after it posted, so the point where the balance stops matching your expectation is the entry to investigate. Watch for a reversal, since reversed originals and their inverse rows both appear and net to zero. If the running ledger looks right but the on-hand KPI disagrees with the last balance, that is cache drift, and the anomaly report's on-hand check confirms it."
+  - question: "An auditor wants only the hand-entered stock corrections for a part this quarter. How do I produce that?"
+    answer: "Open the part's Transaction History and toggle Show Manual Only on, which filters to entries with no order reference: manual receipts, issues, cycle-count adjustments, and opening balances. Those are exactly the hand-entered corrections. Read the comment on each, since a well-written comment names the count, the purchase order, or the reason. The engine-posted consume issues and build receipts stay hidden while the toggle is on, so the auditor sees only the human decisions."
+---
+
+**To audit the inventory ledger for a part in EDGEBIC, you open Transaction History and read the chronological entries and running balance.** In [EDGEBIC by User Solutions](/edgebic) the ledger is append-only, so every receipt, issue, adjustment, reversal, and engine-posted movement is preserved in order, each with the on-hand balance it produced. This post covers how to read that history, how to separate human from engine movements, and how to confirm the ledger and the on-hand figure agree.
+
+The ledger is the source of truth for stock. For why it is designed as an append-only record, read [the inventory ledger explained](/blog/edgebic-inventory-ledger-explained). This post is the narrow task of auditing one part's history. Availability varies by installation, so check which inventory features your build exposes.
+
+An audit is only as trustworthy as the record it reads, and the append-only ledger is built to be that record. Nothing is edited in place and nothing is deleted, so the history you read is the history that happened, corrections and all. That makes an audit here a matter of reading rather than reconstructing: the movements are in order, each carries the balance it produced, and a reversal shows both the original and its cancellation. The job is to follow the trail and confirm it agrees with the current on-hand, then to explain any point where the numbers and your expectation diverge. Everything you need is in the ledger; you are checking it, not rebuilding it. That reliability is the whole point of an append-only design: on-hand is never a figure someone typed and could have fat-fingered, it is the sum of movements that each left a trace, so an audit is a matter of confirming the sum rather than distrusting a standalone number.
+
+## Before You Start
+
+- You know which part you are auditing and roughly what you expect its history to show.
+- You understand that reversed entries and their inverse rows both remain in the ledger and net to zero. Seeing both is correct, not a duplicate.
+- You have a physical or expected on-hand to compare against, if the goal is a reconciliation.
+
+## Open the Transaction History
+
+1. Click **Inventory** in the left navigation.
+2. Select the part in the product dropdown.
+3. Open the **Transaction History** sub-pane.
+
+The pane lists every ledger entry for the part in chronological order, newest last. Each row shows the movement type, the comment, the effective date, the signed quantity, and the balance after that entry.
+
+## Read the Running Balance
+
+The **Balance After** column is the fastest audit tool. It shows the on-hand immediately after each entry posted, so you can trace the balance forward and spot the exact entry where it diverges from what you expected. One caveat: this column is a snapshot at post time. If a reversal was posted later that retroactively changes an earlier balance, the older row's snapshot does not update. For the true current figure, rely on the authoritative on-hand rather than an old balance-after value.
+
+## Separate Manual From Engine Movements
+
+Every engine-posted entry carries a manufacturing order reference; hand-entered ones do not. Use that split:
+
+- Toggle **Show Manual Only** on to see only hand-entered receipts, issues, cycle-count adjustments, and opening balances.
+- Toggle it off to see the full picture, including consume issues from scheduling runs and finished-goods receipts from completed builds.
+
+This is how you produce a clean list of human corrections without the engine noise, or vice versa.
+
+## Confirm On-Hand Matches the Ledger
+
+The current on-hand is the sum of every ledger entry. To reconcile:
+
+1. Read the final balance in Transaction History.
+2. Compare it to **Current On-Hand** on the KPI strip, which sums the authoritative ledger.
+3. If they disagree, the on-hand cache has drifted from the ledger, typically after a partial write or interrupted transaction. The Scheduler Anomaly Report's inventory checks flag this as an on-hand drift for the part. Posting any new movement recomputes and self-heals the cache.
+
+## The Inventory Anomaly Checks Behind an Audit
+
+A manual read of one part is thorough but slow across a catalog. The plant-wide anomaly report automates the integrity questions an audit asks. Run it as a full scan, since these checks read every product and every ledger entry rather than a single job. The inventory checks catch the failures that a ledger audit is looking for: an on-hand cache that no longer matches its ledger sum, a product sitting below zero from over-issuing, and a make-to-stock product that is not flagged stocked and so silently skips posting. Filtering the results to the inventory checks gives you a plant-wide list of exactly the parts whose ledgers deserve a closer manual look.
+
+Reading the detail on a flagged part tells you where to focus. A cache-drift finding names the product, the cached figure, and the ledger sum, so you know the size of the gap before you open the history. From there the single-part audit above confirms the cause, and posting a movement heals the cache.
+
+## Manual-Only Includes Opening Balances
+
+One subtlety when you filter to hand-entered movements: opening balances posted at setup carry no order reference, so they appear in the manual-only view alongside receipts, issues, and adjustments. That is correct, because an opening balance is a human decision, but it can surprise you if you expected only day-to-day corrections. When you produce a manual-only list for a period that includes the product's setup, the opening balance will be the first row. Read it as the seed of the trail rather than a movement in the period.
+
+## How to Check the Audit Is Complete
+
+1. Confirm the entry count and date range cover the period you are auditing.
+2. Confirm every reversal you expect shows both the reversed original and its inverse row.
+3. Confirm the running balance ends at the figure the KPI reports.
+
+## Common Mistakes
+
+- **Trusting balance-after on old rows after a reversal.** The snapshot does not recompute. Use the authoritative on-hand for the live figure.
+- **Reading manual-only and thinking it is the full history.** Manual-only hides engine consume issues and build receipts. Turn the toggle off for the complete picture.
+- **Treating reversed pairs as duplicates.** A reversed original and its inverse both remain and net to zero. That is the audit trail working, not an error.
+- **Ignoring a KPI-versus-ledger mismatch.** A mismatch is real cache drift and should be investigated, then healed by posting a movement. The anomaly report catches it on a full scan.
+
+When the audit turns up an entry that must be undone, follow [how to reverse an inventory transaction](/blog/how-to-reverse-an-inventory-transaction-in-edgebic). To understand the balance figures the ledger drives, see [the projected available balance explained](/blog/edgebic-projected-available-balance-explained), and browse every task in the [EDGEBIC how-to library](/blog/edgebic-how-to-hub).

@@ -1,0 +1,190 @@
+---
+title: "End Item Lead Time: Item Start vs Job End in EDGEBIC"
+description: "End item lead time splits every job's finish into two dates. See how Item Start and Job End work, why lateness is judged at Job End, and how backward reserves it."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - end item lead time scheduling
+  - item start vs job end
+  - delivery ready date manufacturing
+  - lead time tail gantt
+  - days late calculation
+  - backward scheduling lead time
+targetPhrase: "end item lead time scheduling"
+wordCount: 2250
+readingTime: 11
+faqQuestions:
+  - question: "What is end item lead time in production scheduling?"
+    answer: "End item lead time is the delivery tail after the last machine stops: cure time, outgoing inspection, packing and freight. In EDGEBIC it is a field on the product, measured in calendar days, and it splits every job's finish into two dates. Item Start is when the last work center operation ends. Job End is Item Start plus that lead time, which is the delivery-ready date."
+  - question: "What is the difference between Item Start and Job End?"
+    answer: "Item Start is when the last work center operation ends, so it is the moment the manufactured item physically exists. Job End is Item Start plus the product's lead time in calendar days, so it is the date the item is ready to ship. They are identical when the product's lead time is zero. Material rows are excluded from Item Start so a material bar can never masquerade as the manufacturing finish."
+  - question: "Which date does lateness get measured against?"
+    answer: "Job End, the delivery-ready date, on every surface. A job whose machining finishes on the due date but carries a two day tail is two days late, and the grid, the dashboards and the job list all agree on that. Measuring against the last machine stop would understate lateness by exactly the length of the tail, which is how two screens end up disagreeing in systems that do not make the split."
+  - question: "Does the lead time tail consume machine capacity?"
+    answer: "No. The tail is a display-layer derivation drawn as a muted band after the last operation on the Gantt. It claims no work center hours, cannot be dragged or resized, and nothing can be scheduled into it. Setting a product's lead time to zero collapses Item Start and Job End into one date and removes the band entirely."
+  - question: "Why does a backward job finish before its due date?"
+    answer: "Because backward scheduling reserves the lead time. A backward job aims its last operation at the due date minus the product's lead time, so the delivery tail lands on the due date rather than past it. Without that reservation every backward job would be born exactly as many days late as its lead time. Forward scheduling is unaffected: the tail is added afterwards for display, never as a placement constraint."
+qaQuestions:
+  - question: "Our brand new product shows a one day gap between Item Start and Job End that nobody configured. Where did it come from?"
+    answer: "From the default. A new product carries a lead time of one calendar day rather than zero, so every job for it shows a one day delivery tail and is judged late one day earlier than you might expect. If your items really are ready the moment the last machine stops, set the product's lead time to zero and the two dates collapse into one. Do this deliberately per product rather than globally: for painted, cured, inspected or freighted items the default is closer to the truth than zero is."
+  - question: "Is this the same as the supplier lead time on a purchased component?"
+    answer: "No, and confusing the two produces the wrong plan in both directions. A material step's lead time is procurement time on incoming material: it draws that step's bar backward from the point of need to show the buyer when the order had to be placed. End item lead time is outbound time after the last operation on the finished product. One delays material arriving, the other delays the item being deliverable. They live on different records and they never substitute for each other."
+---
+
+**End item lead time is the delivery tail after the last machine stops, and it splits every job's finish into two dates: Item Start when the item physically exists, and Job End when it is ready to deliver.** Paint cures, outgoing inspection signs off, freight takes days. Modeling that tail explicitly is what stops different screens disagreeing about whether a job is late, and it is what lets backward scheduling aim at the right target in EDGEBIC by User Solutions.
+
+This post covers the mechanism with worked arithmetic. For the direction that depends on it, read [backward scheduling explained](/blog/edgebic-backward-scheduling-explained); for the setup procedure, [how to schedule a job backward from its due date](/blog/how-to-schedule-a-job-backward-from-its-due-date-in-edgebic).
+
+## The Two Dates
+
+```
+   last operation ends              delivery-ready
+          │                               │
+  ────────┤███ lead-time tail (display) ██├────────►
+          │                               │
+    ITEM START                        JOB END
+  = last work center                = Item Start
+    operation end                     + product lead time
+```
+
+| Date | Definition | Notes |
+|---|---|---|
+| **Item Start** | The end of the last work center operation | The item physically exists and the lead-time clock starts |
+| **Job End** | Item Start plus the product's lead time in calendar days | The delivery-ready date. Equal to Item Start when lead time is zero |
+
+One rule about Item Start is worth stating explicitly: **material rows are excluded**. A material step consumes no machine capacity and its bar can sit anywhere the procurement timing requires, so counting it would let a material bar masquerade as the manufacturing finish. Item Start is machine work only.
+
+## Where the Tail Shows Up
+
+**On the Drive Schedule grid.** Item Start and Job End sit side by side, next to the due date and Days Late, so the split is visible without opening anything.
+
+**On the Gantt.** After the job's last operation, a muted band is drawn, captioned with the day count. It is display only in every interaction: it cannot be opened for editing, cannot be dragged or resized, is skipped by drag cascades, and is never treated as a downstream operation. Nothing schedules into it.
+
+**In lateness.** Every surface that classifies a job as late does so against Job End, which is the subject of the next section.
+
+The whole tail is a display-layer derivation. The scheduler is not involved in producing it and it claims no work center hours. With a lead time of zero, the two dates collapse and nothing about the plan changes.
+
+## Lateness Is Judged at Job End, Everywhere
+
+This is the reason the split exists at all. A job whose machining finishes on the due date but carries a two day tail is two days late, because the customer receives it two days after the promise. Measuring against the last machine stop would understate lateness by exactly the length of the tail.
+
+| Surface | What it compares |
+|---|---|
+| Drive Schedule grid, Days Late | The larger of calendar days already past due and the gap between Job End and the due date |
+| Dashboard job status | The delivery-ready end, shown as a ready date |
+| Jobs schedule grid marker | Job End |
+| The backward doesn't-fit popup | The forward fallback's end against the due date |
+
+Two properties of the Days Late calculation matter in practice. It is a **projection**: an open job shows lateness before the due date physically passes, which is the warning arriving while acting is still cheap. And it uses the **explicit due date only**, never a fallback derived from the schedule's own end, because a self-referential comparison would manufacture phantom lateness equal to the lead time on every job.
+
+Closed jobs always read zero. Lateness is a forward-looking planning signal, not a permanent scar.
+
+## How Backward Scheduling Reserves the Tail
+
+Here is where the two features become one story. A backward job right-aligned to the raw due date would finish its last operation on the due date, and then its delivery-ready date would land after it. The job would be born exactly as many days late as its lead time, defeating the entire purpose of backward scheduling.
+
+So the backward pass targets **the due date minus the product's lead time**:
+
+```
+raw anchor  = end of the due day
+target      = raw anchor − product lead time (calendar days)
+```
+
+Work completes early enough for the delivery tail to land on the due date. When the lead time consumes all the slack, so that the target lands at or before the job's earliest allowed start, the ordinary forward fallback fires and the job is reported as one that did not fit.
+
+**Forward scheduling is unaffected.** The tail is added afterwards for display, never as a placement constraint. Only the backward pass treats it as a target.
+
+## Worked Example: Forty Valve Bodies
+
+Direction Backward. Cut off date Monday July 6. Due Friday July 17. Product lead time 2 calendar days. Day shifts Monday to Friday, 08:00 to 16:00, one machine per work center, no other load.
+
+| Step | Work center | Duration |
+|---|---|---|
+| Machine | Mill | 22 h (0.5 h per piece, 40 pieces, plus 2 h setup) |
+| Deburr | Finish | 8 h, followed by 4 h queue time |
+| Inspect | QC | 4 h |
+
+**The target.** A date-only due date means end of that day, so the raw anchor is midnight at the end of Friday July 17. Subtract the two day lead time and all machining must finish by Thursday July 16 at 00:00, which in practice means the close of Wednesday's shift.
+
+**Placing backward, successors first:**
+
+- **Inspect** is the last operation, so its deadline is the target itself. Four hours right-aligned inside the last shift before it: Wednesday July 15, 12:00 to 16:00.
+- **Deburr** must hand off to inspect by Wednesday 12:00, and it carries 4 hours of queue time afterwards, so its effective deadline is Wednesday 08:00. Eight hours right-aligned: Tuesday July 14, 08:00 to 16:00. Verification: finish Tuesday 16:00 plus 4 hours queue equals Wednesday 08:00, which is within the Wednesday 12:00 deadline.
+- **Machine** must finish by deburr's start, Tuesday 08:00. Twenty-two hours right-aligned in eight hour shifts, working backward: Monday July 13 for 8 hours, Friday July 10 for 8 hours, and Thursday July 9 from 10:00 to 16:00 for the last 6. Verification: the finish lands on Monday at 16:00, before Tuesday 08:00, and the start on Thursday July 9 is comfortably after the July 6 floor.
+
+**The result:**
+
+```
+Jul  6  7  8  9 10 11 12 13 14 15 16 17
+Mill        ██ ██       ██
+Finish                        ██
+QC                               ▓
+tail                              ░░░░░  Item Start Wed 16:00 → Job End Fri 17
+                                      ▲ due date, delivery-ready on the day
+```
+
+Three days of slack sit in front of the job rather than behind it. Item Start is Wednesday July 15 at 16:00, Job End is Friday July 17, and Days Late reads zero on every surface.
+
+**The variant that does not fit.** Same job, due Thursday July 9. The anchor becomes end of Friday July 10 minus two days, or Wednesday July 8 at 00:00. The routing needs 34 hours of work plus 4 hours of queue, and only two shifts exist between the Monday July 6 floor and that target. The backward attempt fails, everything it placed is removed, and the whole order schedules forward instead, finishing work on July 9 with a delivery-ready date of July 11. The job is recorded as backward-infeasible with its forward window and two days of projected lateness.
+
+## Setting the Field Correctly
+
+Three practical rules:
+
+1. **The default is one day, not zero.** A brand new product already carries a one day tail. If your items are ready the moment the last operation ends, set it to zero deliberately.
+2. **Keep it honest per product.** Backward reserves it, so an inflated value steals production days from the plan. A missing value makes every surface understate lateness by exactly the tail.
+3. **Do not confuse it with procurement lead time.** A material step's lead time draws that step's bar backward from the point of need, showing the buyer when the purchase order had to be placed. End item lead time is outbound: it delays the finished item becoming deliverable. Different records, opposite directions, never interchangeable.
+
+## Auditing the Field Across a Product List
+
+Rolling this out on an existing catalog is a short exercise, and it is worth doing deliberately rather than product by product as complaints arrive.
+
+1. **List the products that carry a genuine tail.** Painted, cured, plated, heat-treated, outgoing-inspected and freighted items usually do. Machined parts collected at the dock often do not.
+2. **Put the real number on each.** Calendar days, not working days, because the tail runs on the calendar rather than on your shift pattern.
+3. **Set the rest to zero.** Every product left at the default carries a one day tail that nobody chose, and on a backward job that day comes straight out of production time.
+4. **Re-run the affected jobs.** Like every master data change, an edited lead time does not ripple into existing plans on its own.
+
+The payoff is that Days Late becomes a number the whole plant can act on. When the tail is modelled, a red row means the customer will receive the item late. When it is not, a red row means something ambiguous, and ambiguous warnings get ignored.
+
+## Reading the Symptoms
+
+| Symptom | Explanation |
+|---|---|
+| A backward job finishes a day before its due date | The lead time is reserved. That is correct behaviour |
+| Days Late shows a value while the last operation ends before the due date | Lateness is judged at the delivery-ready date |
+| A grey band after the last operation that will not drag | The lead time tail, display only by design |
+| A one day gap nobody configured | The default lead time of one day on a new product |
+
+For the run-level failure patterns around this, see [backward scheduling mistakes](/blog/backward-scheduling-mistakes-edgebic). For reading the plan against actuals on the Gantt, see [reading the EDGEBIC Gantt, planned versus actual](/blog/reading-the-edgebic-gantt-planned-vs-actual). And for how these dates appear on the grid after a run, see [how to run the scheduler](/blog/how-to-run-the-scheduler-in-edgebic).
+
+## Why the Split Is Worth the Extra Column
+
+A promise is made about delivery, not about the last machine stop. Systems that report only the manufacturing end make planners do the tail arithmetic in their heads, and different screens then disagree about which jobs are at risk. Naming both dates and judging lateness at one of them makes the whole plant read the same number.
+
+User Solutions has been building schedules against real customer promises since 1991, at organizations from GE Railcar (where on-time delivery moved from 30 percent to 90 percent) to Cummins across 33 locations. The tail was always there. Making it a field is what makes it plannable.
+
+Bring a product with a real cure or freight tail to a demo and we will schedule it backward and show both dates on the grid. [Contact US to arrange it](/contact-us), or start at the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="What is end item lead time in production scheduling?">
+End item lead time is the delivery tail after the last machine stops: cure time, outgoing inspection, packing and freight. In EDGEBIC it is a field on the product, measured in calendar days, and it splits every job's finish into two dates. Item Start is when the last work center operation ends. Job End is Item Start plus that lead time, which is the delivery-ready date.
+</Accordion>
+
+<Accordion title="What is the difference between Item Start and Job End?">
+Item Start is when the last work center operation ends, so it is the moment the manufactured item physically exists. Job End is Item Start plus the product's lead time in calendar days, so it is the date the item is ready to ship. They are identical when the product's lead time is zero. Material rows are excluded from Item Start so a material bar can never masquerade as the manufacturing finish.
+</Accordion>
+
+<Accordion title="Which date does lateness get measured against?">
+Job End, the delivery-ready date, on every surface. A job whose machining finishes on the due date but carries a two day tail is two days late, and the grid, the dashboards and the job list all agree on that. Measuring against the last machine stop would understate lateness by exactly the length of the tail, which is how two screens end up disagreeing in systems that do not make the split.
+</Accordion>
+
+<Accordion title="Does the lead time tail consume machine capacity?">
+No. The tail is a display-layer derivation drawn as a muted band after the last operation on the Gantt. It claims no work center hours, cannot be dragged or resized, and nothing can be scheduled into it. Setting a product's lead time to zero collapses Item Start and Job End into one date and removes the band entirely.
+</Accordion>
+
+<Accordion title="Why does a backward job finish before its due date?">
+Because backward scheduling reserves the lead time. A backward job aims its last operation at the due date minus the product's lead time, so the delivery tail lands on the due date rather than past it. Without that reservation every backward job would be born exactly as many days late as its lead time. Forward scheduling is unaffected: the tail is added afterwards for display, never as a placement constraint.
+</Accordion>

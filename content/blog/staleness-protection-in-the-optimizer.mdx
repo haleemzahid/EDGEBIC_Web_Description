@@ -1,0 +1,70 @@
+---
+title: "Staleness Protection in the Optimizer"
+description: "If the schedule changes while an optimizer proposal is open, Accept refuses to overwrite it. Here is how the snapshot stamp catches drift and protects your data from a stale apply."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - stale proposal protection
+  - schedule optimization safety
+  - concurrent schedule change
+  - optimizer accept guard
+  - production schedule optimization
+  - schedule snapshot check
+targetPhrase: "optimizer staleness protection"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "What is staleness protection in the EDGEBIC optimizer?"
+    answer: "Staleness protection stops the optimizer from applying a proposal that was computed against a schedule that has since changed. Before solving, the optimizer takes a lightweight fingerprint of the current plan. When you Accept, it recomputes that fingerprint and compares. If the schedule drifted (a colleague rescheduled, actuals landed), Accept refuses and reports the proposal is stale, rather than silently overwriting the newer plan with an outdated one."
+  - question: "What happens if I try to accept a stale optimizer proposal?"
+    answer: "Accept detects the drift and raises a stale-proposal condition instead of persisting. The proposal stays held so the interface can offer to re-solve against the current schedule. Nothing is written to the database. You lose nothing except the outdated proposal, and you can rerun the optimizer on the up-to-date plan with one action. The protection turns a potential data-loss event into a harmless prompt to re-solve."
+  - question: "Why does the optimizer need a staleness check at all?"
+    answer: "Because a proposal is computed against a specific snapshot of your schedule and held in memory while you review it. If someone else reschedules a job, or shop-floor actuals arrive, in that review window, applying the old proposal would overwrite those newer facts with a plan that never accounted for them. The snapshot stamp catches exactly that drift, so an optimization can only ever apply to the plan it was actually built for."
+qaQuestions:
+  - question: "I ran an optimization, went to lunch, and now Accept says the proposal is stale. What changed?"
+    answer: "Something altered the schedule while the proposal sat open: a colleague rescheduled a job, or actuals were logged from the floor. The optimizer fingerprinted the plan before solving and rechecked at Accept, found the difference, and refused to overwrite the newer plan with your older proposal. Just re-solve against the current schedule, which the interface offers to do, and review the fresh result. Nothing was lost or corrupted."
+  - question: "Does staleness protection mean two planners cannot optimize at the same time?"
+    answer: "They can both run the optimizer, but only one can Accept a proposal built on a given state of the plan. Whoever Accepts first changes the schedule; the other's proposal becomes stale and must be re-solved against the new plan. This is safer than the alternative, where the second Accept would silently blow away the first planner's change. The check enforces that an optimization only applies to the exact plan it was computed for."
+---
+
+**Staleness protection stops the optimizer from applying a proposal that was built against a schedule which has since changed.** Before it solves, the optimizer takes a lightweight fingerprint of your current plan. When you Accept, it recomputes that fingerprint and compares. If the schedule drifted while the proposal sat open, because a colleague rescheduled a job or shop-floor actuals arrived, Accept refuses and reports the proposal as stale instead of silently overwriting the newer plan with an outdated one. Nothing is written, the proposal stays held, and you can re-solve against the current schedule with one action.
+
+EDGEBIC by User Solutions holds every optimizer proposal in memory while you review it, which is exactly why this guard exists. This post explains how the fingerprint works, what happens when drift is caught, and why refusing a stale apply is the safe behavior. For what a clean Accept does, see [what happens when you accept an optimized schedule](/blog/what-happens-when-you-accept-an-optimized-schedule), and for the pillar, the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## The review window is where drift happens
+
+An optimizer run has three moments: you start it, you review the proposal, and you Accept or Discard. The review can take seconds or minutes, and during it the proposal sits in memory, never in the database. That review window is the risk. The schedule underneath you is live. In a multi-user shop, another planner might reschedule a job. On any shop, actuals might land from the floor as operators log work. The proposal you are reviewing was computed against the plan as it stood when you clicked Run, and it knows nothing about changes made since.
+
+If you were allowed to Accept that proposal after the plan changed, you would overwrite the newer facts with an older plan that never accounted for them. That is a quiet data-loss event, the worst kind, because nothing announces it. Staleness protection exists to make it impossible.
+
+## The snapshot stamp
+
+The mechanism is a cheap fingerprint taken over the schedule before the solve begins. Think of it as a compact signature of the current plan's state. It is fast to compute and it changes whenever the underlying schedule changes in a way that matters. The optimizer records this stamp with the proposal.
+
+When you Accept, the optimizer recomputes the stamp against the schedule as it stands right then and compares it to the one recorded at solve time. If they match, the plan has not drifted and Accept proceeds normally, persisting through the standard pipeline. If they differ, the plan has changed, and Accept stops.
+
+## What a stale Accept does
+
+When the stamps disagree, Accept does not write anything. It raises a stale-proposal condition, and the interface surfaces it as a message that the proposal is out of date. Critically, the proposal is not thrown away, it stays held, so the interface can offer to re-solve against the current schedule. You lose only the outdated proposal, which was never going to be safe to apply anyway. One action reruns the optimizer on the up-to-date plan, and you review a fresh result that does account for whatever changed.
+
+The net effect is that a potential data-loss event becomes a harmless prompt. Instead of silently corrupting the plan, the optimizer tells you plainly that the ground shifted and offers the obvious fix.
+
+## Why refusing is safer than merging
+
+A tempting alternative would be to try to merge the stale proposal into the changed plan. This is rejected for good reason. A proposal is a complete alternative schedule built against a specific state. Splicing it into a different state could produce an internally inconsistent plan that neither the optimizer nor the planner ever actually evaluated, and it would do so without anyone reviewing the combination. Refusing and re-solving is cleaner: the fresh run produces a complete, consistent, scored proposal against the real current plan, which you review in full. Correctness beats convenience here, and the small cost of a re-solve buys certainty that what you Accept was computed for the plan you are actually applying it to.
+
+## How it fits the other safety contracts
+
+Staleness protection is one of several guards that make the optimizer trustworthy, and they reinforce each other. The proposal never touches the database until Accept, so a stale proposal simply never lands. The never-worse clamp ensures the proposal was better than the baseline it was built against. A structural validity check rejects impossible plans before they can persist. And completed work is preserved through the whole flow. Staleness protection adds the final assurance for a specific timing risk: that the baseline the proposal was measured against is still the plan you are applying it to. Together they mean an optimizer Accept is only ever a safe, reviewed, non-destructive change. See [how the optimizer preserves completed and started work](/blog/how-the-optimizer-preserves-completed-and-started-work).
+
+## The practical takeaway
+
+For a single planner, staleness protection mostly matters when actuals arrive mid-review, and the fix is a quick re-solve. For a multi-user shop, it enforces a clean rule: only one planner can Accept a proposal built on a given state of the plan. Whoever Accepts first changes the schedule; anyone else's open proposal becomes stale and must be re-solved. That is exactly the behavior you want, since the alternative would let a second Accept silently erase the first planner's change. The check keeps concurrent optimization honest without requiring anyone to coordinate manually.
+
+## The bottom line
+
+Staleness protection fingerprints your schedule before an optimizer run and rechecks it at Accept. If the plan drifted while you reviewed, because of a reschedule or new actuals, Accept refuses to overwrite the newer plan with your outdated proposal, holds the proposal so you can re-solve, and writes nothing. Refusing and re-solving is safer than merging, and it enforces that an optimization only ever applies to the exact plan it was computed for. To see it in practice, run the optimizer, wait for the schedule to change, and try Accept. Explore the platform at [EDGEBIC](/edgebic).

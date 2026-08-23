@@ -1,0 +1,99 @@
+---
+title: "A Material Step Is Holding Up My Job: Where the Delay Really Comes From"
+description: "A material step is instant by design, so a job that seems stuck on one is usually a mislabeled work-center step, a downstream dependency, or transit time. How to trace it."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - material step holding up job
+  - material step delay scheduling
+  - material step instant
+  - routing step waiting
+  - transit days delay
+  - material step troubleshooting
+targetPhrase: "material step is holding up my job"
+wordCount: 1224
+readingTime: 6
+faqQuestions:
+  - question: "Can a material step delay a job in the schedule?"
+    answer: "A true material step is instant by contract: it has no work center and consumes no time, so it cannot delay the job on its own. If a job seems stuck on what you think is a material step, the delay is coming from somewhere else. The three usual sources are a step that is actually a work-center step wearing a material label, transit or queue time attached to the step, or a downstream operation waiting on capacity. Confirm the step really has no work center before assuming it is the cause."
+  - question: "How do I tell whether a step is really a material step?"
+    answer: "A material step has no work center assigned and produces an instant, zero-hour entry. A work-center step has a work center and schedules real run and setup hours. The anomaly report has a check that flags a material-shaped step carrying hours or booked resources, which is exactly the misconfiguration that makes a material step look like it is taking time. Open the step and check whether a work center is set; if one is, it is a work-center step and will schedule real time."
+  - question: "Does EDGEBIC hold a job until raw material arrives?"
+    answer: "The scheduling engine treats material steps as instant and does not gate a job's start on a material receipt date, so a delay you see is not the engine waiting on a purchase order. What can hold a job is a consume-from-stock decision, transit or queue time on a step, or a downstream operation waiting for capacity. If you need a job to wait for material, that gating is a planning decision you make through the routing and dates, not something a material step enforces on its own."
+qaQuestions:
+  - question: "The Gantt shows a gap right after a material step and before the next operation. The material step has no work center. What is the gap?"
+    answer: "The gap is not the material step working, because it is instant. Look at the next step and the fields between them. Transit days on the step add calendar or working days of movement before the successor can start, and queue time adds a buffer, so a gap after an instant step is usually transit or queue attached to that step or the next one. It can also be the downstream work center being busy until that point. Check the step timing fields and the downstream capacity before treating the material step as the cause."
+  - question: "A step we labeled material is clearly taking hours on the schedule. How is that possible if material steps are instant?"
+    answer: "Because the step almost certainly has a work center assigned, which makes it a work-center step that schedules real run and setup hours regardless of what you call it. A genuine material step has no work center. The anomaly report will flag a material-shaped step that carries hours or resources, which is the tell. Open the step: if a work center is set, either that is intended and the step is not really material, or the work center was assigned by mistake and should be cleared so the step becomes instant."
+---
+
+**A true material step is instant by design: it has no work center and consumes no time, so a job that seems stuck on one is really being held by something else nearby.** The delay is almost always a mislabeled work-center step, transit or queue time on the step, or a downstream operation waiting on capacity.
+
+[EDGEBIC by User Solutions](/edgebic) schedules a material step as an instant, zero-hour entry rather than an operation that occupies a machine. Because it takes no time, a material step cannot push a job out on its own, which means the real cause sits next to it. This post traces where that delay comes from; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [how to add a material step to a routing](/blog/how-to-add-a-material-step-to-a-routing-in-edgebic) and [how EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing).
+
+## First, Confirm the Step Is Actually a Material Step
+
+A material step has no work center and produces an instant entry. A work-center step has a work center and schedules real run and setup hours. This is the fork the whole diagnosis turns on. Open the step and check whether a work center is assigned. If one is, the step is a work-center step no matter what it is named, and it schedules real time like any operation. Naming a step "material" or "stock" changes nothing on its own; the presence or absence of a work center is the only thing the engine reads to decide whether the step takes time.
+
+## Cause 1: It Is a Work-Center Step in Disguise
+
+The most common case. A step meant as material has a work center assigned, so the engine schedules its run and setup hours and the job appears to wait "on the material step."
+
+**How to tell:** the step has a work center set, and the anomaly report may flag a material-shaped step carrying hours or booked resources, which is the signature of this mismatch.
+
+**Fix:** decide which the step should be. If it is genuinely material, clear the work center so it becomes an instant step. If it is an operation, leave the work center and treat its hours as real; then the delay is expected work, not a stuck material step.
+
+## Cause 2: Transit or Queue Time Sits on the Step
+
+Transit days and queue time are separate from the step's work. A material step with transit days adds calendar or working days of movement before the next step can start, and queue time adds a buffer. The gap after an instant step is that transit or queue, not the step running.
+
+**How to tell:** there is a gap after the step, and the step (or the next step) carries transit days or queue time that accounts for it.
+
+**Fix:** if the transit or queue is intended, the gap is correct. If not, reduce or clear the transit days or queue time. Transit and queue are covered in [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained) and set up in [how to add transit days between two steps](/blog/how-to-add-transit-days-between-two-steps-in-edgebic).
+
+## Cause 3: The Next Operation Is Waiting on Capacity
+
+A material step can finish instantly and the next real operation still cannot start, because its work center is busy until later. The job then looks parked at the material step when it is actually queued for the downstream machine.
+
+**How to tell:** the successor's work center is fully booked between the material step and the successor's start, so the successor is waiting for a free window, not for the material step.
+
+**Fix:** none if the capacity is genuinely full; the wait is real. To relieve it, address the downstream work center's load the same way you would any bottleneck. A step waiting with no obvious reason is covered in [a step is waiting with no obvious reason](/blog/a-step-is-waiting-with-no-obvious-reason-edgebic).
+
+## Cause 4: A Consume-From-Stock Decision
+
+If the job's demand was fully met from stock, the engine does no work-center scheduling for it and emits a material-shaped entry instead. That can read as "the material step is all that happened," which is correct, not a delay.
+
+**How to tell:** the job is satisfied from stock and shows only a material entry with no operations.
+
+**Fix:** none; the job was met from inventory by design. Netting against stock is covered in [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock).
+
+## The Reconciliation, in Order
+
+1. **Confirm the step has no work center;** if it does, it is a work-center step and schedules real time.
+2. **Check for transit days and queue time** on the step and its successor, which explain a gap after an instant step.
+3. **Check the downstream work center's load** between the material step and the next operation.
+4. **Check whether the job was satisfied from stock,** which produces a material entry legitimately.
+
+## Prevention
+
+- **Keep material steps free of a work center,** so they stay instant and never schedule hours.
+- **Put deliberate delay where it belongs:** transit days for movement, queue time for a buffer, not on a step that should be instant.
+- **Re-run scheduling after clearing an accidental work center,** so the step converts to an instant entry and downstream steps close up.
+- **Read a gap after a material step as transit, queue, or downstream capacity,** never as the material step working.
+- **Do not expect a material step to wait for a receipt.** The engine schedules material steps as instant and does not gate a start on a purchase arrival, so build in any real wait through the routing and the order's dates instead.
+
+<Accordion title="Can a material step delay a job in the schedule?">
+A true material step is instant by contract: it has no work center and consumes no time, so it cannot delay the job on its own. If a job seems stuck on what you think is a material step, the delay is coming from somewhere else. The three usual sources are a step that is actually a work-center step wearing a material label, transit or queue time attached to the step, or a downstream operation waiting on capacity. Confirm the step really has no work center before assuming it is the cause.
+</Accordion>
+
+<Accordion title="How do I tell whether a step is really a material step?">
+A material step has no work center assigned and produces an instant, zero-hour entry. A work-center step has a work center and schedules real run and setup hours. The anomaly report has a check that flags a material-shaped step carrying hours or booked resources, which is exactly the misconfiguration that makes a material step look like it is taking time. Open the step and check whether a work center is set; if one is, it is a work-center step and will schedule real time.
+</Accordion>
+
+<Accordion title="Does EDGEBIC hold a job until raw material arrives?">
+The scheduling engine treats material steps as instant and does not gate a job's start on a material receipt date, so a delay you see is not the engine waiting on a purchase order. What can hold a job is a consume-from-stock decision, transit or queue time on a step, or a downstream operation waiting for capacity. If you need a job to wait for material, that gating is a planning decision you make through the routing and dates, not something a material step enforces on its own.
+</Accordion>

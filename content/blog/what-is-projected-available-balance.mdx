@@ -1,0 +1,69 @@
+---
+title: "What Is Projected Available Balance (PAB) in Planning?"
+description: "Projected available balance is the running inventory forecast, bucket by bucket, after supply is added and demand subtracted. Here is how PAB works and reads."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - projected available balance
+  - PAB inventory
+  - projected on-hand
+  - inventory projection
+  - stockout projection
+  - time-phased inventory balance
+targetPhrase: "projected available balance"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "What is projected available balance?"
+    answer: "Projected available balance, or PAB, is the running inventory balance carried forward one time bucket at a time. For each bucket it starts from the prior bucket's balance, adds scheduled receipts arriving in that bucket, and subtracts the gross requirements demanded in it. The result becomes the opening balance for the next bucket. PAB is the single most important number on a planning calendar because it answers, for every future period, how much stock you will have."
+  - question: "Can projected available balance be negative?"
+    answer: "Yes, and a negative PAB is meaningful rather than an error. It tells you that committed demand in that bucket exceeds the supply projected to be available, which is a projected stockout. The system shows the negative figure deliberately instead of clamping it to zero, because the size of the shortfall is exactly what a planner needs to size a replenishment. The first bucket where PAB drops below safety stock is reported as the projected stockout date."
+  - question: "What is the difference between projected available balance and on-hand?"
+    answer: "On-hand is what you have right now; projected available balance is what you will have in each future bucket after planned supply and demand play out. On-hand is a single number read from the inventory ledger. PAB is a forward-looking series that begins from an opening balance and rolls period by period. On-hand answers today's question; PAB answers next week's and the week after that."
+qaQuestions:
+  - question: "My calendar shows three buckets in a row with a suggested order. If I firm only the first one, why do the other two still show shortfalls?"
+    answer: "Because a suggestion is displayed but not rolled into the projected available balance until it becomes a real order. The projection deliberately does not assume you will act on a suggestion, so an unfirmed recommendation never lifts the PAB of later buckets. When you firm the first suggestion, a real build-to-stock order is created, and on the next projection run that order lands as a scheduled receipt in its completion bucket. The PAB then rises from that bucket forward, and the later suggestions shrink or disappear because the shortfall they were covering is now solved."
+  - question: "I opened the calendar starting five days ago and the early balances look strange. What is happening?"
+    answer: "Those early buckets are history buckets, and they behave differently on purpose. A bucket whose end date is entirely before today ignores planned supply and demand and uses only what the ledger actually recorded as movement in that period. So the PAB rolls through the past using real receipts and issues, then switches to the planning model at the today boundary. This lets you compare what was planned against what actually happened, which is how you calibrate forecast accuracy, but it means the past columns are truth, not projection."
+---
+
+**Projected available balance, usually shortened to PAB, is the running inventory balance projected forward one bucket at a time, after adding the supply due to arrive and subtracting the demand due to be consumed.** It is the headline number on a time-phased planning calendar. For each period the calculation is simple: take the previous period's balance, add the scheduled receipts landing in this period, subtract this period's gross requirements, and carry the result forward as the opening balance for the next period.
+
+This entry defines PAB and shows how it reads inside [EDGEBIC by User Solutions](/edgebic). For the wider index of terms, see the [manufacturing glossary](/blog/manufacturing-glossary); for the figure that sits right beside PAB on the same calendar, see [available to promise](/blog/what-is-available-to-promise).
+
+## How it works
+
+The clearest analogy is a cash-flow forecast. Your bank balance at the end of each week is last week's balance, plus the salary that landed, minus the rent and bills that went out. Do that week after week and you have a forward projection of your finances. Projected available balance is that same roll-forward, applied to stock instead of cash.
+
+Each bucket's PAB is built from four inputs:
+
+- **Opening balance:** the balance carried in from the prior bucket (the first bucket opens from the sum of ledger entries dated before the planning window).
+- **Actual net:** in history buckets only, the realized ledger movement for that period.
+- **Scheduled receipts:** open build-to-stock orders projected to complete in this bucket.
+- **Gross requirements:** the demand this bucket must absorb, drawn from forecast and firm orders after the forecast-consumption rule is applied.
+
+The formula is `PAB = prior PAB + actual net + scheduled receipts - gross requirements`. Two design choices make PAB trustworthy. First, negative values are allowed and shown, because a projected shortfall is information, not a bug. Second, a replenishment suggestion is displayed in its own column but is never fed back into PAB until a planner turns it into a real order. The projection reports what will happen if nobody acts, which is exactly the picture a planner needs before deciding whether to act.
+
+## A concrete example
+
+Widget A opens with 180 units on hand, make-to-stock, with a safety stock of 50 and no open orders yet. Weekly buckets, with the greater of forecast and firm demand driving gross requirements:
+
+| Bucket | Opening | Receipts | Gross req | PAB | Below safety stock? |
+|---|---|---|---|---|---|
+| Wk 1 | 180 | 0 | 60 | 120 | No |
+| Wk 2 | 120 | 0 | 70 | 50 | No |
+| Wk 3 | 50 | 0 | 60 | -10 | Yes |
+
+Read it left to right. Week 1 opens at 180, absorbs 60 of demand, and closes at 120. That 120 opens week 2, which absorbs 70 and closes at 50, exactly at the safety-stock line. Week 3 opens at 50, faces 60 of demand, and drops to minus 10. That negative figure is the projected stockout, and its size, 10 short of zero on top of a 50 safety buffer, is precisely what tells the planner how much to build. The calendar does not hide the minus 10; it flags the bucket and offers a suggested order sized to recover.
+
+## How EDGEBIC uses it
+
+In EDGEBIC, projected available balance is the central column of the **Inventory Calendar**. A planner selects a product, chooses a bucket width of Day, Week, or Period, and the grid rolls PAB forward across the horizon. The calendar also surfaces three headline metrics derived from the roll: the current on-hand, the projected stockout date (the first bucket where PAB falls below safety stock), and days of cover (current stock divided by the average demand rate).
+
+PAB is computed by a pure calculation layer that takes materialized bucket data (opening balance, actual net, scheduled receipts, forecast, and firm demand) and produces the row-by-row balance with no shortcuts. [History buckets](/blog/what-is-a-history-bucket-in-inventory-projection) use only realized ledger movement, keeping the past immutable, while future buckets use the planned supply-and-demand model. Because unfirmed suggestions are held out of PAB, a chronically short product will honestly show several consecutive shortfall rows rather than pretending the first suggestion already fixed the rest.
+
+To see the full roll-forward with worked numbers and the history-bucket behavior, read [EDGEBIC projected available balance explained](/blog/edgebic-projected-available-balance-explained). To understand how the demand side of the formula is assembled, continue with [forecast consumption](/blog/what-is-forecast-consumption) and [firm demand in planning](/blog/what-is-firm-demand-in-planning).

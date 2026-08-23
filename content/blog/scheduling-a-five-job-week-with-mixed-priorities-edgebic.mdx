@@ -1,0 +1,129 @@
+---
+title: "Scheduling a Five-Job Week With Mixed Priorities in EDGEBIC"
+description: "A production scheduling walkthrough: load five jobs with different priorities and due dates, run the scheduler, and read how the engine sequences competing work."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - production scheduling walkthrough
+  - job priority scheduling
+  - finite capacity scheduling example
+  - scheduling mode
+  - due date sequencing
+  - shop floor schedule
+targetPhrase: "job priority scheduling"
+wordCount: 2100
+readingTime: 11
+faqQuestions:
+  - question: "How does a finite capacity scheduler decide which job runs first?"
+    answer: "It sorts orders ascending by priority, where a lower number means higher priority, and breaks ties by earliest start time. In this walkthrough five jobs carry priorities 1 through 4, so the priority-1 rush job claims capacity first, then the two priority-2 jobs compete by start time, and the priority-4 stock build takes whatever capacity is left. Priority sets the order in which jobs are offered capacity, not a fixed calendar slot."
+  - question: "Does changing a job's priority reschedule it automatically?"
+    answer: "No. Editing the priority cell only marks the change as unsaved and lights the Save Changes button. Nothing moves on the schedule until you save the edit and then run the scheduler. This two-step separation is deliberate: you can restack the whole week's priorities, review the affected-order count, and commit them all at once instead of triggering a reschedule on every keystroke."
+  - question: "What scheduling mode should I use for a normal week of new jobs?"
+    answer: "IncrementalNew is the default and the safest choice for daily intake. It schedules only orders that have never been scheduled and preserves everything already planned. In this walkthrough all five jobs are new, so IncrementalNew places all five. When you later change a priority on jobs already in the plan, you switch to a mode that reschedules existing work, such as Reschedule or FullReschedule."
+qaQuestions:
+  - question: "I loaded five jobs but only four scheduled. How do I find the missing one?"
+    answer: "Read the Scheduling Failure Dialog that appears after the run. The engine excludes any job that fails pre-flight validation and lists it there with a reason, usually a missing active shift, a work center with no capacity, or a broken routing link. In a five-job week the most common cause is a routing step pointing at a work center that has no shift assigned, so it can never receive hours. Fix the master data, then rerun IncrementalNew, which picks up only the still-unscheduled job without disturbing the four that placed correctly."
+  - question: "Two of my priority-2 jobs both want the mill Monday morning. Which one wins?"
+    answer: "The one with the earlier start time. The engine's sort key is priority first, then start time, with ties broken by the lower start time. So if both jobs are priority 2 but one has a Monday 07:00 start and the other a Monday 13:00 start, the 07:00 job is offered the mill first and the 13:00 job queues behind it on the same machine. If you want the second job first, either give it a lower priority number or an earlier start time, save, and reschedule."
+---
+
+**When you schedule a week of jobs that carry different priorities, EDGEBIC by User Solutions sequences them by a simple, checkable rule: orders are sorted ascending by priority, where a lower number wins, and ties break by the earlier start time.** This walkthrough loads five real jobs with mixed priorities and due dates into a small machine shop, runs the scheduler once, and reads exactly why each job landed where it did. It is part of our [worked examples series](/blog/edgebic-worked-examples), where every placement comes with its arithmetic. If you want the concept behind the mechanics first, [what production scheduling is](/blog/what-is-production-scheduling) is the primer.
+
+## The Setup: One Shop, One Shift, Five Jobs
+
+Cedar Valley Machining runs a single day shift, Monday to Friday, 07:00 to 15:30 with a 30-minute break, netting 8 working hours a day. Three single-instance work centers handle everything: a saw (SAW-1), a mill (MILL-1), and a quality bench (QC-1). Every product runs the same three-step routing (saw, mill, inspect), so the five jobs compete directly for the same machines. The numbers below are illustrative, chosen so the sequencing is easy to follow, but the engine behavior they demonstrate is the documented behavior.
+
+Monday morning the planner, Dana, has five orders in the grid, all unscheduled, all with a Monday 07:00 earliest start:
+
+| Job | Product | Qty | Mill hours | Due date | Priority |
+|---|---|---|---|---|---|
+| J-101 | Rush spindle | 40 | 12 h | Tue | **1** |
+| J-102 | Gearbox plate | 60 | 16 h | Thu | 2 |
+| J-103 | Cover bracket | 50 | 14 h | Thu | 2 |
+| J-104 | Base weldment | 30 | 9 h | Fri | 3 |
+| J-105 | Stock coupling | 100 | 18 h | (stock) | 4 |
+
+Lower priority number means higher priority. J-101 is the rush; J-105 is a build-for-the-shelf job with no customer date, so it sits at the bottom.
+
+## Step 1: Confirm the Priorities in the Grid
+
+Dana opens the Orders tab. Each row shows a **Priority** cell that is inline-editable. She clicks into J-101's priority cell, types 1, and tabs out. The row registers the change and the **Save Changes** button turns red to signal unsaved edits. She sets the rest the same way (2, 2, 3, 4), then clicks **Save Changes**. Only the priority field is written; nothing reschedules yet.
+
+This is the first thing worth internalizing: editing priority is a data change, not a scheduling action. You can restack the entire week and review it before a single bar moves. If Dana navigated away without saving, the edits would be lost, because there is no auto-save.
+
+## Step 2: Pick the Mode and Preview the Impact
+
+Dana leaves the **Scheduling Mode** dropdown on its default, **IncrementalNew**, which schedules only orders that have never been scheduled and preserves everything already planned. All five jobs are new, so all five are eligible. The **Scheduling Mode Description** label below the dropdown reads "5 new orders will be scheduled." She toggles **Show Only Affected Orders** to confirm the same five rows are in scope and nothing already committed is at risk.
+
+Choosing the mode deliberately matters because the modes behave differently. [Finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) means the engine respects real machine limits, so the mode decides which jobs are even allowed to compete for that finite capacity. IncrementalNew is the right choice here; later in the week, when Dana changes a priority on jobs already in the plan, she will switch to a mode that reschedules existing work.
+
+## Step 3: Run the Scheduler
+
+Dana clicks **Schedule / Re-Schedule**. The pre-flight check confirms at least one active shift exists (it does), then the engine builds its order list. Before placing any hours it sorts the five jobs:
+
+1. **J-101** (priority 1) sorts first.
+2. **J-102** and **J-103** (both priority 2) tie on priority, so the earlier start time breaks the tie. Both start Monday 07:00, so a secondary tie-break holds their relative order; J-102 precedes J-103 here.
+3. **J-104** (priority 3) is next.
+4. **J-105** (priority 4) is last.
+
+The engine then walks the list in that order, and for each job it schedules the three routing steps forward, each step starting when its predecessor finishes and landing on the first genuinely free capacity on its work center. This is ordinary [forward scheduling](/blog/forward-vs-backward-scheduling): the sort decides who is offered the mill first, and finite capacity decides where the later jobs actually fit.
+
+## Where the Jobs Land
+
+Because all five share one mill, the mill is the pacing resource, and the schedule reads like a queue on MILL-1:
+
+| Job | Mill window | Job completes | Due date | Result |
+|---|---|---|---|---|
+| J-101 | Mon 07:00 to Mon 19:00 (spills with overtime, or Tue AM) | Tue | Tue | On time |
+| J-102 | after J-101 | Wed | Thu | 1 day early |
+| J-103 | after J-102 | Thu | Thu | On time |
+| J-104 | after J-103 | Fri | Fri | On time |
+| J-105 | after J-104 | next Mon | (stock) | No date to miss |
+
+The exact clock times depend on how each job's saw and inspect steps interleave, but the shape is the point: the rush job got the mill first and hit its Tuesday date, the two Thursday jobs slotted in behind it and both made their date, the Friday job made Friday, and the stock build absorbed the leftover capacity into the following week. Nobody dragged a bar. The priorities and the finite mill capacity produced the whole sequence.
+
+## Step 4: Read the Result on the Gantt and the Utilization Report
+
+Dana opens the Job View. The Gantt shows five stacked jobs, and the MILL-1 row is a continuous run of back-to-back bars: J-101, then J-102, J-103, J-104, and finally J-105. The saw and QC rows show shorter bars leading and trailing each mill block. The continuous mill row is the visual proof that the mill is the constraint this week.
+
+To quantify that, she runs the **Work Center Utilization** report for the week. MILL-1 shows a high utilization percentage and a **Rating** of HIGH or CRITICAL, while the saw and quality bench sit in GOOD or LOW. The report's plain-language **LoadProfile** column says as much in a sentence. If the mill reads CRITICAL (over 100%), that is the signal that the week is overbooked and something has to give: overtime, an alternate machine, or a date conversation with a customer. Identifying that pacing resource is the core skill in [finding your bottleneck](/blog/production-bottleneck-identification).
+
+## What This Run Proves
+
+1. **Priority is a sort key, not a slot.** The engine offers capacity to jobs in priority order (lower number first). It does not reserve a fixed calendar block per priority; the rush job simply gets first pick.
+2. **Ties break by start time.** Two jobs at the same priority are ordered by the earlier start time, so start dates are your fine-grained control under priority.
+3. **Editing priority does not reschedule.** Save the edit, then run the scheduler. The two steps are separate on purpose.
+4. **The mode decides the field.** IncrementalNew placed all five new jobs and would have preserved any already-committed work.
+5. **The constraint reveals itself.** One shared mill turned into a visible queue on the Gantt and a HIGH or CRITICAL rating on the utilization report, with no guessing required.
+
+## Variations Worth Trying
+
+**Promote a late arrival.** Suppose a sixth job arrives Tuesday that must ship Wednesday. Give it priority 1, save, and reschedule the unstarted work. It jumps ahead of everything not yet started, and the utilization report shows whether the week can still absorb it. That exact scenario has its own [rush-order ripple walkthrough](/blog/adding-a-rush-order-to-a-full-schedule-edgebic).
+
+**Flatten the priorities.** Set all five jobs to priority 2 and reschedule. Now start time alone orders them, which is a pure earliest-due-date-style queue when your start times track your due dates. Compare the completion dates to the mixed-priority run to see how much the rush designation actually bought J-101.
+
+**Throttle the stock job.** J-105 has no customer date, so you can schedule it at less than full capacity to leave headroom for intake, using the schedule-at-utilization control on the order. It stretches longer but stops crowding the mill.
+
+## The Bigger Point: A Week Is Just Five Sort Decisions
+
+A mixed-priority week feels complicated on a whiteboard because a human has to hold five jobs, three machines, and four due dates in their head at once. That is one of the classic [job shop scheduling challenges](/blog/job-shop-scheduling-challenges), and it is exactly where a finite capacity engine earns its keep: it makes five ordering decisions by one checkable rule, then packs the hours against real capacity in a single run. Your job shifts from sequencing by hand to setting priorities and reading the result.
+
+User Solutions has been building that discipline into scheduling tools since 1991, for operations where the weekly stack is not hypothetical: the US Navy, GE, BAE Systems, and Cummins among them. GE Railcar moved from 30% to 90% on-time delivery on exactly this kind of priority-driven finite scheduling. The same engine runs in [EDGEBIC](/edgebic) today.
+
+Load your own week: five real jobs, your real priorities, your real machines. [Contact us](/contact-us) and we will run your Monday stack against your own routing data, or start with the [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic) to see a single order travel the full lifecycle first.
+
+<Accordion title="How does a finite capacity scheduler decide which job runs first?">
+It sorts orders ascending by priority, where a lower number means higher priority, and breaks ties by earliest start time. In this walkthrough five jobs carry priorities 1 through 4, so the priority-1 rush job claims capacity first, then the two priority-2 jobs compete by start time, and the priority-4 stock build takes whatever capacity is left. Priority sets the order in which jobs are offered capacity, not a fixed calendar slot.
+</Accordion>
+
+<Accordion title="Does changing a job's priority reschedule it automatically?">
+No. Editing the priority cell only marks the change as unsaved and lights the Save Changes button. Nothing moves on the schedule until you save the edit and then run the scheduler. This two-step separation is deliberate: you can restack the whole week's priorities, review the affected-order count, and commit them all at once instead of triggering a reschedule on every keystroke.
+</Accordion>
+
+<Accordion title="What scheduling mode should I use for a normal week of new jobs?">
+IncrementalNew is the default and the safest choice for daily intake. It schedules only orders that have never been scheduled and preserves everything already planned. In this walkthrough all five jobs are new, so IncrementalNew places all five. When you later change a priority on jobs already in the plan, you switch to a mode that reschedules existing work, such as Reschedule or FullReschedule.
+</Accordion>

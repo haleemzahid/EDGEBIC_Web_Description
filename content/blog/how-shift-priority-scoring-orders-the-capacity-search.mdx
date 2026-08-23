@@ -1,0 +1,88 @@
+---
+title: "How Shift Priority Scoring Orders the Capacity Search"
+description: "How EDGEBIC ranks candidate shifts when placing an operation: an immediate-start bonus, an available-capacity term, and an earlier-shift nudge, all deterministic."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - shift priority scheduling
+  - capacity search
+  - deterministic scheduling
+  - shift selection
+  - finite capacity scheduling
+  - scheduling engine
+targetPhrase: "shift priority scoring"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler decide which shift to fill first?"
+    answer: "EDGEBIC scores every candidate shift and fills them in score order. A shift that can start the operation immediately gets a large bonus, more available capacity adds to the score, and an earlier start time in the day adds a little more. The engine then consumes the highest-scoring shifts first until the operation's hours are placed. The scoring is fixed, so the same data always fills shifts in the same order."
+  - question: "Why does an immediate-start shift outrank a bigger later shift?"
+    answer: "Because starting sooner usually finishes the operation sooner, which is what most planners want. EDGEBIC gives a large fixed bonus to any shift that can begin at or before the operation's earliest start, so a shift available right now beats a larger shift that would force the job to wait. Capacity still matters as a secondary term, but availability now is weighted heavily so the engine does not idle a job waiting for a bigger slot."
+  - question: "Is shift selection random or repeatable?"
+    answer: "It is fully repeatable. The priority score is computed from fixed rules, and after scoring the engine applies a stable secondary sort by date, then shift, then remaining capacity. There is no random tie-breaking anywhere in the search, so running the same data twice produces the same placement twice. That determinism is what lets a planner audit why a job landed on a particular shift by re-walking the same rules."
+qaQuestions:
+  - question: "Two shifts on the same day both have 8 free hours, one starts at 08:00 and one at 20:00. Which does the engine fill first?"
+    answer: "The 08:00 day shift. Both shifts get the same capacity contribution because they each have 8 hours free, but the day shift earns a larger earlier-start component because it begins earlier in the day, and if the operation can start immediately on it, it also earns the immediate-start bonus. The night shift starting at 20:00 scores lower on both counts. So the engine places work on the day shift first and only spills into the night shift if the operation still has hours left. This is why a job tends to fill the earliest usable shift of a day before reaching for a later one."
+  - question: "My operation skipped a shift that looked like it had capacity. Why?"
+    answer: "A shift can show remaining capacity yet still be unusable for a given operation, and the score reflects that. If the operation's earliest start falls after the shift has already ended, the shift is rejected before scoring because there is no usable window left. If the earliest start lands mid-shift, only the hours from that point count, so a shift that is mostly consumed offers little and scores low. And if the shift belongs to a later day than a higher-scoring earlier one, the stable date-first sort places the earlier shift ahead. In each case the shift was considered and ranked below a better option, not ignored."
+---
+
+**Shift priority scoring is how EDGEBIC by User Solutions decides the order in which it fills candidate shifts when placing an operation. Each shift the search finds gets a score built from three parts: a large bonus if it can start the operation immediately, a term that rewards more available capacity, and a small nudge toward earlier shifts in the day. The engine then consumes the highest-scoring shifts first until every hour of the operation has a home, and the scoring is fully deterministic.** This is the rule that answers "why did the job land on that shift and not this one?" and the answer is always recoverable, because nothing in the search is random.
+
+Once an operation knows its earliest start, the allocator walks the calendar forward looking for usable capacity. Scoring is what turns the pile of usable shifts it finds into a definite order.
+
+## What the search is ranking
+
+Before scoring, the engine gathers candidates. For each day from the operation's earliest start onward, it checks whether the work center is available, which shifts run on that weekday, and how much unconsumed capacity remains in each shift. A shift whose window has already ended relative to the earliest start is discarded outright, because there is no time left in it to use. A shift whose window is only partly ahead of the earliest start keeps only the hours from that point forward.
+
+What survives is a set of shifts that each offer some real, usable capacity. Scoring ranks them.
+
+## The three parts of the score
+
+The priority score is the sum of three contributions, and each encodes a sensible instinct.
+
+The largest contribution is the **immediate-start bonus**. If a shift can begin the operation at or before its earliest start, meaning there is no waiting, it receives a big fixed bonus. This weights the search heavily toward getting the job moving now rather than holding out for a larger slot later. Finishing sooner is usually what a planner wants, and starting sooner is the surest route to it.
+
+The second contribution scales with **available capacity from the usable start**. A shift with more open hours scores higher than one with fewer, because it can absorb more of the operation in one place, reducing fragmentation across many small slots.
+
+The third contribution is a small **earlier-shift nudge**. Among shifts that are otherwise comparable, one that starts earlier in the day scores slightly higher, so the engine fills the day shift before the night shift when both are open.
+
+Added together, these produce a single number per shift, and the shifts with the highest numbers are consumed first.
+
+## A worked comparison
+
+Take two shifts on the same day, each with 8 hours free: a day shift starting at 08:00 and a night shift starting at 20:00, with an operation that can start immediately.
+
+Both shifts earn the same capacity contribution, because both have 8 free hours. The day shift earns the immediate-start bonus, since the operation can begin on it right away, and it earns a larger earlier-shift component because 08:00 is earlier in the day than 20:00. The night shift scores lower on both counts. So the day shift is filled first, and the operation only spills into the night shift if it still has hours left after the day shift is full. This is why an operation tends to consume the earliest usable shift of a day before reaching for a later one.
+
+Now consider a shift that looks available but gets skipped. Suppose the operation's earliest start is 18:00 and a day shift ran 08:00 to 16:00. That shift ended before the earliest start, so it has no usable window and is discarded before scoring, even though its raw capacity number looked healthy. The operation lands on a later shift not because the day shift was ignored, but because it offered nothing usable.
+
+## Determinism, and why it matters
+
+After the score is computed, the engine applies a stable secondary sort: by date ascending, then by shift, then by remaining capacity descending. This ordering ensures the engine always fills earlier days before later ones and, within a day, fills more-available slots first, in a completely repeatable way.
+
+There is no random tie-breaking anywhere in the search. Two runs on the same data produce the same placement, every time. That reproducibility is not a nicety; it is what makes a schedule auditable. When a planner asks why a job landed where it did, the answer is a walk through the same fixed rules the engine walked: which shifts were usable, what each scored, and how the stable sort ordered them. A difference between two runs always traces to a difference in the data, never to the engine rolling dice.
+
+## How the score fits the wider search
+
+Shift priority scoring is one stage inside multi-shift allocation, which is itself one layer of the engine. The [multi-shift allocation explainer](/blog/how-multi-shift-allocation-fills-capacity) shows the full search, from building the capacity buckets through consuming ranked slots. The reason the search walks forward in time at all, rather than assuming capacity exists, is covered in [why a scheduler searches forward in time for capacity](/blog/why-a-scheduler-searches-forward-in-time-for-capacity). The related question of which job gets a contested slot when two jobs compete is answered in [how a scheduler decides which job runs first](/blog/how-a-scheduler-decides-which-job-runs-first), where the ordering happens before the search rather than inside it.
+
+All of this sits within the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the scoring only means anything because EDGEBIC treats each shift's capacity as [genuinely finite](/blog/finite-vs-infinite-capacity-scheduling): once a shift's hours are consumed, they are gone, so ranking which to consume first is a real decision.
+
+To see how the scoring fills your own shifts and why each operation lands where it does, [bring your data to a demo](/contact-us).
+
+<Accordion title="How does a scheduler decide which shift to fill first?">
+EDGEBIC scores every candidate shift and fills them in score order. A shift that can start the operation immediately gets a large bonus, more available capacity adds to the score, and an earlier start time in the day adds a little more. The engine then consumes the highest-scoring shifts first until the operation's hours are placed. The scoring is fixed, so the same data always fills shifts in the same order.
+</Accordion>
+
+<Accordion title="Why does an immediate-start shift outrank a bigger later shift?">
+Because starting sooner usually finishes the operation sooner, which is what most planners want. EDGEBIC gives a large fixed bonus to any shift that can begin at or before the operation's earliest start, so a shift available right now beats a larger shift that would force the job to wait. Capacity still matters as a secondary term, but availability now is weighted heavily so the engine does not idle a job waiting for a bigger slot.
+</Accordion>
+
+<Accordion title="Is shift selection random or repeatable?">
+It is fully repeatable. The priority score is computed from fixed rules, and after scoring the engine applies a stable secondary sort by date, then shift, then remaining capacity. There is no random tie-breaking anywhere in the search, so running the same data twice produces the same placement twice. That determinism is what lets a planner audit why a job landed on a particular shift by re-walking the same rules.
+</Accordion>

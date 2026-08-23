@@ -1,0 +1,94 @@
+---
+title: "The Optimizer Refused My Proposal as Stale: Causes and Fixes"
+description: "When Accept on an optimizer proposal is refused as stale, the schedule changed under the proposal. Why the guard exists and how to get a fresh, acceptable plan."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - optimizer proposal stale
+  - accept refused stale proposal
+  - optimizer deferred apply
+  - schedule changed under proposal
+  - optimizer accept discard
+  - optimization troubleshooting
+targetPhrase: "optimizer refused my proposal as stale"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "Why was my optimizer proposal refused as stale when I clicked Accept?"
+    answer: "The proposal was built against a snapshot of the schedule, and that schedule changed before you accepted it. The optimizer never writes to the live plan on its own: it produces a proposal you review, then you Accept or Discard. If a reschedule ran, actuals were logged, or another proposal was accepted in between, the base the proposal was measured against no longer matches reality, so Accept is refused rather than allowed to overwrite newer work. Re-run the optimizer for a fresh proposal and accept that one."
+  - question: "Does a stale proposal mean the optimizer did something wrong?"
+    answer: "No. A stale proposal is the safety guard working as designed. The optimizer compares its candidate to a baseline captured when the run started, and accepting a candidate measured against an out-of-date baseline could silently undo changes made after the run. Refusing the stale accept protects the newer state. The proposal itself was valid for the moment it was built; it simply no longer applies once the schedule moved underneath it."
+  - question: "How do I avoid stale optimizer proposals?"
+    answer: "Treat an optimizer proposal as short-lived: review it and Accept or Discard before you run another reschedule, log a batch of actuals, or accept a different proposal. If you need to make other changes first, make them, then re-run the optimizer so its proposal is built against the current schedule. The guard only fires when the base moved between generating and accepting, so a tight generate-then-decide loop avoids it entirely."
+qaQuestions:
+  - question: "I generated a proposal, went to lunch, logged the morning's actuals when I got back, then clicked Accept and it was refused. What happened?"
+    answer: "Logging the actuals changed the schedule the proposal was measured against, so Accept was refused as stale. The optimizer captured a baseline when you generated the proposal; the actuals you logged afterward moved the plan past that baseline, and accepting the older proposal could have overwritten the fresh actuals. Nothing is broken. Re-run the optimizer now that the actuals are in, review the new proposal, and accept it. The guard exists precisely so newly logged reality is never quietly discarded by an older candidate."
+  - question: "Two of us were working the same plant. My proposal got refused as stale even though I did not change anything. Why?"
+    answer: "Someone else changed the schedule after you generated your proposal. The staleness check looks at the state of the plan, not at who touched it, so a reschedule or an accepted proposal from another planner moves the baseline your proposal was built against. Your Accept is refused to protect their change. Coordinate so one person drives optimization at a time, or simply re-run after the other change lands so your proposal reflects the current schedule before you accept it."
+---
+
+**When Accept on an optimizer proposal is refused as stale, it means the schedule changed after the proposal was generated, and the optimizer will not overwrite the newer state with a plan measured against an out-of-date baseline.** [EDGEBIC by User Solutions](/edgebic) never writes an optimized plan to the live schedule on its own: it produces a proposal you review and then Accept or Discard, and the staleness guard is what keeps that deferred-apply step honest.
+
+This post covers the refused-accept symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It is a different situation from [the optimizer made my schedule worse](/blog/the-optimizer-made-my-schedule-worse-edgebic), which is about the result, and from [why the optimizer returned the same schedule](/blog/why-the-optimizer-returned-the-same-schedule-edgebic), which is about no change at all. For how the optimizer weighs its goals before it proposes anything, see [how the optimizer ranks goals in strict order](/blog/how-the-optimizer-ranks-goals-in-strict-order).
+
+## What You Are Seeing
+
+You generated an optimizer proposal, reviewed the deltas, and clicked Accept, but instead of applying, the plan reports the proposal is stale and declines to commit it. The proposal looked fine; the refusal comes at the moment of acceptance, not at generation.
+
+## Why It Happens
+
+### Cause 1: A Reschedule Ran After the Proposal Was Built
+
+The optimizer measures its candidate against a baseline captured when the run started. If a full or targeted reschedule ran between generating the proposal and accepting it, the live plan no longer matches that baseline. Accepting the older candidate could undo the reschedule, so the accept is refused.
+
+**How to tell:** a scheduling run happened, by you or anyone, after you generated the proposal.
+
+### Cause 2: Actuals Were Logged in Between
+
+Logging actuals moves the schedule forward from the position the proposal assumed. Because completed and in-progress work is never overwritten, a proposal built before those actuals landed is out of date the moment they are saved.
+
+**How to tell:** shop-floor hours or a completion were recorded after the proposal was generated.
+
+### Cause 3: Another Proposal Was Accepted First
+
+If a second proposal (yours or another planner's) was accepted between your generate and your accept, the schedule already moved to that plan. Your proposal is now measured against a state that no longer exists.
+
+**How to tell:** the plan changed to a different optimized result before your accept.
+
+## How to Fix It
+
+- **Re-run the optimizer.** A fresh proposal is built against the current schedule, so its baseline matches reality and Accept commits cleanly.
+- **Review and accept promptly.** The guard only fires when the base moves between generating and accepting, so a tight generate-then-decide loop avoids it. A proposal also lives only on your screen until you Accept, which is why [an optimizer proposal can disappear before you accept it](/blog/my-optimizer-proposal-disappeared-edgebic).
+- **Make other changes first, then optimize.** If you need to log actuals or reschedule, do that, then generate the proposal so it starts from the current state.
+- **Coordinate on shared plants.** When more than one planner can change the schedule, let one drive optimization at a time so proposals are not invalidated underneath each other.
+
+## How to Diagnose It, in Order
+
+1. **Confirm a change happened after you generated the proposal:** a reschedule, a batch of actuals, or another accepted proposal.
+2. **Discard the stale proposal.** It is measured against a state that no longer exists and cannot be salvaged.
+3. **Re-run the optimizer** so the new proposal starts from the current schedule.
+4. **Review the fresh deltas** and Accept before making other changes.
+5. **If it keeps recurring,** check whether a second planner or an automated reschedule is moving the plan while you work.
+
+## How to Prevent It
+
+- **Treat proposals as short-lived.** Generate, review, decide. The longer a proposal sits, the more likely the plan moved under it.
+- **Log actuals and reschedule before optimizing,** not after, so the proposal is built on current reality.
+- **Serialize optimization on shared plants,** so two people are not accepting proposals against each other.
+- **Trust the refusal.** A stale accept being blocked is the deferred-apply contract protecting newer work, not a fault to work around. The same never-overwrite discipline that preserves completed work is covered in [the business case for risk-free optimization](/blog/the-business-case-for-risk-free-optimization).
+
+<Accordion title="Why was my optimizer proposal refused as stale when I clicked Accept?">
+The proposal was built against a snapshot of the schedule, and that schedule changed before you accepted it. The optimizer never writes to the live plan on its own: it produces a proposal you review, then you Accept or Discard. If a reschedule ran, actuals were logged, or another proposal was accepted in between, the base the proposal was measured against no longer matches reality, so Accept is refused rather than allowed to overwrite newer work. Re-run the optimizer for a fresh proposal and accept that one.
+</Accordion>
+
+<Accordion title="Does a stale proposal mean the optimizer did something wrong?">
+No. A stale proposal is the safety guard working as designed. The optimizer compares its candidate to a baseline captured when the run started, and accepting a candidate measured against an out-of-date baseline could silently undo changes made after the run. Refusing the stale accept protects the newer state. The proposal itself was valid for the moment it was built; it simply no longer applies once the schedule moved underneath it.
+</Accordion>
+
+<Accordion title="How do I avoid stale optimizer proposals?">
+Treat an optimizer proposal as short-lived: review it and Accept or Discard before you run another reschedule, log a batch of actuals, or accept a different proposal. If you need to make other changes first, make them, then re-run the optimizer so its proposal is built against the current schedule. The guard only fires when the base moved between generating and accepting, so a tight generate-then-decide loop avoids it entirely.
+</Accordion>

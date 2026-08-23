@@ -1,0 +1,156 @@
+---
+title: "Quote Simulation in EDGEBIC: Pricing Against the Shop You Have"
+description: "Manufacturing quote software with capacity awareness: how EDGEBIC quote simulation runs the real scheduling engine on a temporary job and throws it away."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - manufacturing quote software capacity
+  - quote simulation
+  - finite capacity quoting
+  - work hours vs wall clock
+  - quote cost rollup
+  - what if promise dates
+targetPhrase: "manufacturing quote software capacity"
+wordCount: 1934
+readingTime: 10
+faqQuestions:
+  - question: "What is quote simulation in manufacturing software?"
+    answer: "Quote simulation runs a quoted job through the real finite capacity scheduling engine against the shop's current live load, then discards the result. It creates a temporary job for the quoted product and quantity, schedules it around existing work, real shift hours, and holidays, reads off the start date, end date, allocated work hours, and cost, and deletes the temporary job. Nothing is written to the production schedule."
+  - question: "Does simulating a quote move any real job on the schedule?"
+    answer: "No. The simulation borrows the live engine and the live capacity picture, but its output is read and then thrown away. No schedule rows are written and no allocations are kept, so the Gantt, work-center load, and existing jobs are untouched. The temporary job it uses is deleted even when the simulation fails, so nothing accumulates."
+  - question: "Why are estimated quote hours so much smaller than the date span?"
+    answer: "Because hours are the actual allocated work content and the date span includes nights, weekends, holidays, and time queueing behind other jobs. A job starting Friday afternoon and finishing Monday morning spans roughly 66 clock hours but may contain only six hours of real work. Costing from the date span rather than allocated hours would overstate labor several times over."
+  - question: "Does a quote hold or reserve capacity for the customer?"
+    answer: "No. EDGEBIC provides quote simulation and what-if promise dates, not a capacity reservation mechanism. A simulation is discarded after its numbers are read, so no hours are held against the quote. Capacity is committed only when the quote becomes a real manufacturing order and that order is placed by a scheduling run."
+  - question: "How are labor and material cost separated in a simulated quote?"
+    answer: "Each work center that appears in the simulated result has its allocated hours multiplied by a rate, and the result is filed as labor or material depending on the work center's physical type. Material-type work centers contribute material cost; everything else contributes labor. When no material-type work center produced a cost, the quote falls back to the product's unit cost multiplied by the quantity."
+qaQuestions:
+  - question: "We quote from a spreadsheet of hours times rates and we win plenty of work. What does simulating actually change?"
+    answer: "It changes the date, not usually the cost. A spreadsheet can multiply 151.5 hours by the right rates and reach the same $9,230 the simulation reaches. What it cannot do is know that 320 hours of other work is already booked on your mill that week, so the job cannot start when you assumed. In the documented example the simulated window comes back July 20 to August 14 because the engine placed the job around existing load, real shift hours, and holidays. The cost was never the problem. The promise date was."
+  - question: "Our estimator wants to add scrap and tooling wear that the routing does not know about. Does that break the simulated cost?"
+    answer: "No, there is a specific field for it. A manual cost override replaces the rolled-up cost as the pricing basis, so profit and margin compute from your number instead. The calculated labor and material split is still stored underneath, which matters later: when actuals come in, variance reporting can compare what the routing predicted against what the job burned. In the documented rush-order example, a simulation returning $17,400 was overridden to $19,400 for tooling wear and scrap, priced at 30% markup for $504.40 per unit, and the original split survived for the comparison."
+---
+
+**Manufacturing quote software with capacity awareness** does one thing differently from a costing spreadsheet: before it gives you a date, it tries to schedule the job. EDGEBIC by User Solutions quotes by simulation. It builds a temporary job for the quoted product and quantity, runs it through the same finite capacity engine that plans your real production, reads off the dates, hours, and costs, and then deletes the temporary job. Your production schedule never notices.
+
+This post explains what the simulation is and why it works the way it does. For the full quoting workflow, from enquiry to converted order, read the [quoting pillar](/blog/edgebic-quoting-guide). For the platform this module sits inside, see [EDGEBIC](/edgebic).
+
+One vocabulary note first, because it matters in quoting more than anywhere else. EDGEBIC provides **quote simulation** and **what-if promise dates**. It does not hold or reserve capacity against a quote. A simulation is read and discarded, and real capacity is committed only when a real order is scheduled.
+
+## The Problem With Quoting From Hours and Rates
+
+Every shop can price a job. Multiply the routing's hours by the work centers' rates, add material, apply markup, and you have a number. That arithmetic is rarely where quotes go wrong.
+
+Quotes go wrong on the date. The estimator knows the job contains 151 hours of work and knows the shop runs 8 hours a day, so four weeks feels safe. What the estimator does not have in front of them is the 320 hours of other work already booked on the mill that week, the plant holiday in the middle of it, the second shift that only runs Tuesday to Thursday, and the two rush jobs that landed yesterday.
+
+The result is a promise that was arithmetically defensible and operationally impossible. The customer hears a date, the shop hears a date, and the two dates were never the same number. [Better scheduling improves job shop quoting accuracy](/blog/job-shop-quoting-scheduling) covers the commercial cost of that gap.
+
+Simulation closes it by asking the engine instead of the estimator.
+
+## What a Simulation Actually Does
+
+When you simulate a quote, five things happen in sequence.
+
+1. **Pre-flight checks.** The product must exist, the quantity must be above zero, and the product must have a routing. A product with no routing cannot be simulated, and the quote returns a clear message rather than a guess.
+2. **A temporary job is created.** It carries the quoted product, the quoted quantity, and dates derived from the quote's target date and scheduling direction.
+3. **The real engine runs.** Work centers, products, routings, existing production schedules, plant holidays, and setup-time data are all loaded, and the finite capacity engine schedules the temporary job against them.
+4. **Results are read.** The start date and end date come from the resulting schedule. Total hours come from summing the hours actually allocated to resources, not from the date span. Costs are rolled up per work center.
+5. **The temporary job is deleted.** This happens whether the simulation succeeded or failed, so nothing accumulates.
+
+The critical property is what is *not* in that list: no schedule rows are written. The simulation reads your capacity picture and leaves no trace in it. You can simulate twenty times in a morning and the shop floor plan is byte-for-byte what it was before.
+
+There is one more safeguard worth knowing. When the engine loads existing schedules for the capacity picture, it filters out any leftover temporary quote jobs, so one simulation can never contaminate the next.
+
+## Two Estimates, and When Each One Is Right
+
+A quote actually carries two numbers, produced at different moments and for different purposes. Confusing them is the most common reason a quote looks fine and behaves badly.
+
+| | Routing estimate | Simulated estimate |
+|---|---|---|
+| When it appears | As soon as product and quantity are set | After the simulation runs |
+| What it knows | The routing's hours, rates, and sub-assemblies | All of that, plus current shop load, shifts, holidays, and setup times |
+| What it produces | Hours and cost | Hours, cost, a start date, and an end date |
+| Good for | A sanity check before you spend a minute on the enquiry | The number and the date you send a customer |
+
+The routing estimate is genuinely useful. It tells you within seconds whether an enquiry is worth pursuing, and it rolls up sub-assembly work so an assembly does not read as a trivial job. What it cannot do is produce a date, because a date requires knowing what else is already booked.
+
+The house rule is short: estimate to triage, simulate to promise.
+
+## Why the Simulation Uses the Real Engine
+
+It would be simpler to build a lightweight estimator that approximates capacity. EDGEBIC does not, and the reason is that the approximations are where quotes break.
+
+The simulation respects the same finite capacity as a real run. It honours the same shift calendars, so a job cannot run through a night the shop does not staff. It honours plant holidays. It honours setup-time lookups, so a changeover into a different product family costs what it really costs. It sequences routing steps under the same dependency rules, so a step waiting on a predecessor waits.
+
+It differs from a real scheduling run in exactly one way: the result is discarded after the numbers are read. Everything else is the same code path that plans your production. That is what makes the resulting date defensible when a customer asks how you arrived at it. See the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) for what the engine considers.
+
+## Work Hours, Not Wall Clock
+
+The single most misread number on a quote is estimated hours, and understanding it prevents a whole class of pricing errors.
+
+Total hours are the sum of hours actually allocated to resources across every routing step. They are not the end date minus the start date.
+
+Consider a job that starts at 2pm on a Friday and finishes at 9am the following Monday. The wall-clock span is roughly 66 hours. The real work content might be six. The difference is nights, the weekend, and time spent queueing behind other jobs.
+
+Cost from the span and you have priced 66 hours of labor for six hours of work. On a shop that quotes across weekends and holidays routinely, that error is not a rounding issue, it is the difference between winning work and pricing yourself out of the market.
+
+So the number is honest by construction: allocated hours for cost, calendar span for the promise date, and the two reported separately because they answer different questions.
+
+## How the Cost Rollup Works
+
+Once the simulation returns a schedule, cost is assembled from it work center by work center.
+
+**Rates resolve in a fixed order.** A per-step labor rate on the routing wins if it is set. Otherwise the work center's own rate is used. If both are zero, that step costs nothing, which is quietly the most common cause of a margin that looks too good to be true.
+
+**Categories follow the work center type.** Hours on a material-type work center become material cost. Hours on any other work center become labor cost.
+
+**Material has a fallback.** When no material-type work center produced a cost, the quote uses the product's unit cost multiplied by the quoted quantity. That fallback is a safety net rather than a modeling strategy: for a product with a multi-component bill, prefer real material steps in the routing.
+
+**Sub-assembly work rolls up.** When a routing references a sub-assembly product that has its own routing, that sub-assembly's hours, labor, and material roll into the parent's totals recursively, respecting each step's quantity multiplier. A documented topology of a product built from a bracket assembly which is itself built from a base plate resolves to 22.5 hours per unit, or 225 hours at a quantity of 10. Without that rollup, a product whose work lives mostly in sub-assemblies would read close to zero hours.
+
+## What the Engine Loads Before It Decides
+
+The reason a simulated date carries weight is the size of the input list. Before the engine places a single hour of work, it loads:
+
+- **Work centers**, with their capacity, machine instances, and rates.
+- **Products and routings**, including sub-assembly routings referenced by a parent.
+- **Existing production schedules**, so committed work keeps the hours it has reserved.
+- **Plant holidays**, so a job cannot run through a day the plant is closed.
+- **Setup-time data**, so a changeover between product families costs what it really costs.
+
+Shift calendars come with the work centers, so a machine that runs one shift on Friday and two on Monday behaves that way in the simulation. Routing dependencies come with the routing, so a step waiting on its predecessor waits.
+
+That list is the difference between a date and a guess. A spreadsheet can hold the first two items. Only the scheduling engine holds all five at once, which is why the simulation calls it rather than approximating it.
+
+## Where the Date Comes From
+
+The quote carries a scheduling direction, and it decides what your target date means.
+
+**Forward** is the default. The target date is where the simulation *starts*, and the answer is when the job would finish. This is the right shape when you want to know the earliest realistic completion.
+
+**Backward** flips it. The target date is the date the job must *finish by*, and the engine schedules as late as possible while still landing on or before it, with today as the earliest-start floor. This is the direct answer to a customer asking whether you can deliver by a date.
+
+The backward case has a useful failure mode. If the backward plan does not fit, the engine falls back to a forward run, so the returned end date comes back later than the target. That is your honest no, arriving with the date the job would actually land rather than just a rejection. [Backward scheduling in EDGEBIC](/blog/edgebic-backward-scheduling-explained) covers the direction rules in full.
+
+Whichever direction you use, the direction is stored on the quote and carried onto the manufacturing order at conversion, so the real scheduling run reproduces the plan you quoted rather than reinventing it.
+
+## What the Simulation Cannot Tell You
+
+Three honest limits.
+
+**It does not reserve anything.** Two quotes simulated the same morning both see the same free capacity, because neither one consumed it. If both convert, the second one queues behind the first. For high-value promises, re-simulate close to the commitment.
+
+**It is a snapshot.** Costs and dates reflect the shop as it was when you clicked simulate. When rates or capacity change afterwards, the quote view raises a banner telling you the estimates are stale and to re-run. A 90 day old simulation is fiction, which is why the default quote expiry is 30 days.
+
+**Scenario runs are forward only.** Quote scenarios, the named what-if variants of a quote, always simulate forward regardless of the parent quote's direction. Compare a scenario's end date against the customer's date yourself. [What a scenario can and cannot change](/blog/what-a-scenario-can-and-cannot-change-in-edgebic) covers this and the other boundaries.
+
+## Where to Go Next
+
+- [How to build and price a quote](/blog/how-to-build-and-price-a-quote-in-edgebic) walks the fields, the simulation, and the margin math.
+- [How a quote becomes a promise date](/blog/how-edgebic-turns-a-quote-into-a-promise-date) follows the simulation path in detail and covers conversion.
+- [Quoting mistakes](/blog/quoting-mistakes-edgebic) covers the setups that produce confident, wrong numbers.
+- The [quoting pillar](/blog/edgebic-quoting-guide) is the full workflow, and the [EDGEBIC complete guide](/blog/edgebic-complete-guide) maps every module.

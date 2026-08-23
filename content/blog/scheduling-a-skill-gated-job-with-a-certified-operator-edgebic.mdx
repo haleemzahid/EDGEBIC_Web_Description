@@ -1,0 +1,119 @@
+---
+title: "Scheduling a Skill-Gated Job With a Certified Operator in EDGEBIC"
+description: "Certify one welder for a skill, gate two jobs on it, and watch EDGEBIC slide the second job to the next day because one person cannot weld two machines at once, with the ledger shown."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - operator skill scheduling walkthrough
+  - certified operator constraint
+  - labor constraint scheduling
+  - operator hours ledger
+  - skill-gated job
+  - operator attend fraction
+targetPhrase: "operator skill scheduling walkthrough"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "How does EDGEBIC stop a schedule from putting one operator on two machines at once?"
+    answer: "It treats each operator as a finite second resource with a per-day hours ledger. When a routing step declares a required skill, the engine only offers a shift where a qualified, rostered, non-absent operator has free hours, and it books those hours as the job is placed. A single welder with 8 hours on Monday cannot cover two 8-hour jobs the same day, so the second job slides to the next staffed day rather than pretending one person is in two places."
+  - question: "What does the operator attend fraction control in EDGEBIC?"
+    answer: "The attend fraction sets how much operator attention the run phase of a step consumes per machine-hour. At 1.0 the step is fully attended, one operator-hour per machine-hour. At 0.5 one person tends two machines, so 8 pool-hours cover 16 machine-hours. At 0.0, the default, the run books nobody and only the setup needs a person, which models lights-out machines. Setup always books one operator regardless of the fraction, so an unstaffable skill still fails visibly."
+  - question: "How do I certify an operator for a skill in EDGEBIC?"
+    answer: "Open Daily Hours, then the Operators tab. Add the skill to the skills catalog, select the operator, and add a certification on the Skills sub-tab with an optional expiry date. Then roster the operator on the Roster sub-tab by ticking the shift and weekday cells they work. An expired certification drops out of the engine on the next run, and an unrostered operator contributes no hours to the shift, so both currency and presence are enforced."
+qaQuestions:
+  - question: "We have three TIG welders but only one is certified on Inconel. What happens when I schedule three Inconel jobs and he is on vacation Thursday?"
+    answer: "The jobs schedule only where his hours are available. With one qualified welder rostered eight hours a day, three eight-hour Inconel jobs cannot all run the same day; they queue across his available days. If he is on time off Thursday, the engine offers no Inconel capacity that day and slides the affected work to when he is back. The schedule stays honest instead of quietly planning three simultaneous Inconel welds nobody can staff."
+  - question: "Can I lock a specific certified person onto a step, and what happens if that person is out?"
+    answer: "Yes, pin the step to a named operator, which is enabled once the step has a required skill. The qualified pool then narrows to exactly that person, and the rest of the pool is never a fallback. If they are on time off, the step slides through their absence to their first day back rather than silently handing the job to someone else. A named person's absence becomes visible schedule movement, which is the point: no substitution the planner never approved."
+---
+
+**Scheduling a skill-gated job in [EDGEBIC by User Solutions](/edgebic) means the engine treats the certified operator as a second finite resource: a step that requires a skill only schedules where a qualified, rostered, present operator has free hours, and those hours are booked as the job is placed.** This walkthrough certifies one welder, gates two jobs on his skill, and watches the second job slide to the next day because one person cannot weld two machines at once. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so the labor constraint is visible in numbers.
+
+For the concept, [operator and skill scheduling explained](/blog/edgebic-operator-and-skill-scheduling-explained) is the companion, and [EDGEBIC for welding shops: operator certifications](/blog/edgebic-for-welding-shops-operator-certifications) shows the industry fit.
+
+## The Cast: Two Weld Cells, One Certified Welder
+
+Harborline Fabrication runs two identical weld cells and one specialist:
+
+| Item | Value |
+|---|---|
+| Work centers | Weld-A and Weld-B, one instance each, Day Shift Mon to Fri 08:00 to 16:00 (8 h) |
+| Skill | TIG-Inconel |
+| Operator | Joe, certified TIG-Inconel, rostered Day Shift Mon to Fri, no time off |
+| Jobs | J-100 (8 h on Weld-A) and J-200 (8 h on Weld-B), both requiring TIG-Inconel, fully attended |
+
+Without any operator data, both jobs schedule Monday 08:00 to 16:00 in parallel, one on each cell. Two machines, one welder, at the same time: that is the fiction the labor constraint exists to kill.
+
+## Step 1: Set Up the Operator and the Skill
+
+Open Daily Hours and switch to the Operators tab. Add the skill to the catalog: TIG-Inconel. Select Joe, open his Skills sub-tab, and add a certification for TIG-Inconel, optionally with an expiry date. Then open his Roster sub-tab and tick the Day Shift cells for Monday through Friday.
+
+Two rules are worth knowing. An expired certification drops out of the engine on the next run, so currency is enforced automatically. And the roster is a weekly pattern keyed to the shift, not a pile of per-date rows, so you roster Joe once and record his absences separately as exceptions.
+
+## Step 2: Gate the Steps
+
+Open each job's routing step. Set the Required Skill to TIG-Inconel. Set the Operator attention (the attend fraction) to 1.0, meaning fully attended: one operator-hour per machine-hour. Both weld steps now carry the constraint.
+
+## Step 3: Schedule and Watch the Second Job Slide
+
+Run Drive Schedule. The engine holds a per-run operator-hours ledger keyed by operator, date, and shift, and consults it at four points: it will not offer an unstaffed shift, it gates each candidate window on operator availability, it clamps how many hours a window can take to what the pool affords, and it books the hours as each slice commits.
+
+- **J-100** schedules first. Monday Day Shift pool for TIG-Inconel is 8 hours minus 0 booked, or 8. The machine needs 8, the pool affords 8, so J-100 runs Weld-A Monday 08:00 to 16:00. The engine books Joe: his Monday ledger goes to 8 hours.
+- **J-200** is next. Monday Day Shift pool is now 8 minus 8, or 0. The engine never even offers Monday; the diagnostics record that the window was skipped for lack of qualified operator hours. The day walk continues, Tuesday's pool is 8, and J-200 runs Weld-B Tuesday 08:00 to 16:00, with Joe booked Tuesday.
+
+Two jobs, one welder, two days. Exactly how a supervisor would staff it, and no schedule that claims Joe is in two cells at once.
+
+## Step 4: Add a Second Welder
+
+The fix a planner would reach for is a second certified person. Add Mia to the Operators tab, certify her for TIG-Inconel, and roster her Mondays. Reschedule. Now the Monday pool is 16 hours (Joe plus Mia), both jobs run Monday, Joe on one cell and Mia on the other. The constraint did not slow anything down; it made the schedule match the real staffing.
+
+## The Attend Fraction, in One Table
+
+Not every machine needs a person for its whole run. The attend fraction scales the run phase's operator cost:
+
+| Fraction | Meaning | Effect |
+|---|---|---|
+| 0.0 (default) | Setup only | The run books nobody; only setup needs a person |
+| 0.5 | One person tends two machines | 8 pool-hours cover 16 machine-hours |
+| 1.0 | Fully attended | One operator-hour per machine-hour (this walkthrough) |
+| 2.0 | Two-person crew | Each machine-hour books two operator-hours |
+
+Setup always books one operator regardless of the fraction, because a machine still needs a person to set up. So a step with setup can never start on an unstaffed day even at fraction 0.0, which keeps an unstaffable skill failing visibly instead of silently. The lights-out end of this dial is its own walkthrough, [lights-out machining: one operator, seven machines](/blog/lights-out-machining-one-operator-seven-machines-edgebic).
+
+## A Variation: Pin the Job to Joe
+
+Suppose the step must be Joe's, not just anyone certified. Open the step and pin the Operator to Joe, which is enabled only once a required skill is set. The qualified pool narrows to exactly Joe; the rest is never a fallback.
+
+Now record time off for Joe, Monday through Wednesday, on his Time-off sub-tab (the range is inclusive on both ends). Reschedule. With Mia certified but not pinned, the unpinned step would run Monday on Mia. But the pin removes Mia from the pool, so Monday through Wednesday show zero available hours and the step slides to Thursday, Joe's first day back. The slip is visible on the Gantt, which is exactly the point: a named person's absence should surface as schedule movement, never as a silent substitution nobody approved.
+
+## What This Walkthrough Proves
+
+1. **Operators are a finite second resource.** A required skill gates a step on a per-day operator-hours ledger, on top of the machine calendar.
+2. **One person cannot cover two simultaneous jobs.** The second job slides to the next staffed day rather than pretending the welder is in two cells.
+3. **Certification and roster both matter.** An uncertified or unrostered person contributes no hours, and an expired certification drops out automatically.
+4. **The attend fraction sizes the labor cost.** Fully attended is one-for-one; fractions model shared tending; zero models lights-out with setup-only staffing.
+5. **A pin makes absence visible.** Pinning to a named person slides the work through their time off instead of substituting silently. A whole morning of that decision, from the phone call to the audit of which pins cost a due date, is in [covering a certified job when the welder calls in sick](/blog/covering-a-sick-operator-on-a-certified-job-edgebic).
+
+If a certified operator is not being used when you expect, or cannot be assigned to a step at all, the two most common causes are covered in [an operator with the right skill was not used](/blog/an-operator-with-the-right-skill-was-not-used-edgebic) and [an operator cannot be assigned to a step](/blog/an-operator-cannot-be-assigned-to-a-step-edgebic).
+
+## From One Skill to a Staffed Plant
+
+The labor constraint is what turns a machine schedule into a schedule the floor can actually run. It composes cleanly with the machine side: a step can require both a machine pool and a skill, so [work center groups](/blog/setting-up-a-work-center-group-and-load-balancing-edgebic) and this constraint stack rather than fight. For the CNC angle, [EDGEBIC for CNC shops: operator skills](/blog/edgebic-for-cnc-shops-operator-skills) is the direct read.
+
+User Solutions has scheduled certification-driven work since 1991, including aerospace and defense programs for the US Navy and BAE Systems. [Contact us for a demo](/contact-us) and bring one certified skill: we will gate a job on it with you.
+
+<Accordion title="How does EDGEBIC stop a schedule from putting one operator on two machines at once?">
+It treats each operator as a finite second resource with a per-day hours ledger. When a routing step declares a required skill, the engine only offers a shift where a qualified, rostered, non-absent operator has free hours, and it books those hours as the job is placed. A single welder with 8 hours on Monday cannot cover two 8-hour jobs the same day, so the second job slides to the next staffed day rather than pretending one person is in two places.
+</Accordion>
+
+<Accordion title="What does the operator attend fraction control in EDGEBIC?">
+The attend fraction sets how much operator attention the run phase of a step consumes per machine-hour. At 1.0 the step is fully attended, one operator-hour per machine-hour. At 0.5 one person tends two machines, so 8 pool-hours cover 16 machine-hours. At 0.0, the default, the run books nobody and only the setup needs a person, which models lights-out machines. Setup always books one operator regardless of the fraction, so an unstaffable skill still fails visibly.
+</Accordion>
+
+<Accordion title="How do I certify an operator for a skill in EDGEBIC?">
+Open Daily Hours, then the Operators tab. Add the skill to the skills catalog, select the operator, and add a certification on the Skills sub-tab with an optional expiry date. Then roster the operator on the Roster sub-tab by ticking the shift and weekday cells they work. An expired certification drops out of the engine on the next run, and an unrostered operator contributes no hours to the shift, so both currency and presence are enforced.
+</Accordion>

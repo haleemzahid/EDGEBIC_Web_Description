@@ -1,0 +1,118 @@
+---
+title: "ProShop Scheduling Gaps (And How EDGEBIC Fills Them)"
+description: "ProShop finite capacity scheduling gaps that shops report: load views without sequencing, flat work center capacity, sequence-dependent setups, and slow what-if answers."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ProShop finite capacity scheduling
+  - ProShop scheduling gaps
+  - ProShop scheduling add-on
+  - ProShop production scheduling integration
+  - sequence dependent setup ProShop
+  - aerospace bottleneck scheduling
+targetPhrase: "ProShop finite capacity scheduling"
+wordCount: 1820
+readingTime: 9
+faqQuestions:
+  - question: "Why do ProShop shops still sequence the floor by hand?"
+    answer: "Because a load view answers how much work exists, not the order it should run in. ProShop is built to be right about the quality system, travelers, and compliance; sequencing is a constraint problem about which machine runs what, in what order, on which shift. When that decision is made by hand, the printed order becomes the real schedule and the committed dates drift away from it. That is a category gap rather than a product flaw."
+  - question: "Do we have to replace ProShop to get finite capacity scheduling?"
+    answer: "No. The standard pattern is a scheduling layer beside the ERP rather than instead of it. ProShop stays the system of record for the quality system, travelers, purchasing, and compliance. A finite capacity tool reads the parts, work centers, routings, and open orders ProShop already holds, builds an executable schedule, and hands dates back. Nothing in the quality system has to be redesigned."
+  - question: "How does EDGEBIC get data out of ProShop?"
+    answer: "Through reusable import masks fed by the Excel or CSV exports your ProShop environment already produces. You map an export's columns to EDGEBIC fields once; every later run is two clicks, and each row reports back as Created, Updated, Reused, or Failed with a per-run log. There is no certified connector, no middleware, and nothing installed inside ProShop, so an update has nothing to break."
+  - question: "What changes first when a quality-driven shop adds finite capacity scheduling?"
+    answer: "Bottleneck visibility, usually in the first scheduling run. Loading every open order against real shift hours and real machine counts turns an overloaded week from a surprise three weeks out into a number you can see today. The second change is what-if speed: evaluating an AOG or expedite becomes a scheduler run rather than an afternoon of manual cascade math, with the audit trail intact."
+qaQuestions:
+  - question: "ProShop gives our floor excellent digital travelers and a clear load view, so where does a finite capacity engine actually add something?"
+    answer: "A load view tells you a work center has 120 hours of work against 100 hours of capacity next week. It does not tell you which jobs to run first, which will finish late, or what happens to the rest when the expedite lands. EDGEBIC turns that load into a sequence: it orders the work with a setup matrix so compatible jobs run together, anchors around the machine you flag as the bottleneck, and produces a finish date per job that the floor can hit. The traveler ProShop already produces stays your source of truth on the floor; EDGEBIC decides the order and the dates that feed it, and every completed operation is preserved exactly on the next reschedule."
+  - question: "We hold AS9100 and a special-process step can only run when a qualified operator is on shift. Can the schedule respect that, not just the machine?"
+    answer: "Yes. Operator skills and certifications are part of the engine, not an afterthought, so a step that requires a qualified operator is only scheduled into a shift where one is available. That closes the common gap where a machine looks free but the person cleared to run the special process is not, which on paper produces a date the floor cannot hit. The certification model applies to every imported order automatically once it is configured, and like every other input it is set up once in EDGEBIC rather than exported from ProShop, because no ERP column expresses which operator is cleared for which process on which shift."
+---
+
+**ProShop is a strong system of record for the quality system, digital travelers, and compliance, but many shops report that the day-to-day sequencing decision still happens by hand off a load view, because the questions a planner answers each morning are finite capacity questions: which orders fit this week, what an expedite displaces, and when the constraint machine actually runs out of hours.** The fix is not replacing ProShop. It is adding a finite capacity layer beside it that reads the data ProShop already holds and hands executable dates back.
+
+EDGEBIC by User Solutions is that layer. This post walks the gaps shops report, why they exist in any quality-first ERP, and how each one is filled with a specific mechanism rather than a brochure claim. For the data-flow mechanics, the companion post is the [complete ProShop integration guide](/blog/edgebic-proshop-integration-guide).
+
+## Why the gaps exist at all
+
+An ERP's job is to be right about records: what was planned, what was inspected, what was shipped, and the documentation trail behind all of it. A scheduler's job is to be right about time: what runs where, when, in what order, on which machine, with which certified operator. Those are different computational problems, and the second one grows hard fast. Sequencing a few hundred open orders across a couple dozen work centers with shifts, changeovers, and certification constraints is a constraint problem a records-first data model was never designed to solve.
+
+So the gap is structural rather than a defect. A load view is genuinely useful, but it stops at "how much," and the planner still has to decide "in what order." The distinction between capacity planning and detailed scheduling is standard in the operations management body of knowledge maintained by [ASCM](https://www.ascm.org), and the general version of the story is in [where ERP falls short on scheduling](/blog/where-erp-falls-short-scheduling). Here is the ProShop-shop version, gap by gap.
+
+## Gap 1: a load view is not a sequence
+
+A load view sums the hours queued at a work center and compares them with capacity. That answers whether a week is heavy, not the order the jobs should run in, which job finishes late, or what the expedite pushes out. The deeper question is [finite versus infinite capacity](/blog/finite-vs-infinite-capacity-scheduling): does a date reflect real available hours or just an offset?
+
+**How EDGEBIC fills it:** every schedule is finite capacity by construction and it produces a real sequence, not just a load bar. Work centers carry instance counts, shift calendars, efficiency, utilization caps, holidays, and downtime, and the engine resolves available hours day by day, then orders the work and hands back a finish date per job. When you want the just-in-time answer from the due date instead of the earliest one, [backward scheduling](/blog/forward-vs-backward-scheduling) is a per-job choice.
+
+## Gap 2: work center capacity flattened into one number
+
+Most ERP data models describe a work center as a capacity figure. Two identical grinders become one resource with a bigger number, which is right in a weekly total and wrong every day, because it will plan one job that occupies the whole cell where two could run side by side.
+
+**How EDGEBIC fills it:** machine instances are first-class. A work center holding two machines means two simultaneous jobs, and the engine chooses between load balancing across instances and dedicating one machine per job per day when long changeovers make that the correct rule. Work center groups go further: a named pool of interchangeable machines that the engine re-shops on every reschedule, with a per-member efficiency factor so a slower machine takes proportionally longer. The mechanics are in [how EDGEBIC picks the best machine in a pool](/blog/how-edgebic-picks-the-best-machine-in-a-pool).
+
+## Gap 3: no sequence-dependent setup logic
+
+One setup time per operation cannot express the reality that changeover cost depends on what ran immediately before. Aerospace shops running material families, fixtures, or tooling groups lose whole shifts to sequencing nobody can see, and no single column in any export can capture it.
+
+**How EDGEBIC fills it:** a sequence-dependent setup matrix per work center, organized by setup families so you maintain dozens of entries rather than thousands of part-to-part pairs. The optimizer then sequences compatible work together and orders families to reduce total changeover, using mathematical optimization with a proven optimality gap plus a multi-run layer guaranteed never worse than the baseline schedule. The concept post is [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+## Gap 4: the schedule ignores who is certified
+
+In a controlled-process shop, a machine being free does not mean the work can run. A special process needs a qualified operator on shift, and a schedule that assumes any body will do produces a date the floor cannot hit.
+
+**How EDGEBIC fills it:** operator skills and certifications are part of the engine. A step that requires a certified operator is scheduled only into a shift where one is available, so the plan respects the person as well as the machine. That single constraint closes one of the most common sources of "the schedule said today but we could not run it."
+
+## Gap 5: the constraint is invisible until it is late
+
+Every shop has a constraint resource. Without finite loading, its overload appears only as a wave of late orders weeks later, by which point the decision window has closed. Finding and protecting the constraint is the highest-return move in scheduling, and the method is in [production bottleneck identification](/blog/production-bottleneck-identification).
+
+**How EDGEBIC fills it:** flag the work center as a bottleneck and the engine anchors schedules around it, scheduling backward into the constraint and forward out of it with protective buffers, which is the Theory of Constraints pattern applied to a real routing. Capacity views then show the constraint's load by day, so an overloaded Tuesday is visible while there is still time to move something.
+
+## Gap 6: reschedule churn, and the audit trail
+
+The complaint that quietly kills adoption is churn: a re-run that moves jobs already set up or restarts work that is halfway done. In a quality shop there is a second worry: whether a reschedule leaves a defensible record of what changed.
+
+**How EDGEBIC fills it:** two structural guarantees plus a log. Completed work is never moved by a reschedule, because an operation with a recorded actual start and end is historical fact and no mode or setting will shift it. Every scheduled job runs from a frozen snapshot of the routing it was planned with, so a mid-stream engineering change applies to future work and leaves work in progress untouched. And every import run writes a per-run log with one line per row, so you can show exactly what a load changed. [Scheduling modes](/blog/edgebic-scheduling-modes-explained) let you re-plan only new jobs and leave everything else in place.
+
+## The integration question, answered honestly
+
+The objection to any layer beside the ERP is the data bridge. This product line answered that decades ago, and the answer is deliberately unglamorous: reusable import masks that read the Excel, CSV, and database exports ProShop already produces. You map columns once, and every later run is two clicks. Routings import in two passes so operation sequences wire themselves. Unit conversion (minutes to hours at `0.016667`, hours per 100 pieces at `0.01`) lives inside the mask. Every row reports Created, Updated, Reused, or Failed with a per-run log.
+
+There is no certified connector, no middleware server, and nothing installed inside ProShop, which means there is nothing to re-certify at update. The full architecture is on the [ERP integration page](/edgebic-erp-integration), and the same method applied to other platforms is covered in the [E2 Shoptech](/blog/e2-shoptech-scheduling-gaps-and-how-edgebic-fills-them) and [Plex](/blog/plex-scheduling-gaps-and-how-edgebic-fills-them) versions of this post.
+
+This is not a new bet. User Solutions has integrated scheduling with ERPs this way since 1991, including work for BAE Systems and the US Navy, where the method scheduled a Nimitz-class program past 26,000 tasks, plus a Fourth Shift integration at Plastilite Corporation that the ERP vendor itself recommended.
+
+## Three checks that predict how fast this pays off
+
+Each takes minutes and none requires buying anything.
+
+**Routing coverage.** Pull routings for your ten highest-volume parts. Do they carry an operation sequence, a work center, hours per unit, and a setup time? If yes, you can schedule on day one. Missing setup times are survivable and become visible in the results.
+
+**Machine truth.** Count real machines per work center and compare with what ProShop records. Every center where the counts disagree is capacity you are currently misrepresenting in both directions.
+
+**Date honesty.** Sample 20 recently shipped orders and compare committed dates with actual ship dates. That spread is your current scheduling error and becomes the baseline you measure against.
+
+## A 30-minute test
+
+Export three files: work centers, routings for your five highest-volume parts, and this week's open orders. [Bring them to a demo](/contact-us). Mapping the columns live takes minutes, and the first finite capacity schedule from your own data answers the only question that matters: do these dates look like your shop? The [EDGEBIC product overview](/edgebic) and the [ERP scheduling add-on page](/erp-scheduling-add-on) cover the rest.
+
+<Accordion title="Why do ProShop shops still sequence the floor by hand?">
+Because a load view answers how much work exists, not the order it should run in. ProShop is built to be right about the quality system, travelers, and compliance; sequencing is a constraint problem about which machine runs what, in what order, on which shift. When that decision is made by hand, the printed order becomes the real schedule and the committed dates drift away from it. That is a category gap rather than a product flaw.
+</Accordion>
+
+<Accordion title="Do we have to replace ProShop to get finite capacity scheduling?">
+No. The standard pattern is a scheduling layer beside the ERP rather than instead of it. ProShop stays the system of record for the quality system, travelers, purchasing, and compliance. A finite capacity tool reads the parts, work centers, routings, and open orders ProShop already holds, builds an executable schedule, and hands dates back. Nothing in the quality system has to be redesigned.
+</Accordion>
+
+<Accordion title="How does EDGEBIC get data out of ProShop?">
+Through reusable import masks fed by the Excel or CSV exports your ProShop environment already produces. You map an export's columns to EDGEBIC fields once; every later run is two clicks, and each row reports back as Created, Updated, Reused, or Failed with a per-run log. There is no certified connector, no middleware, and nothing installed inside ProShop, so an update has nothing to break.
+</Accordion>
+
+<Accordion title="What changes first when a quality-driven shop adds finite capacity scheduling?">
+Bottleneck visibility, usually in the first scheduling run. Loading every open order against real shift hours and real machine counts turns an overloaded week from a surprise three weeks out into a number you can see today. The second change is what-if speed: evaluating an AOG or expedite becomes a scheduler run rather than an afternoon of manual cascade math, with the audit trail intact.
+</Accordion>

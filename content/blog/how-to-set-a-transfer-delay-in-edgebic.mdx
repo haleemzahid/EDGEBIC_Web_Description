@@ -1,0 +1,84 @@
+---
+title: "How to Set a Transfer Delay in EDGEBIC"
+description: "How to add a Transfer Delay in EDGEBIC to model the material-handling lag after a transfer batch is ready, and how it differs from queue time and transit days."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - set a transfer delay
+  - material handling lag between steps
+  - transfer delay versus queue time
+  - lot streaming handling delay
+  - transfer batch move time
+  - forklift move time scheduling
+targetPhrase: "set a transfer delay"
+wordCount: 1250
+readingTime: 6
+faqQuestions:
+  - question: "What does Transfer Delay do in EDGEBIC?"
+    answer: "Transfer Delay adds a flat lag in hours after a transfer batch is ready, before the downstream step can start. It models the physical move time between operations, such as a forklift run to the next cell. It sits on top of the lot-streaming overlap, so the downstream step starts at the upstream start plus the flow time plus the transfer delay. It is entered on the upstream routing step in hours."
+  - question: "How is Transfer Delay different from queue time and transit days?"
+    answer: "Transfer Delay is a flat handling lag in hours added on top of a lot-streaming overlap. Queue Time is a shift-aware buffer after a step ends, and it is discarded when a lot-streaming model is active on the same step. Transit Days is a calendar or working-day gap for parts that leave the facility. Use Transfer Delay for a sub-hour or few-hour move between two overlapping steps, not for either of the others."
+  - question: "Does Transfer Delay work without a transfer batch?"
+    answer: "Transfer Delay is designed to add a handling lag on top of lot streaming, so it belongs on a step that is already overlapping, one with a transfer batch size set, or a continuous-process step using a flow step. Set the transfer batch first, then add the delay. On a step with no overlap configured, a handling lag between operations is usually better expressed as queue time instead."
+qaQuestions:
+  - question: "After 50 pieces are cut they need a 45-minute forklift move to the paint cell. How do I model that?"
+    answer: "Set the cutting step's transfer batch size to 50 so painting can start as soon as those 50 pieces are ready, then set Transfer Delay to 0.75 on the same step, since 45 minutes is 0.75 hours. The downstream painting step now starts at the cutting start plus the flow time for 50 pieces plus the 45-minute move. Leave queue time at zero on that step: when lot streaming is active, the queue-adjusted end is replaced anyway, so Transfer Delay is the field that actually carries your handling lag."
+  - question: "I set both a transfer delay and a queue time on the same step and the queue time seems ignored. Is that a bug?"
+    answer: "No, that is the documented behavior. When a lot-streaming model fires on a step, its result replaces the queue-adjusted end rather than stacking on it, so the queue time is discarded on that step. The anomaly report flags the combination so you can clean it up. Keep queue time at zero on a lot-streaming step and use Transfer Delay for the handling lag. If you genuinely need a shift-aware buffer instead of a flat lag, then remove the overlap and use queue time on its own."
+---
+
+**To set a transfer delay in EDGEBIC by User Solutions, open the upstream routing step and enter a value in hours in the Transfer Delay field.** It adds a flat material-handling lag after a transfer batch is ready, on top of the lot-streaming overlap, so the downstream step starts at the upstream start plus the flow time plus the delay. The control lives on the routing step, in the Bill of Routing.
+
+Transfer Delay is the field that models the physical move: the forklift run, the crane lift, the walk to the next cell. It is deliberately separate from queue time and transit days, and mixing them up is the usual reason a plan overlaps too much or too little.
+
+## Before You Start
+
+- **The step already has a transfer batch set,** or is a continuous-process step using a flow step. Transfer Delay adds a lag on top of an overlap, so there must be an overlap to add it to. See [how to set a transfer batch size](/blog/how-to-set-a-transfer-batch-size-in-edgebic).
+- **You know the move time in hours.** 30 minutes is 0.5, 45 minutes is 0.75.
+- **You can rerun the scheduler** to see the effect.
+
+## Step 1: Open the Routing Step
+
+Open the **Bill of Routing** for the product, in either the Grid View or the Designer. Select the upstream step: the one that produces the pieces that get moved.
+
+## Step 2: Confirm the Overlap Is There
+
+Check that the step has a **Transfer Batch Size** greater than zero on a discrete work center, or a **Flow Step** on a continuous-process work center. This is the overlap the delay attaches to.
+
+If neither is set, a handling gap between operations is better expressed as **Queue Time**, not Transfer Delay.
+
+## Step 3: Enter the Transfer Delay
+
+Set **Transfer Delay** to the move time in hours. A 45-minute forklift move is `0.75`. A two-hour crane-and-stage sequence is `2`.
+
+Leave **Queue Time** at zero on this step. When a lot-streaming model is active, the queue-adjusted end is replaced, so a queue time here would simply be discarded and the anomaly report would flag the combination.
+
+## Step 4: Save and Reschedule
+
+Save the routing, then run **Schedule / Re-Schedule** so the change reaches the plan.
+
+## What Changes When You Save
+
+The downstream step's earliest start moves later by the delay. Its new start is the upstream start plus the lot-streaming flow time plus the transfer delay, reconciled to a feasible capacity slot. Transit days, if any, still compose after that. Nothing about the upstream step's own duration changes; the delay lives in the gap between the two steps.
+
+## How to Check It Worked
+
+1. On the Job View, confirm the downstream bar now starts later by roughly the delay you entered, relative to the overlap without it.
+2. Open the [step-by-step schedule](/blog/how-to-see-a-jobs-step-by-step-schedule-in-edgebic) and confirm the downstream operation's planned start reflects the added lag.
+3. Run the anomaly report and confirm the step is not flagged for a queue-time-plus-lot-streaming conflict. If it is, clear the queue time on that step.
+
+## Common Mistakes
+
+**Putting queue time on a lot-streaming step.** When lot streaming is active, the queue-adjusted end is replaced, so queue time is discarded and flagged. Use Transfer Delay for the lag instead.
+
+**Using transit days for a sub-hour move.** Transit days are a calendar or working-day gap for parts that leave the facility. A forklift move across the shop is hours, not days. Use Transfer Delay.
+
+**Adding a delay with no overlap to attach to.** Transfer Delay is a lag on top of a lot-streaming overlap. On a non-overlapping step, use queue time. Set the transfer batch first.
+
+## Next
+
+Transfer Delay is the flat handling lag that sits on top of a transfer batch, and keeping it distinct from queue time and transit days is what makes a lot-streamed plan realistic. To set the overlap it attaches to, read [how to set a transfer batch size](/blog/how-to-set-a-transfer-batch-size-in-edgebic) and [what a transfer batch is](/blog/what-is-a-transfer-batch). For the calendar-based gap instead, read [how to add transit days between two steps](/blog/how-to-add-transit-days-between-two-steps-in-edgebic). More single-task recipes are in the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and the platform overview is at [/edgebic](/edgebic).

@@ -1,0 +1,169 @@
+---
+title: "What the EDGEBIC Schedule Checks Actually Look For"
+description: "Schedule data quality checks in plain language: over-booking, machine collisions, off-calendar work, consistency drift, and the thresholds behind each finding."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - schedule data quality checks
+  - over booking capacity check
+  - machine collision detection
+  - off calendar scheduling
+  - schedule consistency drift
+  - inventory integrity check
+  - EDGEBIC anomaly families
+targetPhrase: "schedule data quality checks"
+wordCount: 2300
+readingTime: 12
+faqQuestions:
+  - question: "What does a schedule over-booking check look for?"
+    answer: "It compares the hours booked on a work center in a single day against what that work center physically has: twenty-four hours multiplied by its number of machine units. Anything above that is impossible and is reported as critical. A second, softer version compares the same day against the shift design rather than the physical ceiling, which catches a machine planned beyond its own calendar without being physically impossible."
+  - question: "Why would a scheduler flag an idle gap as a problem?"
+    answer: "Because a gap larger than half an hour between two consecutive jobs on the same machine unit usually has a cause worth knowing. The allocator may have skipped past a prior booking and landed at the next shift boundary, a queue or transit value may have pushed the second job, or a partially completed operation may have left the rest of its day unused. The gap itself is not always wrong; it is a prompt to look."
+  - question: "What is consistency drift in a production schedule?"
+    answer: "Consistency drift is two places in the system storing the same number and disagreeing. The hours booked against machine units and the hours in the daily breakdown for the same operation should match within a hundredth of an hour. A job header's start and end should match the earliest and latest of its own operations within a minute. When they diverge, one of two writers produced a value the other did not see."
+  - question: "Which schedule checks only run on a plant-wide scan?"
+    answer: "The stock integrity and changeover matrix families. Those conditions are per-product and per-work-center rather than per-job, so evaluating them under a job filter would be both slow and misleading. If you are investigating an on-hand figure that disagrees with its transaction history, or a setup matrix cell that never applies, clear the job filter before you run."
+qaQuestions:
+  - question: "The report says one of our work centers is booked past twenty-four hours in a day. That cannot happen. Where does the number come from?"
+    answer: "It can happen in the data even though it cannot happen in the building, and the usual cause is synchronized mirror machines. When a step is configured so two machines must run in exact lockstep, the mirror is booked deliberately without a capacity check, because the physics demands both machines regardless of what else is planned. If that same machine also carries ordinary independent work in the window, the day's total legitimately exceeds the physical ceiling in the plan. The fix is not to silence the check: it is to keep machines used as synchronized mirrors clear of independent load in those periods, and to watch the resource load view for the periods where they are not."
+  - question: "We keep seeing a finding that says a step overlaps its predecessor, but our lot streaming is deliberate. Is the check wrong?"
+    answer: "The dependency check already knows about deliberate overlap and excludes steps that carry a transfer batch or a flow step, so an overlap finding on a streamed step should not appear at all. If one does, the most likely explanation is that the step was routed to an alternate machine rather than its primary, and the overlap gate is keyed to the primary. That is its own finding, marked critical, and its practical meaning is that the head start you configured is silently inactive for every job that lands on the alternate. Either keep streamed steps on their primary machine or accept that the overlap applies only when the primary runs it."
+---
+
+**The Scheduler Anomalies report runs 22 automated checks across seven categories, and every one of them exists because a real condition once produced a real wrong plan.** This post walks them in plain language, family by family, with the thresholds each one uses, so a finding on your screen turns into an action rather than a shrug.
+
+EDGEBIC by User Solutions groups findings into families rather than presenting a flat list of rules, and thinking in families is what makes triage fast. (A wider set of validation checks runs behind the scenes during development and support work; the 22 in the report are the ones a planner acts on.) For the routine that produces these findings, see [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic). For why a scheduler audits itself at all, see [schedule diagnostics explained](/blog/edgebic-schedule-diagnostics-explained).
+
+## Physical Impossibility: Over-Booking and Collisions
+
+The first families answer a blunt question. Does the plan ask a machine to do something no machine can do?
+
+**Over-booking against the physical ceiling.** The hours booked on a work center in one day are summed and compared against twenty-four hours times its number of machine units. Anything above that is impossible and is reported as critical. A three-unit work center has a seventy-two hour ceiling, and a plan that books eighty is not aggressive, it is wrong.
+
+**Over-booking against the shift design.** A softer version compares the same day against the sum of the shifts actually defined for that work center. Not physically impossible, but planned beyond its own calendar. Rows already caught by the physical check are excluded so you do not read the same problem twice.
+
+**Per-unit over-booking.** A single machine unit booked more than twenty-four hours in one day. This catches the case where a work center's total looks plausible because it has several units, while one of those units is carrying an impossible load on its own.
+
+**Two jobs on one machine unit at once.** The same unit, on the same date, with overlapping clock windows from two different operations. One machine cannot run two jobs simultaneously.
+
+**One-job-per-day violations.** When a work center is configured so each unit takes only one job per day, a unit appearing on two different jobs on the same date breaks that contract. That configuration exists for machines where changeover makes sharing a day impractical, described in [machine instances](/blog/edgebic-machine-instances-explained).
+
+The important exception in this family is synchronized mirror machines. When two machines must physically run in lockstep, the mirror is booked deliberately without a capacity check. A shop using that configuration will legitimately see over-booking findings on the mirror machine when it also carries independent work. The finding is correct and so is the configuration; what it is telling you is to keep mirror machines clear of other load in those windows. The two parallel modes are compared in [parallel and alternate work centers](/blog/edgebic-parallel-work-centers-explained).
+
+## Sequence and Calendar Legality
+
+**Dependency order.** A step that starts before the step it depends on has finished. The check deliberately excludes steps carrying a transfer batch or a flow step, because those two fields exist precisely to create overlap. An overlap finding on a step with neither field set is real.
+
+**Off-calendar bookings.** Four separate conditions, all reported as warnings:
+
+| Condition | Source |
+|---|---|
+| Work booked on a plant-wide holiday | The global holiday calendar |
+| Work booked on a work-center holiday | That machine's own holiday list |
+| Work booked inside a shift closure | The shift's holiday ranges |
+| Work booked during a downtime window | Scheduled downtime, one-off or recurring |
+
+These matter more than they look. A schedule with hours on a plant shutdown day is not merely optimistic; every date downstream of it is early by that much, and the error compounds through the job.
+
+**Bookings outside the shift's own hours.** A booking whose clock window falls outside the working hours defined for that day of the week. Overnight shifts are excluded so that a legitimate 22:00 to 06:00 pattern does not read as an error.
+
+**Impossible dates.** An operation, or a booking inside one, that ends at or before it starts. Zero-duration or inverted. Always critical, because nothing downstream of an inverted date can be trusted.
+
+## Configuration That Silently Does Nothing
+
+This family is the one that explains the sentence planners say most often: "we configured that and nothing happened."
+
+**A work center with no shifts.** Scheduled against, but with no shift definition at all, so the engine has no capacity windows to allocate into. Work routes around it silently.
+
+**A booking pointing at a machine unit that no longer exists.** Usually caused by reducing a work center's unit count after jobs were already scheduled onto the higher-numbered units.
+
+**Overlap-model conflicts.** Four distinct configurations, each with a specific silent outcome:
+
+| Configuration | What the engine actually does |
+|---|---|
+| Overlap gate set on a step routed to an alternate machine | The gate is keyed to the primary machine, so the head start is silently inactive on the alternate |
+| A flow step and a queue time on the same step | The overlap gate replaces the queue; the buffer stops having any effect |
+| A flow step and a transfer batch on the same step | On a discrete machine the piece-count model wins and the flow step is ignored |
+| A transfer batch at or above the order quantity | Capped at the quantity, so streaming behaves exactly like no streaming |
+
+**Piece counts on a continuous-process machine.** A transfer batch on a work center whose output is not discrete pieces (paint, chemicals, extrusion) has no meaning, so the engine falls back to the start-to-start model instead. If that field is zero, no overlap happens at all and the configured batch does nothing.
+
+**Working-day transit with no work center.** Transit configured to count only working days needs a work center whose calendar defines which days those are. When that reference is missing or inactive, the engine falls back to flat calendar arithmetic and the transit is longer than intended.
+
+**Dead fields populated.** Move hours and teardown hours are read for costing and never for scheduling. Setting them changes nothing about dates. The check exists so the intent can be moved into a field the engine does read: queue time, transfer delay, or transit days. All of these are explained in [queue and transit times](/blog/edgebic-queue-and-transit-times-explained) and [lot streaming](/blog/edgebic-lot-streaming-explained).
+
+## Waste and Under-Delivery
+
+**Idle gaps.** More than half an hour of dead time between two consecutive jobs on the same machine unit on the same day. Not always wrong. The usual causes are the allocator skipping past a prior booking and landing at the next shift boundary, a queue or transit value pushing the second job out, or a partially completed operation leaving the rest of its day unused. The threshold matches the one the job grid uses for cell coloring, so what the report flags is what you already see.
+
+**Missing hours.** The hours actually booked fall short of what the routing demands by more than half an hour, after allowing for an alternate machine's own speed. This is an informational signal rather than a hard gate. Completed operations are excluded, because recorded time legitimately differs from plan and no report should treat reality as a defect.
+
+## Consistency Drift
+
+Several numbers in a schedule are stored in more than one place because different screens need them differently. When two writers disagree, this family notices.
+
+| What disagrees | Tolerance |
+|---|---|
+| Hours booked against machine units versus the daily breakdown for the same operation | 0.01 hours |
+| Hours booked versus what the routing demands, including recorded time | more than 1 hour and more than 10 percent |
+| A component row carrying booked hours, which should be impossible by contract | 0.01 hours |
+| A synchronized mirror's start or end against the machine it mirrors | 1 minute |
+| A job header's start and end against the earliest and latest of its own operations | 1 minute |
+| A daily breakdown dated outside its operation's own window | any |
+| An operation pointing at a work center that has been deleted | any |
+
+The tolerances are the interesting part. A hundredth of an hour is thirty-six seconds, which is tight enough to catch a genuine write-path disagreement and loose enough to ignore rounding. The one-minute mirror tolerance exists because mirrors are supposed to be in exact lockstep, and a minute of drift means one of them was allocated independently.
+
+## Stock and Changeover Integrity
+
+Two families only run on a plant-wide scan, because their conditions are per-product and per-work-center rather than per-job.
+
+**Stock integrity.** The on-hand figure is a cache that must equal the sum of its own transaction history. When it drifts, something wrote the cache directly instead of posting a transaction, which is a classic migration artefact. The check uses a tolerance of a thousandth of a unit so floating-point noise does not raise findings. The same family catches negative on-hand for a stocked product (more issued than received), a make-to-stock product not flagged as stocked (so its builds never post receipts), and a yield value outside the range zero to one, where zero or below is critical because it is a divide-by-zero waiting to happen.
+
+**Changeover matrix integrity.** Four conditions that make a matrix cell dead: negative setup minutes, a duplicate cell for the same machine and product pair (whose resolution then becomes non-deterministic), a cell where the from and to are the same product or family (the resolver returns zero for same-to-same before consulting the matrix, so that cell can never apply), and a cell referencing a work center, product or family that is missing or inactive. A fifth catches a product assigned to a setup family that no longer exists, whose family cells therefore silently never match. Matrix behavior itself is covered in [the setup matrix](/blog/edgebic-setup-matrix-explained).
+
+## The False Positives Worth Knowing
+
+Three exclusions in the logic save a great deal of wasted investigation, and knowing them is part of reading the report well.
+
+**Legitimate parallel mirrors are excluded** from the duplicate-operation check. A step with parallel machines deliberately produces one operation row per machine with identical start and end dates, and that is not a duplicate.
+
+**A long gap explained by a competing job is excluded.** A gap of more than four days between sequential steps is flagged only when no other job was occupying the downstream machine during the wait. When the machine was genuinely busy, the gap is the schedule being honest about load, and the check stays quiet.
+
+**Recorded work is excluded from under-delivery.** An operation the shop has finished carries the hours it actually took, which is the point of recording actuals. Comparing that to the routing's estimate and calling the difference a defect would be backwards.
+
+Those exclusions are why the report is worth reading rather than filtering. It has already done the obvious dismissals for you.
+
+## Turning Families Into Action
+
+The practical mapping, once you know the families:
+
+- **Impossible or corrupt** (over-booking, collisions, inverted dates, missing references, stock cache drift): fix before rescheduling.
+- **Silently inactive configuration** (overlap conflicts, dead fields, missing shifts, dead matrix cells): fix when you next touch that routing, and expect the behavior you configured to appear only afterwards.
+- **Waste and drift** (idle gaps, missing hours, consistency drift): investigate on a cadence rather than in the moment.
+
+The mistakes that come from ignoring these are collected in [ignoring schedule warnings](/blog/ignoring-schedule-warnings-mistakes-edgebic), and a large share of the findings originate in routing data covered by [routing setup mistakes](/blog/routing-setup-mistakes-edgebic). The symptom-first companion is [why does my schedule look wrong](/blog/edgebic-troubleshooting-guide), and for the underlying capacity model, [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) is the category explainer.
+
+Full platform map: the [complete EDGEBIC guide](/blog/edgebic-complete-guide) and the [EDGEBIC](/edgebic) hub.
+
+Send US a finding you cannot interpret and we will name the cause. [Contact US](/contact-us).
+
+<Accordion title="What does a schedule over-booking check look for?">
+It compares the hours booked on a work center in a single day against what that work center physically has: twenty-four hours multiplied by its number of machine units. Anything above that is impossible and is reported as critical. A second, softer version compares the same day against the shift design rather than the physical ceiling, which catches a machine planned beyond its own calendar without being physically impossible.
+</Accordion>
+
+<Accordion title="Why would a scheduler flag an idle gap as a problem?">
+Because a gap larger than half an hour between two consecutive jobs on the same machine unit usually has a cause worth knowing. The allocator may have skipped past a prior booking and landed at the next shift boundary, a queue or transit value may have pushed the second job, or a partially completed operation may have left the rest of its day unused. The gap itself is not always wrong; it is a prompt to look.
+</Accordion>
+
+<Accordion title="What is consistency drift in a production schedule?">
+Consistency drift is two places in the system storing the same number and disagreeing. The hours booked against machine units and the hours in the daily breakdown for the same operation should match within a hundredth of an hour. A job header's start and end should match the earliest and latest of its own operations within a minute. When they diverge, one of two writers produced a value the other did not see.
+</Accordion>
+
+<Accordion title="Which schedule checks only run on a plant-wide scan?">
+The stock integrity and changeover matrix families. Those conditions are per-product and per-work-center rather than per-job, so evaluating them under a job filter would be both slow and misleading. If you are investigating an on-hand figure that disagrees with its transaction history, or a setup matrix cell that never applies, clear the job filter before you run.
+</Accordion>

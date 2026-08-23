@@ -1,0 +1,133 @@
+---
+title: "Bottleneck Scheduling and Due-Date Scheduling in the Same Plan"
+description: "TOC backward scheduling precedence in EDGEBIC: two different backward passes, opposite triggers, and what happens when one job qualifies for both."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - TOC backward scheduling precedence
+  - bottleneck and due date scheduling
+  - anchor scheduling direction
+  - just in time production scheduling
+  - constraint pinned schedule
+  - scheduling direction rules
+targetPhrase: "TOC backward scheduling precedence"
+wordCount: 1970
+readingTime: 10
+faqQuestions:
+  - question: "What happens when a job is marked for backward scheduling and also has a pinned constraint?"
+    answer: "The anchor wins and the whole-order backward pass does not run. A pinned target start date is a user-placed constraint that outranks a due date, and the anchored path already performs its own backward and forward split around the pin. Running a whole-order right-alignment on top of that would fight the pin. The decision is written to the run log with the reason, so the job's direction is never a mystery."
+  - question: "Are there two different backward passes in EDGEBIC?"
+    answer: "Yes, and they are not interchangeable. The anchored pass right-aligns only the operations upstream of the pinned constraint, using a chained deadline that walks back one operation at a time. The whole-order pass right-aligns the entire routing to the due date, deriving each operation's deadline from the earliest actually-placed start among its successors, which handles branching and joins correctly."
+  - question: "Why can a brand new job be scheduled backward but not anchored?"
+    answer: "Because the two mechanisms have opposite trigger conditions. Whole-order backward scheduling applies only to jobs with no existing schedule rows, since it decides where a job is born. Anchoring requires an existing schedule row carrying a target start date, so there has to have been a prior run to pin. Schedule the job first, then pin the constraint, then reschedule."
+  - question: "Does setting a target start date change how a backward job behaves?"
+    answer: "Completely, and often unintentionally. A target start date on any schedule row promotes that job to an anchored job on the next run, and anchoring outranks the backward direction. That is why the doesn't-fit prompt's start-date edits write the job's earliest-start floor rather than a target date: writing a target date would silently convert the job to a different scheduling mode."
+  - question: "What happens if a backward job cannot fit before its due date?"
+    answer: "The whole order rolls back and forward-schedules from its earliest-start floor. Nothing partial is left behind and no exception reaches the planner. The event is recorded with the reason, the forward window it produced, and whether that window runs past the due date. Depending on the site setting, the run either accepts the fallback silently or holds the whole run and shows the affected jobs before anything is written."
+qaQuestions:
+  - question: "We want a job to arrive just in time and also to respect our heat-treat oven's slot. Can we have both?"
+    answer: "Yes, in sequence. Schedule the job backward first so it is born right-aligned to the due date with slack in front. Then pin the oven step's target start date on the resulting schedule row and reschedule. From that run onward the job is anchored: the oven starts at its pin, upstream operations plan back to feed it, and downstream operations plan forward from its finish. You get the JIT release from the first pass and the constraint discipline from the second."
+  - question: "Our backward job scheduled fine but shows two days late on the dashboard. Nothing looks wrong on the Gantt."
+    answer: "Check the end item's lead time. A backward job targets the due date minus the product's lead time so the delivery tail lands on the due date, and every late calculation measures against the delivery-ready end rather than the last machine's finish. If the product carries a lead time and the job was scheduled by some other path, the tail lands after the due date and every surface agrees it is late. The anomaly report has a dedicated check for a backward job whose plan ends past its due date."
+---
+
+**[EDGEBIC by User Solutions](/edgebic) contains two distinct backward passes, and one job never runs both: a pinned constraint outranks a due-date direction, and the two mechanisms have opposite trigger conditions.** That single sentence explains most of what planners find confusing when a plant runs bottleneck scheduling and just-in-time scheduling side by side.
+
+The concepts themselves are covered elsewhere: [TOC anchor scheduling explained](/blog/edgebic-toc-anchor-scheduling-explained), [backward scheduling explained](/blog/edgebic-backward-scheduling-explained), and the general comparison in [forward vs backward scheduling](/blog/forward-vs-backward-scheduling). The buffer arithmetic and the formal precedence table live in [TOC buffers and direction precedence](/blog/toc-buffers-and-direction-precedence-in-edgebic). This post is about running both in one plan.
+
+## Two Backward Passes That Are Not the Same Mechanism
+
+The word "backward" describes both, and that is where the trouble starts. They differ in scope, in how deadlines are derived, and in what happens when they fail.
+
+| | Anchored pre-constraint pass | Whole-order backward pass |
+|---|---|---|
+| What it right-aligns | Only the operations upstream of the pinned constraint | The entire routing |
+| Anchored to | The constraint's target start date, minus the constraint buffer | The due date, minus the end item's lead time |
+| Deadline per operation | A chained deadline walked back one operation at a time | The earliest actually-placed start among that operation's successors |
+| Branches and joins | Handled linearly, which can be approximate on a fan-in | Handled correctly, because deadlines come from placed starts |
+| Downstream operations | Planned forward from the constraint's finish plus the shipping buffer | Also right-aligned; the whole order is pulled to the deadline |
+| If it does not fit | Schedules what it can; the feeding buffer is consumed and the plan shows it | The whole order rolls back and forward-schedules from the floor |
+
+The deadline derivation is the important technical difference. The whole-order pass places successors first and reads their real placed starts, so when capacity forces a successor later, that move ripples correctly back through every predecessor including through a join where two paths merge. The anchored pass uses a simpler chained walk that suits its narrower job: getting a straight upstream feeder chain to arrive on time at one pinned operation.
+
+## Opposite Trigger Conditions
+
+This is the interaction planners hit first, usually while trying to do both to one job on day one.
+
+**Whole-order backward requires a job with no existing schedule rows.** It decides where a job is born. Once a job has been placed on a prior run, a reschedule goes forward from its resume point rather than re-right-aligning it to the due date. That rule exists because re-pulling an already-committed job to its due date every run would be enormously disruptive to a floor that has already seen the plan.
+
+**Anchoring requires an existing schedule row carrying a target start date.** Marking a work center as a bottleneck does nothing on its own. There has to be a schedule row to pin, and the pin has to be set on it, which means there has to have been a prior scheduling run.
+
+So a brand new job can be scheduled backward and cannot be anchored. A job that has already been scheduled can be anchored and will not be re-right-aligned. Which is exactly the sequence you want:
+
+1. Schedule the job backward. It is born right-aligned to the due date with the slack deliberately in front of it.
+2. Open the resulting schedule row for the constraint operation and set its target start date.
+3. Reschedule. The job is now anchored: the constraint starts at its pin, upstream plans back to feed it, downstream plans forward from its finish.
+
+You keep the JIT release position from the first pass and gain the constraint discipline from the second. The [step-by-step backward setup](/blog/how-to-schedule-a-job-backward-from-its-due-date-in-edgebic) and [how to flag and schedule around a bottleneck](/blog/how-to-flag-and-schedule-around-a-bottleneck-in-edgebic) cover each half.
+
+## The Silent Conversion
+
+Setting a target start date on any schedule row promotes that job to an anchored job on the next run. Nothing warns you at the moment you set it, because setting a target date is a legitimate thing to do.
+
+For a job you marked as backward, that promotion is a mode change. The direction setting stays on the order and stops being consulted, because the anchor outranks it. The job's plan will look different in ways that make sense once you know why: work no longer clusters at the due-date end, the constraint sits exactly where you pinned it, and everything else arranges itself around that pin.
+
+There is one place the product deliberately protects you from this. When a backward job does not fit and the run pauses to show you the affected jobs, that prompt lets you edit the due date, the start date, and the priority. The start-date edit writes the job's earliest-start floor only. It never writes a target start date, because doing so would convert the job to an anchored job and stop it being a backward job at all. That is a deliberate design choice, and it is worth mirroring in your own habits: use the floor to say "not before this," and reserve target dates for genuine constraint pins.
+
+## What They Share
+
+Two behaviors are common to both, and both surprise people who learned only one mechanism.
+
+**Material timing flips to just in time.** In any backward-style pass, whether anchored or whole-order, a material step is placed in a window that *ends* when the material is needed, rather than pushing everything that consumes it later. In a plain forward pass, a material lead time pushes its consumer out. So the same routing with the same lead times produces different material bar positions depending on the direction the job took, and that is intended: the whole point of both mechanisms is to bring material in when it is wanted.
+
+**The due date is never modified.** Neither pass writes a computed end back onto the customer-promised date. The plan lives in schedule rows; the promise stays where the planner typed it. That invariant holds across forward, anchored, and backward paths equally.
+
+## Two Different Failure Philosophies
+
+The most useful contrast in the whole comparison is what each does when the plan cannot be honored.
+
+**The whole-order backward pass is atomic.** If any operation cannot be placed inside the window, or would have to start before the job's floor, the entire attempt is rolled back. Every row it added is removed, the order is forward-scheduled from the floor instead, and the event is recorded with the reason, the forward start, the forward end, and whether that end runs past the due date. A failed backward attempt leaves zero residue, and backward never throws where forward would have succeeded.
+
+**The anchored pass is best effort.** If upstream capacity cannot deliver by the constraint's pin, the constraint still starts at its pin. The upstream work is simply late, the feeding buffer is consumed, and the plan shows it. Scheduling does not abort and no rollback fires. The planner has to detect the condition by comparing the last upstream operation's finish against the constraint's target start.
+
+That difference is deliberate and reflects what each mechanism is protecting. Backward is protecting a customer promise, so an unachievable promise must not be quietly produced. Anchoring is protecting a constraint slot, so the slot is held even when the feed is at risk, because a bottleneck that idles is a worse outcome than a feeder that runs hot.
+
+Both philosophies are defensible; running both in one plant means living with both. The practical answer is to watch different signals for each: fallback events for backward jobs, and the gap between the last feeder's finish and the constraint's pin for anchored ones.
+
+## Competing for the Same Capacity
+
+In a mixed plan, jobs are still dispatched in the site's normal order: priority first, then earliest start, then due date. Direction does not change a job's position in that queue.
+
+What direction changes is how the job's own operations claim slots once its turn comes. An anchored job schedules its constraint operation at maximum priority with a capacity-packing slot strategy, so the constraint's window is secured before any of that job's subordinated operations can compete for shared capacity. Subordinated operations then run at reduced priority. A backward job uses the ordinary allocator throughout, searching right-aligned from a deadline rather than left-aligned from an earliest start.
+
+The consequence for a shared machine is straightforward. An anchored job that routes through a machine your backward jobs also use will claim its constraint window aggressively. If that machine is genuinely your plant constraint, that is correct and is the point. If it is not, you have pinned the wrong operation, and the plan will show it as an anchored job whose pinned resource is not the tightest one for that job.
+
+## End-Item Lead Time Only Interacts With One of Them
+
+A product's lead time models the delivery-ready tail after the last machine stops: cure, outgoing inspection, freight. It splits every job into two reported dates, an item-start date when the item physically exists and a job-end date when it is delivery ready. [Item start vs job end](/blog/end-item-lead-time-item-start-vs-job-end-edgebic) covers the split.
+
+The backward pass reserves that tail. It targets the due date minus the lead time, so manufacturing finishes early enough for the tail to land on the due date. Without that reservation, a backward job would be born exactly its lead time late on every late-days column, which would defeat the entire mechanism.
+
+Anchored and forward jobs do not reserve it. The tail is added afterward for display, never as a scheduling constraint. So the same product with a two-day tail behaves differently by direction, and the difference shows up as apparent lateness on jobs that took a non-backward path. That is not a defect in the late calculation: every surface classifies against the delivery-ready end consistently. It is a genuine statement that the plan does not clear the tail.
+
+## What the Anomaly Report Says About Each
+
+The checks are direction-aware, which matters in a mixed plan.
+
+For **backward jobs**, the report flags any job whose plan ends after its due date. That covers both the fallback case and a plan that drifted late for another reason. It applies the same end-of-day grace to a midnight-precision due date that the engine's own anchor calculation uses, so the two never disagree by half a day.
+
+Also for backward jobs, the idle-gap check is **suppressed**. A backward job has slack in front of it by design; flagging that slack as an anomaly would produce noise on every correctly-scheduled JIT job. The sequential-gap check exempts them the same way.
+
+For **anchored jobs**, there is no equivalent automatic check on feeding-buffer violation. The comparison of last-feeder finish against constraint pin is a planner check today. [Bottleneck scheduling mistakes](/blog/bottleneck-scheduling-mistakes-edgebic) lists the configuration errors that cause it, and [backward scheduling mistakes](/blog/backward-scheduling-mistakes-edgebic) does the same on the other side.
+
+## Diagnosing a Job That Took the Wrong Direction
+
+Every run writes one decision line per job explaining which rule won. It will name exactly one of: the anchor won because a pin exists, actuals forced forward from the resume point, planner-placed start pins forced forward, the due date was missing or a sentinel value, the job was not new, an infeasibility reason with the rollback row count, or a success line with the placed window.
+
+That single line answers the question faster than reading the Gantt. The order it enforces is fixed: anchor, then actuals, then planner pins, then backward, then forward as the default. Anything lower loses to anything higher, every time, and the reason is recorded.
+
+For the wider picture of how the engine assembles a plan, see the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

@@ -1,0 +1,98 @@
+---
+title: "Critical Ratio Scheduling Explained"
+description: "Critical ratio scheduling ranks jobs by time remaining divided by work remaining, so the job most behind pace runs first. See the formula, worked numbers, and how it fits a finite plan."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - critical ratio scheduling
+  - critical ratio formula
+  - critical ratio dispatch rule
+  - job sequencing rules
+  - time remaining work remaining
+  - dynamic priority scheduling
+targetPhrase: "critical ratio scheduling"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "What is critical ratio scheduling?"
+    answer: "Critical ratio scheduling ranks jobs by a single number: the time remaining until the due date divided by the work remaining to finish the job. A ratio below 1.0 means the job is behind pace and needs to move up the queue, a ratio of exactly 1.0 means it is on pace, and a ratio above 1.0 means it has slack. Because the ratio recalculates as the clock moves and work gets logged, the priority order updates itself instead of staying frozen the way a fixed priority number does."
+  - question: "What is the critical ratio formula?"
+    answer: "Critical ratio equals time remaining divided by work remaining, both measured in the same units, usually working days. Time remaining is the working days between now and the due date. Work remaining is the working days of processing still left in the routing. A job due in 4 working days with 5 days of work left has a critical ratio of 0.8, which is below 1.0, so it is behind pace and should run before a job with a ratio of 1.3."
+  - question: "How is critical ratio different from earliest due date?"
+    answer: "Earliest due date sorts only by the calendar date on the order, ignoring how much work each job still needs. Critical ratio weighs the due date against the remaining work content, so a job due sooner but nearly finished can correctly rank behind a job due later that still has many hours to run. Critical ratio is dynamic and self-updating, while earliest due date is a static sort until you re-run it."
+qaQuestions:
+  - question: "Two jobs are both due Friday. One has 2 days of work left, the other has 6. Which should run first?"
+    answer: "The one with 6 days of work left, and critical ratio proves it with numbers. If today is Monday and Friday is 4 working days out, the 2-day job has a ratio of 4 divided by 2, which is 2.0, comfortably ahead of pace. The 6-day job has a ratio of 4 divided by 6, which is 0.67, badly behind. The lower ratio wins the machine first. Earliest due date alone would call them a tie and miss the real risk."
+  - question: "Does EDGEBIC sort by critical ratio automatically on every run?"
+    answer: "The standard engine sorts by priority, then start date, then due date, not by critical ratio directly. But the multi-run optimizer tries a critical-ratio ordering as one of the several complete schedules it scores, alongside earliest due date and shortest processing time. It proposes the best of those, guaranteed never worse than the baseline, and you accept or discard. So critical ratio is available as an optimizer candidate rather than a permanent default sort."
+---
+
+**Critical ratio scheduling ranks every open job by one number: the time remaining until its due date divided by the work remaining to finish it.** A ratio below 1.0 means a job is falling behind and should claim a machine sooner; a ratio of exactly 1.0 means it is on pace; a ratio above 1.0 means it has slack to spare. The strength of the rule is that it weighs both halves of the risk at once, the deadline and the workload, instead of looking at only the calendar. EDGEBIC by User Solutions treats critical ratio as one of the dispatch orderings its optimizer evaluates, which lets you test a pace-aware sequence against your standard plan without committing to it blindly.
+
+## The formula, in planner terms
+
+Critical ratio is deliberately simple. You divide two quantities measured in the same units, usually working days:
+
+```
+Critical ratio = time remaining until due date  /  work remaining
+```
+
+Time remaining is the number of working days between now and the due date. Work remaining is the number of working days of processing still left in the routing, summed across every operation that has not yet finished. Read the result like a fuel gauge:
+
+- **Below 1.0**: less calendar time left than work left. The job is behind pace and at risk of being late.
+- **Exactly 1.0**: calendar time and work are matched. No margin, no deficit.
+- **Above 1.0**: more calendar time than work. The job has slack.
+
+The lowest ratio is the most urgent, so a critical-ratio queue runs the smallest numbers first. Unlike a fixed priority integer, the ratio changes on its own as days pass and as operators log completed hours against the routing. A job that looked safe on Monday can slide under 1.0 by Wednesday if an upstream step ran long, and the rule surfaces that automatically.
+
+## Why the calendar alone misleads you
+
+The reason critical ratio exists is that a due date on its own hides half the picture. Two jobs due the same Friday are not equally urgent if one is nearly finished and the other has barely started. A pure [earliest due date sort](/blog/priority-rules-job-shop) calls them a tie and picks arbitrarily. Critical ratio does the arithmetic that a planner does in their head: how much runway is left, and how much runway does the work actually need?
+
+This matters most in a [finite capacity plan](/blog/finite-vs-infinite-capacity-scheduling), where contested machine time is the whole game. When a machine can take only one job at a time, the sequence decides who is late. Putting the nearly-finished job ahead of the barely-started one wastes the scarce slot on a job that had margin, and starves the job that did not. Critical ratio spends the machine on the job with the least room to spare.
+
+## A worked example
+
+Take three jobs competing for the same milling machine on a Monday morning. Friday is 4 working days out.
+
+| Job | Due date | Working days remaining | Work remaining (days) | Critical ratio |
+|---|---|---|---|---|
+| MO-201 | Friday | 4 | 2.0 | 4 / 2.0 = 2.00 |
+| MO-202 | Friday | 4 | 6.0 | 4 / 6.0 = 0.67 |
+| MO-203 | Next Tuesday | 7 | 5.0 | 7 / 5.0 = 1.40 |
+
+A critical-ratio sequence runs **MO-202 first** (0.67), then **MO-203** (1.40), then **MO-201** (2.00). Notice what a plain due-date sort would have done: it would run MO-201 and MO-202 in some tied order before MO-203, and it would happily put MO-201 (which has plenty of margin) ahead of MO-202 (which is the only job actually behind pace). Critical ratio corrects that. It pulls the one endangered job to the front and lets the two comfortable jobs wait.
+
+Now let the clock advance. Say MO-202 runs Monday and Tuesday and its work remaining drops to 2.0 days, while nothing else moves. On Wednesday, with 2 working days left to Friday, MO-202's ratio becomes 2 divided by 2, which is 1.0: back on pace. The number reset itself because both inputs changed. That self-correcting behavior is the entire appeal of the rule.
+
+## How critical ratio fits the EDGEBIC engine
+
+The standard engine does not sort by critical ratio as its default. It sorts every order deterministically by priority, then start date, then due date, so the same inputs always produce the same sequence and any change traces back to a data change. That determinism is a feature, and it is described in [how a scheduler decides which job runs first](/blog/how-a-scheduler-decides-which-job-runs-first).
+
+Critical ratio enters through the optimizer. The multi-run search re-runs the unmodified engine under several complete global orderings, including an earliest-due-date ordering, shortest and longest processing time, seeded shuffles, and a critical-ratio ordering. It scores every resulting schedule and proposes the single best one. That proposal is clamped never worse than the baseline, and nothing changes until you accept it. So instead of betting the whole plant on one dispatch rule, you let the optimizer test critical ratio as one candidate among many and keep it only if it genuinely helps. The mechanics live in the [optimizer guide](/blog/edgebic-optimizer-guide).
+
+There is also a manual path. Because critical ratio is just time remaining over work remaining, you can compute it from the same fields you already maintain (the due date and the routing hours) and use it to inform how you set the priority integer or the start date. The engine then honors your ordering directly.
+
+## When critical ratio is the right tool, and when it is not
+
+Critical ratio shines when due dates and work content vary widely across the queue, which is the normal state of a [job shop](/blog/job-shop-scheduling-challenges). It keeps attention on the job closest to trouble and adapts as the day unfolds.
+
+It is a weaker choice in a few situations. On a heavily setup-dependent line, running strictly by critical ratio can scatter similar jobs and pile up changeover time, which is why the optimizer also weighs a setup-minimizing sequence; that trade-off is covered in [how a scheduler trades off setup against due date](/blog/how-a-scheduler-trades-off-setup-against-due-date). Critical ratio also assumes your work-remaining estimate is honest: if routing hours are wrong, the ratio is wrong, and the rule confidently prioritizes the wrong job. Clean routing data is the price of admission.
+
+Used well, critical ratio turns a static priority list into a pace-aware one. It answers the question a planner actually cares about, not "which job is due soonest" but "which job is most likely to be late," and it keeps answering it as the shift moves. See how a pace-aware sequence would reshape your own queue in [EDGEBIC](/edgebic), and read the full sequencing pipeline in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="What is critical ratio scheduling?">
+Critical ratio scheduling ranks jobs by a single number: the time remaining until the due date divided by the work remaining to finish the job. A ratio below 1.0 means the job is behind pace and needs to move up the queue, a ratio of exactly 1.0 means it is on pace, and a ratio above 1.0 means it has slack. Because the ratio recalculates as the clock moves and work gets logged, the priority order updates itself instead of staying frozen the way a fixed priority number does.
+</Accordion>
+
+<Accordion title="What is the critical ratio formula?">
+Critical ratio equals time remaining divided by work remaining, both measured in the same units, usually working days. Time remaining is the working days between now and the due date. Work remaining is the working days of processing still left in the routing. A job due in 4 working days with 5 days of work left has a critical ratio of 0.8, which is below 1.0, so it is behind pace and should run before a job with a ratio of 1.3.
+</Accordion>
+
+<Accordion title="How is critical ratio different from earliest due date?">
+Earliest due date sorts only by the calendar date on the order, ignoring how much work each job still needs. Critical ratio weighs the due date against the remaining work content, so a job due sooner but nearly finished can correctly rank behind a job due later that still has many hours to run. Critical ratio is dynamic and self-updating, while earliest due date is a static sort until you re-run it.
+</Accordion>

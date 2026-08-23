@@ -1,0 +1,125 @@
+---
+title: "Specifying the ERP Export You Need From IT"
+description: "How to write a request your ERP report writer can build in one pass: the columns, the filter, the grain, the naming, and the five questions that prevent a second round trip."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - specifying an ERP export
+  - ERP report request for scheduling
+  - what columns to export for scheduling
+  - export specification production planning
+  - working with ERP report writers
+  - EDGEBIC export requirements
+targetPhrase: "specifying an ERP export"
+wordCount: 1590
+readingTime: 8
+faqQuestions:
+  - question: "What should an ERP export request for scheduling actually specify?"
+    answer: "Five things: the grain (one row per what), the columns with their units, the filter that decides which rows appear, the file format and delimiter, and the saved name. Most failed requests omit the grain or the units, which produces a file that looks right and imports wrong. Naming the units in the request is what prevents a minutes-versus-hours error surviving into the schedule."
+  - question: "Should you ask for one export or several?"
+    answer: "Several, one per data type, because each feeds its own import mask. Products, work centers, routings, work orders, and labor hours have different grains and different refresh cadences, so combining them into one report produces a file that cannot be imported in one pass. Five small reports are easier to build, easier to filter, and easier to re-run individually."
+  - question: "Does the export need to be a database view rather than a file?"
+    answer: "No. A saved report exporting to CSV or Excel is enough, and it has the advantage of being inspectable by whoever runs it. A read-only database view is useful when you want automation and your ERP supports it. Both end at the same import mask, so the choice is about how your ERP produces data rather than what the scheduler requires."
+qaQuestions:
+  - question: "Our IT group is busy and every request takes three weeks. How do I get this right on the first attempt?"
+    answer: "Write the request as a table rather than a paragraph, with one row per column you want and four fields against each: the column heading you want in the file, what it means in plain language, its unit, and whether it is required or nice to have. Then add three lines above the table stating the grain, the filter, and the format. That format is unambiguous enough for a report writer to build without asking follow-up questions, which is where most of the three weeks actually goes. Include one worked example row with real values from a job they can look up, because that single line catches misunderstandings that no amount of description does. If you can, ask for a twenty row sample first rather than the full report. Reviewing twenty rows takes ten minutes and turns a possible second three week cycle into a same-day correction."
+  - question: "The report writer says a column we want does not exist anywhere in the ERP. Do we stop and get it added?"
+    answer: "Usually no, because the columns most often missing are the ones the ERP was never meant to hold. Machine counts per work center, real shift coverage, and changeover cost by sequence are not transaction data, and adding custom fields to hold them puts the ERP in the position of maintaining information the floor changes faster than anyone will update it. Take the export without those columns and enter that data directly in the scheduler, once, where it is visible to the planner who owns it. The exception is a field the ERP genuinely holds under a different name, which happens more often than people expect: ask the report writer what the closest thing is rather than whether your exact term exists, because your term is probably not their term."
+---
+
+**A good ERP export request specifies five things: the grain, the columns with their units, the filter, the format, and the saved name.** Requests that fail almost always omit the grain or the units, which produces a file that looks correct in a spreadsheet and imports wrong into the schedule.
+
+EDGEBIC by User Solutions reads whatever your ERP can export through saved import masks, which puts the whole burden of the interface on the export specification. That is a good trade, because a specification is a one-time document and a report is a one-time build. This post is how to write both so the request comes back right the first time.
+
+## Ask for five exports, not one
+
+Each data type has its own grain and its own refresh cadence, and each feeds its own mask. Combining them makes a file that cannot be imported in one pass.
+
+| Export | Grain | Refreshed |
+|---|---|---|
+| Products | One row per part | Weekly or monthly |
+| Work centers | One row per machine or cell | On change |
+| Routings | One row per operation | On engineering change |
+| Open work orders | One row per order line | Daily |
+| Labor hours | One row per job, work center, and date | Daily |
+
+Five small reports are easier to build than one wide one, easier to filter, and independently re-runnable, which matters because the cadences differ. Why they differ is worked out in [deciding import frequency by data type](/blog/deciding-erp-import-frequency-by-data-type).
+
+## State the grain in one sentence
+
+The grain is what one row represents, and it is the assumption most likely to be different in your head and the report writer's.
+
+"One row per operation, per end product" produces a routing file. "One row per operation, per work order" produces something else entirely, because the same operation now appears once per job and the file is twenty times larger. Both are valid reports. Only one is a routing.
+
+Write it as a sentence at the top of the request: "One row per routing operation, for every active end product." Ambiguity here costs a full request cycle.
+
+## Name the units on every numeric column
+
+This is the single highest-value line in the specification, because a units mistake produces no error at any point.
+
+A standard time column carrying minutes where the schedule expects hours makes every operation sixty times longer, and the file looks entirely reasonable. The fix on the import side is a conversion factor on that column, which is easy once you know: minutes to hours is `0.016667`, seconds to hours `0.000278`, and a standard quoted per lot of 100 becomes per piece with `0.01`. The mechanism is in [what a conversion factor is](/blog/what-is-a-conversion-factor-in-data-import).
+
+So ask the question explicitly rather than assuming: is setup in hours or minutes, is run time per piece or per lot, and if per lot, what lot size? A report writer can answer all three in one email. Nobody can answer them from the file afterward without arithmetic.
+
+## Specify the filter, and say why
+
+Which rows appear is a planning policy, not a technical detail, so it belongs in the request rather than being left to the report writer's judgment.
+
+For work orders, that means naming the statuses that count as demand: released and firm planned orders in, MRP suggestions and canceled orders out. The reasoning is in [deciding which ERP work orders to import](/blog/deciding-which-erp-work-orders-to-import). For products and routings it usually means active records only. For multi-plant shops it means either a site parameter or an all-sites file, depending on the model, per [handling multi-plant ERP exports](/blog/handling-multi-plant-erp-exports-in-edgebic).
+
+Include the reason in one clause. Six months later somebody will ask why suggested orders are excluded, and the answer needs to be recoverable from the report definition rather than from memory.
+
+## The column table
+
+Write the columns as a table, not a paragraph. Four fields per row is enough.
+
+| Heading in the file | Meaning | Unit | Required |
+|---|---|---|---|
+| Part Number | The end product identifier | text | Yes |
+| Operation Seq | Step order within the routing | integer | Yes |
+| Work Center | Where the step runs | text | Yes |
+| Run Hours | Time per piece | hours per piece | Yes |
+| Setup Hours | Time per changeover, not per piece | hours | No |
+| Queue Hours | Buffer before the step may start | hours | No |
+
+Two conventions save trouble later. Ask for stable headings, because the import mask maps by heading rather than by position, so reordering columns is harmless and renaming one is not. And ask that the first row of the file be the heading row, since that is what makes the mapping resilient. The consequences are covered in [handling an ERP export that changed column order](/blog/handling-an-erp-export-that-changed-column-order).
+
+Sequence numbers are worth one extra sentence: ask for them in gaps of 10 if the ERP allows it, so a later insert becomes 25 and nothing renumbers.
+
+## Ask for a twenty row sample first
+
+This is the step that converts a possible second three week cycle into a same-day correction.
+
+Review the sample against the specification and check three things: the grain matches, the units are what you asked for, and one job you know by heart produces the right arithmetic. Three operations at 0.25, 0.40, and 0.10 hours per piece with 1.5 hours of setup, on an order of 200 pieces, totals `(0.25 + 0.40 + 0.10) x 200 = 150` run hours plus 1.5 setup, so 151.5. If the sample produces something else, you have found the problem before the report was finished.
+
+## Format, delimiter, and name
+
+The remaining three lines are short.
+
+**Format.** An Excel workbook or a delimited text file both work, and the mask handles comma, semicolon, tab, and space delimited text. If values may contain commas, say that the file should quote text values so the reader handles them correctly. Whether to prefer a file or a read-only database view is a separate decision, covered in [CSV versus database view export tradeoffs](/blog/csv-vs-database-view-erp-export-tradeoffs).
+
+**Delivery.** A shared folder the report writes to on a schedule is the version that removes the most friction from the weekly routine.
+
+**Name.** Ask for the saved report to be named so it is obviously a scheduling asset, and ask that edits to it be treated as changes to a shared asset. Most format churn comes from a well meaning edit by someone answering an unrelated question.
+
+## What not to ask for
+
+Do not ask IT to add custom fields for machine counts, shift coverage, or changeover cost by sequence. Those are not transaction data, they change faster than anyone will maintain an ERP master record, and they belong with the planner who owns them. What the export cannot carry, and what to do instead, is in [what your ERP export cannot tell you about the floor](/blog/what-your-erp-export-cannot-tell-you-about-the-floor).
+
+Bring a draft specification and a sample export to [a working session](/contact-us). Mapping a sample live usually surfaces the two columns that need a different definition, and it takes minutes rather than a request cycle. The import layer that consumes the file is on the [EDGEBIC ERP integration page](/edgebic-erp-integration), and the engine behind it is on the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="What should an ERP export request for scheduling actually specify?">
+Five things: the grain (one row per what), the columns with their units, the filter that decides which rows appear, the file format and delimiter, and the saved name. Most failed requests omit the grain or the units, which produces a file that looks right and imports wrong. Naming the units in the request is what prevents a minutes-versus-hours error surviving into the schedule.
+</Accordion>
+
+<Accordion title="Should you ask for one export or several?">
+Several, one per data type, because each feeds its own import mask. Products, work centers, routings, work orders, and labor hours have different grains and different refresh cadences, so combining them into one report produces a file that cannot be imported in one pass. Five small reports are easier to build, easier to filter, and easier to re-run individually.
+</Accordion>
+
+<Accordion title="Does the export need to be a database view rather than a file?">
+No. A saved report exporting to CSV or Excel is enough, and it has the advantage of being inspectable by whoever runs it. A read-only database view is useful when you want automation and your ERP supports it. Both end at the same import mask, so the choice is about how your ERP produces data rather than what the scheduler requires.
+</Accordion>

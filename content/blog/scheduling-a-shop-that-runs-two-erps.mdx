@@ -1,0 +1,154 @@
+---
+title: "Scheduling a Shop That Runs Two ERPs"
+description: "One shop floor, two systems of record: how to feed both into a single finite capacity model, namespace colliding part numbers, and avoid double-counting the same demand."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - scheduling two ERP systems
+  - two systems of record manufacturing
+  - post acquisition ERP scheduling
+  - identifier collision ERP import
+  - EDGEBIC multiple ERP sources
+  - one capacity model many systems
+targetPhrase: "scheduling a shop that runs two ERPs"
+qaQuestions:
+  - question: "We acquired a company that stayed on its own ERP, and both businesses now use our machine shop. Do we need two schedulers?"
+    answer: "No, and two schedulers would be actively wrong, because the constraint is the shop floor and there is only one of it. Two plans would each believe they own the same mills, so both would look feasible and neither would be. Build one capacity model with one work center list and one calendar, then feed it from both systems through separate import masks. A mask is just a saved recipe, so having one set for each source costs nothing after the first afternoon. The disciplines that matter are namespacing identifiers so the two catalogs cannot collide, and agreeing which system owns which demand so no job arrives twice. Once those are settled, the daily routine is two exports instead of one and a single scheduler run over the combined load."
+  - question: "Both our systems use simple numeric part numbers, so 1000 exists in each and means different things. How do we keep them apart?"
+    answer: "Namespace the identifier in each export before it reaches the mask, so 1000 from the first system becomes something like ACME-1000 and 1000 from the second becomes BETA-1000. Matching is on the identifier, so without a prefix the two parts become one product carrying one routing, and every job for either one schedules against whichever routing was imported last. Nothing errors, which is why this has to be prevented rather than detected. Do the same for work center names only if the two systems genuinely name different machines identically, and be careful there: shared machines must stay one record, because duplicating a work center splits its capacity and makes both copies look half empty."
+faqQuestions:
+  - question: "Can EDGEBIC take data from more than one ERP at the same time?"
+    answer: "Yes. An import mask is a saved recipe for one file shape, so you build one set of masks per source system and run whichever applies to each export. All of them land in a single scheduling model, which is what you want, because the shop floor is one set of machines no matter how many systems place orders on it."
+  - question: "What is the biggest risk when two ERPs feed one schedule?"
+    answer: "Identifier collision, followed closely by double-counted demand. Products and work centers match on the identifier, so the same number meaning different parts in two systems merges them into one record with one routing. Prefix each system's identifiers in its export to keep the catalogs separate, and agree explicitly which system owns which orders so a job cannot arrive twice and book capacity twice."
+  - question: "Should each ERP get its own work centers in the scheduler?"
+    answer: "Only where the machines really are different. A shared machine must be one work center record, because duplicating it splits its capacity across two copies and both then look half empty while the real machine is full. Where each business genuinely has its own cells, model them as separate work centers and let the shared ones stay shared, which is exactly the picture a finite capacity plan should show."
+wordCount: 1640
+readingTime: 8
+---
+
+**When one shop floor is served by two ERPs, you still build one capacity model: one work center list, one calendar, one plan, fed by a separate set of import masks per source system.** The machines do not care which system placed the order, and two schedulers would each believe they owned the same mills, so both plans would look feasible and neither would be.
+
+EDGEBIC by User Solutions has fed schedules from mixed system landscapes since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, multi-source shops are common enough to have a settled pattern. This post covers it: why one model is the only correct answer, the three problems that need solving before the first import, and the routine afterwards.
+
+## How shops end up here
+
+Four situations account for nearly all of them:
+
+- **An acquisition** where the acquired business stayed on its own system but its work runs through your plant.
+- **A division on a legacy system** that nobody has had time to migrate.
+- **A parallel migration**, where old and new run side by side for a quarter.
+- **A contract manufacturing arm** on a separate system from the branded business.
+
+The first three are usually temporary and often last years. The fourth is permanent by design.
+
+## The file interface is why this works at all
+
+The integration method does not change: export to a file, import through a reusable mask, schedule, export dates back. A mask remembers one file shape, so a second source simply means a second set of masks. Nothing is installed in either ERP, no connector has to support both, and neither system needs to know the other exists.
+
+That is the practical consequence of the approach described in [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way). A universal import layer treats a second source as another Tuesday.
+
+This is a different problem from one ERP exporting several plants, which is covered in [handling multi-plant ERP exports](/blog/handling-multi-plant-erp-exports-in-edgebic). There, one system speaks for many sites. Here, many systems speak for one site.
+
+## Problem 1: identifier collision
+
+Products and work centers match on the identifier, case-insensitively. So part `1000` from one system and part `1000` from another become **one product**, holding **one routing**, and every job from either business schedules against whichever routing was imported last.
+
+Nothing errors. The counts look clean. The plan is fiction.
+
+Prevent it with a namespace applied in each export before the file reaches the mask:
+
+| Source system | Raw identifier | Exported identifier |
+|---|---|---|
+| System A | 1000 | ACME-1000 |
+| System B | 1000 | BETA-1000 |
+
+Do it in the saved report or view so every export from that system carries the prefix automatically, rather than in a step someone performs by hand. The identifier discipline generally is in [keeping product masters in sync](/blog/keeping-product-masters-in-sync-erp-edgebic).
+
+Apply the same thinking to job numbers, so a job reference is traceable to the system that issued it. Conventions are in [keeping job numbers aligned between ERP and EDGEBIC](/blog/keeping-job-numbers-aligned-between-erp-and-edgebic).
+
+## Problem 2: work centers must not be namespaced
+
+This is the exception, and getting it backwards is expensive.
+
+A machine shared by both businesses is **one machine**. Give it one work center record. If each system's export creates its own copy, the capacity splits: two records with, say, four instances between them, each looking half empty while the real cell is full. Every promise date built on that picture is wrong in the optimistic direction.
+
+So:
+
+- **Shared machines: one record**, named once, mapped from both systems' exports to the same identifier.
+- **Genuinely separate cells: separate records**, which is just ordinary modeling.
+
+Normalize the work center name in each mask so both systems' spellings land on the same record. Watch the auto-create behavior while you do it: the routing import creates any work center a file names that does not exist, so a spelling variant from the second system silently produces a second, empty center. Sorting the work center list by shift assignment groups those orphans, which is check one on the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+## Problem 3: double-counted demand
+
+If both systems can issue a work order for the same physical job, that job books capacity twice, and a machine reads full while the floor stands idle.
+
+The fix is organizational and it needs to be written down: **agree which system owns which demand.** Usually by business unit, sometimes by product family, occasionally by order number range. Then filter each export to its own slice.
+
+Check it weekly during any period of change: total open jobs in the plan should equal open jobs in system A plus open jobs in system B. A gap in either direction is worth chasing the same day.
+
+## The conventions can differ, and that is fine
+
+Two systems will disagree about almost everything, and the mask absorbs it, because conversion and shaping are per column and per mask:
+
+| Difference | Where it is handled |
+|---|---|
+| Minutes in one, hours in the other | Conversion factor of 0.016667 on that mask only |
+| Per hundred standards in one | Factor of 0.01 on that column |
+| Blended setup and run in one | Split before import, per [combined setup and run time](/blog/handling-combined-setup-and-run-time-from-your-erp) |
+| Setup on its own row in one | Merged, per [setup as its own operation row](/blog/when-your-erp-exports-setup-as-its-own-operation-row) |
+| Alphanumeric operation codes in one | A numeric sequence column, per [operation sequence numbers](/blog/importing-erp-operation-sequence-numbers) |
+| Different status codes for open orders | A separate filter rule per source |
+
+Name the masks so nobody has to guess: `Weekly Routings (System A)` and `Weekly Routings (System B)` beat two masks both called Routings.
+
+## One calendar, always
+
+Shifts and plant holidays describe the building, not the paperwork. There is one calendar, authored locally, and neither ERP should be mapped onto it. That is already the standing rule, since no ERP models a plant calendar at the grain a scheduler needs, and it becomes non-negotiable with two sources. The reasoning is in [should you import your ERP's manufacturing calendar](/blog/importing-shift-calendars-and-plant-holidays-from-your-erp), and the wider field ownership map is in [choosing the system of record for each scheduling field](/blog/choosing-the-system-of-record-for-each-scheduling-field).
+
+## The daily routine with two sources
+
+Barely longer than with one:
+
+1. Export from system A, run its masks, read the counts.
+2. Export from system B, run its masks, read the counts.
+3. Reconcile per source: Created versus Reused should look sane for each independently.
+4. Run the scheduler once, over the combined load.
+5. Export dates back to each system in the format that system's process expects.
+
+Step 4 is the point of the whole exercise. One run, one plan, one truth about what the mills are doing on Thursday. The rhythm is in the [weekly ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine), and the return trip is in [exporting the EDGEBIC schedule back to your ERP](/blog/exporting-the-edgebic-schedule-back-to-your-erp).
+
+## Reading the counts per source
+
+Keeping the masks separate gives you a diagnostic that a merged file would hide. A high Created count on system B's routine product import points at system B, not at your data generally: usually a prefix that changed, a trailing space, or a column that shifted one position. Per-source counts turn a vague problem into a located one.
+
+The slower drift checks belong in [a monthly ERP to EDGEBIC data audit](/blog/a-monthly-erp-to-edgebic-data-audit), which is worth running per source during any parallel period.
+
+## If one of the two is on its way out
+
+A parallel migration is a special case of this pattern with an end date. The retirement side of it is covered in [what changes in EDGEBIC when you replace your ERP](/blog/what-changes-when-you-replace-the-erp-behind-edgebic): the model survives, the masks get rebuilt, and identifier continuity is the whole risk.
+
+## What one model buys
+
+With both businesses' work in one plan, the engine can do what it exists for: load every machine to its real finite capacity across shifts and instances, re-shop work center groups on every reschedule, apply sequence-dependent setups, overlap steps with transfer batches, and produce a plan through mathematical optimization with a proven optimality gap. Crucially, it can show which business's work is displacing which, which is a conversation two separate plans can never support. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows the import layer both sources share.
+
+## Bring an export from each
+
+Export one week of work orders from each system and [bring both to a demo](/contact-us). Mapping two sources into one model takes under an hour, and seeing the combined load on your shared machines is usually the moment the case makes itself.
+
+<Accordion title="Can EDGEBIC take data from more than one ERP at the same time?">
+Yes. An import mask is a saved recipe for one file shape, so you build one set of masks per source system and run whichever applies to each export. All of them land in a single scheduling model, which is what you want, because the shop floor is one set of machines no matter how many systems place orders on it.
+</Accordion>
+
+<Accordion title="What is the biggest risk when two ERPs feed one schedule?">
+Identifier collision, followed closely by double-counted demand. Products and work centers match on the identifier, so the same number meaning different parts in two systems merges them into one record with one routing. Prefix each system's identifiers in its export to keep the catalogs separate, and agree explicitly which system owns which orders so a job cannot arrive twice and book capacity twice.
+</Accordion>
+
+<Accordion title="Should each ERP get its own work centers in the scheduler?">
+Only where the machines really are different. A shared machine must be one work center record, because duplicating it splits its capacity across two copies and both then look half empty while the real machine is full. Where each business genuinely has its own cells, model them as separate work centers and let the shared ones stay shared, which is exactly the picture a finite capacity plan should show.
+</Accordion>

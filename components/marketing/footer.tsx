@@ -198,7 +198,7 @@ export function Footer(): React.JSX.Element {
                 </span>
               </div>
               <p className="text-center text-sm text-muted-foreground">
-                © {new Date().getFullYear()} {AppInfo.APP_NAME}. All rights
+                © {new Date().getFullYear()} {AppInfo.COMPANY_NAME}. All rights
                 reserved.
               </p>
               <div className="flex items-center gap-4">

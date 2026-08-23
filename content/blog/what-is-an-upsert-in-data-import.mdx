@@ -1,0 +1,70 @@
+---
+title: "What Is an Upsert (Create-or-Update)?"
+description: "An upsert creates a record if it does not exist and updates it if it does, matched by a business key. Learn how EDGEBIC decides create, update, or reuse on import."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - upsert
+  - upsert definition
+  - create or update import
+  - reuse existing record
+  - update existing records import
+  - idempotent import
+targetPhrase: "upsert in data import"
+wordCount: 1010
+readingTime: 5
+faqQuestions:
+  - question: "What is an upsert in data import?"
+    answer: "An upsert is a create-or-update operation: for each row, the import looks for a matching record by a business key, and if none exists it creates one, while if one does exist it either updates it or leaves it alone. The name is a blend of update and insert. In EDGEBIC the row outcome is reported as Created for a new record, Updated for a changed existing one, or Reused when an existing record is matched but deliberately not overwritten."
+  - question: "What decides whether a row is created or updated?"
+    answer: "Two things: whether a matching record already exists, and whether the mask is set to update existing records. If no match is found, the row is created. If a match is found and the mask allows updates, the record is updated. If a match is found but updates are turned off, the record is reused, meaning it is recognized but left unchanged. The match itself is made on a business key such as a product name or work center name."
+  - question: "Is re-running the same import safe?"
+    answer: "Yes, that is the point of upsert. Because each row is matched to an existing record rather than blindly inserted, re-running the same file does not create duplicates. Rows that already exist are updated or reused rather than added again, so the import is idempotent: run it once or five times and you end up in the same place. This makes it safe to re-import a corrected file or to re-run a scheduled load without cleaning up first."
+qaQuestions:
+  - question: "We import our product list weekly and are terrified of creating duplicates. How does EDGEBIC prevent that?"
+    answer: "EDGEBIC matches each row to an existing product by its business key, the product name, before deciding what to do. If the name already exists, the row updates or reuses that product rather than inserting a second copy, so re-importing the same list week after week never doubles it up. New names create new products; known names update in place if you have updates turned on, or reuse unchanged if you do not. The practical effect is that your weekly file can safely contain the whole catalog every time, and only genuine changes move. Just keep the names consistent, since the match is on name; a renamed product reads as a new one."
+  - question: "When we update existing products, blank cells in our file are wiping good data. Is upsert the problem?"
+    answer: "The upsert is doing its job; the issue is how blanks are handled on update, and EDGEBIC actually guards against this. On an update, a blank cell in the file is treated as leave-as-is: the existing stored value is kept rather than being overwritten with nothing. So if your update file only fills in the columns that changed and leaves the rest blank, those blanks preserve the current data instead of zeroing it. If you are still seeing values wiped, check that the cells are genuinely empty and not holding a zero or a space, which are real values and will overwrite. There is a dedicated walkthrough of this exact case in the article on a blank cell wiping a value."
+---
+
+**An upsert is a create-or-update operation: for each row in an import, EDGEBIC looks for a matching record by a business key, then creates a new one if none exists or updates the existing one if it does.** The word blends update and insert. It is what makes re-running an import safe: rows are matched, not blindly added, so a corrected file or a repeated scheduled load never spawns duplicates.
+
+[EDGEBIC by User Solutions](/edgebic) performs an upsert on every reconcilable import row and reports the outcome as Created, Updated, or Reused. This article defines the term. For the full outcome vocabulary, see the sibling term [import row status](/blog/what-is-an-import-row-status).
+
+## How It Works
+
+For each row, the import first identifies the record's business key: a product name, a work center name, and so on. It then looks for an existing record with that key.
+
+Three outcomes follow from two questions, is there a match and does the mask allow updates:
+
+- **No match:** the row is a new record, created and saved. Outcome: Created.
+- **Match, updates allowed:** the existing record is updated with the row's values. Outcome: Updated.
+- **Match, updates turned off:** the existing record is recognized but left untouched. Outcome: Reused.
+
+The "updates allowed" switch is a mask option on the record types that reconcile this way, so you can choose whether an import is allowed to change existing records or only to fill in new ones. That switch is the [Update Existing Records import option](/blog/what-is-the-update-existing-records-import-option), and it is off by default.
+
+Upsert has one more careful behavior on updates: a blank cell in the file is treated as leave-as-is, so it keeps the current stored value rather than overwriting it with nothing. That lets you send an update file containing only the columns that changed, without fear of blanking the rest. On a create, by contrast, a blank cell simply saves as empty or a default, because a brand-new record has nothing to preserve. Actuals imports carry a blunter relative of this idea, [Replace Existing](/blog/what-is-replace-existing-in-an-actuals-import), which clears logged days the file does not mention rather than leaving them alone.
+
+## A Concrete Example
+
+Think of updating a contact in your phone. When someone texts you a new number, your phone does not create a second entry for them; it finds the existing contact by name and updates the number, leaving their email and photo alone. If the name is brand new, it offers to create a contact. That is an upsert.
+
+In EDGEBIC, a weekly product file behaves the same way:
+
+| Row (product name) | Already exists? | Updates on? | Outcome |
+|---|---|---|---|
+| M8-Bolt | yes | yes | Updated: new cost saved |
+| M8-Nut | yes | no | Reused: recognized, unchanged |
+| Frame-B | no | either | Created: new product |
+
+Run the same file again next week and nothing duplicates: M8-Bolt updates again if its cost moved, M8-Nut is reused, and Frame-B, now existing, updates or reuses rather than being created a second time.
+
+## How EDGEBIC Uses It
+
+Upsert is the default behavior for the reconcilable import types, the master and demand records matched by a business name. It is what makes imports repeatable: because rows reconcile against existing records, you can re-import a whole catalog every cycle and only real changes move. The three outcomes, Created, Updated, and Reused, appear in the import result so you can see exactly what each row did.
+
+The blank-cell preservation on updates is a deliberate safeguard, but zeros and spaces count as real values, so verify your update files hold genuine blanks where you mean to leave data alone. For a step-by-step look at that exact pitfall, read [a blank cell in my import wiped a value](/blog/a-blank-cell-in-my-import-wiped-a-value-edgebic), and for the surrounding mechanics see [how EDGEBIC handles import masks](/blog/edgebic-import-masks-explained). Browse more definitions in the [manufacturing glossary](/blog/manufacturing-glossary).

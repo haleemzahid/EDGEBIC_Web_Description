@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { EDGEBIContentEdgebiPage } from '@/components/marketing/sections/edgebi-content-edgebi-page';
+import { EdgebicSuccessorCallout } from '@/components/marketing/sections/edgebic-successor-callout';
 import { EDGEBIPageContent } from '@/components/marketing/sections/edgebi-page-content';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
@@ -271,6 +272,8 @@ export default function EDGEBIPage(): React.JSX.Element {
           )}
         </div>
       </section>
+
+      <EdgebicSuccessorCallout variant="edgebi" />
     </div>
   );
 }

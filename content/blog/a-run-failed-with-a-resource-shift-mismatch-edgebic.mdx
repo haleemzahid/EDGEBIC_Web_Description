@@ -1,0 +1,109 @@
+---
+title: "A Run Failed With a Resource Shift Mismatch: Causes and Fixes"
+description: "A shift mismatch means a slot was allocated and then rejected because it fell outside every configured shift. How it differs from no capacity and how to fix it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - resource shift mismatch
+  - allocation outside shift window
+  - scheduling failure shift
+  - work center has no shift for day
+  - shift mismatch vs no capacity
+  - day of week shift gap
+targetPhrase: "resource shift mismatch scheduling failure"
+wordCount: 1170
+readingTime: 6
+faqQuestions:
+  - question: "What does a resource shift mismatch failure mean?"
+    answer: "It means the engine found a slot, allocated it, and then rejected it because the allocated window does not fall inside any shift the work center actually runs on that day. The distinction matters: a no-capacity failure means nothing was found in the first place, while a shift mismatch means something was found and failed validation afterward. The usual cause is a work center whose shifts have no hours defined for the day of week the allocation landed on."
+  - question: "How is a shift mismatch different from a no-capacity failure?"
+    answer: "They fail at different stages. A no-capacity failure means the search finished the whole window without finding any slot to allocate, which usually points to zero machine units, no shifts at all, or a calendar that blocks every day. A shift mismatch means a slot was allocated and then failed the check that confirms it sits inside a real working window. Read which one the failure dialog names before you start changing capacity settings."
+  - question: "Where do I fix a shift mismatch?"
+    answer: "On the work center's shift configuration. Either turn on plant-wide shifts for the work center so it inherits the standard pattern, or give it at least one work center shift with real hours on the day of week involved. Then re-run scheduling. If the work center already has shifts, check the specific day: a pattern that covers Monday through Friday leaves nothing valid for a job that landed on a Saturday."
+qaQuestions:
+  - question: "The dialog says shift mismatch but the work center clearly has a shift. What should I check?"
+    answer: "Check the day of week, not just the presence of a shift. A shift record can exist and still have no hours for the specific day the allocation landed on, which is the usual shape of this failure: weekday hours defined, weekend hours blank, and a job that ran long enough to reach Saturday. Open the shift and confirm hours exist for that day, or add a work center shift that covers it. Then re-run and confirm the job places."
+  - question: "We fixed the shift and the job now schedules, but the anomaly report flags a booking outside shift hours on an older job. Same problem?"
+    answer: "Related but not the same. A shift mismatch stops a job from scheduling at all, while a booking outside shift hours is an existing booking that was placed when the shift looked different and survived because calendar and shift edits are not retroactive. Re-run scheduling for the older job and the booking is rebuilt inside the corrected window. If it survives a clean re-run, compare the work center's own shift against the plant shift, since a work center override can define a different window."
+---
+
+**A resource shift mismatch means the engine found a slot, allocated it, and then rejected it because the allocated window does not sit inside any shift the work center actually runs on that day.** [EDGEBIC by User Solutions](/edgebic) validates every allocation against the shift pattern after placing it, so this failure is a late rejection rather than an empty search.
+
+That distinction is the whole diagnosis. Treating it like a capacity shortage sends you to add machine units and extend hours when the real problem is a day of week with no working pattern behind it. This post covers how to read the failure, what to change, and how it differs from the anomaly that flags a booking already sitting outside shift hours. It sits with the other run-failure entries in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), and for the categories themselves see [what is a scheduling failure category](/blog/what-is-a-scheduling-failure-category).
+
+## What You Are Seeing
+
+A scheduling run ends with the failure dialog open. One or more jobs did not schedule, and the category on the row says the allocated resource does not match a configured shift. The affected work center is named on the row, along with a fix hint.
+
+## Why It Happens
+
+### Cause 1: The Shift Has No Hours for That Day of Week
+
+This is the common case. A work center runs Monday through Friday, a job runs long enough to reach the weekend, and the allocation lands on a day with no working pattern. The slot was placed, then the validation that confirms it sits inside a real window rejected it.
+
+**How to tell:** the work center has shifts, but the day the job reached has no hours defined.
+
+### Cause 2: The Work Center Has No Resolvable Shift at All
+
+A work center that neither uses the plant-wide shifts nor carries its own shift rows has nothing to validate an allocation against. The result reads as a mismatch because no window can ever match.
+
+**How to tell:** the work center has no shift assignment of either kind.
+
+### Cause 3: A Work Center Override Defines a Different Window
+
+A work center can carry its own shift definition that differs from the plant shift of the same name. If the allocation was sized against one window and validated against the other, the two disagree and the placement is rejected.
+
+**How to tell:** the work center has its own shift row and its hours differ from the plant shift you expected it to follow.
+
+### Cause 4: The Allocation Carries No Shift Reference
+
+An allocation created without a shift reference has nothing to validate against, so the check fails even where a suitable window exists on paper.
+
+**How to tell:** the work center's shift setup looks correct and the failure persists on a clean re-run.
+
+## How It Differs From a No-Capacity Failure
+
+| Failure | What happened | Where to look |
+|---|---|---|
+| No available capacity | The search finished without finding any slot | Machine units, shifts, calendars, utilization percentage |
+| Resource shift mismatch | A slot was allocated, then rejected by validation | The shift pattern for the specific day of week |
+
+Both dialogs name a work center. Only the second one tells you the placement was made and then thrown out, and that is the clue that sends you to the day-of-week pattern rather than to capacity.
+
+## How to Fix It
+
+- **Give the work center a shift that covers the day.** Either turn on the plant-wide shifts so it inherits the standard pattern, or add a work center shift with real hours for the day involved.
+- **Check the day, not just the shift.** A shift that exists with blank hours on Saturday is the same as no shift for a job that reached Saturday.
+- **Reconcile a work center override against the plant shift** if both exist and their windows differ.
+- **Re-run scheduling** and confirm the job places. The failure dialog is per run, so a clean run with no rows for that job is the confirmation.
+
+## How to Diagnose It, in Order
+
+1. **Read the failure dialog, not the timeline.** The category and the named work center are the starting point, and the fix hint states the intended action.
+2. **Open the named work center** and check whether it uses plant shifts, its own shifts, or neither.
+3. **Check the specific day of week** the job would have reached, which is usually just past the end of the working week.
+4. **Add or extend the shift** so hours exist for that day, or turn on plant shifts.
+5. **Re-run scheduling** and confirm the job schedules and the row is gone.
+
+## How to Prevent It
+
+- **Give every active work center at least one resolvable shift,** which is the same discipline that prevents a zero-capacity work center. See [capacity shows zero for a work center](/blog/capacity-shows-zero-for-a-work-center-edgebic).
+- **Decide weekend coverage deliberately.** A plant that occasionally runs Saturdays should have a shift pattern that says so, rather than relying on the schedule never reaching one.
+- **Use work center shift overrides sparingly** and document why each one exists, since two windows for the same named shift are hard to reason about later.
+- **Add a second shift rather than stretching one** when the real answer is more hours, as covered in [how to add a second shift](/blog/how-to-add-a-second-shift-in-edgebic). Stretching a single window past what the plant really works produces bookings nobody can staff.
+
+<Accordion title="What does a resource shift mismatch failure mean?">
+It means the engine found a slot, allocated it, and then rejected it because the allocated window does not fall inside any shift the work center actually runs on that day. The distinction matters: a no-capacity failure means nothing was found in the first place, while a shift mismatch means something was found and failed validation afterward. The usual cause is a work center whose shifts have no hours defined for the day of week the allocation landed on.
+</Accordion>
+
+<Accordion title="How is a shift mismatch different from a no-capacity failure?">
+They fail at different stages. A no-capacity failure means the search finished the whole window without finding any slot to allocate, which usually points to zero machine units, no shifts at all, or a calendar that blocks every day. A shift mismatch means a slot was allocated and then failed the check that confirms it sits inside a real working window. Read which one the failure dialog names before you start changing capacity settings.
+</Accordion>
+
+<Accordion title="Where do I fix a shift mismatch?">
+On the work center's shift configuration. Either turn on plant-wide shifts for the work center so it inherits the standard pattern, or give it at least one work center shift with real hours on the day of week involved. Then re-run scheduling. If the work center already has shifts, check the specific day: a pattern that covers Monday through Friday leaves nothing valid for a job that landed on a Saturday.
+</Accordion>

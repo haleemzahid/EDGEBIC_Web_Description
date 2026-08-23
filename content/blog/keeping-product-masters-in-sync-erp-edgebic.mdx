@@ -1,0 +1,86 @@
+---
+title: "Keeping Product Masters in Sync Between Your ERP and EDGEBIC"
+description: "How to keep item and product master data aligned between an ERP and EDGEBIC: natural keys, case-insensitive matching, Reused vs Updated, and safe partial refreshes."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - product master sync ERP scheduling
+  - item master data sync
+  - EDGEBIC product import
+  - keeping item data aligned
+  - master data integration scheduling
+  - product identifier matching
+targetPhrase: "product master sync ERP scheduling"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "How does EDGEBIC match an imported item to an existing one?"
+    answer: "By the item identifier, treated as the natural key and matched case-insensitively, so BRK-200 in a file finds brk-200 in the database. Because matching is on a stable identifier rather than an internal row number, the same item list can be re-imported repeatedly and each row lands on the right record. Keep the identifier consistent between systems and the sync takes care of itself."
+  - question: "What is the difference between Reused and Updated on a product import?"
+    answer: "Reused means the row matched an existing item and nothing changed, so the record was left alone. Updated means the row matched and at least one value differed, so the record was refreshed. Created means the identifier was new. A healthy weekly product import is mostly Reused, a few Updated, and a handful of Created, which tells you the master is stable."
+  - question: "Will re-importing the full item list overwrite fields I set inside EDGEBIC?"
+    answer: "Only the fields the mask maps are touched, and on an update run a blank cell keeps the existing value rather than wiping it. So a partial refresh file that carries only identifiers and descriptions leaves costs and lead times you set in EDGEBIC intact. Map only the columns you want the ERP to own, and EDGEBIC keeps the rest."
+qaQuestions:
+  - question: "Our part numbers sometimes get re-cased or re-spaced between departments. Will that create duplicate items in EDGEBIC every time we import?"
+    answer: "Case will not, spacing might, so it is worth understanding the boundary. EDGEBIC matches item identifiers case-insensitively, so BRK-200, brk-200, and Brk-200 all resolve to the same record and never duplicate on that account. What matching cannot absorb is a genuinely different string: an extra space, a swapped separator, or a leading zero that appears in one export and not another reads as a new identifier and creates a new item. The fix is upstream discipline rather than an EDGEBIC setting: pick one canonical form for the part number in the ERP and export it consistently. If you already have drift, a one-time cleanup of the export, or a mask that maps a cleaned column, resolves it. Once the identifier is stable, the case-insensitive match handles the everyday variation and the product master stays one-to-one."
+  - question: "We want the ERP to own item descriptions and costs, but we set lead times and a few scheduling attributes inside EDGEBIC. Can both be true without one clobbering the other?"
+    answer: "Yes, and the mask is where you draw that line. A mask only writes the columns it maps, so if you build the product import to carry identifier, description, and cost but not lead time, then every import refreshes descriptions and costs from the ERP while never touching the lead times you maintain in EDGEBIC. Blank-cell preservation reinforces this: even for a mapped column, a blank cell on an update run keeps the existing value, so a sparse export cannot wipe a field it simply left empty. The practical rule is map the columns the ERP should own and leave out the columns EDGEBIC should own. That gives you a clean split of authority, ERP for commercial data, EDGEBIC for scheduling attributes, without either side overwriting the other's fields."
+---
+
+**Keeping product masters in sync between an ERP and EDGEBIC comes down to a stable item identifier, case-insensitive matching, and a mask that writes only the columns the ERP should own.** Re-importing the full item list is safe because matched rows come back Reused and untouched, changed rows come back Updated, and blank cells preserve the values you maintain inside EDGEBIC. The sync is a habit, not a project.
+
+EDGEBIC by User Solutions matches items on a natural key rather than an internal row number, which is what makes a repeatable product refresh reliable. This post covers how the matching works, how to read the outcomes, and how to split which system owns which field. The wider integration model is in [the EDGEBIC ERP integration overview](/edgebic-erp-integration).
+
+## The identifier is the natural key
+
+Every product import matches on the item identifier, treated as a natural key and matched case-insensitively. `BRK-200` in a file finds `brk-200` in the database, so everyday case variation between departments never creates duplicates. Because matching is on the identifier and not on an internal row number, the same item list re-imports cleanly every week, each row landing on the correct existing record.
+
+The one thing matching cannot absorb is a genuinely different string. An extra space, a swapped separator, or a leading zero present in one export and absent in another reads as a new identifier and creates a new item. A revision suffix raises the same question on purpose rather than by accident, and [whether a revision should create a new product or update the existing one](/blog/handling-erp-part-number-revisions-on-import) is worth settling before the first refresh. Keeping the master clean is therefore an upstream discipline: choose one canonical form for the part number in the ERP and export it consistently.
+
+## Reading the four outcomes
+
+Every row of a product import returns exactly one outcome, and reading the mix tells you the master's health:
+
+- **Created.** The identifier was new; a product was added.
+- **Updated.** The identifier matched and at least one mapped value differed; the record was refreshed.
+- **Reused.** The identifier matched and nothing changed; the record was left alone.
+- **Failed.** The row was rejected, with the reason recorded in the per-run log.
+
+A healthy weekly product import is mostly Reused, a few Updated, and a handful of Created. A sudden surge of Created rows on a list you expected to match is the classic sign of an identifier drift, worth investigating before it multiplies.
+
+## Splitting who owns which field
+
+The most useful sync habit is deciding which system owns which attribute, then building the mask to respect that split. Two behaviors make this clean:
+
+- **A mask only writes the columns it maps.** If the product mask carries identifier, description, and cost but not lead time, every import refreshes descriptions and costs from the ERP and never touches the lead times you maintain in EDGEBIC.
+- **Blank cells preserve values.** On an update run, a blank cell keeps the existing value rather than wiping it, so even a sparse export cannot erase a field it simply left empty. A zero, however, is a value, so leave a column out rather than filling it with zeros you do not mean.
+
+The practical rule: map the columns the ERP should own, leave out the columns EDGEBIC should own. That gives a clean split of authority, ERP for commercial data like descriptions and costs, EDGEBIC for scheduling attributes, with neither side overwriting the other.
+
+## Where product data feeds the schedule
+
+Product master data is foundation for the schedule but does not drive it alone. The item identifier is what routings and orders attach to, so a stable master keeps routings pointed at the right products and orders resolving to the right items. Costs feed the cost rollups on reports; lead times and other attributes inform planning. The engine that consumes all of this is mapped in the [EDGEBIC product overview](/edgebic).
+
+## Fitting product sync into the weekly routine
+
+Product masters are the first import in the standard order, before work centers, routings, and orders, because downstream data attaches to items. In practice the product refresh is the fastest step, because a stable master is mostly Reused and clears in seconds. The full order of operations is in [scheduling a nightly ERP export and import routine](/blog/scheduling-a-nightly-erp-export-import-routine), and the exact columns each file should carry is in [which ERP fields EDGEBIC needs to schedule](/blog/which-erp-fields-edgebic-needs-to-schedule).
+
+## Get your identifiers right once
+
+A clean, consistent item identifier is the whole foundation of a durable sync. Export your item list, check that the identifiers are canonical, and [bring the file to a demo](/contact-us) to map it live and watch the Reused, Updated, and Created counts on a real refresh. Per-ERP guides like [NetSuite](/blog/edgebic-netsuite-integration-guide) and [Acumatica](/blog/edgebic-acumatica-integration-guide) show the same product-import step in those systems' terms.
+
+<Accordion title="How does EDGEBIC match an imported item to an existing one?">
+By the item identifier, treated as the natural key and matched case-insensitively, so BRK-200 in a file finds brk-200 in the database. Because matching is on a stable identifier rather than an internal row number, the same item list can be re-imported repeatedly and each row lands on the right record. Keep the identifier consistent between systems and the sync takes care of itself.
+</Accordion>
+
+<Accordion title="What is the difference between Reused and Updated on a product import?">
+Reused means the row matched an existing item and nothing changed, so the record was left alone. Updated means the row matched and at least one value differed, so the record was refreshed. Created means the identifier was new. A healthy weekly product import is mostly Reused, a few Updated, and a handful of Created, which tells you the master is stable.
+</Accordion>
+
+<Accordion title="Will re-importing the full item list overwrite fields I set inside EDGEBIC?">
+Only the fields the mask maps are touched, and on an update run a blank cell keeps the existing value rather than wiping it. So a partial refresh file that carries only identifiers and descriptions leaves costs and lead times you set in EDGEBIC intact. Map only the columns you want the ERP to own, and EDGEBIC keeps the rest.
+</Accordion>

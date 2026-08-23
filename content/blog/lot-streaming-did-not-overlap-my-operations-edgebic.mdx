@@ -1,0 +1,103 @@
+---
+title: "Lot Streaming Did Not Overlap My Operations: Causes and Fixes"
+description: "You set up lot streaming but the downstream step still waits for the full upstream lot. The four documented reasons a transfer batch or flow lag stops working, and how to fix each."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - lot streaming did not overlap
+  - operations not overlapping
+  - transfer batch not working
+  - flow step no overlap
+  - downstream waits for full lot
+  - piece count streaming ignored
+targetPhrase: "lot streaming did not overlap"
+wordCount: 1434
+readingTime: 7
+faqQuestions:
+  - question: "Why is my downstream operation still waiting for the full upstream lot after I set up lot streaming?"
+    answer: "Four documented conditions stop lot streaming from producing overlap. Neither streaming field is actually set, so nothing triggers it. The transfer batch size is set as large as or larger than the order quantity, so the engine caps it and behaves serially. The flow step is set on a step that ran on an alternative machine, where it is silently ignored. Or the work center is flagged continuous-process, where piece-count streaming does not apply. The anomaly report flags the last three."
+  - question: "Does a flow step have to be smaller than the upstream run to create overlap?"
+    answer: "For genuine overlap, yes. A flow step is a start-to-start lag in hours: the downstream step may begin that many hours after the upstream step starts. A flow step of 1 on an operation running 08:00 to 10:00 lets the successor begin at 09:00, which is overlap. A flow step larger than the upstream run acts as a pure start-to-start lag that ends after the upstream finishes, so it delays rather than overlaps. The value is hours, not a fraction of the run."
+  - question: "Why does the transfer batch size behave like no streaming when it equals the order quantity?"
+    answer: "The engine caps the transfer batch at the order quantity, because you cannot wait for a piece that will never be made. When the batch size is as large as the order, the cap makes the first sublot equal to the whole lot, so the downstream step waits for every piece exactly as it would with no streaming. The anomaly report flags this so you can lower the batch size to a fraction of the typical order and get real overlap."
+qaQuestions:
+  - question: "I set a transfer batch of 100 on a step, but a small 30-piece order shows no overlap. Why?"
+    answer: "The engine caps the transfer batch at the order quantity, so a batch of 100 on a 30-piece order becomes 30, which is the whole lot, and the downstream step waits for all of it. That is the serial behavior a batch-equals-or-exceeds-order-quantity flag warns about. Lower the transfer batch to a fraction of the smallest order that routes through the step, for example 10 to 25 percent of a typical order, so the first sublot moves downstream well before the lot finishes."
+  - question: "Lot streaming works on most runs of a routing but not when the job uses a backup machine. Is that a bug?"
+    answer: "No, it is a documented limitation the anomaly report flags as critical. A flow step is keyed to the routing's primary machine, so when a job runs the step on an alternative machine, the engine cannot match the flow setting to the alternate-routed schedule and skips it, and the downstream step starts at the full upstream end. The reliable workaround is to use a transfer batch size instead of a flow step, since the piece-count model does not depend on the primary-machine match, or to route the step to the machine it actually runs on."
+---
+
+**When lot streaming does not produce the overlap you configured, it is one of four documented conditions: neither streaming field is set, the transfer batch is too large, the flow step ran on an alternative machine, or the work center is continuous-process.** [EDGEBIC by User Solutions](/edgebic) supports two overlap models, and each has a specific reason it can quietly do nothing, so the fix is to find which condition applies.
+
+The controls you use to diagnose this are the anomaly report and the routing step fields. This post is the detailed version of the lot-streaming symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanism, [lot streaming explained](/blog/edgebic-lot-streaming-explained) covers both models, and [how to overlap operations](/blog/how-to-overlap-operations-in-edgebic) shows the setup.
+
+## The Two Overlap Models, Briefly
+
+EDGEBIC compresses a routing by letting a downstream step begin before the upstream step finishes the whole lot. It does this two ways. The piece-count model uses a transfer batch size: once that many pieces accumulate upstream, the downstream step may start. The flow-step model uses a start-to-start lag in hours: the downstream step may begin a set number of hours after the upstream step starts. [Piece-count versus time-lag overlap](/blog/piece-count-vs-time-lag-overlap-in-edgebic) compares the two. If neither field carries a value, there is no streaming and the downstream step correctly waits for full completion.
+
+## Cause 1: Neither Streaming Field Is Set
+
+The first thing to rule out is that streaming was never actually enabled. Both the transfer batch size and the flow step default to zero on every routing step, so a step where both are still zero produces no overlap by design.
+
+**How to tell:** open the routing step and read the transfer batch size and flow step fields. Two zeros means nothing triggers streaming.
+
+**Fix:** set one of them. Use a transfer batch size for discrete pieces, or a flow step in hours for a fixed head start or a continuous process. Do not set both on the same step; that ambiguity is its own flagged condition, and [setting two lot-streaming methods on one step](/blog/i-set-two-lot-streaming-methods-on-one-step-edgebic) covers which of the two the engine uses.
+
+## Cause 2: The Transfer Batch Is as Large as the Order
+
+The engine caps the transfer batch at the order quantity, because it cannot wait for a piece that will never exist. When the batch size is set as large as or larger than the order, the cap makes the first sublot equal to the whole lot, and the downstream step waits for every piece exactly as it would with no streaming.
+
+**How to tell:** the anomaly report flags a transfer batch that meets or exceeds the maximum order quantity for that step as a warning that streaming has become serial. Compare the batch size to your typical order size.
+
+**Fix:** lower the transfer batch to a fraction of the smallest order that routes through the step, commonly 10 to 25 percent of a typical order. A 200-piece order with a batch of 50 moves the first sublot downstream after a quarter of the run, giving real compression.
+
+## Cause 3: The Flow Step Ran on an Alternative Machine
+
+A flow step is keyed to the routing's primary machine. When a job runs the step on an alternative work center instead, the engine cannot match the flow setting to the alternate-routed schedule, so it silently skips the flow step and the downstream step starts at the full upstream end.
+
+**How to tell:** the anomaly report flags this as critical, naming the flow step, the alternate machine the step ran on, and the primary machine the flow was configured for. The tell is that streaming works on runs that use the primary machine and fails on runs that use a backup.
+
+**Fix:** the reliable workaround is to use a transfer batch size instead of a flow step, because the piece-count model does not depend on the primary-machine match. Alternatively, route the step to the machine it actually runs on so the primary matches. [The schedule ignored my alternate work center](/blog/the-schedule-ignored-my-alternate-work-center-edgebic) covers alternate routing more broadly.
+
+## Cause 4: The Work Center Is Continuous-Process
+
+A work center flagged as continuous-process, such as a paint line, chemical reactor, or extruder, does not use the piece-count model, because a discrete piece count is meaningless there. The engine ignores the transfer batch size on steps routed to such a center and falls back to the flow step. If no flow step is set, no overlap happens.
+
+**How to tell:** the anomaly report flags a transfer batch size on a continuous-process center, noting that piece-count is ignored and the flow-step value in effect. Check the continuous-process flag on the machine.
+
+**Fix:** if the center truly is continuous-process, clear the transfer batch and set a flow step in hours instead. If the machine is actually discrete and the flag is wrong, turn the continuous-process flag off and the piece-count model takes effect. [Continuous-process work centers](/blog/continuous-process-work-centers-edgebic) explains the flag.
+
+## A Note on Flow-Step Values
+
+If you set a flow step but see no overlap, check the value. The flow step is a start-to-start lag in hours, so a value larger than the upstream run pushes the successor past the upstream end and acts as a delay rather than an overlap. A flow step of 1 on an operation running two hours creates overlap; a flow step of 3 on the same operation does not. The value is hours, not a fraction of the run.
+
+## How to Diagnose Missing Overlap, in Order
+
+1. **Read the two streaming fields on the step.** Both zero means streaming was never enabled.
+2. **Compare the transfer batch to the order quantity.** A batch as large as the order caps to serial; lower it.
+3. **Check whether the run used an alternative machine.** A flow step on an alternate-routed step is skipped; switch to a transfer batch or fix the routing.
+4. **Check the continuous-process flag** on the machine. It disables piece-count; use a flow step or correct the flag.
+5. **Confirm the flow-step value is smaller than the upstream run** if you want overlap rather than a delay.
+
+## Prevention
+
+- **Pick one model per step.** A transfer batch for discrete pieces, a flow step in hours for continuous processes, never both on the same step.
+- **Size the transfer batch below your smallest order.** A batch that can equal the order quantity silently becomes serial on small runs.
+- **Prefer a transfer batch when a step uses alternate machines.** The piece-count model survives alternate routing where a flow step does not.
+- **Run the anomaly report after enabling streaming.** The flow, batch, and continuous-process checks fire immediately on a save, so you catch a dead configuration before a job runs. The [lot streaming overlap walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic) shows a working example end to end, and if steps appear out of order rather than not overlapping, read [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic).
+
+<Accordion title="Why is my downstream operation still waiting for the full upstream lot after I set up lot streaming?">
+Four documented conditions stop lot streaming from producing overlap. Neither streaming field is actually set, so nothing triggers it. The transfer batch size is set as large as or larger than the order quantity, so the engine caps it and behaves serially. The flow step is set on a step that ran on an alternative machine, where it is silently ignored. Or the work center is flagged continuous-process, where piece-count streaming does not apply. The anomaly report flags the last three.
+</Accordion>
+
+<Accordion title="Does a flow step have to be smaller than the upstream run to create overlap?">
+For genuine overlap, yes. A flow step is a start-to-start lag in hours: the downstream step may begin that many hours after the upstream step starts. A flow step of 1 on an operation running 08:00 to 10:00 lets the successor begin at 09:00, which is overlap. A flow step larger than the upstream run acts as a pure start-to-start lag that ends after the upstream finishes, so it delays rather than overlaps. The value is hours, not a fraction of the run.
+</Accordion>
+
+<Accordion title="Why does the transfer batch size behave like no streaming when it equals the order quantity?">
+The engine caps the transfer batch at the order quantity, because you cannot wait for a piece that will never be made. When the batch size is as large as the order, the cap makes the first sublot equal to the whole lot, so the downstream step waits for every piece exactly as it would with no streaming. The anomaly report flags this so you can lower the batch size to a fraction of the typical order and get real overlap.
+</Accordion>

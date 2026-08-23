@@ -1,4 +1,3 @@
-import path from 'path';
 import { defineCollection, defineConfig } from '@content-collections/core';
 import { compileMDX } from '@content-collections/mdx';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
@@ -96,8 +95,11 @@ export const posts = defineCollection({
     return {
       ...data,
       author,
-      slug: `/${data._meta.path}`,
-      slugAsParams: data._meta.path.split(path.sep).slice(1).join('/'),
+      slug: `/${data._meta.path.split(/[\\/]/).join('/')}`,
+      // Split on either separator: content-collections emits _meta.path with
+      // the OS separator, so this is a backslash on Windows and a forward
+      // slash on Linux. Hardcoding either one breaks that platform's slugs.
+      slugAsParams: data._meta.path.split(/[\\/]/).slice(1).join('/'),
       body: {
         raw: data.content,
         code: body
@@ -128,8 +130,11 @@ export const docs = defineCollection({
     });
     return {
       ...data,
-      slug: `/${data._meta.path}`,
-      slugAsParams: data._meta.path.split(path.sep).slice(1).join('/'),
+      slug: `/${data._meta.path.split(/[\\/]/).join('/')}`,
+      // Split on either separator: content-collections emits _meta.path with
+      // the OS separator, so this is a backslash on Windows and a forward
+      // slash on Linux. Hardcoding either one breaks that platform's slugs.
+      slugAsParams: data._meta.path.split(/[\\/]/).slice(1).join('/'),
       body: {
         raw: data.content,
         code: body

@@ -1,0 +1,147 @@
+---
+title: "EDGEBIC + Plex: The Complete Scheduling Integration Guide"
+description: "Plex production scheduling integration with EDGEBIC step by step: export items, work centers, routings and orders, map columns once, schedule at finite capacity."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Plex production scheduling integration
+  - Plex finite capacity scheduling
+  - Plex scheduling add-on
+  - EDGEBIC Plex integration
+  - Plex routing export scheduling
+  - import mask ERP integration
+  - cloud ERP finite capacity scheduling
+targetPhrase: "Plex production scheduling integration"
+wordCount: 2040
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC have a certified Plex connector?"
+    answer: "No, and that is a deliberate design choice. EDGEBIC integrates with Plex through reusable Excel, CSV, and database import masks rather than a certified connector. You map the columns of a Plex export once, and every later run is two clicks. Nothing is installed inside Plex, no schema is extended, and no interface object enters its upgrade path. The same file-based method has fed schedules in this product line since 1991."
+  - question: "What Plex data does EDGEBIC need to build a finite capacity schedule?"
+    answer: "Four exports carry a complete scheduling model: items, work centers with machine counts, routings with operation sequence and run and setup times, and open orders with quantities and dates. A fifth optional export carries logged hours from the floor. Each one goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed with a per-run log."
+  - question: "Will adding EDGEBIC change how we run Plex in the cloud?"
+    answer: "No. Plex stays the system of record for MES, quality, traceability, inventory, and financials. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machine counts, and hands dates and dispatch lists back as Excel files. Your cloud workflows keep running exactly as they do today, so no Plex process has to be redesigned."
+  - question: "Plex is cloud-based. Can EDGEBIC still read a cloud export?"
+    answer: "Yes. The interface is a file, not a database connection. Any Plex report or list that saves or downloads to Excel or CSV is a valid source, so a cloud platform is no obstacle. You download the export, feed it to the mask, and every later run is two clicks. Because the interface is a file, a cloud release that renames a column just means re-mapping that column in the mask once."
+qaQuestions:
+  - question: "We run high-volume automotive lines in Plex alongside some short-run tooling and prototype work, and the two kinds of work compete for the same machines. How does a finite capacity engine handle that mix?"
+    answer: "It handles it by loading everything against the same real capacity and letting the sequence fall out of the constraints rather than out of a lead-time offset. EDGEBIC loads every open order, the repetitive lines and the short-run jobs, against real shift hours and the real count of machines at each work center, so the day the two kinds of work collide is visible today rather than as a wave of late orders later. You flag the machine both streams fight over as the bottleneck and the engine anchors the schedule around it, scheduling backward into the constraint and forward out of it with protective buffers. Short-run changeovers ride the setup matrix so they cluster instead of scattering through the repetitive runs."
+  - question: "Sales wants to promise a date during a customer call, but inserting a rush order into a full Plex schedule displaces other jobs in ways nobody can trace by hand. What changes?"
+    answer: "Rescheduling becomes a computed operation, so the honest answer to what slips stops being a guess. You insert the candidate order, run the scheduler, and read the displaced dates directly, and quote simulation lets you test a promise date before you commit to it. The whole what-if loop is minutes rather than an afternoon of manual cascade math, which changes who gets to ask the question: sales can ask it during the call. Two guarantees keep the answer trustworthy: completed work is never moved by a reschedule, and every scheduled job runs off a frozen snapshot of the routing it was planned with."
+---
+
+**Integrating Plex with EDGEBIC means exporting the items, work centers, routings, and open orders Plex already holds to Excel or CSV, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then export back for Plex and your customers. There is no middleware server, no interface object inside the ERP, and no certified connector to maintain through a cloud release.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with manufacturing ERPs this way since 1991. Across 35+ years the same approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins, including Cummins scheduling across 33 locations from AS400-era data, and it drove GE Railcar from 30 percent to 90 percent on-time. This guide covers the Plex case: what to export, how the masks work, what the engine does with the result, and what a realistic first two weeks looks like in a high-volume plant.
+
+## Where Plex stops and detailed scheduling starts
+
+Plex is strong at what a cloud MES-plus-ERP is built for: real-time production data, quality, traceability, inventory, and financials in one platform, which is exactly what an automotive or food and beverage plant needs to stay compliant and auditable. That belongs there and should stay there. The gap plants report sits one layer up, in the planning decision that runs ahead of the line:
+
+- Which of these open orders actually fits on the constraint machine or line this week?
+- If the rush order jumps the queue, which committed dates slip and by how much?
+- Is the shared cell loaded to 85 percent or 145 percent next Tuesday?
+
+Those are finite capacity questions. Answering them means modeling shifts, machine counts, changeover sequences, and operator skills against every open order at once, which is a different computational problem from monitoring a running line. That is why a dedicated scheduling layer beside the ERP is the standard pattern. The general argument is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the gap-by-gap version for this ERP is the companion post on [Plex scheduling gaps and how EDGEBIC fills them](/blog/plex-scheduling-gaps-and-how-edgebic-fills-them). The wider category view is on [where ERP falls short on scheduling](/blog/where-erp-falls-short-scheduling).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, Plex included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Plex → EDGEBIC | Items | Excel or CSV export → Product import mask |
+| Plex → EDGEBIC | Work centers | Export → Workcenter import mask |
+| Plex → EDGEBIC | Routings / operations | Export → BOR (bill of routing) import mask, two-pass |
+| Plex → EDGEBIC | Open orders | Export → SalesOrder import mask |
+| Plex → EDGEBIC | Logged hours (optional) | Export → Actuals import mask |
+| EDGEBIC → Plex | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (an Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row carries headings, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks: pick the mask, press Do It.
+
+Every row in your file produces exactly one outcome: **Created**, **Updated**, **Reused** (found and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row. Nothing half-imports silently, which matters when a governance team asks what a run actually changed.
+
+## Step 1: the four exports
+
+You do not need everything Plex knows. Four exports carry a complete scheduling model.
+
+1. **Items.** The item number, description, unit of measure, and any cost or lead-time columns you want visible. The identifier is the natural key and matching is case-insensitive, so `PANEL-A` in the file finds `Panel-A` in the database.
+2. **Work centers.** The work center identifier, how many identical machines it holds, default setup hours, efficiency, and an hourly rate if you want cost rollups. Bottleneck and shift assignment flags can ride along in the same file.
+3. **Routings.** One row per operation: end item, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open orders.** Item, quantity, order reference, and dates.
+
+Any report, list, or query in your Plex environment that saves or downloads to Excel or CSV is a valid source. You are not writing code, not calling an API, and not asking for a custom interface. The file is the interface, which is exactly why a cloud release has nothing to break here.
+
+## Step 2: map the columns once
+
+Build one mask per file. Name it after the routine rather than the file: `Weekly Plex Orders` outlives `orders-week29.xlsx`. Mandatory fields are flagged in the mask editor, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row rather than half-way through.
+
+Two mask features carry most of the weight in a Plex integration:
+
+**Unit conversion.** ERPs and schedulers disagree about units constantly. Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`. Seconds to hours is `0.000278`. A standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in one file can carry different factors, so a routing export mixing per-lot run times with per-changeover setup minutes lands correctly in one run.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value instead of wiping it. A file carrying only item number and price refreshes prices and touches nothing else. Note the rule: a zero is a value, not a blank, so leave a column out rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move between systems because operations reference each other: op 10 feeds op 20 feeds op 30. A naive row-by-row import cannot wire those links, because op 20 does not exist yet when op 10 is written.
+
+EDGEBIC's routing import therefore runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or item the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end item, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished item so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Three conventions save time later:
+
+- **Number sequences in gaps of 10.** When engineering inserts an op next quarter it becomes 25 and nothing renumbers.
+- **Keep all of one item's steps in one file.** A routing import wipes and recreates that item's steps once per run, which is what makes re-imports idempotent. Splitting one item across two runs means the second run's wipe deletes the first run's steps.
+- **Re-importing is safe for running orders.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: orders in, then run the scheduler
+
+The order import maps item, quantity, reference, and dates. When your export carries an order reference, rows sharing that reference group under one order and their jobs auto-number as `{Ref}-{line}`, which keeps a multi-line release together instead of scattering it.
+
+One rule matters more than any other: **imports never schedule anything.** After the run, imported orders sit as unscheduled demand. You then run the scheduler, which states its scope before it plans (how many jobs are new and how many existing jobs are being rescheduled), and the new work slots around everything already committed on the floor. Data movement and planning stay separate on purpose, so an import can never silently rearrange a plant.
+
+Once the data is in, the whole engine applies to your Plex work: finite capacity across multiple shifts and machine instances, [work center groups that re-shop the machine pool on every reschedule](/blog/edgebic-work-center-groups-explained), a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending executable dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet. The work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved, which turns a dispatch list into a saved report rather than a document someone rebuilds each morning.
+
+From there, revised dates go back into Plex through the order-maintenance path your team already uses. There is no automated write-back, which is deliberate: your ERP data stays under your team's control and inside your existing approval process. The category framing for this split is on the [ERP scheduling add-on page](/erp-scheduling-add-on).
+
+## A realistic first two weeks
+
+The method behind this guide has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. A larger high-volume estate usually wants a little more runway for approvals rather than for the technical work.
+
+| Days | Work |
+|---|---|
+| 1 to 2 | Export items and work centers; build and run those two masks; verify counts against Plex |
+| 3 to 4 | Export routings; build the routing mask with unit conversions; import and review the routing designer |
+| 5 | Export open orders; import; run the first full finite capacity schedule |
+| 6 to 8 | Compare EDGEBIC dates to current commitments; correct instance counts, shifts, and setups where reality disagrees |
+| 9 to 10 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+If you are starting from an empty database, the [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the sequence in detail, and the [Plex to EDGEBIC data mapping reference](/blog/plex-to-edgebic-data-mapping-reference) is the field-level lookup you keep open while building masks.
+
+## Prove it with your own export
+
+The fastest evaluation is not a feature list, it is your own file. Download this week's open orders and a routing file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own plant scheduled against its own capacity. Plants comparing several ERPs at once can also read the [IQMS / DELMIAworks](/blog/edgebic-iqms-delmiaworks-integration-guide) and [ProShop](/blog/edgebic-proshop-integration-guide) versions of this guide: the method is identical, which is the point.
+
+<Accordion title="Does EDGEBIC have a certified Plex connector?">
+No, and that is a deliberate design choice. EDGEBIC integrates with Plex through reusable Excel, CSV, and database import masks rather than a certified connector. You map the columns of a Plex export once, and every later run is two clicks. Nothing is installed inside Plex, no schema is extended, and no interface object enters its upgrade path. The same file-based method has fed schedules in this product line since 1991.
+</Accordion>
+
+<Accordion title="What Plex data does EDGEBIC need to build a finite capacity schedule?">
+Four exports carry a complete scheduling model: items, work centers with machine counts, routings with operation sequence and run and setup times, and open orders with quantities and dates. A fifth optional export carries logged hours from the floor. Each one goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed with a per-run log.
+</Accordion>
+
+<Accordion title="Will adding EDGEBIC change how we run Plex in the cloud?">
+No. Plex stays the system of record for MES, quality, traceability, inventory, and financials. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machine counts, and hands dates and dispatch lists back as Excel files. Your cloud workflows keep running exactly as they do today, so no Plex process has to be redesigned.
+</Accordion>
+
+<Accordion title="Plex is cloud-based. Can EDGEBIC still read a cloud export?">
+Yes. The interface is a file, not a database connection. Any Plex report or list that saves or downloads to Excel or CSV is a valid source, so a cloud platform is no obstacle. You download the export, feed it to the mask, and every later run is two clicks. Because the interface is a file, a cloud release that renames a column just means re-mapping that column in the mask once.
+</Accordion>

@@ -1,9 +1,15 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { allPosts } from 'content-collections';
 import { CalendarDays, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { SORTED_POSTS } from '@/lib/blog/post-index';
+import {
+  ALL_PRODUCTS,
+  countByProduct,
+  getPostProduct,
+  PRODUCT_FILTERS
+} from '@/lib/blog/products';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
@@ -55,28 +61,42 @@ function categoryGradient(category: string): string {
 }
 
 export default async function BlogsPage(props: {
-  searchParams: Promise<{ category?: string; page?: string }>;
+  searchParams: Promise<{ category?: string; product?: string; page?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const activeCategory = searchParams.category || 'All';
+  const activeProduct = searchParams.product || ALL_PRODUCTS;
   const currentPage = Math.max(1, parseInt(searchParams.page || '1', 10) || 1);
 
-  // Sort all posts by published date, most recent first
-  const sortedPosts = [...allPosts].sort(
-    (a, b) => new Date(b.published).getTime() - new Date(a.published).getTime()
-  );
+  // Pre-sorted lightweight index, built once per process rather than copying
+  // and sorting every post (and its whole MDX body) on each request.
+  const sortedPosts = SORTED_POSTS;
 
-  // Extract unique categories
+  const productCounts = countByProduct(sortedPosts);
+
+  // Product is the outer filter, so narrow by it before anything else.
+  const productPosts =
+    activeProduct === ALL_PRODUCTS
+      ? sortedPosts
+      : sortedPosts.filter((p) => getPostProduct(p) === activeProduct);
+
+  // Categories come from the product-filtered set, so the chips can never
+  // offer a combination that returns nothing.
   const categories = [
     'All',
-    ...Array.from(new Set(sortedPosts.map((p) => p.category))).sort()
+    ...Array.from(new Set(productPosts.map((p) => p.category))).sort()
   ];
+
+  // A category held from a previous product may not exist under this one.
+  const effectiveCategory = categories.includes(activeCategory)
+    ? activeCategory
+    : 'All';
 
   // Filter by category
   const filteredPosts =
-    activeCategory === 'All'
-      ? sortedPosts
-      : sortedPosts.filter((p) => p.category === activeCategory);
+    effectiveCategory === 'All'
+      ? productPosts
+      : productPosts.filter((p) => p.category === effectiveCategory);
 
   // Identify pillar posts (posts whose slugAsParams matches their own pillarSlug)
   const pillarPosts = filteredPosts.filter(
@@ -96,9 +116,22 @@ export default async function BlogsPage(props: {
   const paginatedPosts = regularPosts.slice(startIdx, startIdx + POSTS_PER_PAGE);
 
   // Helper to build URL with search params
-  function buildUrl(params: { category?: string; page?: string }): string {
+  function buildUrl(params: {
+    category?: string;
+    product?: string;
+    page?: string;
+  }): string {
     const sp = new URLSearchParams();
-    const cat = params.category ?? (activeCategory !== 'All' ? activeCategory : undefined);
+    const prod =
+      params.product ??
+      (activeProduct !== ALL_PRODUCTS ? activeProduct : undefined);
+    if (prod && prod !== ALL_PRODUCTS) sp.set('product', prod);
+    // Switching product drops the category, since the chip may not exist there.
+    const cat =
+      params.product !== undefined
+        ? undefined
+        : (params.category ??
+          (effectiveCategory !== 'All' ? effectiveCategory : undefined));
     if (cat && cat !== 'All') sp.set('category', cat);
     if (params.page && params.page !== '1') sp.set('page', params.page);
     const qs = sp.toString();
@@ -138,14 +171,51 @@ export default async function BlogsPage(props: {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {/*
+          Product is the outer dimension and category the inner one, so they get
+          different treatments on purpose: an underlined tab row reads as a level
+          above the chips rather than as more of the same.
+        */}
+        <div className="border-b border-slate-200">
+          <div className="flex flex-wrap gap-x-8 gap-y-1">
+            {PRODUCT_FILTERS.map((product) => {
+              const isActive = activeProduct === product.value;
+              return (
+                <Link
+                  key={product.value}
+                  href={buildUrl({ product: product.value, page: '1' })}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`-mb-px border-b-2 pb-3 text-base font-semibold transition-colors ${
+                    isActive
+                      ? 'border-cyan-600 text-cyan-700'
+                      : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800'
+                  }`}
+                >
+                  {product.label}
+                  <span className="ml-2 text-sm font-normal text-slate-400">
+                    {productCounts[product.value] ?? 0}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm leading-relaxed text-slate-600">
+          {
+            PRODUCT_FILTERS.find((p) => p.value === activeProduct)?.blurb ??
+              PRODUCT_FILTERS[0].blurb
+          }
+        </p>
+
         {/* Category Filter Pills */}
-        <div className="mb-10 flex flex-wrap items-center gap-2">
+        <div className="mb-10 mt-6 flex flex-wrap items-center gap-2">
           {categories.map((cat) => (
             <Link
               key={cat}
               href={buildUrl({ category: cat, page: '1' })}
               className={`inline-flex items-center rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                activeCategory === cat
+                effectiveCategory === cat
                   ? 'bg-cyan-600 text-white shadow-sm'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
@@ -225,7 +295,7 @@ export default async function BlogsPage(props: {
             </h2>
             <p className="mb-6 text-slate-500">
               There are no posts in the
-              <span className="font-medium"> {activeCategory} </span>
+              <span className="font-medium"> {effectiveCategory} </span>
               category yet. Try selecting a different category or check back soon.
             </p>
             <Link

@@ -1,0 +1,98 @@
+---
+title: "Does a Multi-Day Operation Set Up Again Each Day?"
+description: "Why setup is incurred once at the start of an operation, not repeated each morning a multi-day run continues, and how that differs from a changeover between two different operations."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - setup time
+  - multi-day operation
+  - changeover
+  - run time
+  - operation duration
+  - finite capacity scheduling
+targetPhrase: "setup once per operation"
+wordCount: 1460
+readingTime: 8
+faqQuestions:
+  - question: "Does a multi-day operation incur setup on every day it runs?"
+    answer: "No. Setup is incurred once, at the start of the operation, and is not repeated each day the run continues. A machine that is set up on Monday and runs the same job through Wednesday does not set up again Tuesday and Wednesday morning; it resumes the run. Only the run portion spills across days, because run time scales with quantity, while setup is a one-time preparation at the front of the operation."
+  - question: "What is the difference between setup within an operation and a changeover between operations?"
+    answer: "Setup is the preparation at the start of one operation, counted once. A changeover is what a machine incurs when it switches from one operation to a different one, and that is where sequence-dependent setup lives: going from a light color to a dark one costs more than the reverse. A multi-day run is one operation, so it has one setup and no internal changeovers. Two different jobs back to back are two operations, each with its own setup, and the second may cost more depending on what ran before it."
+  - question: "If setup is once, why does a long job sometimes look like it restarts each morning?"
+    answer: "It resumes, it does not restart. The run picks up where it left off when the shift reopens, so the schedule shows a fresh block each morning, but that block is continued run time, not a new setup. The setup sits only at the very front of the operation, before the first run block. If you see repeated setup on a single operation across days, it usually means the work was modeled as several separate operations rather than one, which is worth correcting."
+qaQuestions:
+  - question: "We have a 30-hour machining job that runs across four days. My estimate assumed a two-hour setup every morning. Is the schedule wrong or is my estimate wrong?"
+    answer: "Your estimate is almost certainly overstating it. In EDGEBIC the two-hour setup is incurred once, at the front of the operation, and the 30 hours of run then spill across the four days without setting up again each morning. The machine holds its fixture and program overnight and resumes the run when the shift reopens. So the operation's footprint is setup plus run, once, not setup times four plus run. If your product genuinely requires re-fixturing every morning, that is a different physical process and should be modeled as separate operations, but a continuous machining run does not re-incur setup just because a shift boundary passed."
+  - question: "Two different products run back to back on the same paint booth. Where does the color-change time go?"
+    answer: "That is a changeover between two operations, not setup within one, and it belongs on the second operation's setup, ideally as a sequence-dependent value. The first product's operation carries its own setup at its front. When the booth switches to the second product, the changeover cost, which depends on going from the first color to the second, is the second operation's setup. A multi-day run of a single color, by contrast, sets up once and then just runs, because nothing is changing over inside one operation. So model the color change as the setup of the following operation, and let sequence-dependent setup capture that a dark-to-light change costs more than light-to-dark."
+---
+
+**Setup in EDGEBIC by User Solutions is incurred once, at the start of an operation, and is not repeated each day a multi-day run continues. A machine set up on Monday that runs the same job through Wednesday does not set up again Tuesday and Wednesday morning; it resumes the run. Only the run portion, which scales with quantity, spills across days. The setup is a single one-time preparation at the front of the operation.** This clears up a common estimating error, multiplying setup by the number of days, and it draws the important line between setup within one operation and a changeover between two.
+
+The confusion is understandable. A long job appears on the schedule as a fresh block each morning, and it is easy to assume each block includes a fresh setup. But the blocks are continued run time, not repeated preparation.
+
+## Setup and run are different in kind
+
+An operation's time is composed of a fixed setup and a run that scales with quantity, as laid out in [how setup time composes into a step's duration](/blog/how-setup-time-composes-into-a-steps-duration). The two behave differently precisely because they are different in kind.
+
+Run time is proportional to output. Making twice as many parts takes twice as long to run, so run time grows with the order quantity and, on a big order, naturally exceeds a single shift and spills across days. Setup is not proportional to anything. Loading a fixture, threading material, or dialing in a program takes the time it takes, once, to get the machine ready. It happens before the run begins and does not recur just because the run is long.
+
+So the composition is:
+
+```
+operation footprint = setup (once, at the front) + run (scales with quantity, may span days)
+```
+
+The setup sits at the very front. Everything after it is run, however many days that run occupies.
+
+## Resume is not restart
+
+When a run crosses a shift boundary, the machine does not tear down and set up again. It holds its state, the fixture stays clamped, the program stays loaded, and it resumes the run when the shift reopens. The schedule shows a new block each morning because that is when the calendar reopens capacity, but the block is a continuation, not a new operation.
+
+This is why a multi-day operation's daily hour breakdown, described in [how a multi-day operation spreads hours across days](/blog/how-a-multi-day-operation-spreads-hours-across-days), shows run hours on each day and setup on only the first. The first day carries the setup plus whatever run fits after it; the later days carry pure run. If you ever see setup repeated on every day of what should be one operation, it is a sign the work was modeled as several separate operations rather than one continuous run, which is worth correcting.
+
+## Setup within an operation versus changeover between operations
+
+The place setup legitimately recurs is between different operations, not within one. When a machine finishes one job and switches to a different one, it incurs a changeover: teardown of the first, setup for the second. That second setup is the front of the second operation, and it can depend on what ran before it.
+
+This is where sequence-dependent setup lives, covered in [how sequence-dependent setup shapes a schedule](/blog/how-sequence-dependent-setup-shapes-a-schedule). A paint booth going from white to black might change over in fifteen minutes, but black to white might take four hours of flushing. That variable cost belongs to the changeover between two operations. It has nothing to do with a single operation's run spanning days, because inside one operation nothing is changing over.
+
+So the mental model is clean: one operation, one setup at its front, run that may span days with no internal changeovers. Two operations, two setups, and the second may cost more or less depending on the first.
+
+## A worked example: 30 hours across four days
+
+Take a machining job: 2-hour setup, 30 hours of run, on a single-instance work center with an 08:00-to-16:00 day shift. It starts Monday at 08:00.
+
+```
+Monday    08:00-10:00  setup (2 h)
+Monday    10:00-16:00  run   (6 h)      run remaining: 24
+Tuesday   08:00-16:00  run   (8 h)      run remaining: 16
+Wednesday 08:00-16:00  run   (8 h)      run remaining: 8
+Thursday  08:00-16:00  run   (8 h)      run remaining: 0
+```
+
+The operation's footprint is 2 + 30 = 32 hours, finishing Thursday at 16:00. Setup appears once, Monday morning. Tuesday through Thursday are pure run. If a planner had estimated setup on all four days, they would have added 6 hours of phantom setup and made the job look longer and more expensive than it is.
+
+Now contrast with two different products on the same machine. Product A runs Monday and Tuesday, then Product B starts. Product B carries its own setup at its front, and if the change from A to B is a costly one, that is where a sequence-dependent value applies. That setup is real and belongs to B. It is a changeover between operations, categorically different from A's run merely continuing from Monday into Tuesday.
+
+## Why this matters for estimates and plans
+
+Getting this right keeps two things honest. Estimates stay accurate, because a long run is costed as one setup plus run, not setup times the number of days. And schedules stay accurate, because the engine reserves setup capacity once, at the front, rather than carving out a setup block every morning that the machine would not actually spend. Overstating setup on a multi-day job inflates the plan and can make a resource look busier than it is.
+
+The single-setup rule is one of the small correctnesses that add up to a trustworthy plan, and it sits inside the broader pipeline in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). It rests on the same commitment to modeling the floor faithfully as [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling). To watch your own long runs set up once and then flow across days, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="Does a multi-day operation incur setup on every day it runs?">
+No. Setup is incurred once, at the start of the operation, and is not repeated each day the run continues. A machine that is set up on Monday and runs the same job through Wednesday does not set up again Tuesday and Wednesday morning; it resumes the run. Only the run portion spills across days, because run time scales with quantity, while setup is a one-time preparation at the front of the operation.
+</Accordion>
+
+<Accordion title="What is the difference between setup within an operation and a changeover between operations?">
+Setup is the preparation at the start of one operation, counted once. A changeover is what a machine incurs when it switches from one operation to a different one, and that is where sequence-dependent setup lives: going from a light color to a dark one costs more than the reverse. A multi-day run is one operation, so it has one setup and no internal changeovers. Two different jobs back to back are two operations, each with its own setup, and the second may cost more depending on what ran before it.
+</Accordion>
+
+<Accordion title="If setup is once, why does a long job sometimes look like it restarts each morning?">
+It resumes, it does not restart. The run picks up where it left off when the shift reopens, so the schedule shows a fresh block each morning, but that block is continued run time, not a new setup. The setup sits only at the very front of the operation, before the first run block. If you see repeated setup on a single operation across days, it usually means the work was modeled as several separate operations rather than one, which is worth correcting.
+</Accordion>

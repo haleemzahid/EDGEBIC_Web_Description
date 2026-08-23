@@ -1,0 +1,123 @@
+---
+title: "Handling Engineering Changes With an ERP Routing Re-Import"
+description: "How to push an engineering change from your ERP into EDGEBIC: re-import the routing, keep jobs in progress on their original snapshot, and control when the new method takes effect."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - engineering change routing re-import
+  - ERP engineering change order scheduling
+  - update routing in scheduler
+  - routing snapshot work in progress
+  - EDGEBIC routing re-import
+  - ECO production scheduling
+targetPhrase: "engineering change routing re-import"
+wordCount: 1580
+readingTime: 8
+faqQuestions:
+  - question: "How do I get an engineering change from my ERP into EDGEBIC?"
+    answer: "Re-import the routing for the affected products. The routing import wipes and recreates each product's steps once per run, so a corrected export replaces the old method cleanly with no manual editing and no partial merge. Export only the changed products if you prefer, but keep every step of each product in the same file, because the wipe is per product and per run."
+  - question: "Will a routing change disturb jobs already running on the floor?"
+    answer: "No. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress on the method it started with. That is what makes engineering changes safe to import at any time. A job that is halfway through the old routing finishes on the old routing unless you deliberately reschedule it against the new one."
+  - question: "Can I stage an engineering change so it starts on a specific date?"
+    answer: "You control the effective point by choosing when you import and which jobs you reschedule, rather than by setting a date on the routing. Import the new method, then let the change take effect naturally as new work orders arrive, since only jobs planned after the import use the new steps. To pull the change forward onto an already-planned job that has not started, reschedule that job after the import."
+qaQuestions:
+  - question: "Engineering just deleted an operation and added two new ones on a part we run every week. We have 14 open jobs on that part, 6 already started. What actually happens when we re-import?"
+    answer: "The re-import replaces the product's step list with the new one, so the routing designer immediately shows the two new operations and the deleted one is gone. The 6 started jobs are unaffected because each carries a frozen snapshot of the routing it was planned with, and completed work is never moved by a reschedule. The 8 not-yet-started jobs still hold their original snapshot too, so they will keep the old method until you reschedule them. If the change is a must-have, reschedule those 8 and the new steps appear in their plan. If the old method is acceptable for work already promised, leave them and let the change apply to new orders only. Either way, decide deliberately rather than letting a reschedule surprise you."
+  - question: "Our ERP exports the whole routing table every night. Does that mean every engineering change lands automatically?"
+    answer: "Yes for the data, no for the plan, and that split is the useful part. The nightly routing import replaces each product's steps with whatever the export currently holds, so an engineering change made in the ERP during the day is in EDGEBIC the next morning. Nothing reschedules on its own, though: imported data sits until a planner runs the scheduler, and jobs already planned stay on their snapshots until they are rescheduled. So the change is visible for review before it touches a single date. Add a reconciliation habit of checking one changed routing end to end in the designer, because a nightly export makes it easy to miss a step count that dropped."
+---
+
+**To push an engineering change from your ERP into EDGEBIC, re-import the routing for the affected products: the routing import wipes and recreates each product's step list per run, so the new method replaces the old cleanly, while every job already scheduled keeps the frozen routing snapshot it was planned with.** That separation is what makes engineering changes safe to import on any day of the week, including the middle of a busy one.
+
+EDGEBIC by User Solutions has handled routing revisions this way since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the requirement is always the same: the new method must reach the plan without disturbing what is already running.
+
+## What an engineering change actually changes
+
+An engineering change order can touch a routing in several ways, and they behave differently on import:
+
+| Change | Effect on the routing import | Effect on running jobs |
+|---|---|---|
+| Operation time revised | New value replaces the old on re-import | None, snapshots keep old times |
+| Operation added | Appears in the recreated step list | None until rescheduled |
+| Operation deleted | Absent from the recreated step list | None until rescheduled |
+| Work center changed | New center on the step, auto-created if new | None until rescheduled |
+| Sequence reordered | New order applies after the sort | None until rescheduled |
+
+The common thread: the data changes on import, the plan changes only when you schedule. The [universal import method](/blog/why-edgebic-connects-to-every-erp-the-same-way) keeps those two acts separate deliberately.
+
+## Why re-import beats hand editing
+
+It is tempting to make a small change directly in the routing designer, and for a one-off correction that is fine. For an engineering change that originated in the ERP, re-importing is better for three reasons:
+
+- **The ERP stays the master.** Hand editing creates a divergence that nobody documents and the next nightly import silently overwrites.
+- **The wipe-and-recreate behavior makes it idempotent.** Running the same routing file twice gives the same result, so a repeated or partially-completed import is never a problem.
+- **The chain is rewired automatically.** Pass two of the routing import sorts steps by sequence and wires 10 to 20, 20 to 30, and the terminal step to the finished product. A hand-inserted step needs those links set manually.
+
+## The one rule that matters: keep a product's steps together
+
+The routing import wipes and recreates a product's steps **once per run**. That is what makes re-imports safe, and it is also the one behavior that will bite you if you split a product across two files.
+
+If product BRK-200 has ten steps and you import five of them in one run and five in another, the second run's wipe deletes the first run's five. You end up with half a routing and no error message, because both runs did exactly what they were told.
+
+So: export whole products. Filtering the export down to only the changed products is fine and often sensible. Filtering down to only the changed *steps* is not.
+
+## Numbering that survives an insert
+
+Number operation sequences in gaps of ten. When engineering adds an operation between 20 and 30, it becomes 25 and nothing else renumbers.
+
+That habit matters more than it sounds, because renumbering every downstream operation makes the change look far bigger than it is. It also breaks any cross-reference your shop keeps between an operation number on a traveler and the same number in the ERP. The [routing versus operations mapping guide](/blog/mapping-routings-vs-operations-from-your-erp) covers the column-level detail.
+
+## Controlling when the change takes effect
+
+There is no effectivity date on the routing itself. You control the cut-in point through two levers, and between them they cover the real cases:
+
+**Lever one: when you import.** Nothing changes until the file lands. If the change should not apply until next month, import next month.
+
+**Lever two: which jobs you reschedule.** After the import, jobs already planned keep their snapshots. New work orders pick up the new method as they are scheduled for the first time. So the default behavior is a natural phase-in: existing commitments run the old way, new work runs the new way.
+
+To pull the change forward onto a job that is planned but not started, reschedule that job. To hold a job on the old method, leave it alone. Jobs that have already started are protected either way, because [completed work is never moved by a reschedule](/blog/what-is-actuals-preservation-on-reschedule).
+
+## The three cut-in patterns shops actually use
+
+**Phase in on new orders.** Import the change, reschedule nothing. Old jobs finish the old way, new jobs use the new method. Lowest disruption, and correct when the change is an improvement rather than a correction.
+
+**Immediate for all unstarted work.** Import the change, then reschedule the open jobs on that product. Correct when the change fixes a quality or safety problem and the old method should not be run again.
+
+**Immediate for everything, including started jobs.** Import, reschedule everything on the product, and accept that started jobs continue from where their actuals left off using the new remaining steps. Correct when the change is mandatory and mid-job. Use it sparingly, because it moves promise dates on work already committed.
+
+## What to check after the re-import
+
+Engineering changes are the case where the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist) earns its keep, because a routing re-import can succeed with fewer steps than you expected and never say a word about it.
+
+1. **Step count.** Open the changed product in the routing designer and count. A step that quietly vanished usually means a filter on the export dropped a row.
+2. **Chain continuity.** Every step connected, terminal step ending at the finished product.
+3. **New work centers.** The routing import auto-creates any work center it names that does not exist. A change that moves an operation to a new machine will create that machine as an empty center with no shifts and no instance count. Configure it before scheduling, or it plans against defaults.
+4. **Hours on one job.** Add setup plus run time times quantity across the new steps and compare against the schedule.
+
+## Where the change shows up in the plan
+
+Once rescheduled, the new routing feeds the full engine: finite capacity across shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, sequence-dependent setups, lot streaming with transfer batches, and mathematical optimization with a proven optimality gap. If the change moved an operation onto a tighter machine, the effect on promise dates is visible immediately rather than three weeks later. The [EDGEBIC product overview](/edgebic) maps the engine and the [ERP integration architecture](/edgebic-erp-integration) shows where the routing import sits.
+
+## Fold it into the routine
+
+Engineering changes do not need their own process. Add them to the recurring import rhythm you already run: routings refresh on whatever cadence your engineering department actually changes them, which for most shops is weekly rather than nightly. The [weekly sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine) has the order of operations, and the [nightly routine post](/blog/scheduling-a-nightly-erp-export-import-routine) covers the higher-frequency case.
+
+## Try it with a real change
+
+Take a routing your engineering team revised recently, export both versions, and [bring them to a demo](/contact-us). Watching the old method schedule, then re-importing and watching the new one, makes the snapshot behavior concrete in about five minutes.
+
+<Accordion title="How do I get an engineering change from my ERP into EDGEBIC?">
+Re-import the routing for the affected products. The routing import wipes and recreates each product's steps once per run, so a corrected export replaces the old method cleanly with no manual editing and no partial merge. Export only the changed products if you prefer, but keep every step of each product in the same file, because the wipe is per product and per run.
+</Accordion>
+
+<Accordion title="Will a routing change disturb jobs already running on the floor?">
+No. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress on the method it started with. That is what makes engineering changes safe to import at any time. A job that is halfway through the old routing finishes on the old routing unless you deliberately reschedule it against the new one.
+</Accordion>
+
+<Accordion title="Can I stage an engineering change so it starts on a specific date?">
+You control the effective point by choosing when you import and which jobs you reschedule, rather than by setting a date on the routing. Import the new method, then let the change take effect naturally as new work orders arrive, since only jobs planned after the import use the new steps. To pull the change forward onto an already-planned job that has not started, reschedule that job after the import.
+</Accordion>

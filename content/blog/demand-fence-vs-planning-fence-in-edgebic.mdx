@@ -1,0 +1,99 @@
+---
+title: "Demand Fence vs Planning Fence in EDGEBIC"
+description: "The two time fences in EDGEBIC's MPS suppress different things: the demand fence hides stale forecast, the planning fence protects committed builds. Here is how each works."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - demand time fence
+  - planning time fence
+  - time fences mps
+  - forecast suppression
+  - protected build quantity
+  - planning horizon zones
+targetPhrase: "demand fence vs planning fence"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is a demand time fence in EDGEBIC?"
+    answer: "A demand time fence is a near-term window, measured in days from today, inside which only firm customer demand counts and forecast demand is ignored. The reasoning is that inside a short horizon the orders you actually hold are the truth, and a forecast that predicted them would double the same demand. A bucket falls inside the fence when its start date is earlier than today plus the product's demand time fence days."
+  - question: "What is a planning time fence and how is it different?"
+    answer: "A planning time fence is a near-term window inside which the system suppresses automatic suggestions and does not auto-overwrite committed build quantities. Where the demand fence controls which demand counts, the planning fence protects the plan a human already agreed to. The two are set separately per product, and the planning fence is normally the longer of the two, so it covers the demand fence and extends past it."
+  - question: "Are the time fences a hard lock or just a visual cue?"
+    answer: "They govern automatic behavior, not manual action. The demand fence genuinely changes which demand the engine counts inside the window, and the planning fence stops automatic revision of committed quantities. What they do not do is physically block a planner from clicking firm or editing a quantity inside the window. So the fences protect the plan from arithmetic, while a human with intent can still override inside them when they mean to."
+qaQuestions:
+  - question: "Our forecast has drifted but the next two weeks look right. Is the demand fence hiding a problem?"
+    answer: "It is protecting you, which is its job. Inside the demand fence, requirements come from confirmed order lines only, so a stale forecast cannot inflate the near term. The trap is the fence boundary. In the documented example a product with a 14 day demand fence and a 30 day planning fence sees forecast start contributing again on day 20. If your forecast is wrong, the damage appears in the buckets just outside the demand fence, not inside it, so that is where to look after you fix the forecast."
+  - question: "A planner committed 50 units for a bucket and a planning run wiped it. Which fence should have stopped that?"
+    answer: "The planning time fence. In the documented example, with a 30 day planning fence set on June 13, a commitment for July 3 sits inside the fence and is protected from automatic revision, while a commitment for July 18 sits in the open horizon where the system may suggest afresh and will not protect the committed quantity. If your planners commit a month out and expect the number to survive a rerun, the planning fence days on that product are the value to raise."
+---
+
+**A demand fence and a planning fence** are the two time-based settings in EDGEBIC's master production schedule, and they suppress different things: the demand fence hides forecast demand in the near term so only real orders count, and the planning fence protects committed build quantities from being rewritten by an automatic run. EDGEBIC by User Solutions keeps them as separate per-product values, measured in days from today, so each product can have its own planning discipline. Confusing the two, or setting one when you meant the other, is a common source of plans that feel either too volatile or too rigid.
+
+Both fences exist because a plan needs two kinds of stability near the present: stability about which demand is real, and stability about which decisions stay put. For the wider MPS context, see [the master production schedule explained](/blog/edgebic-master-production-schedule-explained); for the generic concept, see [what a time fence is in planning](/blog/what-is-a-time-fence-in-planning). This post is about the difference between the two fences and how to set each.
+
+## The Demand Fence: Only Real Orders Count
+
+The demand time fence answers the question of which demand to trust in the near term. Inside the fence, the engine ignores forecast demand entirely and drives gross requirements from firm orders alone. Outside the fence, forecast and firm both contribute under the product's consumption rule.
+
+A bucket falls inside the demand fence when its start date is earlier than today plus the product's demand fence days. So a 14-day demand fence covers roughly the next two weeks of buckets. The logic is that a forecast is a prediction, and inside a short horizon the predictions have already resolved into actual orders. Counting both the forecast and the orders it predicted would double the same demand and push you to build stock nobody wants. The demand fence removes that risk by trusting only what customers have committed to.
+
+The important consequence: if your forecast has drifted, the demand fence hides the drift in the near term, which is good, but it also means the drift resurfaces exactly at the fence boundary. That boundary is where forecast starts contributing again, and it is where a bad forecast first shows up as an inflated requirement.
+
+## The Planning Fence: Protect What a Human Decided
+
+The planning time fence answers a different question: which decisions should an automatic run leave alone. Inside the planning fence, the system suppresses new automatic suggestions and does not auto-overwrite committed build quantities. Outside it, the system may surface fresh suggestions and does not protect committed quantities from automatic revision.
+
+A bucket falls inside the planning fence when its start date is earlier than today plus the product's planning fence days. The purpose is to protect the near-term plan a human has already agreed to. If a planner committed 50 units for a bucket after weighing capacity, materials, and customer priority, an automatic planning run should not silently rewrite that number. The planning fence is what stops it.
+
+Because the planning fence protects committed quantities and the demand fence controls which demand counts, they naturally nest. The planning fence is normally the longer of the two, so it covers the demand fence and extends past it. A common setup is a 14-day demand fence inside a 30-day planning fence.
+
+## The Two Fences Side by Side
+
+The clearest way to hold the difference is a table of what each fence suppresses.
+
+| | Demand fence | Planning fence |
+|---|---|---|
+| Question it answers | Which demand counts? | Which decisions stay put? |
+| Inside the fence | Only firm demand; forecast ignored | Suggestions suppressed; committed quantities protected |
+| Outside the fence | Forecast and firm both count | Suggestions shown; committed quantities can be auto-revised |
+| Typical length | Shorter, near term | Longer, covers the demand fence |
+| Protects against | Double-counting a stale forecast | Automatic reruns rewriting a human plan |
+
+## A Worked Example: The Two Boundaries
+
+Take Precision Shaft with a 14-day demand fence and a 30-day planning fence, and let today be June 13.
+
+| Bucket start | Inside demand fence? | Inside planning fence? | Behavior |
+|---|---|---|---|
+| Jun 13 | Yes | Yes | Only firm orders drive requirements; committed quantity protected |
+| Jun 23 | Yes | Yes | Same |
+| Jul 3 | No | Yes | Forecast contributes to requirements; committed quantity still protected |
+| Jul 18 | No | No | Forecast and firm both count; committed quantity can be auto-revised |
+
+Two boundaries matter. On June 27, the demand fence ends and forecast starts contributing again, so a stale forecast first shows up around July 3. On July 13, the planning fence ends, so a commitment for July 18 sits in the open horizon and is not protected from an automatic rerun. A planner who committed 50 units for July 3 can trust that number to survive a planning run; a planner who committed 50 units for July 18 should double-check it after any rerun.
+
+## Setting the Fences: Two Numbers, Per Product
+
+Both fences are set on the product, in days, alongside its other planning attributes. Because they live per product, a high-turnover consumable can carry a short demand fence of a week while a long-lead casting carries 60 days, each matched to how far ahead its demand actually firms up. The MPS grid reflects the new boundaries on the next load, flagging each bucket with whether it sits inside each fence.
+
+Choose the demand fence by asking how far out your orders are typically committed. If most demand inside two weeks is already firm orders, a 14-day demand fence stops the forecast from double-counting them. Choose the planning fence by asking how far out you want committed decisions to be safe from automatic reruns. If planners commit a month ahead and expect stability, set the planning fence to at least 30 days.
+
+## Matching the Fences to an Item's Lead Time
+
+The most reliable way to set the two fences is to anchor them to how the item actually behaves, not to a single house default applied to every product. The demand fence should roughly match how far ahead your orders firm up. If a product's demand inside two weeks is almost always confirmed orders rather than forecast, a 14-day demand fence stops the forecast from double-counting them, and stretching it further only hides forecast you might still want to see. The planning fence should roughly match how far ahead you make firm build commitments you want protected from automatic reruns.
+
+A long-lead casting and a fast consumable illustrate the range. The casting might need 60 days of demand fence, because orders for it are placed months out and firm up early, and an even longer planning fence to protect the build decisions you make against that long lead. The consumable might need only a 7-day demand fence, because its demand is short-horizon and a two-week forecast is still useful, with a modest planning fence to match its quick replan cycle. Setting both fences per product is what lets these two items live under one plan without either one's discipline being wrong for the other.
+
+A practical check after setting the fences is to load the MPS grid and read where the fence flags fall. If the demand fence covers buckets where you know demand is still mostly forecast, it is too long. If committed quantities you want to keep are sitting outside the planning fence, it is too short. The flags make both fences visible, so tuning them is a matter of looking rather than guessing.
+
+## What the Fences Do Not Do
+
+One honest limit: the fences govern automatic behavior, not manual action. The demand fence really does change which demand the engine counts, and the planning fence really does stop automatic revision of committed quantities. But neither fence physically prevents a planner from editing a quantity or clicking firm inside the window. A human with intent can still act inside a fence. The fences protect the plan from arithmetic drift and automatic reruns, not from a deliberate override. That is usually what you want: stability against the machine, flexibility for the planner.
+
+A final way to hold the two fences apart is by who they defend against. The demand fence defends the near term against a stale forecast, which is a data problem: the forecast is wrong and you do not want it inflating requirements. The planning fence defends the near term against automatic reruns, which is a process problem: the arithmetic wants to rewrite a decision a human already made. One protects against bad numbers, the other against unwanted automation. Knowing which problem you are trying to solve tells you which fence to reach for and which number to change.
+
+To see how firm demand itself is defined, read [why only confirmed sales orders count as firm demand](/blog/why-only-confirmed-sales-orders-count-as-firm-demand-in-edgebic). For the full grid these fences flag, read [reading the MPS grid as a planning cockpit](/blog/reading-the-mps-grid-a-planning-cockpit-in-edgebic), and for the platform overview visit [EDGEBIC](/edgebic).

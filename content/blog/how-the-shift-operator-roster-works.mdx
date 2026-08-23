@@ -1,0 +1,84 @@
+---
+title: "How the Shift Operator Roster Works in EDGEBIC"
+description: "The roster is a weekly shift-by-weekday pattern that says who works which shift. Learn how it keys to global shifts and why parentless custom shifts can never be staffed."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - shift operator roster
+  - weekly roster pattern
+  - global shift staffing
+  - operator time off
+  - roster scheduling
+  - labor availability
+targetPhrase: "shift operator roster"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "What is the operator roster in EDGEBIC?"
+    answer: "The roster is a weekly pattern that records which operator works which shift on which weekday, exactly like a shift's weekly hours. You tick the weekday cells for a person on a given shift, and that pattern repeats every week. Absences are recorded separately as time off, so the roster stays a clean recurring pattern rather than thousands of per-date rows across a planning horizon."
+  - question: "Why does the roster key on global shifts?"
+    answer: "Operators are rostered onto global shifts, and work centers whose calendars derive from a global shift inherit that shift's roster automatically. Roster a person once on Day Shift and they cover every work center that mirrors it. This mirrors the machine model, where a work-center calendar can derive from a global shift, and it means you maintain staffing in one place rather than per machine."
+  - question: "How does time off interact with the roster?"
+    answer: "Time off is an inclusive date range that overrides the roster for those days. A rostered operator still counts as available on their pattern days, except on days covered by a time-off range, where their available hours drop to zero. Recording time off changes nothing until the next scheduling run, because EDGEBIC does not auto-replan; run a schedule and steps that depended on that person's hours will slide."
+qaQuestions:
+  - question: "I rostered people but steps at one work center still won't staff. What's wrong?"
+    answer: "That work center is almost certainly using a custom shift with no global parent. The roster keys on global shifts, so a parentless custom work-center shift can never match a roster row, and its skill pool is always zero. Derive the work-center shift from a global parent, or roster people on the global shift the work center mirrors. EDGEBIC fails this case loudly rather than silently passing, because a silent pass would let one person be promised to two machines."
+  - question: "A person stopped being scheduled and nothing visible changed. Where do I look?"
+    answer: "Check three things in order: their certification's expiry date, whether the operator or certification was deactivated, and whether a roster row was removed or made inactive. Expired certifications and inactive records drop out of the engine feed on the next run without a warning banner, so a lapsed certification is the most common silent cause. Renew or reactivate the record, then reschedule."
+---
+
+**The operator roster in EDGEBIC by User Solutions is a weekly pattern that records which operator works which shift on which weekday, and it keys onto global shifts so one roster row covers every work center that mirrors that shift.** It is the labor-side twin of a shift's weekly hours: a recurring pattern, with absences recorded separately as time off. The roster is what turns a certified operator into available capacity on a given day, and it is a foundational part of the [shop floor](/blog/edgebic-shop-floor-guide) labor model.
+
+A certification says a person is qualified. A roster says when they are actually at work. The scheduler needs both to place a skill-gated step: qualified is not the same as present. This article explains how the roster is built, why it keys on global shifts, how time off overrides it, and the one configuration trap that silently starves staffing.
+
+## A Weekly Pattern, Not Per-Date Rows
+
+The roster is deliberately a weekly pattern. For each operator you pick a shift and tick the weekday cells they work it (Monday through Sunday), and that pattern repeats every week. If a person rotates between shifts, you add another row for the second shift with its own weekday ticks.
+
+This mirrors how machine calendars work: a shift carries weekly hours, and exceptions are recorded separately. Per-date roster rows would mean thousands of entries across a planning horizon, so EDGEBIC records the recurring pattern and treats absences as exceptions. That keeps the data small and the intent clear: this is the normal week, and time off is the deviation.
+
+## Keyed on Global Shifts
+
+The roster keys onto global shifts, and this is the design decision that makes staffing maintainable. When a work center uses a calendar derived from a global shift, it inherits that global shift's roster automatically. Roster Joe once on Day Shift, and he covers every work center that mirrors Day Shift. You do not roster a person separately for each machine they might run.
+
+This composes cleanly with the machine calendar chain. A work-center shift derived from a global parent shift picks up the parent's roster; the operator's availability then stacks on top of the machine's own availability. For how that availability becomes a scheduling gate, see [how operator skills gate work center assignment](/blog/how-operator-skills-gate-work-center-assignment).
+
+## Time Off Overrides the Pattern
+
+Absences are recorded as time-off ranges, inclusive on both ends, so a range that starts and ends on the same Thursday covers that one day and the person is back Friday. A time-off range overrides the roster for the days it covers: on those days, a rostered operator's available hours drop to zero, so any step that needed them slides.
+
+One rule to internalize: recording time off changes nothing until the next scheduling run. EDGEBIC does not auto-replan. Enter the vacation as soon as it is approved, then run a schedule, and steps that depended on that person's hours will move. A vacation entered but never rescheduled protects nothing.
+
+## The Qualified Pool, Assembled
+
+The roster, certifications, and time off come together into the qualified pool the scheduler consults. For a skill on a date and shift, the pool is every operator who is certified and unexpired, rostered for that shift on that weekday, and not on time off, each contributing their remaining hours. If the pool has hours, the window is usable for a step needing that skill; if it is empty, the window is skipped. The Resource Calendar's operator lens shows this pool over time, which is where you look when a step scheduled later than a machine's free hours suggested.
+
+## The Parentless-Shift Trap
+
+Here is the configuration mistake that silently starves staffing. Because the roster keys on global shifts, a work-center shift that is not derived from any global shift, a fully custom, parentless shift, can never match a roster row. Its skill pool is always zero, and skill-gated steps routed there visibly fail to schedule.
+
+EDGEBIC treats this as a loud failure, not a silent pass, on purpose. A silent pass here would let a step schedule with no real staffing behind it, which is exactly the one-welder-two-machines fiction the labor constraint exists to prevent. The fix is always to derive the custom work-center shift from a global parent shift, or to roster people on the global shift the work center mirrors, never to relax the check.
+
+## A Worked Example
+
+Day Shift runs 08:00 to 16:00, Monday through Friday. Joe is certified in TIG-Weld and rostered Day Shift Monday through Friday. Mary is certified and rostered the same. Sam is rostered but not certified.
+
+A weld step needs 6.5 hours on Weld-1 Thursday:
+
+- **Base case.** Joe and Mary both have 8 Thursday hours in the pool, so the step runs Thursday with room to spare. Sam's presence changes nothing: rostered is not the same as qualified.
+- **Joe on PTO Thursday, Mary not yet certified.** Enter Joe's Thursday time off. Now the Thursday pool is empty, because Joe is out and Sam is not qualified. Reschedule, and the step slides to Friday, Joe's first day back.
+- **Certify Mary and reschedule.** Mary's Thursday hours refill the pool, and the step returns to Thursday, staffed by Mary.
+
+Every movement traces to the roster and time off feeding the pool. Nothing about the machine changed.
+
+## Where the Roster Shows Up
+
+You build the roster on the operator's Roster sub-tab in the Operators manager, ticking shift-by-weekday cells. The resulting plan surfaces on the [Dispatch tab](/blog/how-supervisors-use-the-edgebic-dispatch-view) as a printable per-person daily work list, and on the Resource Calendar's operator lens as availability versus booked hours. These are plan surfaces; who actually worked still comes from kiosk punches and actual dates.
+
+## The Bottom Line
+
+The shift operator roster is a weekly, shift-by-weekday pattern that turns a certified person into available capacity, keyed onto global shifts so one row covers every mirroring work center. Time off overrides the pattern by date, and nothing moves until you reschedule. The one trap to avoid is a parentless custom work-center shift, which can never be staffed and fails loudly by design. Together the roster, certifications, and time off assemble the qualified pool that governs skill-gated [production scheduling](/blog/what-is-production-scheduling). Explore the labor model in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), and see the platform at [EDGEBIC](/edgebic).

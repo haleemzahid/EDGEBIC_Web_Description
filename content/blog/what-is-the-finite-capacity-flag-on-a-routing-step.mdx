@@ -1,0 +1,82 @@
+---
+title: "What Is the Finite Capacity Flag on a Routing Step?"
+description: "The finite capacity flag decides whether a step's hours are checked against real machine capacity or booked regardless. On an alternate work center it also decides mirror versus independent booking. Definition and how EDGEBIC uses it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - finite capacity flag routing step
+  - is finite capacity setting
+  - infinite capacity step scheduling
+  - dependent versus independent parallel flag
+  - capacity checked or bypassed
+  - routing step capacity setting
+targetPhrase: "finite capacity flag"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "What is the finite capacity flag on a routing step?"
+    answer: "The finite capacity flag decides whether a routing step's hours are checked against the work center's real available capacity before being booked. Turned on, which is the default, the step waits until the machine genuinely has room. Turned off, the step is scheduled without any capacity check, which is infinite-capacity behavior for that one step and can produce a plan the shop cannot physically run."
+  - question: "Why would anyone turn finite capacity off?"
+    answer: "It is unusual and rarely the right answer for a production operation. The legitimate uses are administrative or material steps that consume no machine time and exist to carry information, dates, or a component consumption in the routing. For anything that occupies a real machine, leaving the flag off means the plan will book hours the work center does not have, and no other check will make the schedule honest again."
+  - question: "Does the flag mean something different on an alternate work center?"
+    answer: "Yes, and this is the part that surprises people. On a secondary work center attached to a step, the flag decides which kind of parallel processing you get. On, the secondary machine's own capacity is checked and consumed, which is independent parallel processing. Off, the secondary machine is not capacity checked at all and its schedule is mirrored from the parent, which is dependent parallel processing. Same setting, two very different behaviors depending on where it sits."
+qaQuestions:
+  - question: "We added a second assembly line as a parallel machine and it seems to be copying the first line's dates exactly rather than splitting the work. What did we set wrong?"
+    answer: "The finite capacity flag on that secondary work center is off, which puts it into dependent parallel processing: its schedule is mirrored from the parent, starting and ending at the same moments, rather than being checked and booked against its own capacity. That is the correct model for machines that physically must run in lockstep, such as several drill heads on one large frame. It is the wrong model for two assembly lines you want to share the work. Turn the flag on for that alternate and the engine will treat it as independent, find a window where both lines genuinely have capacity at the same time, and split the hours between them."
+  - question: "A step is booked into a work center that the utilization report says is already full. Could the finite capacity flag explain it?"
+    answer: "It is the first thing to check. With the flag off on that routing step, the engine schedules it without consulting available capacity at all, so a fully booked machine will happily accept more work and the utilization number will keep climbing past what the shifts define. Nothing else in the plan will object, because the step was legitimately told not to check. Open the routing step, confirm the flag is on, re-run the schedule, and the step will queue behind the existing work instead of stacking on top of it. If the flag was already on, look at the over-utilization check instead, since the cause is then duplicate or mirrored allocations rather than a bypass."
+---
+
+**The finite capacity flag on a routing step decides whether that step's hours are checked against the work center's real available capacity before being booked. Turned on, which is the default, the step waits until the machine genuinely has room. Turned off, the step is scheduled with no capacity check at all, which is infinite-capacity behavior for that one operation. On a secondary work center attached to a step, the same flag selects between independent parallel processing, where the secondary machine's capacity is checked and consumed, and dependent parallel processing, where the secondary machine is mirrored from the parent without any capacity check.**
+
+The plain framing: the flag is the switch between "book it only if there is room" and "book it regardless." Almost everything you schedule should be in the first mode, which is why it is the default.
+
+This entry belongs to the [EDGEBIC by User Solutions](/edgebic) glossary. For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the concept it governs, the definition of [independent parallel processing](/blog/what-is-independent-parallel-processing).
+
+## How the Finite Capacity Flag Works
+
+### On the routing step itself
+
+A production operation consumes a real machine for real hours. With the flag on, the engine will not place those hours until it finds a window where the work center has capacity left after everything already booked. If the machine is full for a week, the operation waits a week. That is what finite capacity scheduling means, and it is why the plan on the board is one the floor can actually run.
+
+With the flag off, the engine skips that search entirely and books the hours where the routing wants them. Nothing checks whether the machine has room, and nothing downstream will object. The result is a plan that reads well and cannot be executed, which is why the flag being on is the sane default for anything occupying a machine.
+
+The legitimate reason to turn it off is a step that does not occupy a machine at all: an administrative marker, or a material step that consumes a component rather than machine time. Those steps carry no hours to check, so a capacity search has nothing to do.
+
+### On an alternate work center
+
+A routing step can carry secondary work centers that run alongside the primary. Here the same flag chooses the parallel model.
+
+**Flag on means independent.** The secondary machine has its own capacity, that capacity is checked, and the hours consume it. The engine has to find a window where the primary and the secondary both have room at the same moment, then splits the work between them. If the secondary is fully booked, the whole group defers to the next available day.
+
+**Flag off means dependent.** The secondary machine's capacity is bypassed. Its schedule is mirrored from the parent: identical start, identical end, identical instance assignment, with only the machine name and the factor-scaled hours differing. This is the correct model for machines that physically have to run in lockstep, where treating them as independent capacity would be meaningless.
+
+## Why the Distinction Matters
+
+The two parallel models look similar on a Gantt and behave completely differently in a plan. Independent machines genuinely share work and genuinely compete for capacity with other jobs. Dependent machines are copies of one operation and do not compete for anything, because they are already committed by the parent.
+
+Picking the wrong one produces a specific, recognizable symptom. Two lines you wanted to split work between end up showing identical bars and no throughput gain. Or a set of synchronized heads end up scheduled at different times, which the equipment cannot do.
+
+## A Concrete Example
+
+A shop has two assembly lines and wants a sixteen-hour operation to run on both.
+
+The planner adds Assembly-2 as a secondary work center on the step, sets it to run alongside the primary rather than replace it, gives it a factor of one so it does the same work per hour, and leaves the finite capacity flag on.
+
+The engine searches for a day where both Assembly-1 and Assembly-2 have capacity in the same shift. It finds Monday's day shift, allocates eight hours to each line from 08:00 to 16:00, and consumes both capacity pools normally. The sixteen-hour operation finishes in one day instead of two, and both lines show as genuinely busy to every other job competing for them.
+
+Had the planner turned the flag off on Assembly-2, the result would look superficially similar and mean something different: Assembly-2 would mirror Assembly-1's exact window without its own capacity being checked, and neither line would have been tested for whether it was already booked. That is right for three drill heads on one frame. It is wrong for two lines sharing a job.
+
+## How EDGEBIC Uses the Finite Capacity Flag
+
+In EDGEBIC, the flag appears in two places. On a routing step, open the step in the grid view and the setting sits with the other step-level controls; it defaults to on and should stay on for any operation that occupies a machine. On a secondary work center, it is one of the fields you set when configuring parallel and alternate machines, alongside the category, the factor, the priority, and whether the entry is active.
+
+Because the two locations carry different meanings, the habit worth building is to read the setting in context. On a step it answers "should this operation queue for capacity?" On an alternate it answers "is this machine sharing the work or copying it?"
+
+The neighboring definitions are [dependent parallel processing](/blog/what-is-dependent-parallel-processing) and [independent parallel processing](/blog/what-is-independent-parallel-processing), the [alternative work center category](/blog/what-is-an-alternative-work-center-category) that decides alongside versus instead of, and the [parallel factor](/blog/what-is-a-parallel-factor-in-a-routing-step) that scales the secondary machine's hours. For the mechanism, see [EDGEBIC parallel work centers explained](/blog/edgebic-parallel-work-centers-explained), and for the practical step, [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic).
+
+A finite plan is the entire point of a finite capacity scheduler. This flag is the one place you can opt out of it, which is exactly why it deserves a deliberate answer rather than a default one.

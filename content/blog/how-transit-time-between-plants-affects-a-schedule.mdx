@@ -1,0 +1,99 @@
+---
+title: "How Transit Time Between Plants Affects a Schedule"
+description: "How EDGEBIC models the days a job spends leaving the building: calendar-day versus working-day transit, and how it composes with queue time and lot streaming."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - transit days scheduling
+  - inter-plant scheduling
+  - outside process scheduling
+  - queue time
+  - working day transit
+  - multi-plant routing
+targetPhrase: "transit time between plants scheduling"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "How does a scheduler handle parts sent to an outside vendor?"
+    answer: "EDGEBIC adds transit days to the routing step that ships the work out. When a step carries transit days, the engine pushes the earliest start of the next step forward by that transit, so downstream work cannot begin until the parts are back. You choose calendar-day transit, which counts raw days including weekends, or working-day transit, which counts only operating days. Note whose days those are: working-day transit is counted against the calendar of the shipping step's own work center, not the receiving one."
+  - question: "What is the difference between calendar-day and working-day transit?"
+    answer: "Calendar-day transit adds flat days including weekends and holidays, which fits an off-site vendor whose schedule is not tied to yours: three calendar days from Thursday noon lands Sunday noon. Working-day transit counts only days the work center actually runs and lands the part at the end of the last shift, so three working days from Thursday at a Monday-to-Friday plant resolves to the following Tuesday. The difference matters most when the transit crosses multiple weekends."
+  - question: "How is transit time different from queue time?"
+    answer: "Queue time is a shift-aware buffer that only ticks during active working shifts, used for cooling, staging, or drip time inside the plant. Transit days model physical transport out of the building and can count raw calendar days that never tick as work. They compose in a fixed order: EDGEBIC applies queue time first, then transit, so a step can have both a shift-aware wait and a calendar-day move stacked one after the other."
+  - question: "Does transit time move the downstream start or the upstream finish?"
+    answer: "It moves the downstream start. Transit is applied after the upstream operation finishes, pushing the earliest moment the next step may begin further into the future. The upstream operation's own end is unchanged. The capacity allocator then searches for the next available downstream slot after the transit resolves, so if transit lands the part on a weekend the next step simply starts when the plant reopens."
+qaQuestions:
+  - question: "A routing sends parts from our Texas plant to Mexico for heat treat and back. How do I model the four days it spends in transit so the schedule stays honest?"
+    answer: "Put transit days on the routing step that ships the work to the other plant. If the four days are real calendar days at a vendor whose schedule is not yours, use calendar-day transit and set it to four; the engine pushes the next step's earliest start four calendar days past the heat-treat step's end, weekends included, and the allocator finds the first open slot after that. If instead you want to skip non-working days, use working-day transit and the engine skips weekends and holidays, landing the part at the end of the last counted working day. Be deliberate here, because the days counted are the shipping step's work center calendar rather than the receiving plant's, and where two plants keep different schedules that distinction decides the answer. Model each leg on the step that performs the move, and the downstream operations cascade automatically."
+  - question: "My outside-process step has both a cooling requirement and shipping time. Should I put both on one field?"
+    answer: "No, use the right field for each because they behave differently. Cooling that should only count during working shifts belongs in queue time, which pauses over nights and weekends. Physical shipping time belongs in transit days, which can count raw calendar days. EDGEBIC applies queue time first and transit second, so a step that cools for a shift and then ships for two days stacks the two correctly. Mixing them onto one field would either make the shipping time pause at night, which is wrong for a courier, or make the cooling run through the weekend, which is wrong for a shift-bound process."
+---
+
+**Transit time is how EDGEBIC by User Solutions models the days a job spends physically leaving the building, whether to an outside heat-treater, a plating vendor, or a sister plant. A routing step carries transit days, and the engine pushes the earliest start of the next step forward by that transit, so downstream work cannot begin until the parts are back.** You choose whether those days count as raw calendar days or only operating days, and in working-day mode the days counted belong to the shipping step's own work center rather than the receiving one. Transit composes cleanly with the other timing buffers, so a real inter-plant move lands on the schedule the way it lands in reality.
+
+When work never leaves the shop, the next operation can start as soon as its predecessor ends. But the moment a part goes to an outside process or another facility, there is dead time on the calendar that is not machine time and not queue time. It is transport, and a schedule that ignores it promises dates the shop cannot hit. Transit days close that gap.
+
+## Two ways to count the days
+
+Transit days sit on the routing step that ships the work out, and EDGEBIC counts them one of two ways depending on how you configure the step.
+
+**Calendar-day transit** adds flat days, weekends and holidays included. This is the right model for an off-site vendor whose calendar is not yours: the heat-treater does not care that Saturday is not a working day for you, the truck still moves. Three calendar days from a step that ends Thursday at noon lands Sunday at noon.
+
+**Working-day transit** counts only operating days, and it lands the part at the end of the last counted working day. Three working days from Thursday at a Monday-to-Friday plant counts Friday, then skips the weekend, then counts Monday and Tuesday, resolving to Tuesday end-of-shift.
+
+One detail matters more than any other on an inter-plant move: the operating days counted are those of the **shipping step's own work center**, not the destination's. If the two plants keep different weeks or different holidays, working-day transit measures the sending plant's calendar, so the resolved arrival can land inside a non-working period at the receiving end. Nothing breaks when it does, because the capacity allocator simply finds the next feasible slot downstream. But it does mean a three-working-day transit is not a promise about the receiving plant's calendar, and where a vendor's or sister plant's week differs from yours, calendar-day transit usually models the move more honestly.
+
+The two modes agree for a short transit inside one work week; they diverge when the move crosses multiple weekends, which is exactly the case where getting it right matters most.
+
+Either way, transit moves the downstream start, not the upstream finish. The operation that ships the work keeps its own end time; what changes is the earliest moment the next step may begin. If the transit lands the part on a non-working day, the capacity allocator simply searches forward and starts the next operation when the plant reopens.
+
+## A worked example: Texas to Mexico and back
+
+Take a four-step routing that crosses two plants: mill in Texas, drill in Texas, heat treat in Mexico, inspect back in Texas. The Mexico heat-treat step ships work back to Texas and carries four transit days.
+
+- The mill step ends, say, Monday 16:00.
+- The drill step runs and ends Tuesday 12:00.
+- The heat-treat step runs and ends Tuesday 14:00. It carries four transit days. In calendar mode the next step's earliest start becomes Tuesday plus four days, the following Monday, weekends included.
+- The inspect step therefore cannot start before that Monday, and the allocator places it in Texas from there.
+
+The same routing in working-day mode would count only Texas working days and land the inspect step at the end of the fourth counted working day instead. You put the transit on the step that performs the move, and every downstream operation cascades from it automatically. The whole timing chain, including transit, feeds the same [forward search for capacity](/blog/why-a-scheduler-searches-forward-in-time-for-capacity) that places every other operation.
+
+## Where transit sits among the timing buffers
+
+Transit is one of three mechanisms that can push a downstream start later (or, for lot streaming, earlier), and they compose in a fixed order. After an operation's machine time ends, EDGEBIC applies:
+
+1. **Queue time**, a shift-aware buffer that only ticks during active working shifts. Cooling, staging, or drip time inside the plant.
+2. **Lot streaming**, which can pull a downstream start earlier when a partial batch is ready before the full lot finishes.
+3. **Transit days**, the calendar or working-day move out of the building.
+
+Keeping these separate matters because they behave differently. Queue time pauses over nights and weekends: a four-hour cooling queue that starts Friday at 14:00 consumes two hours that afternoon and finishes the remaining two Monday morning. Transit does not pause in calendar mode: a two-day courier trip is two real days whether or not the shop is open. Putting a shipping delay in the queue field would make it wrongly pause at night, and putting a cooling delay in the transit field would make it wrongly run through the weekend. Use each field for what it models, and the composition handles the rest. The [queue and transit times explainer](/blog/edgebic-queue-and-transit-times-explained) walks the full composition order with worked numbers.
+
+One practical note: a flat handling lag, such as the forklift trip between two stations in the same building, has its own field distinct from both queue and transit, so you can add instantaneous move time on top of a lot-streaming trigger without disturbing either the shift-aware buffer or the calendar-day transit.
+
+## Why modeling transit is what makes multi-plant scheduling honest
+
+The value of transit days is not the arithmetic; it is that the schedule stops lying about work that is out of your hands. Without it, a routing that sends parts to a vendor for a week promises a first-cut date and a ship date that assume the parts teleport back. Receiving discovers the gap when the steel is not there, the schedule gets rebuilt, and the customer hears about the slip late. With transit modeled on the shipping step, the downstream operations queue behind the real return date from the first plan, and the quoted date and the executable date agree.
+
+This is the mechanism that lets EDGEBIC treat a department in another facility as ordinary capacity with a transport gap in front of it, rather than as a black hole the schedule cannot see into. Combined with per-machine [calendars for holidays and downtime](/blog/how-a-schedule-accounts-for-holidays-and-downtime), which let each plant keep its own shifts and closures, transit days are enough to route a job across sites and have the plan reflect the days it actually spends on a truck.
+
+For the full timing pipeline and where transit fits in it, see the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide). To route your own multi-plant jobs and watch transit push the downstream work to the right day, [bring your data to a demo](/contact-us).
+
+<Accordion title="How does a scheduler handle parts sent to an outside vendor?">
+EDGEBIC adds transit days to the routing step that ships the work out. When a step carries transit days, the engine pushes the earliest start of the next step forward by that transit, so downstream work cannot begin until the parts are back. You choose calendar-day transit, which counts raw days including weekends, or working-day transit, which counts only operating days. Note whose days those are: working-day transit is counted against the calendar of the shipping step's own work center, not the receiving one.
+</Accordion>
+
+<Accordion title="What is the difference between calendar-day and working-day transit?">
+Calendar-day transit adds flat days including weekends and holidays, which fits an off-site vendor whose schedule is not tied to yours: three calendar days from Thursday noon lands Sunday noon. Working-day transit counts only days the work center actually runs and lands the part at the end of the last shift, so three working days from Thursday at a Monday-to-Friday plant resolves to the following Tuesday. The difference matters most when the transit crosses multiple weekends.
+</Accordion>
+
+<Accordion title="How is transit time different from queue time?">
+Queue time is a shift-aware buffer that only ticks during active working shifts, used for cooling, staging, or drip time inside the plant. Transit days model physical transport out of the building and can count raw calendar days that never tick as work. They compose in a fixed order: EDGEBIC applies queue time first, then transit, so a step can have both a shift-aware wait and a calendar-day move stacked one after the other.
+</Accordion>
+
+<Accordion title="Does transit time move the downstream start or the upstream finish?">
+It moves the downstream start. Transit is applied after the upstream operation finishes, pushing the earliest moment the next step may begin further into the future. The upstream operation's own end is unchanged. The capacity allocator then searches for the next available downstream slot after the transit resolves, so if transit lands the part on a weekend the next step simply starts when the plant reopens.
+</Accordion>

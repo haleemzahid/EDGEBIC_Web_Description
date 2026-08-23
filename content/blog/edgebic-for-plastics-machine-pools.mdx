@@ -1,0 +1,153 @@
+---
+title: "Routing Molding Jobs Across a Press Pool"
+description: "Injection molding machine scheduling with pools: route a step to a group of presses and let the engine pick the member by real capacity and speed."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - injection molding machine scheduling
+  - press pool scheduling
+  - work center group plastics
+  - machine pool scheduling software
+  - interchangeable machine scheduling
+  - press selection strategy
+  - molding capacity planning
+targetPhrase: "injection molding machine scheduling"
+wordCount: 1777
+readingTime: 9
+faqQuestions:
+  - question: "What is a press pool in scheduling terms?"
+    answer: "A press pool is a named group of interchangeable machines that a routing step targets instead of one specific press. The routing says the step runs on the 200-ton group rather than on Press-4. On every scheduling run the engine explodes the group into its current members, evaluates each one against real capacity, and picks the best according to the group's strategy. Adding a press to the group makes it available to every routing that targets the pool."
+  - question: "How is a machine pool different from a work center with several instances?"
+    answer: "Instances model identical units inside one work center that share a single calendar and a single capacity bucket. A pool models genuinely different machines that happen to be interchangeable for some work: different tonnage, different age, different speed, their own calendars, their own changeover matrices. Membership is many to many, so one press can belong to several pools if it qualifies for several capability classes."
+  - question: "How does the engine decide which press gets the job?"
+    answer: "By the group's selection strategy, of which there are three. Earliest completion projects each member's finish and takes the soonest, which balances load automatically. Primary first always prefers a designated machine and spills to the others only when it is full, which gives predictable routing. Earliest start is day granular and favours getting work moving today even if another machine would finish sooner."
+  - question: "Can a slower machine be modeled honestly inside a pool?"
+    answer: "Yes, with a per-member efficiency factor applied to run time. A factor of 1.5 means that member takes 50 percent longer per piece, and 0.5 means it runs twice as fast. The factor is always applied to the planner-entered base hours, never to a previously factored value, so it cannot compound across reschedules. Setup is never scaled by the factor: a member with genuinely different setup gets its own setup override instead."
+qaQuestions:
+  - question: "Our newest press is twice as fast, so it is always the answer on paper and always booked in reality. What does the pool actually do?"
+    answer: "It stops treating fast and available as the same thing. In the documented three-machine example, the fast member finishes a 100-piece job in 2.5 hours against 4.5 on the primary, so with everything free it wins. Book that fast machine solid until Wednesday and the same job goes to the primary, which starts Monday and finishes at 12:30, because a Monday finish beats a Wednesday one. That is capacity-aware pooling: the fastest machine loses to the available one whenever waiting for it costs more than running slower. Your planner already makes that call by eye. The pool makes it every run, on every job, with the current capacity picture."
+  - question: "We added a fourth press last quarter and updating routings took a week. Does a pool avoid that?"
+    answer: "Yes, and that is usually the first payback. Add the press as a member of the pool, set its efficiency factor and any setup override, and every routing step that targets the pool considers it on the very next scheduling run. No routing edits, no per-part maintenance, no risk of missing the twelve parts nobody remembered. The reverse is just as useful: taking a press out for a retrofit is one flag on the membership, and it drops out of every candidate list while work already started on it stays put."
+---
+
+**Injection molding machine scheduling gets easier the moment a routing stops naming one press and starts naming a capability.** Most molding plants have several machines that can run the same tool, differing in tonnage, age and cycle speed. [EDGEBIC by User Solutions](/edgebic) models that as a work center group: a named pool the routing targets, from which the engine picks a member on every scheduling run based on real capacity, real speed differences and the group's configured strategy.
+
+For the mechanism without the plastics framing, read [work center groups explained](/blog/edgebic-work-center-groups-explained), and for the concept on its own, [what a work center group is](/blog/what-is-a-work-center-group-machine-pool). Pooling answers which press a job lands on; how much that press actually produces per hour is a separate question, covered in [modeling mold cavities and pieces-based capacity](/blog/edgebic-for-plastics-cavity-and-pieces-capacity). For this sector's wider constraint picture see [plastics and rubber production scheduling](/blog/plastics-rubber-scheduling), and for the cross-industry map, [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## The routing problem pooling solves
+
+Without pools, a routing step names one press. Three bad things follow.
+
+Adding a machine means editing every routing that could use it, and the routings you forget quietly never see the new capacity. Taking a machine out for a retrofit means editing them all back. And the schedule cannot balance load, because each part has exactly one place to go regardless of what the queue looks like.
+
+Planners work around this with alternate work centers listed per step, which helps but still has to be maintained per routing. A pool inverts the maintenance: the capability is defined once, and every routing that targets it inherits the current membership automatically.
+
+## Pool or instances: choosing the right model
+
+Both exist and they answer different questions.
+
+| | Instances | Pool |
+|---|---|---|
+| Models | Identical units inside one work center | Different but interchangeable machines |
+| Calendars | One shared calendar | Each machine keeps its own |
+| Capacity | One shared bucket | Each machine has its own |
+| Speed differences | Not modeled | Per-member efficiency factor |
+| Membership | Fixed count | Many to many, one press can join several pools |
+
+A bank of four identical presses bought together, run on the same shift, is a work center with four instances. Ten presses of varying tonnage and vintage where six can run a given family of tools is a pool. If you are unsure, ask whether the machines share a calendar. If they do not, they are a pool.
+
+One rule underpins the design: a pool has no capacity of its own. It is a routing target and a reporting lens, never a capacity bucket. Pool numbers on the Resource Calendar are live sums of the member machines, which is why a press that belongs to two pools appears in both without inventing hours that do not exist.
+
+## Members carry the differences
+
+A membership is more than a link. Each member carries the settings that make the pool honest.
+
+**Efficiency factor** scales run time only. A factor of 0.5 means that member runs twice as fast per piece; 1.5 means 50 percent slower. It is always applied to the planner-entered base hours, so a reschedule cannot compound it into nonsense.
+
+**Setup override** replaces the base setup for that member. Use it when a press genuinely sets up differently, for example one with quick-change clamps. Setup is never scaled by the efficiency factor, because a changeover is a per-changeover event rather than a per-piece one.
+
+**Primary flag** designates the preferred machine. At most one member per pool can hold it, and promoting a new primary demotes the old one automatically.
+
+**Priority** orders the candidate list.
+
+**Active flag** takes a machine out of rotation without deleting anything.
+
+## The three strategies, worked
+
+The documented example uses three machines and one step: base 0.04 hours per unit, base setup 0.5 hours, order quantity 100, earliest start Monday 08:00.
+
+| Member | Efficiency factor | Setup override | Effective per unit | Total for 100 |
+|---|---|---|---|---|
+| Press-1 (primary) | 1.0 | none | 0.04 h | 4.5 h |
+| Press-2 (newest) | 0.5 | none | 0.02 h | 2.5 h |
+| Press-3 (oldest) | 1.5 | 0.25 h | 0.06 h | 6.25 h |
+
+Note Press-3: the factor made the run time longer, but its simpler fixturing gave it a shorter setup. Both are modeled, and the totals reflect both.
+
+**Earliest completion, everything free.** Projected finishes are Press-1 Monday 12:30, Press-2 Monday 10:30, Press-3 Monday 14:15. Press-2 wins on 2.5 hours.
+
+**Earliest completion, Press-2 booked until Wednesday.** Now the projections are Press-1 Monday 12:30, Press-2 Wednesday 10:30, Press-3 Monday 14:15. Press-1 wins. The fastest machine loses to the available one, which is the entire point of capacity-aware pooling.
+
+**Primary first, same data.** Press-1 holds the primary flag, so as long as it has capacity on the target date it wins, even in the first case where Press-2 would finish two hours sooner. Choose this when predictable routing matters more than cycle time, for example when one press has the validated tooling and the others are genuine fallbacks.
+
+**Earliest start, same data.** This strategy is day granular. If Press-2 can only start Tuesday while Press-3 can start Monday afternoon, Press-3 wins even though Press-2 would finish first. Choose it in shops where getting work moving today matters more than optimal cycle time.
+
+## What the planner sees
+
+After scheduling, every surface shows the resolved machine. The Job View, the Gantt and the dispatch list all say Press-2, not "the 200-ton group". The routing step keeps its pool binding underneath, which is what lets the next reschedule shop the pool again.
+
+When a reschedule moves a job from one member to another, the change surfaces through the existing replacement indicator, reading in the form "Replaced: Press-2 to Press-1". Nobody has to diff two schedules to notice that a job changed machines.
+
+Diagnostics record the reasoning too. The scheduling session log carries one line per explosion showing the group, the strategy, the base hours and every candidate's effective hours, so "why did it pick that press" has a documented answer rather than an argument.
+
+## Reschedules, actuals and pins
+
+Three behaviors keep pooling safe in a plant that reschedules daily.
+
+**Started work stays put.** If an operator has punched in on Press-2, that step keeps Press-2 through every subsequent reschedule. The engine matches the started machine among the pool candidates and locks it. Only operations that have not started are re-shopped.
+
+**Base hours never compound.** Re-explosion always starts from the planner-entered base, so Press-2's effective time is recomputed as base times its factor rather than as a factor applied to an already-factored number.
+
+**A planner pin beats the strategy.** If you need this job on that press for a reason the model does not know, pin it. The pin wins over the group strategy and survives rescheduling, exactly as a manual alternate selection does.
+
+## Configuration and the rules worth knowing
+
+1. **Create the group** in the Work Center tab, Work Center Groups. Name it after the capability, for example 200-TON or MULTI-CAVITY, and choose its strategy.
+2. **Add members** and set the efficiency factor only where machines genuinely differ for this class of work. Leave 1.0 for a homogeneous pool.
+3. **Set one primary** if you plan to use primary-first.
+4. **Bind the routing step** through the work center selection popup's group option. The step shows a group badge until it is scheduled, then shows the resolved member.
+5. **Review pool load** in the Resource Calendar, where each group row sums its members for the window.
+
+Two rules save trouble. A group binding and manually listed alternates are mutually exclusive on the same step, because the pool is the alternate list and two competing sources of alternates have no defined meaning. And a group that routing steps still reference cannot be hard deleted: deactivate it, or rebind the steps first. Both behaviors fail loudly rather than silently degrading, which is the right trade in a plant where a quietly mis-routed job costs a shift.
+
+## Seeing pool load without inventing capacity
+
+The Resource Calendar shows a row per group for the selected window, and each row is a live sum of its member machines rather than a stored number. That distinction is what keeps the view honest.
+
+A press that belongs to two pools appears under both, because it genuinely qualifies for both capabilities. Its hours are not duplicated: they are the same hours shown through two lenses. Reading a pool row therefore tells you what the capability can absorb, not what a separate resource can absorb, and adding the two pool rows together would double count the shared machine. Planners who internalise that read the view correctly on day one.
+
+This is also why a pool is not modeled as a work center. A work center with shifts gets a real capacity bucket seeded for it, so a pool built that way would create hours no machine can work, and every schedule downstream would be built on phantom capacity. Keeping the pool as a routing target and a reporting lens makes that mistake impossible rather than merely discouraged.
+
+## When a pool is the wrong answer
+
+Three cases where naming a single machine is still correct.
+
+**Validated or qualified processes.** If only one press is qualified for a medical or automotive part, that is not a pool with one member, it is a machine. Name it.
+
+**Tool-specific mounting.** A tool that physically fits one press has no pool. Model the constraint where it lives.
+
+**Genuinely identical machines on one calendar.** Four presses bought together, run on the same shift, with no speed difference are instances of one work center. A pool would add member records and settings for no gain.
+
+## How it compounds with changeover pricing
+
+Pools and the setup matrix reinforce each other, and running both is where molding plants get the most out of this.
+
+Each press carries its own changeover matrix, because changeover physics are per machine. Once that is loaded, the pool's earliest-completion projection includes each candidate's real changeover for the transition it would actually face. A press already set with the same resin and color family carries little or no changeover, so it wins naturally against a faster machine that would need a full purge. You get campaigning behavior out of the selection logic instead of having to enforce it by hand.
+
+That combination is the subject of [mold changeovers and sequencing](/blog/edgebic-for-plastics-mold-changeovers). The third piece, spreading a long run across shifts without double-booking a machine, is covered in [running molding around the clock](/blog/edgebic-for-plastics-multi-shift).
+
+Bring your press list, tonnages and cycle-time differences to a demo of [plastic manufacturing scheduling software](/plastic-manufacturing-software), and we will build your first pool in the session.

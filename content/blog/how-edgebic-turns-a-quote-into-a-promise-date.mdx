@@ -1,0 +1,166 @@
+---
+title: "How EDGEBIC Turns a Quote Into a Promise Date You Can Keep"
+description: "Realistic delivery date quoting, step by step: the temporary job, the engine run, what the returned date accounts for, and what carries onto the real order."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - realistic delivery date quoting
+  - promise date manufacturing
+  - quote simulation pipeline
+  - forward vs backward quote
+  - quote to order conversion
+  - lead time estimate
+targetPhrase: "realistic delivery date quoting"
+wordCount: 1962
+readingTime: 10
+faqQuestions:
+  - question: "What does a simulated promise date actually account for?"
+    answer: "Existing shop load, real shift hours, plant holidays, setup times between products, routing step dependencies, and sub-assembly work. The simulation runs the same finite capacity engine that plans real production, loading the same work centers, routings, existing production schedules, and calendar data. The returned date therefore includes time spent queueing behind jobs that are already committed, which is exactly what a spreadsheet estimate cannot see."
+  - question: "How do I ask whether we can deliver by a specific date?"
+    answer: "Set the quote's scheduling direction to Backward and the target date to the customer's date. The engine schedules as late as possible while still finishing on or before that date, using today as the earliest-start floor. If the returned end date is on or before the target, the answer is yes and you also have the latest safe start. If it comes back later, the backward plan did not fit and the engine fell back to a forward run, which gives you the honest date instead of a rejection."
+  - question: "Why is comparing the end date to the target date meaningless on a forward quote?"
+    answer: "Because on a forward quote the target date is the start, not the finish. The simulation begins there and reports where the work lands. Comparing an end date to a start date answers nothing. On a forward quote, compare the returned end date against the customer's wanted date, which lives outside the quote record, or switch the quote to backward and let the engine answer directly."
+  - question: "Does the promise date change after the quote is converted to an order?"
+    answer: "The order carries the quoted window and the scheduling direction, so the real scheduling run reproduces the quoted plan rather than reinventing it. A backward quote becomes a backward order and stays backward unless an anchored target, recorded actuals, or planner-pinned dates force it forward. The order is created rather than scheduled, so it is placed on the calendar at the next scheduling run."
+  - question: "How stale can a simulated date become?"
+    answer: "Stale enough to matter within weeks. The date reflects the shop as it was when the simulation ran, so every order accepted since then has consumed capacity the simulation assumed was free. The quote view raises a banner when work-center rates or capacity have changed since simulation. The default 30 day quote expiry exists for the same reason: re-simulate anything older before reviving it."
+qaQuestions:
+  - question: "Two salespeople simulated the same week's capacity this morning and both promised it. What happens when both orders land?"
+    answer: "They queue. A simulation reads capacity and discards its result, so nothing is held against a quote and both simulations legitimately saw the same free hours. When both convert, the second order competes for what remains and finishes later than its quote implied. This is not a defect to work around, it is the honest boundary of quote simulation: EDGEBIC provides what-if promise dates, not a capacity reservation mechanism. For a large commitment, re-simulate immediately before you commit, and convert promptly once the customer says yes."
+  - question: "Our quoted lead time and our actual lead time never match. Where do we look first?"
+    answer: "At the two numbers the quote separates for you. Estimated hours are allocated work content; the lead time is the calendar span the engine produced around real shifts, holidays, and existing load. In the documented bracket example, 34.75 hours of work produced a five day span, and that gap is queueing and calendar, not inefficiency. If quoted and actual diverge after conversion, the quoted-versus-actual hours column on the quote is the direct comparison: hours drifting means the routing is wrong, while hours matching but dates slipping means capacity was consumed after the quote was simulated."
+---
+
+**Realistic delivery date quoting** works only when the date comes from the same engine that runs the shop. In EDGEBIC by User Solutions, a quote's promise date is produced by scheduling a temporary version of the job against your live capacity picture and then throwing it away. This post follows that path in detail: what gets built, what the engine loads, what the returned date includes, and what carries onto the real order at conversion.
+
+For the concept, read [quote simulation explained](/blog/edgebic-quote-simulation-explained). For the hands-on version, read [how to create a quote](/blog/how-to-build-and-price-a-quote-in-edgebic). Everything here describes documented behavior of [EDGEBIC](/edgebic).
+
+## Stage 1: Pre-Flight
+
+Before anything is built, the simulation validates. The product must resolve, the quantity must be greater than zero, and the product must have a routing.
+
+That last check is the one that fires most often, and it fails cleanly: the quote returns a message saying no routing was found rather than throwing an error or, worse, returning a plausible date built on nothing. A product with no routing has no work content, and a promise date derived from no work content would be a guess dressed as arithmetic.
+
+## Stage 2: The Temporary Job Is Built, Direction-Aware
+
+The simulation needs a real job for the engine to schedule, so it builds a temporary one carrying the quoted product, the quoted quantity, and dates derived from the quote.
+
+The date construction is where the quote's scheduling direction does its work, and it is asymmetric on purpose.
+
+**Forward.** The quote's target date is the job's target start and its earliest start. The simulation begins there and reports where the work lands.
+
+**Backward.** The quote's target date becomes the job's due date, and the earliest-start floor is set to today rather than to the target date. The target start is deliberately left unset.
+
+Both of those backward details prevent a specific failure. If the floor were set to the target date, the earliest possible start would equal the deadline, and the engine's own feasibility pre-check would immediately conclude the backward plan cannot fit, forcing a forward fallback on every single backward simulation. And if a target start were set, the job would be promoted to an anchored job, and anchoring outranks backward direction entirely, so the quote would silently stop being backward.
+
+In both directions, the quote's target date also becomes the temporary job's due date. That triple duty (target start in forward, finish-by in backward, due date in both) is the reason the quote dialog labels the field carefully and the reason direction has to be a deliberate choice rather than a default nobody looks at.
+
+## Stage 3: The Engine Runs on the Real Picture
+
+The temporary job is handed to the finite capacity engine, which loads the same inputs a real scheduling run loads:
+
+- Work centers, with their capacity, instances, and rates.
+- Products and their routings.
+- Existing production schedules, so current load is respected.
+- Plant holidays.
+- Setup-time data, so changeovers cost what they really cost.
+
+One filter matters: any leftover temporary quote jobs are excluded from the existing-schedules picture, so one simulation can never contaminate the next.
+
+The engine then runs on a background thread. It differs from a production scheduling run in exactly one respect, which is that nothing is written to the schedule tables. Your Gantt, your work-center load, and every committed job are untouched. When the run finishes, the temporary job is deleted, and it is deleted whether the run succeeded, returned nothing, or threw.
+
+## Stage 4: The Numbers Are Read
+
+Three readings come out of the resulting schedule, and each one answers a different question.
+
+**The window.** Start date and end date come from the produced schedule. This is the promise date, and it is a calendar span.
+
+**The hours.** Total hours are summed from the hours actually allocated to resources, not from the date span. A job that starts Friday afternoon and finishes Monday morning spans roughly 66 clock hours and may hold six hours of work. Costing from the span would overstate labor several times over, which is why the two numbers are reported separately and never substituted for one another.
+
+**The cost.** Each work center in the result has its hours multiplied by a rate: a per-step routing rate if set, otherwise the work center's own rate. Material-type work centers contribute material cost; the rest contribute labor. When no material-type work center produced a cost, the product's unit cost times the quantity is used as a fallback.
+
+Sub-assembly work is included. When a routing references a sub-assembly product that has its own routing, that routing's hours, labor, and material roll up into the parent recursively, respecting each step's quantity multiplier. The documented topology of a product built from a bracket assembly built in turn from a base plate resolves to 22.5 hours per unit, or 225 hours at a quantity of 10.
+
+## Worked Example: A Steel Bracket, 200 Units
+
+Take a bracket with a three step routing: cutting at 0.1 hours per unit with a 0.5 hour setup, drilling at 0.05 per unit with a 0.25 hour setup, and deburring at 0.02 per unit with no setup. Each work center runs 8 hours a day, Monday to Friday, one machine each. Today is July 4, 09:00. The customer wants August 15.
+
+The engine walks the routing in dependency order:
+
+| Step | Work content | Placed window |
+|---|---|---|
+| Cutting | (0.1 x 200) + 0.5 = 20.5 h | Jul 4 09:00 to Jul 7 12:00 |
+| Drilling | (0.05 x 200) + 0.25 = 10.25 h | Jul 7 12:00 to Jul 8 14:15 |
+| Deburring | 0.02 x 200 = 4.0 h | Jul 8 14:15 to Jul 9 08:45 |
+
+The result: start July 4, end July 9 08:45, a lead time of five days, and 34.75 hours of allocated work.
+
+Read those two numbers together. Thirty-five hours of work took five calendar days, because the deburring step ran past a shift boundary and continued the next morning, and because each step waited for its predecessor. Neither of those is inefficiency. Both are what a promise date has to include.
+
+Costing at $45, $38, and $22 per hour:
+
+| Work center | Hours | Rate | Cost |
+|---|---|---|---|
+| Cutting | 20.5 | $45 | $922.50 |
+| Drilling | 10.25 | $38 | $389.50 |
+| Deburring | 4.0 | $22 | $88.00 |
+| Total | 34.75 | | $1,400.00 |
+
+At 25% markup that is $8.75 per bracket. Against a requested August 15, the July 9 completion leaves 37 days of margin, and the quote can go out with confidence.
+
+## Stage 5: Checking Feasibility Correctly
+
+There is no stored yes-or-no flag on a quote. The comparison is made on demand, and how you make it depends entirely on direction.
+
+**On a backward quote**, compare the returned end date against the target date. That comparison is meaningful because the target date *is* the finish-by date. If the end date is on or before it, the plan fits. If it is after it, the backward pass did not fit and the engine fell back to forward, so the comparison catches exactly the case you care about.
+
+**On a forward quote**, that same comparison is meaningless, because the target date is a start. Compare the end date against the customer's wanted date, which on a forward quote lives outside the quote record, or switch the quote to backward and let the engine answer directly.
+
+This is why the direction field is worth thirty seconds of thought at quote creation. It is not a preference, it is the shape of the question you are asking.
+
+## Stage 6: Conversion Carries the Plan Forward
+
+When the customer accepts, converting the quote creates one manufacturing order. Three guards run first: the quote must not already be converted, no order may already reference it, and the order name must not collide.
+
+The new order carries the product and quantity, the target date as its due date, the simulated window as its target start and planned end, the estimated cost with its labor and material split, the estimated hours, the markup and unit price, and the customer and sales order links.
+
+It also carries the **scheduling direction**, and that one item is what makes the promise reproducible. A backward quote becomes a backward order, so the real scheduling run right-aligns the same way the simulation did rather than pushing the work as early as possible. The direction holds unless an anchored target date, recorded actuals, or planner-pinned step dates force forward, which are the documented precedence rules. [Backward scheduling in EDGEBIC](/blog/edgebic-backward-scheduling-explained) covers that precedence in full.
+
+Carrying the cost fields matters for a different reason: once actuals arrive from the shop floor, quoted hours and actual hours sit side by side on the quote. That column is the feedback loop that makes the next quote better. An empty right-hand side means no actuals yet rather than zero hours.
+
+The order is created, not scheduled. It joins the calendar at the next scheduling run. [Quote to ship in EDGEBIC](/blog/quote-to-ship-in-edgebic) follows one order through that whole journey.
+
+## The Feedback Loop That Improves the Next Quote
+
+Carrying the estimate onto the order is not bookkeeping. It creates the only comparison that makes quoting better over time.
+
+Once actuals arrive from the shop floor, the quote shows quoted hours next to actual hours. An empty right-hand side means no actuals yet rather than zero, which is a deliberate distinction: a zero would read as a job that took no time.
+
+Two divergence patterns are worth naming, because they point at different fixes.
+
+**Hours diverge, dates hold.** The routing is wrong. Setup or run times on one or more steps do not match what the shop actually does, and every future quote for that product inherits the same error. Fix the routing, not the quote.
+
+**Hours hold, dates slip.** The routing is right and capacity was consumed after the simulation ran. That is a commercial process issue rather than a data one: the quote sat too long, or too much was promised into the same week. Re-simulate closer to commitment and convert promptly.
+
+Reading that column monthly, across the jobs that completed, turns quoting from a fixed estimating standard into something that gets measurably more accurate. It is the same discipline as tracking [quoted versus actual lead time](/blog/quoted-vs-actual-lead-time-job-shop), applied at the routing level.
+
+## What the Date Does Not Include
+
+Three limits, stated plainly.
+
+**No capacity is held.** EDGEBIC provides quote simulation and what-if promise dates. It has no capacity reservation mechanism. Two quotes simulated the same morning both see the same free hours because neither consumed any. When both convert, the second queues behind the first.
+
+**It is a snapshot.** The date reflects the shop at the moment you simulated. The quote view raises a banner when rates or capacity have changed since, and the default 30 day expiry exists because a stale simulation is fiction.
+
+**A concurrent scheduling run can blur it.** The simulation reads current database state to rebuild the capacity picture. If a real scheduling run is committing at that exact moment, the simulation may see partially committed state. Simulations are fast and the overlap is rare, but for a high-value promise it is worth simulating when the shop is not mid-run.
+
+## Where to Go Next
+
+- [What-if scenarios explained](/blog/edgebic-what-if-scenarios-explained) covers what to do when the base date misses the customer's date.
+- [Quoting mistakes](/blog/quoting-mistakes-edgebic) lists the configuration errors that make a promise date wrong.
+- The [quoting pillar](/blog/edgebic-quoting-guide) is the full workflow, and [what is production scheduling](/blog/what-is-production-scheduling) covers the underlying discipline.
+- The [EDGEBIC complete guide](/blog/edgebic-complete-guide) maps the platform.

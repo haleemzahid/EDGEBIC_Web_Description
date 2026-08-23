@@ -1,0 +1,91 @@
+---
+title: "I Changed a Step's Required Skill and the Operator Pin Stayed"
+description: "Changing a step's required skill keeps its operator pin, so a pinned person who lacks the new skill stops the next scheduling run. Why that is deliberate, and the fix."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - operator pin required skill
+  - changed required skill scheduling stopped
+  - pinned operator lacks skill
+  - skill gated step will not schedule
+  - operator assignment scheduling error
+  - clear an operator pin
+targetPhrase: "changed required skill operator pin"
+wordCount: 990
+readingTime: 5
+faqQuestions:
+  - question: "Does changing a step's required skill clear its operator pin?"
+    answer: "No. Clearing the skill from a step clears the pin, but changing the skill to a different one keeps it. If the pinned person does not hold the new skill, the next scheduling run stops immediately with a message naming the problem. The pin is a named-person decision, so the software fails loudly rather than quietly handing the work to somebody else."
+  - question: "Why does the scheduling run stop instead of just picking another operator?"
+    answer: "Because a pin exists precisely to override the automatic choice, and silently overriding the override would be the worse behavior. Pins are usually set for a reason the software cannot see: a customer requirement, a sign-off authority, or the one person trusted with a particular fixture. Stopping with a named problem puts the decision back with the planner who made it."
+  - question: "How do you remove an operator pin from a routing step?"
+    answer: "Set the step's operator selector back to the automatic option, which lets the scheduler load-balance across everyone certified in the required skill. If the job is already scheduled, make the change on that job's own routing rather than only on the master routing, because a scheduled job carries a frozen copy of its routing that a master edit does not reach."
+qaQuestions:
+  - question: "We moved a weld step from a general certification to an Inconel certification, and now the run stops even though two people hold Inconel. Why?"
+    answer: "The step still carries a pin to the person who held the old certification, and that person does not hold the new one. The scheduler is not choosing between your two Inconel welders at all, because a pinned step has no pool to choose from. Either clear the pin so both qualified people become candidates, re-pin to whichever of the two you actually want, or certify the original person in Inconel if that is genuinely true. Then re-run."
+  - question: "I cleared the pin on the routing and the same job still refuses to schedule. What now?"
+    answer: "Check whether you edited the master routing or the job's own routing. A job that has already been scheduled carries its own frozen routing snapshot, which is what the next reschedule reads. A change made only on the product's master routing reaches future jobs and leaves the scheduled one exactly as it was. Open the scheduled job's routing, clear the pin there, and re-run. The master edit still stands for everything scheduled after it."
+---
+
+**Clearing a required skill from a routing step clears its operator pin, but changing that skill to a different one deliberately keeps the pin, so a pinned person who does not hold the new skill stops the next scheduling run with a message naming the problem.** That is documented behavior in [EDGEBIC by User Solutions](/edgebic), not a defect, and it catches people because the mental model of "I changed the requirement, so the staffing must have been worked out again" is a reasonable one that happens to be wrong.
+
+This post covers that specific sequence. If your pin is correct and the step still will not place, the availability gates are a different problem, covered in [an operator pin left a step unscheduled](/blog/an-operator-pin-left-a-step-unscheduled-edgebic). The wider symptom index is the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## What You Are Seeing
+
+You edited a routing step's required skill, changing it from one certification to another. The step already had a named operator pinned to it. On the next scheduling run, one of two things happens: the run stops straight away with a message that names the problem, or the step simply will not place, even though several qualified people are rostered and the machine has open capacity.
+
+The confusing part is the machine. Capacity is clearly available, the skill clearly exists in your workforce, and the run still refuses.
+
+## Why It Happens
+
+### The Pin Survives a Skill Change by Design
+
+Two rules govern a pin's lifetime, and they are deliberately different:
+
+| Edit to the step | What happens to the pin |
+|---|---|
+| Required skill **removed** entirely | The pin is cleared with it |
+| Required skill **changed** to a different one | The pin is kept |
+
+The first rule is obvious: a step with no skill requirement has nothing to pin against. The second is the one that surprises, and the reasoning behind it is worth understanding, because it tells you what a pin means.
+
+A pin is a statement about a person, not about a skill. Planners set them for reasons the software cannot see: a customer who has approved one operator, a sign-off authority, the one person trusted with an expensive fixture. If a skill edit silently released the pin, the work would quietly move to whoever the load-balancer preferred, and the planner who set the pin would find out from the customer. Keeping the pin and stopping the run puts the decision back where it was made.
+
+### A Pinned Step Has No Pool
+
+This explains why the number of qualified people does not help. When a step is pinned, the scheduler does not consider a pool of candidates and pick the best one. It considers exactly one person. If that person cannot do the work, there is no second choice to fall back on, so having two, five, or twenty other certified operators changes nothing.
+
+**How to tell:** the step carries both a required skill and a named operator, and the named operator's certification list does not include that skill.
+
+## The Fix
+
+Pick whichever of these three matches the truth, then re-run:
+
+**Clear the pin.** Set the step's operator selector back to the automatic option. The scheduler then load-balances across everyone certified in the new skill, which is the right answer when the pin existed only because somebody happened to be the obvious choice under the old requirement.
+
+**Re-pin to someone who holds the new skill.** Right when the reason for pinning is still real and you know who should now carry it.
+
+**Certify the pinned person in the new skill.** Right only when that is genuinely true. Certifications carry expiry dates, so record the real one rather than a distant placeholder: an expired certification produces the same refusal later, with a different explanation. [Setting up operators, skills, and rosters](/blog/how-to-set-up-operators-skills-and-rosters-in-edgebic) covers the certification list.
+
+## The Step That Catches People Twice
+
+If the job is already scheduled, edit the pin on that job's own routing, not only on the product's master routing.
+
+A scheduled job carries a frozen copy of the routing it was scheduled against, which is what protects in-flight work from routing edits made for the next order. That protection is exactly why a master-routing edit does not reach a job already on the schedule. Clear the pin on the master routing and future jobs behave, while the job in front of you refuses for exactly the same reason it refused before. Make the change on the scheduled job's routing to fix the job you are looking at.
+
+This is the same mechanism described in [routing snapshots](/blog/edgebic-routing-snapshots-explained), and it is worth internalizing once, because it explains a whole family of "I fixed it and nothing changed" moments.
+
+## Preventing the Next One
+
+**Treat a skill change as a two-field edit.** When you change the required skill on a step, look at the operator selector in the same visit. It takes two seconds, and it is the entire prevention.
+
+**Use pins sparingly.** The automatic option load-balances across everyone qualified and gives the scheduler room to hold your dates. A pin trades that flexibility for certainty about who, which is a good trade when the certainty is genuinely needed and a poor one when it was set out of habit. A plant with pins on a dozen routine steps will meet this symptom a dozen times.
+
+**Read the failure message.** When the run stops, the message names the problem rather than failing vaguely. Reading it in full is usually faster than any diagnosis, and it is the first tier of the escalation ladder for every scheduling refusal, ahead of the anomaly report and the session log.
+
+**Keep certifications current.** Expiry dates are the other way a pinned operator becomes ineligible, and that one arrives without any edit on your part. A quarterly look at expiring certifications turns a scheduling stop into a renewal reminder. [How operator and skill scheduling works](/blog/edgebic-operator-and-skill-scheduling-explained) covers the full model.

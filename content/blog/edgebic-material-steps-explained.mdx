@@ -1,0 +1,111 @@
+---
+title: "EDGEBIC Material Steps Explained: The Routing Row That Books No Capacity"
+description: "How material steps work in EDGEBIC: a routing row for a consumed component, scheduled as an instant gate with no capacity booked, and how it differs from a sub-assembly."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - material step routing
+  - component consumption routing
+  - bill of routing materials
+  - manufacturing routing components
+  - material availability scheduling
+  - finite capacity scheduling
+targetPhrase: "material step routing"
+wordCount: 1440
+readingTime: 7
+faqQuestions:
+  - question: "What is a material step in EDGEBIC?"
+    answer: "A material step is a routing row that names a component product instead of a work center. It represents material being consumed at that point in the routing, not an operation being performed, so the scheduler assigns it instantly and books no capacity for it. Its job is structural: it records what the routing consumes and where, so quantities, costs, and inventory demand all attach to the right point in the sequence."
+  - question: "How is a material step different from a sub-assembly?"
+    answer: "The difference is whether the component product has a routing of its own. With no routing, the component is a plain material: an instant gate that books no capacity. With a routing, the same reference becomes a sub-assembly, and its operations are exploded and scheduled on real work centers as part of the parent job. You do not declare which one it is. The presence or absence of a child routing decides it."
+  - question: "Why does a material step book no capacity?"
+    answer: "Because no machine is doing anything. Capacity in EDGEBIC represents machine and shift hours, and consuming a component uses none of them. Giving a material step even a small booking would put fictional load on a work center and make every capacity report slightly wrong. Handling time that genuinely exists, moving material between operations, belongs on transit or queue time rather than on the material row."
+qaQuestions:
+  - question: "Our material step is showing labor hours on the routing and inflating the estimate. What did we do wrong?"
+    answer: "Almost always the row is not really a material step. A material step names a product and no work center, and it should carry no hours at all. If hours are appearing, the usual causes are that the row still has a work center attached, so EDGEBIC is treating it as an operation, or that hours were typed into it out of habit when the routing was built by hand or imported. The check is quick: open the row and confirm it names a product and no work center, and that its hours fields are zero. If the handling genuinely takes time, someone has to fetch and stage the material, model that as queue time or transit on the neighboring operation, where it delays the successor without inventing capacity load on a machine that is not doing anything."
+  - question: "Material is late from the supplier. Does putting it on the routing as a material step make the schedule wait for it?"
+    answer: "The material step is the place the dependency is recorded, and the lead time on it is what pushes the consuming operation later. What it does not do on its own is track your purchase orders: EDGEBIC is a scheduling system, and a material step models that this component is consumed here and needs this much lead time, not that purchase order 9912 slipped by nine days. In practice the two useful moves are to keep the component's lead time honest so routine procurement time is in the plan by default, and to treat a specific late delivery as a date change on the job rather than something the routing should discover. If the component is stocked, the inventory side is where availability genuinely lives, and letting a job consume from stock is what turns an on-hand balance into a schedule that does not wait."
+---
+
+**EDGEBIC by User Solutions lets a routing include rows that name a component product instead of a work center. These are material steps, and the scheduler assigns them instantly and books no capacity for them.** They exist so the routing can say what it consumes and where, without pretending that consuming something occupies a machine.
+
+It is a small idea with a surprising number of consequences downstream, and it is the row people most often model wrongly.
+
+## What a Material Step Is
+
+Every row in a [bill of routing](/blog/edgebic-bill-of-routing-explained) is one of two things.
+
+An **operation** names a work center. It has setup time and hours per unit, it competes for capacity, it lands on a shift, and it appears as a bar on the Gantt.
+
+A **material step** names a product. It has a quantity per parent unit and, where the component needs one, a lead time. It books no capacity, occupies no machine, and holds no place in a shift.
+
+On the [visual routing canvas](/blog/edgebic-visual-routing-editor-explained) the two are drawn differently: a machine node for an operation, a product node for a component. The product node's tooltip is explicit that it is a component consumed at that point with no capacity booked.
+
+The step-by-step version of adding one is in [how to add a material step to a routing](/blog/how-to-add-a-material-step-to-a-routing-in-edgebic), and the scheduling behavior in isolation is covered in [how a material step schedules as an instant gate](/blog/how-a-material-step-schedules-as-an-instant-gate).
+
+## The Line Between Material and Sub-Assembly
+
+The same routing row can behave two entirely different ways, and you do not choose which. The component product decides.
+
+| The component product | What the row becomes |
+|---|---|
+| Has no routing | A material step: instant, no capacity booked |
+| Has a routing of its own | A [sub-assembly](/blog/edgebic-sub-assembly-scheduling-explained): its operations are exploded and scheduled with the parent job |
+
+This is worth internalizing because it means building a routing for a product changes how every parent that consumes it is scheduled, without anyone editing those parents. A bought-in bracket is a material step. The day you start making that bracket and give it a routing, every parent that references it starts planning bracket operations on real machines.
+
+That is the correct behavior, and it is also the mechanism behind an occasional surprise, a job that suddenly takes longer after somebody added a routing to a component. Nothing broke. The plan got more honest.
+
+## Why No Capacity
+
+Capacity in EDGEBIC is machine and shift hours. Consuming a component uses none of them.
+
+Giving a material step even a nominal booking would put load on a work center that is doing nothing, and every capacity number derived from that work center, its utilization, its load view, its position in a bottleneck analysis, would be wrong by that amount. Multiply that by a routing with four material rows and the distortion stops being nominal.
+
+There is a real question hiding behind this, though: what about the time it genuinely takes to fetch and stage material? That time exists, and it belongs somewhere. It belongs on [queue and transit time](/blog/edgebic-queue-and-transit-times-explained), which delays the successor operation without inventing machine load. Modeling handling as fake operation hours is the single most common way a routing acquires phantom capacity.
+
+The symptom to watch for is a material row showing hours at all. If it does, either it still has a work center attached and is being treated as an operation, or hours were typed into it out of habit. [A material step showing labor hours](/blog/a-material-step-is-showing-labor-hours-edgebic) covers the diagnosis.
+
+## What the Row Is Actually For
+
+If it books no capacity, it is fair to ask what a material step earns.
+
+**It records the structure.** The routing is the definition of how the product is made, and what goes into it is part of that definition. A routing that lists only operations is a process sheet with the parts list missing.
+
+**It carries quantity.** Two frames per parent unit is a multiplier that matters to demand, to cost, and, when the component has its own routing, to how much work is exploded into the job.
+
+**It carries lead time.** Where a component needs procurement time, the material step is where that time enters the plan, pushing the consuming operation later rather than letting the schedule assume the part is on the bench.
+
+**It feeds cost.** A component's unit cost flows into the material side of a job's cost, which is what makes a quote's [cost breakdown](/blog/edgebic-costing-and-rates-explained) reflect what the product is made of and not only the hours it takes.
+
+**It connects to inventory.** Material demand is what the [inventory ledger](/blog/edgebic-inventory-ledger-explained) and the projection are working against, and it is what makes [consume-from-stock netting](/blog/what-is-consume-from-stock-netting) possible: a job that can be satisfied from an on-hand balance does not have to wait on procurement at all.
+
+## Where They Go in the Sequence
+
+A material step sits immediately before the operation that consumes it, connected into that operation. That placement is not decorative. It is what says the frame is needed at assembly, not at sawing, so a lead time on the frame delays assembly rather than pushing the whole job's start.
+
+Getting the placement wrong is a quiet error. Attaching every component to the first operation makes the job appear to need everything on day one, which inflates the apparent procurement urgency and, on a routing with a long tail, makes a plan look infeasible that is perfectly fine. Attach each component where it is genuinely consumed.
+
+If a material dependency is holding a job up more than you expected, [a material step is holding up my job](/blog/a-material-step-is-holding-up-my-job-edgebic) walks through the usual causes.
+
+## What It Is Not
+
+Being clear about the boundary is worth more than any feature description.
+
+A material step is not a purchase order and does not track one. EDGEBIC schedules; it does not manage procurement transactions against a supplier. The routing says this component is consumed here with this much lead time, which is a modeling statement, not a live view of a specific delivery.
+
+Nor is a material step a substitute for the inventory picture. Whether a component is actually on hand lives in inventory, not in the routing, and the [projection](/blog/edgebic-projected-available-balance-explained) is what tells you whether the balance will cover what the plan is about to consume.
+
+## Where It Fits
+
+Material steps are the smallest thing in a routing and the most frequently mis-modeled. Getting them right, product and no work center, no hours, quantity correct, attached at the point of consumption, is what keeps capacity numbers honest and makes the difference between a routing that describes the product and a routing that describes only its machining.
+
+The general concept is covered in [what is a material step in a routing](/blog/what-is-a-material-step-in-a-routing), the [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps how routings feed the rest of the system, and [/edgebic](/edgebic) covers the platform as a whole.
+
+## The Row That Keeps the Others Honest
+
+A scheduling model earns trust by not claiming things that are not true. A material step is the smallest expression of that principle: it is on the routing because the material is genuinely part of the product, and it books nothing because no machine is genuinely busy. Every hour of capacity in EDGEBIC represents a machine doing something, and that is only true because the rows where nothing is being done are honest about it.

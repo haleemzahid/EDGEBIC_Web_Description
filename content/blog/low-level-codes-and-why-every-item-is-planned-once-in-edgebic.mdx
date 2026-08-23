@@ -1,0 +1,106 @@
+---
+title: "Low-Level Codes: Why Every Item Is Planned Exactly Once"
+description: "A shared component appears at different depths in different bills. The low-level code is the single number that decides when it gets planned, and planning it early quietly hides shortages."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-06T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - low-level code
+  - planning order MRP
+  - shared component planning
+  - BOM level
+  - dependent demand
+  - cyclic bill of materials
+targetPhrase: "low-level code"
+wordCount: 1460
+readingTime: 7
+faqQuestions:
+  - question: "What is a low-level code?"
+    answer: "It is the deepest level at which an item appears anywhere in any bill in the plant, taken as a single number per item rather than per bill. An end item is level 0, its direct components level 1, and so on. If a plate sits one level down under one product and three levels down inside another, its low-level code is 3. Planning strictly in ascending low-level-code order guarantees an item is never planned until every parent that could demand it already has been."
+  - question: "Why does the order of planning matter at all?"
+    answer: "Because a component's demand does not exist until its parents have been planned. Plan a shared plate before the assembly three levels above it and the plate is netted against only part of its real demand, reports a comfortable balance, and raises no suggestion. The rest of the demand arrives later, after the plate has been declared healthy. The failure is silent and it points the reassuring way, which is what makes the ordering rule non-negotiable rather than an optimization."
+  - question: "What happens if a bill contains itself?"
+    answer: "EDGEBIC reports it rather than dropping it. A product whose bill leads back to itself has no finite plan, so the run flags it as a cyclic bill of materials and that message is listed first, ahead of everything else. An item with no plan at all cannot be judged by any other message about it. The fix is in the routing that creates the loop, not in the planning run."
+qaQuestions:
+  - question: "I want to plan just one purchased component. Why does the run pull in a dozen other products?"
+    answer: "Because planning a component correctly requires every parent that could demand it to have been planned first. Naming one product expands the run to its whole family, everything it is made from and everything made from it, then orders that family by low-level code. Walking only downwards would plan your component against no dependent demand at all and report a flat, healthy balance, which is the exact blindness the multi-level run exists to remove. The expansion is the correct answer, not an inefficiency."
+  - question: "Our routings already carry a level number on each step. Can that be used instead?"
+    answer: "No, and it is a tempting mistake because it is already an integer called a level. A routing step's level is depth within that one routing, scoped to a single end product, and it has no opinion about anyone else's bill. A shared plate can carry level 1 in one routing and level 3 in another, two unrelated numbers for one physical part. A low-level code is global and singular, taken as the maximum across every appearance, which is exactly the property the planning order depends on."
+---
+
+**A low-level code is the deepest level at which an item appears anywhere in any bill, and planning strictly in ascending low-level-code order is what guarantees every item is netted exactly once, against all of its demand.** In [EDGEBIC by User Solutions](/edgebic), that single number decides the order a multi-level run works in, and getting it wrong produces a failure that looks exactly like success: a flat, healthy balance on a part that is about to run out.
+
+This post explains why an order of planning has to exist, what the code is, how it is computed across a shared component, and why a run expands beyond the products you name. It sits under the [EDGEBIC planning guide](/blog/edgebic-planning-guide) and follows [exploding a parent's demand into component demand](/blog/exploding-a-parents-demand-into-component-demand-in-edgebic).
+
+## Netting One Item Is Easy. Netting a Hundred Is Only Easy in the Right Order
+
+Netting a single item is arithmetic: demand in, on-hand and incoming supply out, safety buffer protected. Netting a hundred items that demand each other is the same arithmetic, but it is only correct if each item is netted after everything that could demand it.
+
+The reason is that dependent demand does not exist until its parent has been planned. Before a gearbox has an order, the sub-assemblies beneath it have no requirement, so the plate beneath those has no requirement either. Nothing has yet told the plate it is wanted.
+
+Plan the plate at that moment and it nets against whatever demand happens to exist so far, reports a balance it has not earned, and fires no suggestion. The remaining demand appears afterwards, when the levels above it are planned, and by then the plate has already been declared comfortable. Nothing errors. There is no warning. The balance simply lies.
+
+## What the Code Is
+
+The low-level code fixes that with one rule: **the deepest level at which an item appears anywhere in any bill**.
+
+End items are level 0. Their direct components are level 1. A component of a level-1 item is level 2, and so on. When an item appears in several bills at several depths, its code is the deepest of them, not an average and not the first one found.
+
+The word doing the work is *anywhere*. The code is global and singular, one number per physical part across the whole product structure. That is the property the ordering depends on, and it is why a per-routing depth cannot stand in for it. A routing's own step levels describe depth inside that one routing for that one end product; the same shared part can carry two unrelated numbers in two routings. The low-level code is the maximum over every appearance.
+
+## A Worked Example: The Shared Plate
+
+Two end items. A widget takes one plate directly. A gearbox takes a casing, the casing takes two subframes, and each subframe takes four plates.
+
+| Item | Depth under widget | Depth under gearbox | Low-level code |
+|---|---|---|---|
+| Widget | 0 | - | 0 |
+| Gearbox | - | 0 | 0 |
+| Casing | - | 1 | 1 |
+| Subframe | - | 2 | 2 |
+| Plate | 1 | 3 | **3** |
+
+The plate appears at depth 1 under the widget and depth 3 under the gearbox. Its low-level code is 3, so the planning order runs widget and gearbox, then casing, then subframe, then plate.
+
+Now suppose both end items release orders for 30 widgets and 10 gearboxes on the same day.
+
+| Order | Item | Demand it holds when planned | It explodes to |
+|---|---|---|---|
+| 1 | Widget | independent only | plate + 30 |
+| 2 | Gearbox | independent only | casing + 10 |
+| 3 | Casing | 10 | subframe + 20 |
+| 4 | Subframe | 20 | plate + 80 |
+| 5 | Plate | **110** | nothing, it is bought |
+
+The plate is netted once, against 110, with both parents pegged to it. Plan it at "depth 1" instead, using its position in the widget's routing, and it would have been netted against 30, reported comfortable, and the 80 from the gearbox branch would have arrived as a surprise several levels and several days later.
+
+## Planning One Item Pulls In Its Family
+
+This is the behavior planners notice first and misread as inefficiency.
+
+Name a single product for a run and EDGEBIC expands it to that product's whole family: everything it is made from, and **everything made from it**. Then it orders that family by low-level code.
+
+The upward half is the one that gets forgotten, and forgetting it reintroduces exactly the blindness the multi-level run removes, one level up. Planning a component requires every parent that could demand it to have been planned first, so asking to plan a plate must pull in the widget and the gearbox tree that consume it. Walk only downwards and the plate is planned against no dependent demand at all and reports a flat, healthy balance.
+
+Products that appear in no bill at all still plan, at level 0, on their own.
+
+The other option is simply to name nothing. Leaving the product list empty runs the plan over every active product, which is the regenerative run and the usual default. There is no net-change mode; every run replans from scratch.
+
+## When a Bill Contains Itself
+
+Occasionally a routing leads back to its own product, directly or through several levels. That is a cycle, and a bill that contains itself has no finite plan at all.
+
+EDGEBIC reports these rather than silently dropping them. The affected products are named, and the cyclic-bill message is listed ahead of every other message in the worklist, because an item with no plan cannot be judged by any other message about it. The correction is in the routing that creates the loop.
+
+A step whose product is the same as the end item it belongs to is ignored rather than treated as a level, so a self-reference on one line does not take the whole product out of the plan.
+
+## Why This Matters to a Planner
+
+You will rarely type a low-level code or set one, and that is the point: it is derived, not maintained. What it buys you is the guarantee behind every number on the worklist.
+
+When the plan says a shared component needs 110 units, the low-level code is your assurance that 110 is all of the demand rather than the part of it that happened to be computed first. And when a run pulls in products you did not ask for, that is the same guarantee doing its job.
+
+The general failure mode in this part of a planning system is worth stating plainly: **no shortage is the outcome that looks like success**. A comfortable balance on a shared part is the thing to be suspicious of, and the ordering rule is what makes it trustworthy. Next, read [reading MRP action messages](/blog/reading-mrp-action-messages-in-edgebic) for what the plan does with the shortages it finds, or [what is MRP](/blog/what-is-mrp) for the method's fundamentals.

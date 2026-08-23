@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+// import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Brain,
@@ -19,6 +19,9 @@ import {
   Target,
   Wrench
 } from 'lucide-react';
+
+import { ScreenshotSlideshow } from '@/components/marketing/fragments/screenshot-slideshow';
+import { EdgebicPlanFlow } from '@/components/marketing/sections/edgebic-plan-flow';
 
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
@@ -36,7 +39,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
     useState(false);
   const [reportingExpanded, setReportingExpanded] = useState(false);
   const [dataIntegrationExpanded, setDataIntegrationExpanded] = useState(false);
-  const [imagePopupOpen, setImagePopupOpen] = useState(false);
+  const [popupImage, setPopupImage] = useState<{
+    src: string;
+    alt: string;
+  } | null>(null);
 
   return (
     <section className="bg-white pt-3">
@@ -85,9 +91,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Would an END-END, near realtime view of your entire
-                          supply chain be useful? How about adding
-                          Finite-Capacty scheduling to your existing ERP?
+                          Would an end-to-end, near real-time view of your
+                          entire supply chain be useful? How about adding
+                          finite-capacity scheduling to your existing ERP?
                         </p>
                       </motion.div>
                     )}
@@ -127,9 +133,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          With a method to completely reconfigure system upon
-                          demand, its suprisingly easy to try various models to
-                          achieve maximum efficiency.
+                          With a method to completely reconfigure the system on
+                          demand, it&apos;s surprisingly easy to try various
+                          models to achieve maximum efficiency.
                         </p>
                       </motion.div>
                     )}
@@ -171,7 +177,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          By identifying constaints and other business rules,
+                          By identifying constraints and other business rules,
                           the system quickly and easily generates a reasonable
                           schedule.
                         </p>
@@ -192,7 +198,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <FileText className="size-4 text-blue-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Allowing Instant User Overides
+                        Allowing Instant User Overrides
                       </h3>
                     </div>
                     {reportingExpanded ? (
@@ -254,8 +260,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                       >
                         <p className="text-md text-gray-600">
                           Easily map existing data, from your ERP or Excel or
-                          any other system directly into RMDB for importing. The
-                          same capability exists for exporting data to other
+                          any other system, directly into EDGEBIC for importing.
+                          The same capability exists for exporting data to other
                           systems.
                         </p>
                       </motion.div>
@@ -263,18 +269,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </AnimatePresence>
                 </div>
               </div>
-              {/* RMDB Image */}
-              <div className="w-full lg:w-1/2 flex justify-center">
-                <Link href="/resource-manager-db-2">
-                  <Image
-                    src="/images/Edgebic/2022-07/rmdb11.png"
-                    alt="RMDB Core Capabilities dashboard"
-                    width={500}
-                    height={291}
-                    className="h-[230px] w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                    loading="lazy"
-                  />
-                </Link>
+              {/* Product screenshot slideshow */}
+              <div className="w-full lg:w-1/2">
+                <ScreenshotSlideshow heightClassName="h-[230px]" />
               </div>
             </div>
           </div>
@@ -491,7 +488,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                           system rules with manual adjustments, maintenance is
                           effortless. The system intelligently rebalances based
                           on your updates; for instance, if you report starting
-                          the 6th step of a process, RMDB/EDGE automatically
+                          the 6th step of a process, EDGEBIC automatically
                           assumes previous steps are complete and reschedules
                           all subsequent steps.
                         </p>
@@ -505,7 +502,12 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 <button
                   type="button"
                   title="View full size image"
-                  onClick={() => setImagePopupOpen(true)}
+                  onClick={() =>
+                    setPopupImage({
+                      src: '/images/Edgebic/2022-09/homeimagewithtext.png',
+                      alt: 'Scheduling step process diagram showing optimal scheduling workflow'
+                    })
+                  }
                   className="w-full cursor-pointer border-0 bg-transparent p-0"
                 >
                   <Image
@@ -524,14 +526,14 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
         {/* Image Popup Modal */}
         <AnimatePresence>
-          {imagePopupOpen && (
+          {popupImage && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-              onClick={() => setImagePopupOpen(false)}
+              onClick={() => setPopupImage(null)}
             >
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -543,14 +545,14 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               >
                 <button
                   type="button"
-                  onClick={() => setImagePopupOpen(false)}
+                  onClick={() => setPopupImage(null)}
                   className="absolute -right-3 -top-3 z-10 flex size-8 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg hover:bg-gray-100 transition-colors md:-right-3 md:-top-3"
                 >
                   ✕
                 </button>
                 <Image
-                  src="/images/Edgebic/2022-09/homeimagewithtext.png"
-                  alt="Scheduling step process diagram showing optimal scheduling workflow"
+                  src={popupImage.src}
+                  alt={popupImage.alt}
                   width={1200}
                   height={700}
                   className="block rounded-lg max-h-[85vh] max-w-[90vw] h-auto w-auto"
@@ -559,6 +561,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* The six product screens, in the order you would use them */}
+        <EdgebicPlanFlow />
 
         {/* RMDB Integrate MRP and capacity planning - Moved to resource-management page */}
         {/* <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">

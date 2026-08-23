@@ -1,0 +1,70 @@
+---
+title: "What Is an Inventory Ledger? Append-Only Stock Truth Explained"
+description: "An inventory ledger is the append-only, signed record of every stock movement that is the authoritative on-hand figure. Here is how it works and why it never lies."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - inventory ledger
+  - append-only inventory
+  - authoritative on-hand
+  - inventory transaction history
+  - stock movement record
+  - inventory reversal
+targetPhrase: "inventory ledger"
+wordCount: 1180
+readingTime: 6
+faqQuestions:
+  - question: "What is an inventory ledger?"
+    answer: "An inventory ledger is an append-only list of signed stock movements, where a positive quantity is a receipt into stock and a negative quantity is an issue out of it. The true on-hand for any part is the sum of all its ledger entries, nothing else. The ledger is never edited or deleted; a mistake is corrected by posting an opposite reversal entry, so the full history of what happened and when it was undone survives forever."
+  - question: "How is on-hand different from the inventory ledger?"
+    answer: "On-hand is a number; the ledger is the record that produces it. The authoritative on-hand equals the sum of every ledger entry for a part. Any on-hand figure shown on a grid is a cached copy of that sum, recomputed each time a movement posts. If the cached number ever drifts from the ledger sum, an anomaly check flags it, and the ledger, not the cache, is treated as correct."
+  - question: "Why can't you just delete a wrong inventory entry?"
+    answer: "Because deleting destroys the audit trail and breaks any downstream figure that trusted the old number. An inventory ledger is append-only for the same reason a bank statement is: the record must show every movement that ever occurred. To correct a mistake you post a reversal, an equal and opposite entry, which nets the error to zero while leaving both the original and the correction visible for any future audit."
+qaQuestions:
+  - question: "My on-hand grid shows 50 but the transaction history sums to 48. Which do I trust and how do I fix it?"
+    answer: "Trust the ledger sum of 48; the grid figure is a cache and it has drifted. This is exactly the condition an inventory integrity check watches for, and the fix is not to overwrite the grid number, which would only hide the discrepancy. Post an adjustment entry for the difference, minus two, with a clear reason such as a cycle-count correction and a date. That appends a signed movement that brings the cache and the ledger sum back into agreement without touching any historical entry, and the audit trail now records that the correction was made deliberately."
+  - question: "We rescheduled the same job three times. Won't the ledger fill with duplicate stock issues?"
+    answer: "No, because each reschedule reverses the prior consume issue before it posts a new one, so at any moment there is at most one live issue for that job. If a job consumed 50 units from stock and you reschedule, the engine first appends a plus-50 reversal that restores the balance, then reads the restored on-hand and posts a fresh minus-50 issue. The ledger grows with every cycle, which is correct, but the net effect on the balance is stable and every step is explained by a row you can read."
+---
+
+**An inventory ledger is the append-only, signed record of every stock movement for a part, and the sum of its entries is the only authoritative on-hand figure.** A positive quantity is a receipt into stock, a negative quantity is an issue out of it, and nothing is ever edited or deleted. When a movement is wrong, you correct it with an opposite reversal entry, not by erasing the original. That single design choice is what lets an inventory ledger stay trustworthy through years of reschedules, corrections, and audits.
+
+This entry defines the concept and shows how it behaves inside [EDGEBIC by User Solutions](/edgebic). For the broader index of planning terms, see the [manufacturing glossary](/blog/manufacturing-glossary), and for a closely related figure, see [projected available balance](/blog/what-is-projected-available-balance).
+
+## How it works
+
+Think of an inventory ledger the way you think of a bank statement. One line reads "July 4, Salary In, +3,000, Balance 5,200." The next reads "July 5, Rent Out, -1,800, Balance 3,400." You never scribble over an old line to fix a mistake. You add a correcting line. The running balance after each entry is carried forward, and the sum of every line is your true balance.
+
+An inventory ledger works identically. Each entry carries a signed quantity, a transaction type (receipt, issue, adjustment, opening balance, or a reversal of one of those), an effective date for planning, a unit cost captured at post time, and the running balance after that movement. Entries also carry provenance: which manufacturing order, schedule row, or material step drove the movement, and what the demand source was.
+
+Two movement directions matter most. A receipt (positive) posts when a build-to-stock order completes and puts finished goods on the shelf, marked with the comment "Build to Inventory." An issue (negative) posts when a demand is satisfied from existing stock rather than by building, marked "Schedule Transaction." Both directions flow through one transactional path that reads the current sum, appends the entry, recomputes the cached on-hand, and only then broadcasts the change to the rest of the application.
+
+The append-only rule is not a preference; it is the guarantee. Because no row is ever mutated, the sum is reproducible, the past is immutable, and any figure that trusts on-hand can trust it completely.
+
+## A concrete example
+
+A shop starts with zero Widget A on hand. A make-to-stock order for 200 units completes, and the ledger gets its first entry:
+
+| Entry | Quantity | Type | Comment | Balance |
+|---|---|---|---|---|
+| 1 | +200 | Receipt | Build to Inventory | 200 |
+
+A customer order for 80 units arrives. Because 200 are already on the shelf, the scheduling engine satisfies it from stock rather than building. At the persist step it posts an issue:
+
+| Entry | Quantity | Type | Comment | Balance |
+|---|---|---|---|---|
+| 2 | -80 | Issue | Schedule Transaction | 120 |
+
+On-hand is now 120, and it is 120 because 200 minus 80 equals 120, a fact you can verify by reading two rows. If that customer order is later cancelled, the ledger does not lose entry 2. It gains entry 3, a +80 reversal that restores the balance to 200 and marks the original as reversed. Both the issue and its reversal survive, so the record shows exactly what was committed and exactly when it was undone.
+
+## How EDGEBIC uses it
+
+In EDGEBIC, the inventory ledger is the single source of truth for stock, and every other inventory figure derives from it. The **Transaction History** view for a part displays the ledger directly, and the balance it shows is the same sum the scheduling engine nets against when it decides whether to build or consume from stock. Manual corrections go through the **Adjustments** screen, which appends a signed adjustment rather than overwriting a number.
+
+The ledger also underpins reschedule safety. Every time a job is rescheduled, EDGEBIC reverses the job's prior stock issue before posting a new one, so repeated rescheduling can never leave a phantom balance. When an order is deleted or reopened, all of its pegged entries are reversed, and the entries themselves survive with their order link cleared, preserving the audit trail even after the order row is gone. Anomaly checks watch for the two failure modes that matter: a cached on-hand that has drifted from the ledger sum, and a physical balance that has gone negative because more was issued than was ever received.
+
+To see the receipt side of the ledger in a full walkthrough, read the [EDGEBIC inventory ledger explained](/blog/edgebic-inventory-ledger-explained) mechanism post, which traces a build-to-stock cycle end to end. To understand how those ledger balances project forward into a planning calendar, continue with [projected available balance](/blog/what-is-projected-available-balance) and [consume-from-stock netting](/blog/what-is-consume-from-stock-netting).

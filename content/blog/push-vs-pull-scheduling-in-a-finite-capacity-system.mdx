@@ -1,0 +1,114 @@
+---
+title: "Push vs Pull Scheduling in a Finite Capacity System"
+description: "Push vs pull scheduling in a finite capacity system: forward start-as-soon-as-possible against backward JIT right-alignment, the trade-off, and worked dates."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - push vs pull scheduling
+  - forward vs backward scheduling
+  - just in time scheduling
+  - finite capacity scheduling direction
+  - backward scheduling fallback
+  - work in process reduction
+targetPhrase: "push vs pull scheduling"
+qaQuestions:
+  - question: "We build to firm due dates and hate holding finished goods. Should every job be backward scheduled?"
+    answer: "Backward scheduling fits your inventory goal, but set it as the site default rather than forcing it job by job, and expect the forward fallback to fire on tight orders. A backward job right-aligns to the due date so work finishes just in time, which minimizes finished goods and work in process. The cost is zero downstream slack: any disruption immediately threatens the promise. For rush orders where the due date is close, the engine will detect the JIT plan does not fit and forward-schedule that order from today instead, so you never get a silent late plan."
+  - question: "My backward job scheduled forward from today instead of right-aligning to the due date. Why?"
+    answer: "The most common reasons are that the due date is too close for the work to fit, or the job already has actuals. If the total work plus handoffs needs more working hours than exist between today and the due date, the backward pass fails its feasibility check, rolls back atomically, and forward-schedules the whole order from the floor. Once any step has a logged actual start, the job also always goes forward from where it is, because starting as late as possible is meaningless for a job that has already started."
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between push and pull scheduling?"
+    answer: "Push scheduling, also called forward scheduling, starts each job as early as possible and lets slack accumulate before the due date. Pull scheduling, also called backward or just-in-time scheduling, works back from the due date and right-aligns the whole order so it finishes just in time, putting the slack in front. Push minimizes the risk of being late because there is runway before the due date; pull minimizes inventory and work in process because material is not consumed until it is needed."
+  - question: "Which is safer, forward or backward scheduling?"
+    answer: "Forward scheduling is safer against disruption because it front-loads the work and leaves a cushion before the due date, so a machine breakdown still has runway. Backward scheduling is riskier because it deliberately removes that cushion to cut inventory: any delay immediately threatens the promise. A good finite capacity engine mitigates the risk by falling back to forward automatically whenever a just-in-time plan cannot fit, so backward never produces a plan worse than forward would have."
+  - question: "Does backward scheduling change how the engine allocates capacity?"
+    answer: "No, backward scheduling uses the same allocator, shifts, holidays, downtime, and instance rules as forward scheduling; only the search direction changes. Forward searches for hours starting from an earliest start and moving later. Backward searches from a deadline moving earlier, right-aligning each step so its successor is fed just in time. Because both directions share one allocator, every capacity constraint is enforced identically, and the same job scheduled either way respects the same finite capacity."
+---
+
+**Push scheduling starts every job as early as possible and banks slack before the due date, while pull scheduling works back from the due date and finishes just in time, putting the slack in front.** In finite capacity terms these are forward and backward scheduling. Push protects you against disruption with runway; pull protects your cash with less inventory and work in process. EDGEBIC by User Solutions runs the same finite capacity engine in both directions and lets you choose per order, with an automatic fall back to forward whenever a just-in-time plan cannot honor the due date.
+
+## The two directions in one picture
+
+```
+PUSH (forward, start as soon as possible):
+  Start ->[S1][S2][S3] . . . . . . . . . . . . |Due
+          work front-loaded; slack at the end
+
+PULL (backward, just in time):
+  Start |. . . . . . . . . . . . [S1][S2][S3]-> Due
+        slack in front; work right-aligned to the due date
+```
+
+Forward is the default. It starts each operation at its earliest feasible slot and reports when the job finishes. Any cushion between that finish and the due date is your protection: a breakdown or a late material still has runway. Backward inverts the posture. It places the entire order latest-feasible, so the last step ends at or just before the due date, and the cushion sits in front as deliberate idle time.
+
+The distinction is the classic [push against pull](/blog/glossary/pull-system) system split from lean manufacturing, applied at the level of a single schedule.
+
+## What each posture buys and costs
+
+| | Push (forward) | Pull (backward) |
+|---|---|---|
+| Start | As soon as possible | As late as feasible |
+| Slack sits | After the work, before the due date | In front, before the work |
+| Optimizes for | On-time protection | Low inventory and work in process |
+| Cost | Early material spend, finished goods in stock | Zero downstream slack; disruption threatens the promise |
+| Fits | Make-to-order, uncertain shops | Just-in-time, firm due dates |
+
+Forward minimizes the risk of missing a date. Backward minimizes the age of work in process and the finished goods sitting in stock, at the price of removing the buffer that forward gives you. Neither is universally right. A shop with volatile demand and unreliable suppliers leans forward; a mature just-in-time operation with firm dates leans backward. The other lever on work in process is which jobs are authorized to reach the floor at all, which is the [released versus unreleased distinction](/blog/released-vs-unreleased-jobs-in-scheduling).
+
+## One engine, two search directions
+
+The important design point is that backward is not a separate scheduler. Every placement in both directions goes through the same allocator, so shifts, holidays, downtime, utilization percentage, instance selection, and one-per-day rules all apply identically. Forward searches for hours starting from an earliest start and moving later. Backward searches from a deadline moving earlier. That is the only difference.
+
+Because deadlines in a backward pass come from each step's successors' actually placed starts, capacity-forced moves ripple correctly upstream, including through fan-in joins where two branches feed one assembly. And backward never throws where forward would have succeeded: if the just-in-time plan cannot fit, the whole order rolls back atomically and forward-schedules from the floor. You never get a silent late plan.
+
+## A worked example
+
+Forty valve bodies, a three-step routing, marked as a backward job. The floor, the earliest any step may start, is Monday July 6. The due date is Friday July 17, which the engine reads as end of that day. The product carries a 2-day delivery tail for outgoing inspection and freight.
+
+The engine subtracts the 2-day tail so work must finish by Thursday July 16, then places the steps in reverse:
+
+```
+S30 Inspect (4 h): Wed Jul 15, 12:00 to 16:00
+S20 Deburr (8 h):  Tue Jul 14, 08:00 to 16:00
+S10 Machine (22 h): Thu Jul 9 10:00 through Mon Jul 13 16:00
+```
+
+The last work-center operation ends Wednesday afternoon, the 2-day tail lands the delivery-ready date on Friday July 17, and three days of slack, July 6 through 8, sit in front of the job instead of after it. The job shows zero days late on every screen.
+
+Now shorten the due date to Thursday July 9. The 34 hours of work plus handoffs need more working time than exists between Monday July 6 and the deadline. The backward pass fails on the machining step, rolls back the two placed steps atomically, and forward-schedules the whole order from Monday July 6. The engine records that the just-in-time plan did not fit and shows the forward window instead, so you see the honest result rather than an impossible one.
+
+## Direction precedence: what wins when instructions collide
+
+A job can carry more than one scheduling instruction at once. The engine resolves them in a fixed order:
+
+1. **A bottleneck anchor** wins over everything, because a pinned target date is a harder constraint than the due date.
+2. **Actuals** win over a backward request: once a step has started, remaining work goes forward from where it is.
+3. **Planner-dragged pins** come next.
+4. **Backward** applies only to a new job with a real due date, no anchor, no actuals, no pins.
+5. **Forward** is the default for everything else.
+
+This is why setting a target start date silently converts a backward job into an anchored one, and why a job that already has actuals never re-right-aligns to its due date. For the anchor case specifically, see [anchor scheduling vs plain backward scheduling](/blog/anchor-scheduling-vs-plain-backward-scheduling).
+
+## Choosing a direction
+
+Set backward as the site default only if your operation genuinely runs just in time against firm dates and you value low inventory over disruption buffer. Otherwise leave the default forward and switch individual orders to backward when a specific customer wants delivery timed exactly. The trade-off is real and it is yours to make; the engine just enforces whichever posture you pick, respecting the same [finite capacity](/blog/finite-vs-infinite-capacity-scheduling) either way.
+
+For the general treatment of the two directions, see [forward vs backward scheduling](/blog/forward-vs-backward-scheduling). For how the engine decides sequence within a direction, see [how a scheduler decides which job runs first](/blog/how-a-scheduler-decides-which-job-runs-first), and the full pipeline lives in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). Try both directions on your own routings in [EDGEBIC](/edgebic).
+
+<Accordion title="What is the difference between push and pull scheduling?">
+Push scheduling, also called forward scheduling, starts each job as early as possible and lets slack accumulate before the due date. Pull scheduling, also called backward or just-in-time scheduling, works back from the due date and right-aligns the whole order so it finishes just in time, putting the slack in front. Push minimizes the risk of being late because there is runway before the due date; pull minimizes inventory and work in process because material is not consumed until it is needed.
+</Accordion>
+
+<Accordion title="Which is safer, forward or backward scheduling?">
+Forward scheduling is safer against disruption because it front-loads the work and leaves a cushion before the due date, so a machine breakdown still has runway. Backward scheduling is riskier because it deliberately removes that cushion to cut inventory: any delay immediately threatens the promise. A good finite capacity engine mitigates the risk by falling back to forward automatically whenever a just-in-time plan cannot fit, so backward never produces a plan worse than forward would have.
+</Accordion>
+
+<Accordion title="Does backward scheduling change how the engine allocates capacity?">
+No, backward scheduling uses the same allocator, shifts, holidays, downtime, and instance rules as forward scheduling; only the search direction changes. Forward searches for hours starting from an earliest start and moving later. Backward searches from a deadline moving earlier, right-aligning each step so its successor is fed just in time. Because both directions share one allocator, every capacity constraint is enforced identically, and the same job scheduled either way respects the same finite capacity.
+</Accordion>

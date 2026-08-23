@@ -1,0 +1,153 @@
+---
+title: "7 Routing Dependency Mistakes and the Schedules They Break"
+description: "Routing dependency mistakes that quietly break a schedule: missing links, one-legged joins, circular chains, repeated machines, and double-counted transit."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - routing dependency mistakes
+  - operations scheduled out of order
+  - circular dependency routing
+  - missing next in sequence link
+  - join waits for one leg
+  - routing snapshot live job
+targetPhrase: "routing dependency mistakes"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "What is the most common routing dependency mistake?"
+    answer: "A missing next-in-sequence link. When an upstream operation names no successor, the downstream step finds no predecessor finish to read and falls back to the job's own start date, so it schedules far earlier than it should. The plan looks tighter than reality and the shop floor stalls waiting for parts that were never scheduled to exist yet."
+  - question: "Why does my assembly step start before both feeding operations are done?"
+    answer: "Because only one leg is linked to it. A join is formed by every feeding operation naming the same successor, and a leg whose link is missing or points elsewhere never teaches the assembly to wait for it. Open both feeding steps and confirm each one names the assembly. The join then waits for whichever leg finishes last, which is the correct behaviour even when it looks like a delay."
+  - question: "How do I tell if a routing has a circular dependency?"
+    answer: "Look for a group of tail operations that appear appended rather than sequenced, with start times that ignore the predecessors you expected. Operations caught in a loop never become free of predecessors, so the scheduler places everything it can order properly and appends the rest in entry order. Nothing crashes and no step is dropped, which is why the symptom is subtle. Trace the links for an A to B to A loop."
+  - question: "Why did my routing edit not affect a job that is already running?"
+    answer: "Because each job freezes the routing it was first scheduled with, and later edits to the master routing do not rewrite a job already on the floor. That protection is deliberate: a running job's plan should not change because somebody edited a template. To bring a live job onto the new routing, refresh that job onto the live version deliberately."
+  - question: "Should I fix sequencing problems by renumbering the steps?"
+    answer: "No. Sequence numbers are a display hint and do not drive the plan: the scheduler follows the links. Renumbering makes the grid look right while the underlying network stays wrong, which is the worst of both outcomes. Fix the links, then keep the numbers tidy for readability."
+qaQuestions:
+  - question: "Our routing visits the same inspection machine twice and the second visit keeps scheduling too early. What is happening?"
+    answer: "The two visits are not distinct enough for the link to resolve correctly. If the routing is linked by machine name, both visits answer to the same name and the second one can read the first one's finish time, which is earlier than the assembly it should actually be waiting for. Two fixes and you want both: give each visit a distinct display identity such as Inspect 1 and Inspect 2, and link the steps by their identity rather than by machine name so the resolution can never fall back to a name at all."
+  - question: "I set a material lead time of ten days and the operation still scheduled for tomorrow. Is the lead time being ignored?"
+    answer: "No, but it is not doing the job you expected. A material step's lead time draws its bar backward from the point of need, which shows the buyer when the purchase order had to be placed. It is a planning signal on the Gantt rather than a hard gate that holds the machine. If the material genuinely will not arrive until a date, the reliable lever today is the job's own start date: set the floor to the arrival date so no operation can be placed before it."
+---
+
+**Most sequencing problems are not scheduling problems: they are link problems, and the schedule is faithfully reporting a routing that says something different from what you meant.** The scheduler follows the next-in-sequence links, so a missing link, a one-legged join, or a loop produces a plan that is internally consistent and practically wrong. These are the seven routing dependency mistakes worth checking before you blame the engine, drawn from the documented failure patterns in EDGEBIC by User Solutions.
+
+Each entry gives the symptom you will see on the grid, the cause, and the fix. For how the links are meant to be set, see [how to sequence operations with dependencies](/blog/how-to-sequence-operations-with-dependencies-in-edgebic); for the mechanism they feed, see [how EDGEBIC orders operations](/blog/how-edgebic-orders-operations-dependency-graphs).
+
+## Mistake 1: The Missing Link
+
+**Symptom.** A step in the middle of the routing starts at the job's start date instead of after its predecessor. Everything downstream is optimistic by days.
+
+**Cause.** The upstream operation names no successor, so there is no finish time recorded against the downstream step. The rule is that an operation starts at the latest finish among its predecessors and never before the job start. With no predecessors found, the job start is what remains.
+
+**Fix.** Open the upstream step and set its next-in-sequence link. Then confirm the whole chain terminates at the end item: a step whose link is missing or points at a deleted step is exactly this failure. The Designer view makes it obvious, because the missing connector is visible where a missing grid value is not.
+
+## Mistake 2: The One-Legged Join
+
+**Symptom.** An assembly starts as soon as the fast feeding path is finished, and the shop floor stalls waiting for the other half.
+
+**Cause.** Only one leg names the assembly step. A join is created by every leg pointing at the same successor, and the later finish then wins. A leg that points elsewhere, or nowhere, never contributes its finish time and is never waited for.
+
+**Fix.** Check every leg, not just the one that looks late. If prep A takes 40 hours and prep B takes 60, both must name the assembly so the assembly waits for the 60 hour path. The idle window on the fast leg is correct: it is unbalanced routing made visible, not a scheduling error.
+
+## Mistake 3: The Circular Chain
+
+**Symptom.** A group of operations at the tail of the job appears appended rather than sequenced, with start times that ignore the predecessors you expected.
+
+**Cause.** A loop: operation A feeds B and B feeds A, often created by a copy-paste edit or by relinking a step without clearing its old link. Operations in a loop never become free of predecessors, so they cannot be ordered.
+
+**Fix.** The scheduler will not crash and will not drop steps: it orders everything it can and appends the rest in entry order, which is why the symptom is quiet rather than loud. Trace the links from the appended group backward until you find the step that points at something upstream of itself, and repoint it.
+
+## Mistake 4: The Same Machine, Twice, Undistinguished
+
+**Symptom.** A routing that inspects before and after assembly runs the second inspection too early, as if it were waiting for the first one.
+
+**Cause.** Both visits answer to the same work center name. If the routing resolves predecessors by name, the second visit can read the first visit's finish time, which is much earlier than the assembly it should be waiting for. The same failure appears when a parent routing and a sub-assembly share machine names.
+
+**Fix.** Two moves, and you want both. Give each visit a distinct display identity such as Inspect 1 and Inspect 2. Then link the steps by their identity rather than by machine name, so the resolution never falls back to a name at all. Steps linked by identity are immune to name collisions however many times a routing reuses a machine.
+
+## Mistake 5: Fixing Sequence by Renumbering
+
+**Symptom.** The step numbers now read 10, 20, 30 in a sensible order, and the plan is unchanged.
+
+**Cause.** Sequence numbers do not drive the plan. They influence only the tie-break between operations that are simultaneously ready to start. The links drive everything else.
+
+**Fix.** Fix the links. Keep the numbers tidy afterwards for readability, because a grid whose numbers and links disagree is genuinely hard for the next planner to read, but never expect renumbering to change a schedule.
+
+## Mistake 6: Doubling the Wait Between Operations
+
+**Symptom.** A gap between two operations that is roughly twice as long as the delay you configured.
+
+**Cause.** Two handoff mechanisms configured for the same physical wait. Queue time, overlap and transit days compose: they are applied in sequence after the operation's work finishes, and each contributes. The specific trap is a material step, which absorbs its transit internally, carrying an additional queue time on top.
+
+**Fix.** Pick one mechanism per physical wait. Queue time models the buffer before the next operation picks the part up. Transit days model physical movement between operations, cells or plants. Configuring both for the same handoff double counts it, and the downstream plan drifts by exactly the duplicate. The related case, gaps that are meant to be there, is covered in [idle gaps in the schedule](/blog/schedule-has-idle-gaps-edgebic).
+
+## Mistake 7: Expecting a Material Lead Time to Hold the Machine
+
+**Symptom.** A ten day material lead time is set and the dependent operation still schedules for tomorrow.
+
+**Cause.** A material step's lead time draws its bar backward from the point of need, which makes the ordering deadline visible on the Gantt. It is a planning signal rather than a hard supply gate: the material step consumes no machine capacity, and its lead time does not by itself refuse to let the operation start.
+
+**Fix.** If the material genuinely will not arrive until a date, set the job's own start date to that date. The job start is a floor that no operation can be placed before, so it does gate the work. Keep the material lead time accurate as well, because it is what tells the buyer when the order had to be placed.
+
+## The Bonus Mistake: Editing the Template and Expecting the Job to Follow
+
+**Symptom.** You correct a routing, reschedule the affected job, and the old sequence comes back.
+
+**Cause.** Each job freezes the routing it was first scheduled with. A later edit to the master routing does not rewrite a job already running on the floor, which is deliberate protection: a running job's plan should not change because somebody edited a template.
+
+**Fix.** Refresh that job onto the live routing deliberately, which is covered in [editing a live job's routing](/blog/editing-a-live-jobs-routing-in-edgebic). Until you do, the master edit affects new jobs only.
+
+## A Worked Symptom: Reading Two Days of Missing Wait
+
+A planner reports that welding starts two days before the parts can possibly reach it. Here is the reasoning, in order:
+
+1. **Does welding start at the job's start date?** If yes, it found no predecessor at all: the upstream link is missing (mistake 1). If no, it did read a predecessor, so go on.
+2. **Which predecessor did it read?** If the routing visits one machine twice, welding may have read the earlier visit's finish (mistake 4).
+3. **Does the upstream step point at welding, or at something downstream of it?** A link that skips a step is the bypass created by an incomplete insert.
+4. **Was a handoff configured on the wrong step?** Queue time set on welding delays what follows welding, not welding itself.
+
+Four checks, all in the routing rather than the schedule. The plan is correct given the links; the links are what disagree with the shop floor.
+
+## The Two-Minute Audit
+
+| Check | Pass condition |
+|---|---|
+| Terminal link | The last operation points at the end item |
+| Reachability | Every step sits on a chain that reaches the end item |
+| Joins | Every leg feeding a join names the join step |
+| Branches | The shared predecessor lists all of its successors |
+| Repeated machines | Each visit carries a distinct display identity |
+| Handoffs | One mechanism per physical wait, never queue plus transit for the same move |
+| Loops | No step points at anything upstream of itself |
+
+Run that audit in the Designer rather than the grid. The diagram shows a missing connector, an unreachable node and a loop at a glance, and it refuses to save a chart where a step cannot reach the end product. Reading the validator's list is faster than debugging a schedule a week later.
+
+For live triage on an existing plan, [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic) is the diagnostic path, and [forward scheduling explained](/blog/edgebic-forward-scheduling-explained) covers the rules these links feed. Data accuracy in routings is one of the fundamentals that bodies such as [ASCM](https://www.ascm.org) treat as a prerequisite for any planning system to be trusted, and a routing audit is the cheapest version of it.
+
+Bring one routing you suspect and we will audit it live. [Contact US for a working session](/contact-us), or start at the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="What is the most common routing dependency mistake?">
+A missing next-in-sequence link. When an upstream operation names no successor, the downstream step finds no predecessor finish to read and falls back to the job's own start date, so it schedules far earlier than it should. The plan looks tighter than reality and the shop floor stalls waiting for parts that were never scheduled to exist yet.
+</Accordion>
+
+<Accordion title="Why does my assembly step start before both feeding operations are done?">
+Because only one leg is linked to it. A join is formed by every feeding operation naming the same successor, and a leg whose link is missing or points elsewhere never teaches the assembly to wait for it. Open both feeding steps and confirm each one names the assembly. The join then waits for whichever leg finishes last, which is the correct behaviour even when it looks like a delay.
+</Accordion>
+
+<Accordion title="How do I tell if a routing has a circular dependency?">
+Look for a group of tail operations that appear appended rather than sequenced, with start times that ignore the predecessors you expected. Operations caught in a loop never become free of predecessors, so the scheduler places everything it can order properly and appends the rest in entry order. Nothing crashes and no step is dropped, which is why the symptom is subtle. Trace the links for an A to B to A loop.
+</Accordion>
+
+<Accordion title="Why did my routing edit not affect a job that is already running?">
+Because each job freezes the routing it was first scheduled with, and later edits to the master routing do not rewrite a job already on the floor. That protection is deliberate: a running job's plan should not change because somebody edited a template. To bring a live job onto the new routing, refresh that job onto the live version deliberately.
+</Accordion>
+
+<Accordion title="Should I fix sequencing problems by renumbering the steps?">
+No. Sequence numbers are a display hint and do not drive the plan: the scheduler follows the links. Renumbering makes the grid look right while the underlying network stays wrong, which is the worst of both outcomes. Fix the links, then keep the numbers tidy for readability.
+</Accordion>

@@ -46,6 +46,14 @@ export const MENU_LINKS = [
     title: 'Software',
     items: [
       {
+        title: 'EDGEBIC',
+        description:
+          'Next-generation finite capacity scheduling: the successor to RMDB + EDGEBI',
+        icon: <PackageIcon className="size-5 shrink-0" />,
+        href: Routes.Edgebic,
+        external: false
+      },
+      {
         title: 'Manufacturing Software',
         description: 'Integrated platform for scheduling, MRP, inventory, BOMs, and analytics',
         icon: <PackageIcon className="size-5 shrink-0" />,
@@ -327,6 +335,17 @@ export const FOOTER_LINKS: Array<{
   {
     title: 'Products',
     links: [
+      { name: 'EDGEBIC (New)', href: Routes.Edgebic, external: false },
+      {
+        name: 'EDGEBIC ERP Integration',
+        href: Routes.EdgebicErpIntegration,
+        external: false
+      },
+      {
+        name: 'Upgrade to EDGEBIC',
+        href: Routes.RmdbToEdgebic,
+        external: false
+      },
       {
         name: 'Resource Manager for Excel (RMX)',
         href: '/resource-manager-for-excel-2',
@@ -464,6 +483,8 @@ export const FOOTER_LINKS: Array<{
     title: 'Resources',
     links: [
       { name: 'Blog', href: '/blogs', external: false },
+      { name: 'Documentation', href: '/docs', external: false },
+      { name: 'Developers & API', href: '/developers', external: false },
       { name: 'Excel Templates', href: '/excel-templates', external: false },
       { name: 'Compare Products', href: '/compare-products', external: false },
       { name: 'Product Downloads', href: '/product-downloads', external: false },

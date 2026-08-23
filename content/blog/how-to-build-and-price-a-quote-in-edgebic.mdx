@@ -1,0 +1,175 @@
+---
+title: "How to Create a Manufacturing Quote in EDGEBIC, Field by Field"
+description: "Create a manufacturing quote step by step in EDGEBIC: fill the dialog, run the capacity simulation, read cost and margin, and price with markup or an override."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - create manufacturing quote
+  - quote dialog fields
+  - markup pricing manufacturing
+  - manual cost override
+  - quote margin percent
+  - simulate quote capacity
+targetPhrase: "create manufacturing quote"
+wordCount: 1710
+readingTime: 9
+faqQuestions:
+  - question: "What do I need before I can create a manufacturing quote?"
+    answer: "Four things. The quoted product needs a routing, because the simulation schedules that routing and a product without one cannot be simulated. Work centers need hourly rates, because a rate of zero silently prices that step at nothing. Shifts and calendars need to be configured, because the simulation uses real shift hours and holidays. A customer record is recommended, since linking one carries the customer through to the order and the reports."
+  - question: "How is the unit price calculated if I leave it at zero?"
+    answer: "After a successful simulation, the price is derived as effective cost times one plus the markup percent, divided by the quantity, rounded to two decimals. The default markup is 25%. This auto-fill happens only when the unit price is zero, so a price you typed yourself is never overwritten by a later simulation. To re-derive after costs change, use the apply markup action or zero the price and simulate again."
+  - question: "What does a manual cost override change?"
+    answer: "It replaces the rolled-up cost as the pricing basis, so profit, margin, and markup-derived price all compute from your number. The calculated labor and material split is still stored underneath for later variance reporting, which is why an override is better than quietly inflating the unit price. Clearing the field returns the quote to the calculated cost."
+  - question: "Can I simulate several quotes at once?"
+    answer: "Yes. Tick the select checkbox on the quotes you want and run the simulation; with nothing ticked, it runs on every not-yet-simulated quote in the current filter. Each quote gets its own simulation against current capacity, and the grid's date, hours, cost, profit, and margin columns fill in as they complete."
+  - question: "What happens to a quote when it is converted to an order?"
+    answer: "One manufacturing order is created, named after the quote number, carrying the product and quantity, the target date as the due date, the simulated window, the scheduling direction, the estimated cost with its labor and material split, the markup and unit price, and the customer and sales order links. The quote's status locks at Converted and cannot produce a second order. The new order is placed on the calendar at the next scheduling run."
+qaQuestions:
+  - question: "Walk me through the actual numbers on a 200 piece quote so I know what to expect on screen."
+    answer: "The documented Widget-A example runs a saw at 0.5 hours setup plus 0.10 per unit, a mill at 1.0 hour setup plus 0.50 per unit, and assembly at 0.15 per unit, with rates of $40, $60, and $35 per hour and a unit cost of $6.50. At 200 units the simulation allocates 20.5, 101.0, and 30.0 hours, giving $820, $6,060, and $1,050 of labor plus $1,300 of material: 151.5 hours and $9,230 total cost. Around existing shop load the window comes back July 20 to August 14, a 25 day lead time. At $85 per unit the total is $17,000, profit $7,770, and margin 45.7%, which the grid paints green."
+  - question: "Our estimator typed a price before simulating and now the markup button seems broken. What is going on?"
+    answer: "Nothing is broken. Automatic markup pricing fires only when the unit price is zero, precisely so that a price a human decided is never overwritten by a later simulation. In the same Widget-A example, leaving the price at zero would have proposed $57.69 per unit from the 25% markup, but the typed $85 stands. When costs change and you do want to re-derive, either use the apply markup action explicitly or zero the price and simulate again. The protection is deliberate; the override is one click."
+---
+
+**To create a manufacturing quote** in EDGEBIC by User Solutions you fill one dialog, click simulate, and read six columns. This guide covers each of those in order, with the documented worked numbers so you know what a healthy quote looks like on screen.
+
+For why the simulation works the way it does, read [quote simulation explained](/blog/edgebic-quote-simulation-explained). For the strategy around quoting against real load, see the [quoting pillar](/blog/edgebic-quoting-guide). Everything here describes documented behavior of [EDGEBIC](/edgebic).
+
+## Before You Start: Four Prerequisites
+
+| Prerequisite | Why it matters |
+|---|---|
+| The product has a routing | The simulation schedules that routing; without one the quote cannot be simulated at all |
+| Work centers have hourly rates | Labor cost is hours times rate, and a rate of zero prices that step at nothing |
+| Shifts and calendars are configured | The simulation uses real shift hours and holidays, so bad calendars produce bad promise dates |
+| The customer exists | A free-text reference works, but a linked customer record carries through to the order and reports |
+
+The rate one deserves emphasis. A missing rate does not raise an error. It quietly contributes zero cost, and the quote comes back with a margin that looks excellent. [Work centers in EDGEBIC](/blog/edgebic-work-centers-explained) covers where rates live.
+
+## Step 1: Fill the Quote Dialog
+
+Open the quote tab and create a new quote. The configuration dialog groups fields into basic information, pricing and quantities, and important dates.
+
+| Field | Required | What it does |
+|---|---|---|
+| Product (BOR) | Yes | The product being quoted; it must have a routing |
+| Customer Reference | Yes | The customer's own reference or purchase order number |
+| Customer Id | No | Links to a customer record; a plus button adds a new one without leaving the dialog |
+| Contact Person / Email | Yes | Who receives the quote |
+| Quantity | Yes | Units quoted |
+| Unit Price | No | Leave at zero to let markup derive it after the first simulation |
+| Markup % | No | Percentage applied to internal cost to derive price; default 25% |
+| Manual Cost Override | No | Replaces the rolled-up cost as the pricing basis; shows as use calculated when blank |
+| Quote Date | Yes | The date the quote was raised |
+| Expiry Date | Yes | Validity window; must be after the quote date, defaults to 30 days out |
+| Target Start Date | Yes | The date the simulation anchors on; its meaning depends on direction |
+| Scheduling Direction | No | Forward or Backward; defaults from the schedule settings |
+| Status | Yes | Lifecycle status, starting at Draft |
+| Sales Order | No | Optional link, filtered by the selected customer |
+| Customer / Internal Notes | No | Customer notes print on the quote; internal notes never leave the building |
+
+Save, and the quote appears in the grid. Leave the quote number blank for an auto-generated one, or type your own when you need to match an external reference such as an RFQ number.
+
+Before you simulate, the dialog's cost analysis panel already shows a routing-based estimate: hours and cost calculated from the routing math, including sub-assemblies. Treat that as a sanity check. It knows your routing but not your shop load.
+
+## Step 2: Choose the Direction Deliberately
+
+The target start date field means two different things, and picking the wrong one is the most common source of a misread quote.
+
+| Direction | What the target date means | The question it answers |
+|---|---|---|
+| Forward (default) | The date the simulation starts | If we start then, when do we finish? |
+| Backward | The date the job must finish by | Can we deliver by then, and how late can we start? |
+
+To answer a customer asking for delivery by September 1, set direction to Backward and the target date to September 1. The engine right-aligns the plan and reports the latest safe start. If the returned end date lands *after* the target, the backward plan did not fit and the engine fell back to a forward run: that is your no, arriving with the real date attached. [Backward scheduling in EDGEBIC](/blog/edgebic-backward-scheduling-explained) has the full rules.
+
+## Step 3: Simulate
+
+Tick the select checkbox on the quotes you want, then run the simulation. With nothing ticked, it runs on every not-yet-simulated quote in the current filter, which is the efficient way to clear a morning's enquiries.
+
+The grid's start date, end date, estimated hours, estimated cost, profit, and margin columns fill in as each quote completes. Nothing is written to the production schedule: the temporary job the engine used is deleted, even on failure.
+
+## Step 4: Read the Results
+
+Six columns carry the answer.
+
+| Column | What it tells you |
+|---|---|
+| Start Date / End Date | The simulated window against real current capacity |
+| Est. Hours | Total allocated work hours across every routing step, including sub-assemblies |
+| Est. Cost | Labor plus material |
+| Profit | Quoted total price minus effective total cost |
+| Margin % | Profit divided by total price, green above 20%, amber above 10%, red when negative |
+| Hours (quoted / actual) | After conversion, quoted hours against hours actually burned |
+
+For the breakdown, open the details window on the row. Its resource allocations tab shows which work center received which hours on which days. Its summary tab carries the production schedule block and the cost and profit analysis block in one view.
+
+Estimated hours are work hours, not calendar hours. A job spanning a weekend has a wall-clock span far larger than its work content, and cost always comes from the allocated hours.
+
+## Worked Example: 200 Units of Widget-A
+
+Acme asks for 200 units, delivery wanted by September 1. Today is July 16.
+
+The routing: a saw at 0.5 hours setup plus 0.10 per unit, a mill at 1.0 hour setup plus 0.50 per unit, and assembly at 0.15 per unit. Rates are $40, $60, and $35 per hour. The product's unit cost is $6.50.
+
+Create the quote with quantity 200, unit price 85.00, target start July 20, direction Forward. Simulate.
+
+| Work center | Hours | Rate | Cost |
+|---|---|---|---|
+| Saw-1 | 0.5 + 200 x 0.10 = 20.5 | $40 | $820 |
+| CNC-Mill-1 | 1.0 + 200 x 0.50 = 101.0 | $60 | $6,060 |
+| Assembly-1 | 200 x 0.15 = 30.0 | $35 | $1,050 |
+| Material fallback | | $6.50 x 200 | $1,300 |
+
+Estimated hours 151.50. Labor $7,930 plus material $1,300 gives estimated cost **$9,230**. Around the existing load on the day shift, the window comes back July 20 to August 14, a 25 day lead time.
+
+The margin: total price is $85 x 200 = $17,000, so profit is $7,770 and margin is 45.7%, painted green.
+
+Note what would have happened at a zero unit price: the 25% default markup would have proposed $9,230 x 1.25 / 200 = **$57.69** per unit. The typed $85 stands, because typed prices are never overwritten.
+
+Simulated end August 14 is comfortably before the wanted September 1, so the quote goes out. For a direct check, flip the direction to Backward with the target date at September 1 and read the latest safe start.
+
+## Step 5: Price the Quote
+
+Three routes to a price, in order of preference.
+
+**Markup on calculated cost.** If the unit price was zero at simulation time, it is filled automatically: effective cost times one plus markup, divided by quantity. Adjust the markup percent per quote when the job justifies it.
+
+**Re-derive after a change.** Once you type a price, later simulations leave it alone. When costs move and you want the price to follow, use the apply markup action on the quote, or zero the price and simulate again.
+
+**Manual cost override.** For costs the routing cannot know, such as tooling wear, scrap allowance, or freight, enter the number as an override. Profit and margin then compute from your figure while the calculated labor and material split stays stored for variance reporting later. In the documented rush-order case, a $17,400 simulated cost was overridden to $19,400 and priced at 30% markup for $504.40 per unit.
+
+Prefer the override to a hand-bumped unit price. The override records the reason in a field; a bumped price hides it forever.
+
+## Step 6: Move the Quote Through Its Lifecycle
+
+| Status | Meaning |
+|---|---|
+| Draft | Being prepared; every new quote starts here |
+| Submitted | Sent to the customer |
+| UnderReview | Being reviewed internally or by the customer |
+| Approved | Customer accepted, ready to convert |
+| Rejected | Customer declined |
+| Expired | Past its expiry date |
+| Converted | An order exists; final |
+
+Statuses are informational and you can move between them freely, with one exception: Converted is set by the system and blocks any further conversion.
+
+## Step 7: Convert the Accepted Quote
+
+Convert the row, or tick several and convert in bulk (already-converted rows are skipped). The order appears in the manufacturing order list named after the quote number, and the quote locks at Converted.
+
+What carries over: product and quantity, the target date as the due date, the simulated window, the scheduling direction, the estimated cost with its labor and material split, markup and unit price, and the customer and sales order links. The order is created rather than scheduled; it is placed on the calendar at the next scheduling run.
+
+Conversion is one way and guarded three times over. For repeat business, create a new quote.
+
+## Next Steps
+
+- [How a quote becomes a promise date](/blog/how-edgebic-turns-a-quote-into-a-promise-date) follows the simulation path and conversion in detail.
+- [What-if scenarios](/blog/edgebic-what-if-scenarios-explained) cover the case where the base simulation misses the customer's date.
+- [Quoting mistakes](/blog/quoting-mistakes-edgebic) lists the setups that produce confident wrong numbers.
+- The [EDGEBIC complete guide](/blog/edgebic-complete-guide) maps the rest of the platform.

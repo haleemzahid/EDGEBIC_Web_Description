@@ -1,0 +1,187 @@
+---
+title: "Global Shop to EDGEBIC: The Data Mapping Reference"
+description: "Global Shop data export scheduling field by field: map items, work centers, routings, jobs and hours into EDGEBIC masks, with conversions and upsert rules."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Global Shop data export scheduling
+  - Global Shop field mapping scheduling
+  - Global Shop routing export
+  - import mask field reference
+  - job shop work center export
+  - ERP data mapping scheduling
+targetPhrase: "Global Shop data export scheduling"
+wordCount: 2442
+readingTime: 12
+faqQuestions:
+  - question: "Which columns must a Global Shop export contain before EDGEBIC will import it?"
+    answer: "Each entity type has a short mandatory list and everything else is optional. Products need a product id. Work centers need a work center id. Routings need end product, step name, an operation flag, and hours required. Jobs need product, quantity, and a job date. Actuals need job number, work center id, and the actual date. If a mandatory field is unmapped in the mask, the run aborts before reading a single row."
+  - question: "How do I map routing times quoted in minutes or per lot?"
+    answer: "Use a conversion factor on that mask column. Minutes become hours with a factor of 0.016667, seconds with 0.000278, and a time quoted per 100 pieces becomes per piece with 0.01. The multiplication happens before the value is stored, so the file needs no pre-processing in Excel. Factors are saved with the mask, which makes the conversion permanent, repeatable, and auditable through the per-run log."
+  - question: "How do outside processing steps get mapped?"
+    answer: "As an ordinary operation row on a work center that represents the vendor, with the turnaround expressed as transit days on that routing step. The vendor then appears on the Gantt as its own block with its own dates, so the outside week can be planned around and measured rather than padded into the operation before it. A vendor that consistently runs long becomes a visible number you can change in one place."
+  - question: "Every job in our shop has a different routing. Does that make the import harder?"
+    answer: "No. A routing file is rows of end product, work center, sequence number, and hours per unit, and the import does not care whether two products share a routing or none of them do. What high mix changes is the value of the result rather than the difficulty of the load, because sequencing by hand is exactly what stops working when no two weeks look alike."
+qaQuestions:
+  - question: "We build one-off parts, so most product identifiers are used once. Does that flood the database with dead products?"
+    answer: "It grows the product list, and that is fine, but the practical concern is naming rather than volume. Give one-off work a stable identifier convention (customer code plus drawing number is the usual answer) so the same part quoted again next year matches the existing record and returns Reused rather than creating a near-duplicate. Matching ignores case, so a difference in capitalization is safe, but it does not ignore punctuation or leading zeros, so ACME-1024 and ACME-01024 become two products. Set the convention on the export side once and every future run inherits it without anyone remembering the rule."
+  - question: "Our routings put setup and run together in one number because that is how the estimator quotes. Should we split them before importing?"
+    answer: "Yes, and it is worth the effort on your top parts at least, because setup and run behave differently in a finite capacity plan. Run time scales with quantity while setup does not, so a combined number is right at exactly one quantity and wrong everywhere else, and it typically overstates small jobs badly. It also disables the setup matrix, since sequence-dependent changeover only works when setup is a separate value the engine can vary. The pragmatic path is to split the top parts by volume first, import the rest as they are, and let the schedule show you which combined estimates are producing implausible dates."
+---
+
+**Mapping Global Shop Solutions data into EDGEBIC is a column-mapping exercise rather than a development project: you export items, work centers, routings, open jobs, and optionally reported hours to Excel or CSV, then drag each source column heading onto the matching EDGEBIC field once and save it as a reusable import mask.** This reference lists what maps to what, which columns are mandatory, how unit conversion and blank cells behave, and what every row outcome means when a run finishes.
+
+EDGEBIC by User Solutions integrates with Global Shop through those masks rather than a certified connector, so nothing is installed inside the ERP and nothing enters its upgrade path. If you have not read the end-to-end version, start with the [complete Global Shop integration guide](/blog/edgebic-global-shop-integration-guide). This post is the lookup table you keep open while building masks.
+
+## The load order
+
+Import in dependency order. Later files reference records that earlier files created.
+
+| # | Global Shop export | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Items | Product | Nothing |
+| 2 | Work centers | Workcenter | Nothing |
+| 3 | Routings / operations | BOR (bill of routing) | Items and work centers |
+| 4 | Open jobs | SalesOrder | Items |
+| 5 | Reported hours (optional) | Actuals | Scheduled jobs |
+
+Two entity types have no ERP origin and are built from a spreadsheet you write yourself: **Shift** (one row per shift with a start and end pair per weekday, a blank pair meaning the day is off) and **PlantHoliday** (closures by name and date). These two define the calendar every date is computed against, so they deserve ten careful minutes rather than five. Job shops running a partial Saturday should put it in the shift record rather than treating it as overtime nobody models, because a Saturday the engine cannot see is capacity you will keep discovering by accident.
+
+Auto-create is on by default, so a routing file naming a work center that has not been imported yet creates it on the fly. That is a useful safety net and a poor strategy: an auto-created work center has a name and nothing else, meaning one machine, no shift assignment, and no efficiency. Load the work center file properly first.
+
+## Items to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id` | Yes | The item identifier. Natural key, matched case-insensitively |
+| `Product_Name`, `Description` | | Descriptive text |
+| `UOM` | | Unit of measure |
+| `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Only the identifier is required. Everything else can arrive later through a second, narrower refresh file, because blank cells preserve existing values on an update run. Watch identifier formatting across exports: matching ignores case but not leading zeros or punctuation, so make every export render the identifier the same way.
+
+## Work centers to Workcenter
+
+This is the file where scheduling accuracy is won or lost, because it carries capacity.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. Routing steps match on it |
+| `Workcenter Name` | | Label on the Gantt and in reports |
+| `Number_Of_Instances` | | How many identical machines the center holds. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per routing step where present |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint so the engine can anchor around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts`, `Shift_Names` | | Calendar assignment |
+| `Pieces_Per_Hour` | | Rate-based capacity where the center is measured in output |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+`Number_Of_Instances` is the highest-value column on the page and the one most ERP exports do not carry, because ERP data models generally describe a work center as a capacity figure rather than a count of machines. A cell of four identical machines imported with one instance produces a plan roughly four times too long, and it fails quietly: nothing errors, the dates are simply wrong. Fill it deliberately for every multi-machine center. The arithmetic is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+If your export expresses capacity as an available-hours figure that already embeds a machine count, do not carry that number into `Capacity` unchanged while also setting instances, or you will count the same capacity twice. Pick one representation: instances plus the shift calendar is the one the engine reasons about best.
+
+`One_Per_Day_Flag` earns its keep in job shops more than anywhere else. A center with a long, messy changeover (a paint booth, an oven, a large fixture setup) is often run as one job per machine per day in practice, and telling the engine that produces a plan the floor recognizes rather than one that assumes three changeovers in a shift.
+
+## Machine pools have no export column
+
+Planners think in pools of interchangeable machines, and EDGEBIC models that as a **work center group**. The membership is not a static assignment: a routing step bound to a group re-evaluates every member on each reschedule, picks by strategy (earliest completion, primary first, or earliest start), and applies a per-member efficiency factor so a slower machine is chosen only when it still finishes first. Operations already started keep the machine they started on, because recorded work is never moved.
+
+That efficiency factor matters in job shops where the pool is genuinely mixed: an older mill and a newer mill do the same work at different rates, and the factor is how the engine knows. None of it fits in an export column, so import the members as ordinary work centers and create the group inside EDGEBIC afterwards. The concept is defined in [what a work center group is](/blog/what-is-a-work-center-group-machine-pool) and the procedure is in [how to create work center groups](/blog/how-to-create-work-center-groups-in-edgebic).
+
+## Routings to BOR
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Item identifier this routing builds |
+| `Sub_Prod` | Yes | Work center id (operation row) or component item (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; chaining happens automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and transport time |
+| `Parallel_Op` | | Parent step's work center name for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent`, `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Applicable machine instances for this step |
+| `Fam_Dept` | | Department for auto-created work centers |
+
+`Op_Flag` is the field people get wrong first. True means "this row is an operation running on a work center". False means "this row is a component consumed at this point in the routing". Mixing them produces a routing full of work centers that are actually parts, and it is visible immediately in the graphical designer.
+
+`Transit_Days` is the outside-processing field. Model plating, heat treat, and anodize as an operation on a work center named for the vendor, and put the turnaround in transit days so the vendor week appears on the Gantt as its own block rather than as padding inside the step before it.
+
+### Why the import takes two passes
+
+A routing cannot be written row by row, because step 10 must point at step 20 and step 20 does not exist yet. So the import runs in two passes. Pass one validates each row, resolves or creates the items and work centers it names, and buffers the row. Pass two groups the buffer by end product, sorts by sequence number, writes the steps, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished item so the routing renders connected. Check that visually after the first import: a routing missing its final link draws as a chain floating free of the item it builds.
+
+Two rules follow from the same mechanism. All of one item's steps must travel in one file, because a run wipes and recreates that item's steps on first reference, and splitting across two runs means the second wipe deletes the first run's work. And re-importing is safe for running jobs, because every scheduled job carries a frozen snapshot of the routing it was planned with.
+
+## Jobs to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Item being built |
+| `Qty` | Yes | Order quantity |
+| `Job_Date` | Yes | Release or start date |
+| `Sales_Order(Ref#)` | | Order reference: shared references group into one sales order, jobs auto-number `{Ref}-{line}` |
+| `Job_Number` | | Your ERP job number carried across |
+| `Due_Date`, `Order_Date`, `Priority` | | Promise, entry, and ranking |
+| `Customer_Name` | | Auto-created when missing |
+| `Unit_Price`, `User_Notes` | | Optional |
+
+Carry `Job_Number` if you possibly can. In a job shop the ERP job number is the word everybody uses on the floor, on the traveler, and on the phone, so a schedule that shows the same number needs no translation step. `Customer_Name` is worth carrying too: in make-to-order work the customer is often the fastest way a planner recognizes a job on the Gantt.
+
+## Reported hours to Actuals
+
+Job number, work center id, and actual date are mandatory. Hours and pieces are both optional, and either can be derived from the other using the operation's rate. A `Complete` column marks the operation finished, and an explicit start column overrides the default of using the earliest imported date.
+
+The import always overwrites the days a file carries, so re-running a corrected extract fixes the numbers rather than doubling them. Days a file does not mention are preserved unless you explicitly ask for them to be cleared. Actuals import last, because each row has to find an operation on a job that is already scheduled.
+
+## Conversions, blanks, and zeros
+
+| Situation | Behavior |
+|---|---|
+| Minutes in the export | Conversion factor `0.016667` on that mask column |
+| Seconds in the export | Conversion factor `0.000278` |
+| Hours quoted per 100 pieces | Conversion factor `0.01` |
+| Blank cell on an update | Existing value preserved |
+| Zero in a cell on an update | Zero is written: it is a value, not a blank |
+| Unmapped column | Ignored entirely |
+| Mandatory field unmapped | Run aborts before reading any row |
+| One bad row | Fails alone and the run continues, unless you choose strict mode |
+
+Different columns in the same file can carry different factors, so a routing export mixing per-lot run times with per-changeover setup minutes lands correctly in a single run.
+
+## Reading the outcomes
+
+Every row resolves to **Created**, **Updated**, **Reused**, or **Failed**. Reused is the default for a record that already exists, so a weekly item file of 8,000 rows reporting Created 14, Reused 7,986 is the desired result rather than a failure. When counts look wrong, the per-run log file carries one line per row with the exact reason for every failure.
+
+## What import cannot bring, and why it matters
+
+The settings that most differentiate a schedule have no column in any ERP export: the sequence-dependent setup matrix, operator skills and certifications, work center group strategies, bottleneck anchoring, and lot streaming transfer batches. Those are configured once in EDGEBIC and then apply to every imported job afterwards. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) explains why one mask design serves every ERP.
+
+For the questions that come up before a project starts, see the [Global Shop integration FAQ](/blog/edgebic-global-shop-integration-faq), and for the case that usually precedes the decision, [Global Shop scheduling gaps and how EDGEBIC fills them](/blog/global-shop-scheduling-gaps-and-how-edgebic-fills-them). The [Infor](/blog/infor-to-edgebic-data-mapping-reference) and [Microsoft Dynamics](/blog/dynamics-to-edgebic-data-mapping-reference) references show how little the method changes from one platform to the next, and the [ERP scheduling add-on page](/erp-scheduling-add-on) frames the category.
+
+<Accordion title="Which columns must a Global Shop export contain before EDGEBIC will import it?">
+Each entity type has a short mandatory list and everything else is optional. Products need a product id. Work centers need a work center id. Routings need end product, step name, an operation flag, and hours required. Jobs need product, quantity, and a job date. Actuals need job number, work center id, and the actual date. If a mandatory field is unmapped in the mask, the run aborts before reading a single row.
+</Accordion>
+
+<Accordion title="How do I map routing times quoted in minutes or per lot?">
+Use a conversion factor on that mask column. Minutes become hours with a factor of 0.016667, seconds with 0.000278, and a time quoted per 100 pieces becomes per piece with 0.01. The multiplication happens before the value is stored, so the file needs no pre-processing in Excel. Factors are saved with the mask, which makes the conversion permanent, repeatable, and auditable through the per-run log.
+</Accordion>
+
+<Accordion title="How do outside processing steps get mapped?">
+As an ordinary operation row on a work center that represents the vendor, with the turnaround expressed as transit days on that routing step. The vendor then appears on the Gantt as its own block with its own dates, so the outside week can be planned around and measured rather than padded into the operation before it. A vendor that consistently runs long becomes a visible number you can change in one place.
+</Accordion>
+
+<Accordion title="Every job in our shop has a different routing. Does that make the import harder?">
+No. A routing file is rows of end product, work center, sequence number, and hours per unit, and the import does not care whether two products share a routing or none of them do. What high mix changes is the value of the result rather than the difficulty of the load, because sequencing by hand is exactly what stops working when no two weeks look alike.
+</Accordion>

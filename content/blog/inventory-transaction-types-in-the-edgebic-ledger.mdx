@@ -1,0 +1,79 @@
+---
+title: "Inventory Transaction Types in the EDGEBIC Ledger"
+description: "A field guide to the inventory transaction types in EDGEBIC: receipts, issues, adjustments, reversals, and opening balances, what posts each, and how they sum to on-hand."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - inventory transaction types
+  - inventory ledger
+  - receipt issue adjustment
+  - reversal entry
+  - opening balance
+  - stock movement
+targetPhrase: "inventory transaction types"
+wordCount: 1440
+readingTime: 7
+faqQuestions:
+  - question: "What are the inventory transaction types in EDGEBIC?"
+    answer: "EDGEBIC records five kinds of stock movement in its inventory ledger: receipts (stock in), issues (stock out), adjustments (manual corrections), reversals (the inverse entry that cancels a prior receipt or issue), and opening balances (the seed quantity for a new product). Every entry is signed, positive for stock in and negative for stock out, and the true on-hand for any product is the sum of all its ledger entries."
+  - question: "How is a mistake corrected if entries are never edited?"
+    answer: "A mistake is corrected with a reversal, not an edit. EDGEBIC appends an inverse entry that cancels the original, marks the original as reversed, and links the two together. Both survive forever, and they net to zero. This keeps a complete audit trail of what was recorded and when it was undone. Reversals fire automatically when an order is canceled, reopened, or rescheduled, and can also be posted for a hand correction."
+  - question: "What is the difference between an adjustment and a reversal?"
+    answer: "An adjustment is a fresh, standalone correction with no link to a prior entry, used for a cycle-count discrepancy or a scrap write-off. A reversal is bound to a specific original entry it cancels, used when the event that created that entry is undone. An adjustment says the count was wrong; a reversal says a recorded event did not stand. Both are signed ledger rows and both preserve history."
+qaQuestions:
+  - question: "A completed build shows a 'Build to Inventory' row and a customer order shows a 'Schedule Transaction' row. Are those different transaction types?"
+    answer: "Yes. 'Build to Inventory' is the canonical comment on a receipt posted when a make-to-stock order completes, a positive quantity that raises on-hand. 'Schedule Transaction' is the canonical comment on the automatic issue posted when a demand is satisfied from stock during scheduling, a negative quantity that lowers on-hand. Same ledger, two directions. The comment tells you at a glance which mechanism created the movement, and both are auditable to the order that drove them."
+  - question: "We reschedule the same order several times a week. Does the ledger keep growing with issues and reversals?"
+    answer: "It grows, and that is by design. Each reschedule first reverses the prior consume issue, then posts a fresh one, so a heavily rescheduled order accumulates matched issue and reversal pairs plus one live issue. The pairs net to zero, so on-hand stays correct no matter how many cycles run, and there is at most one live consume issue for the order at any moment. The extra rows are the audit trail, not clutter, and you can read the full history in Transaction History."
+---
+
+**The EDGEBIC inventory ledger records five transaction types:** receipts, issues, adjustments, reversals, and opening balances. Every one is a signed entry, positive for stock in and negative for stock out, and the authoritative on-hand for a product is simply the sum of all its entries. EDGEBIC by User Solutions never edits or deletes a posted row, so reading the ledger is reading the complete, ordered history of every unit that ever moved. This post is a field guide to the five types: what each one is, what posts it, and how to recognize it in Transaction History.
+
+For how the ledger relates to the fast on-hand number you usually look at, see [why on-hand is a cache](/blog/why-on-hand-is-a-cache-not-the-source-of-truth-in-edgebic). For the wider planning picture, see the [inventory and planning pillar](/blog/edgebic-planning-guide).
+
+## Receipt: Stock In
+
+A receipt is a positive entry that raises on-hand. The most common receipt is a completed make-to-stock build, which posts automatically when a planner marks the order complete. Its canonical comment is "Build to Inventory," so you can spot build receipts at a glance in the transaction list. A receipt also captures the unit cost at post time, which feeds the moving-average cost calculation covered in [how moving-average cost updates on each receipt](/blog/how-moving-average-cost-updates-on-each-receipt-in-edgebic).
+
+## Issue: Stock Out
+
+An issue is a negative entry that lowers on-hand. The engine posts an issue when a demand is satisfied from existing stock during scheduling, tagged with the canonical comment "Schedule Transaction." One net issue is posted per order that consumes stock. When the entire demand is met from inventory, the order does no shop-floor work and the only trace it leaves is this single issue.
+
+## Adjustment: Manual Correction
+
+An adjustment is a standalone, signed correction that links to no order. Enter a positive quantity to add stock or a negative quantity to remove it. Adjustments cover cycle-count corrections, scrap write-offs, and any hand reconciliation between the ledger and a physical count. Because an adjustment does not peg to an order, it is the right tool for a discrepancy whose cause is not a specific transaction, only a difference you need to close.
+
+## Reversal: The Inverse Entry
+
+A reversal cancels a prior entry without deleting it. EDGEBIC appends an inverse row, positive to cancel an issue or negative to cancel a receipt, marks the original as reversed, and links the reversal back to the entry it undoes. Both rows remain in the ledger forever and net to zero.
+
+Reversals fire automatically in three situations: when an order is canceled, when it is reopened, and when it is rescheduled. The reschedule case is the one you meet most often. Rescheduling reverses the order's existing consume issue before the engine reads on-hand again, so the same order can be rescheduled any number of times and never accumulate more than one live issue. The design behind that is covered in [how a reschedule keeps inventory consistent](/blog/how-a-reschedule-keeps-inventory-consistent-in-edgebic).
+
+## Opening Balance: The Seed
+
+An opening balance is the one-time entry that seeds a new product's inventory when you start using EDGEBIC or introduce an item. It sets the initial on-hand and the starting unit cost. You post it once per product; every movement after that is a receipt, issue, adjustment, or reversal. Seeding a new install is covered in [how opening balances seed a new install](/blog/how-opening-balances-seed-a-new-edgebic-install).
+
+## Reading a Ledger End to End
+
+Here is a short lifecycle for one product that touches four of the five types:
+
+| Entry | Quantity | Type | Comment | Balance |
+|---|---|---|---|---|
+| 1 | +500 | Opening Balance | Initial count | 500 |
+| 2 | −50 | Issue | Schedule Transaction | 450 |
+| 3 | +50 | Reversal | Reversal of #2 | 500 |
+| 4 | −50 | Issue | Schedule Transaction | 450 |
+| 5 | +200 | Receipt | Build to Inventory | 650 |
+| 6 | −12 | Adjustment | Cycle count correction | 638 |
+
+The product seeded at 500. An order consumed 50, was rescheduled (reversing entry 2 and reposting as entry 4), a build added 200, and a cycle count trimmed 12. On-hand is the running sum, 638. Nothing was edited; every step is legible.
+
+## Why the Type Matters to a Planner
+
+The transaction type tells you the cause of a movement without opening the order behind it. A receipt means a build landed. An issue means stock was consumed by demand. An adjustment means a human corrected the count. A reversal means a prior event was undone, usually by a reschedule or cancellation. When on-hand looks wrong, scanning the types is the fastest triage: a missing receipt points to an order that never completed, a stray adjustment points to a hand correction someone made, and an unmatched issue points to consumption you may not have expected. To see the issues a single job produced, [what stock a job actually drew from inventory](/blog/what-stock-a-job-actually-drew-from-inventory-in-edgebic) opens the per-job window behind them.
+
+Because the ledger is append-only, the type is permanent evidence. That is what makes the sum authoritative and what makes an auditor comfortable. For the full rationale behind never editing a row, see [why inventory transactions are append-only](/blog/why-inventory-transactions-are-append-only-in-edgebic).

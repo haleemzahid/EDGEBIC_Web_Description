@@ -1,0 +1,146 @@
+---
+title: "EDGEBIC + Epicor: The Complete Scheduling Integration Guide"
+description: "Epicor scheduling add-on integration with EDGEBIC explained: export items, routings, and orders, map columns once with import masks, schedule finite capacity, send dates back."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Epicor scheduling add-on integration
+  - Epicor Kinetic scheduling
+  - Epicor finite capacity scheduling
+  - EDGEBIC Epicor integration
+  - Epicor resource group scheduling
+  - ERP scheduling import masks
+targetPhrase: "Epicor scheduling add-on integration"
+wordCount: 2020
+readingTime: 10
+faqQuestions:
+  - question: "Is EDGEBIC a certified Epicor connector?"
+    answer: "No. EDGEBIC integrates with Epicor through reusable Excel/CSV/database import masks, not a certified per-ERP connector. Epicor's exports feed the masks; you map the columns once and re-run the same mask whenever the data changes. This universal approach is deliberate: it works identically across Epicor versions and every other ERP, and there is no connector to re-certify when either system upgrades."
+  - question: "What Epicor data does EDGEBIC import?"
+    answer: "Items, work centers and their capacity data, routings with operation sequences and times, open orders or jobs, and optionally shop-floor actuals. Each entity has its own import mask; routings import through a two-pass process that wires step sequences automatically. Records match by natural key, and every row reports back as Created, Updated, Reused, or Failed with a per-run log file."
+  - question: "How do EDGEBIC work center groups compare to Epicor resource groups?"
+    answer: "Both model a pool of interchangeable machines that an operation can run on. The difference EDGEBIC adds is re-shopping: a routing step bound to a work center group re-evaluates the whole pool on every reschedule, picking the member by strategy (earliest completion, primary first, or earliest start) with per-machine efficiency factors. Started work keeps its assigned machine; only unstarted operations re-shop."
+  - question: "Do schedules flow back into Epicor automatically?"
+    answer: "Schedules and dates export to Excel, and from there they return to Epicor through whatever update path your team already uses. EDGEBIC's Job View exports the full job schedule as a workbook, and every report exports to Excel or PDF. Epicor remains the system of record; EDGEBIC supplies the finite capacity dates worth recording."
+qaQuestions:
+  - question: "We run Epicor Kinetic with about 400 open jobs, 35 work centers, and three shifts. How long does the first usable schedule take, realistically?"
+    answer: "Budget one working week, front-loaded on data mapping. Day one: export items and work centers, build those masks, verify counts. Day two: routings through the two-pass import (a 400-job shop typically has a few hundred routings; one file per run per product is the only rule that matters). Day three: open jobs in, first full finite capacity schedule out. Days four and five: reconcile EDGEBIC's dates against your current promises and tune shifts and instance counts. The documented lineage benchmark for this method is 5 days from export to optimized schedule at Plastilite, on Fourth Shift."
+  - question: "Our Epicor routings assume any of our five CNC lathes can run a turning op, but lathe 3 runs the job 40 percent slower. Can the import express that?"
+    answer: "The import brings the routing in with its base hours; the pool logic lives in EDGEBIC. Put the five lathes in a work center group and set a per-member efficiency factor: lathe 3 at a factor that stretches a 2.0-hour operation to 2.8 hours, the others at 1.0. The scheduler then weighs real finish times when it picks a machine, so lathe 3 gets work when it is still the fastest way to finish, not by rotation. On every reschedule, unstarted operations re-shop the whole pool."
+---
+
+**Integrating Epicor with EDGEBIC means moving the items, work centers, routings, and open orders Epicor already holds into EDGEBIC through reusable import masks (Excel, CSV, or a database source), scheduling that work against true finite capacity, and exporting realistic dates back for Epicor and your customers.** No certified connector, no middleware layer, no consulting project that outlives its sponsors: the exports your ERP already produces are the whole interface.
+
+EDGEBIC by User Solutions comes from a lineage that has integrated scheduling with ERPs since 1991, across 35+ years and names like the US Navy, GE, BAE Systems, and Cummins. This guide covers the Epicor case end to end: what to export, how the masks and the two-pass routing import work, which EDGEBIC engine features map to Epicor concepts like resource groups, and what the return trip looks like.
+
+## Why Epicor shops add a scheduling layer
+
+Epicor Kinetic is a deep manufacturing ERP, and its scheduling tooling is more capable than most ERP modules. Even so, many plants find the generated plans drift from what the floor can execute, especially where multi-shift and multi-instance work centers, shared machine pools, and sequence-dependent setups pile up. Planners end up supplementing the module with spreadsheets and judgment calls, which is the tell that a gap exists. The gap analysis has its own posts: the generic version in [Epicor Kinetic scheduling gaps and how to fix them](/blog/epicor-scheduling-gaps), and the EDGEBIC-specific version in [Epicor Kinetic scheduling gaps and how EDGEBIC fills them](/blog/epicor-kinetic-scheduling-gaps-and-how-to-fill-them).
+
+The pattern that works is complementary, not competitive: Epicor stays the system of record for orders, inventory, purchasing, and financials, and a dedicated [finite capacity layer beside the ERP](/erp-scheduling-add-on) owns sequencing. What makes the pattern practical is the integration cost, which is where the import masks earn their keep.
+
+## The integration architecture in one table
+
+The [EDGEBIC ERP integration approach](/edgebic-erp-integration) is identical for every ERP; only the export files differ:
+
+| Direction | Data | Mechanism |
+|---|---|---|
+| Epicor → EDGEBIC | Items / parts | Export to Excel/CSV → Product import mask |
+| Epicor → EDGEBIC | Resources / work centers | Export → Workcenter import mask |
+| Epicor → EDGEBIC | Routings / methods of manufacture | Export → two-pass BOR (bill of routing) import mask |
+| Epicor → EDGEBIC | Open jobs / orders | Export → SalesOrder import mask |
+| Epicor → EDGEBIC | Labor / actuals (optional) | Export → Actuals import mask |
+| EDGEBIC → Epicor | Finite capacity dates, dispatch lists, reports | Excel export from Job View and report dialogs |
+
+An **import mask** is a saved column mapping. You point it at your Epicor export once, drag each source column heading onto the matching EDGEBIC field, set any options, and save. From then on the weekly run is two clicks. Each row of every run resolves to exactly one outcome (Created, Updated, Reused, or Failed), the result dialog shows the counts, and a per-run log file records every row and every failure reason. Nothing imports halfway in silence.
+
+Three mask behaviors matter most in ERP work:
+
+1. **Unit conversion in the mask.** If an Epicor export carries setup in minutes, a conversion factor of `0.016667` on that column converts to hours during import: a `30` lands as `0.5`. The factor is stored on the mask, so the conversion never depends on anyone remembering it.
+2. **Blank cells never wipe values on update.** Re-importing with updates enabled changes only the columns your file carries; a blank cell preserves the existing value. A price-only refresh file is safe by construction.
+3. **Safe defaults.** Matching records come back Reused (untouched) unless you explicitly enable updates, and a bad row fails individually without aborting the other 199 rows unless you choose strict mode.
+
+## The two-pass routing import
+
+Routings are the hard part of any scheduling integration because operations reference each other. EDGEBIC's routing import solves the ordering problem in two passes. Pass one validates each row, auto-creates any work centers or products the file names that do not exist yet, and buffers the steps. Pass two sorts each product's steps by sequence number, saves them, then wires the links: step 10 to 20, 20 to 30, and the terminal step to the finished product, so the routing arrives as one connected flow in the graphical routing designer.
+
+Conventions worth adopting on day one:
+
+- **Sequence numbers in gaps of 10** (10, 20, 30) so later inserts need no renumbering.
+- **All of one product's steps in one file.** Re-importing a routing wipes and recreates that product's steps within the run, which keeps re-imports idempotent; splitting one routing across two runs loses the first run's steps.
+- **Running jobs are immune.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing re-import affects future jobs only. Work in progress does not move, and completed operations are never rescheduled at all.
+
+## Mapping Epicor concepts to the EDGEBIC engine
+
+Once the data is in, the part Epicor shops care about is whether the engine models their reality. The mappings that come up in every evaluation:
+
+**Resource groups → work center groups.** Epicor planners think in pools of interchangeable machines. EDGEBIC's work center groups model the same idea with one addition that changes outcomes: a group-bound operation re-shops the entire pool on every reschedule, choosing the member by strategy (earliest completion, primary first, earliest start) and applying per-member efficiency factors, so a machine that runs a job 40 percent slower is chosen only when it still finishes first. Operations already started keep their machine; actuals are never disturbed.
+
+**Multi-shift, multi-instance capacity.** Work centers carry instance counts, shift calendars, efficiency, and utilization caps. A three-machine cell on two shifts is 6 machine-shifts of real capacity, not one number in a field. That is the core of [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and it is the difference between dates you publish and dates you apologize for.
+
+**Sequence-dependent setups.** A setup matrix per work center (organized into setup families so it stays maintainable) lets the optimizer sequence jobs to cut changeover time: mathematical optimization with a proven optimality gap, plus a multi-run layer guaranteed never worse than the baseline schedule.
+
+**Constraints.** Flag a work center as a bottleneck and the engine anchors the schedule around it, backward into the constraint and forward out of it with protective buffers.
+
+The full engine map lives on the [EDGEBIC product overview](/edgebic) and in the [complete EDGEBIC guide](/blog/edgebic-complete-guide).
+
+## Orders in, dates back out
+
+The jobs import carries product, quantity, reference, and dates. Rows that share an order reference group under one sales order with jobs auto-numbered `{Ref}-{line}`. And one deliberate rule governs everything: **imports never schedule.** Imported jobs land as unscheduled demand; you then run the scheduler, which reports how many new and existing jobs are in scope before planning, so fresh work slots around existing commitments. Data movement and planning stay separate so that an import can never silently rearrange your floor.
+
+The return trip is Excel. Job View exports the schedule grid (colored cells plus a legend sheet) as a workbook; every report dialog exports to Excel or PDF with your saved column layout. Updated dates flow back into Epicor through whatever date-maintenance path your team already uses, and dispatch lists go to the supervisors. Epicor's workflows stay untouched.
+
+If you also want shop-floor reality flowing in, the actuals import takes hours and piece counts per job, work center, and day (from Epicor labor data or a supervisor spreadsheet) and is safe to re-run: the dates a file carries are always overwritten, so a corrected file fixes numbers without double-counting. The next reschedule plans remaining work from where the shop actually is, and completed work never moves.
+
+## Common pitfalls, each with a one-line fix
+
+Integrations fail on small mechanical details more often than on architecture. The recurring ones, from decades of doing this:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Setup times import 60 times too large | Export is in minutes, no conversion set | Set the column's conversion factor to 0.016667 in the mask |
+| Every row comes back Reused, nothing updates | Updates are off (the safe default) | Enable updates in the mask options for refresh runs |
+| Routing steps missing after a re-import | One product's steps were split across two files and two runs | Put all of a product's steps in one file |
+| Values wiped by a partial file | A column full of zeros was mapped | Leave columns out of the file rather than filled with zeros; blank cells preserve, zeros write |
+| Imported jobs never appear on the Gantt | Imports never schedule | Run the scheduler after the import; that separation is deliberate |
+| A row fails and you cannot tell why | Reading only the summary counts | Open the per-run log; every failed row records its exact reason |
+
+The pattern behind the fixes: the import system is built to be re-run. A corrected file imported again converges on the right data, because master records come back Reused or Updated (never duplicated), routing re-imports wipe and recreate rather than accumulate, and actuals overwrite the dates they carry rather than double-count.
+
+## The first week, day by day
+
+The methodology is inherited from a documented case in the User Solutions lineage: the Fourth Shift ERP vendor recommended the User Solutions scheduler to its own customers, and the Plastilite integration ran Monday to Friday, from first export to a complete optimized schedule. Applied to Epicor:
+
+| Day | Work |
+|---|---|
+| 1 | Export items and work centers; build and run both masks; verify counts |
+| 2 | Export routings; build the routing mask with unit conversions; import; review in the routing designer |
+| 3 | Export open jobs; import; run the first finite capacity schedule |
+| 4 | Reconcile EDGEBIC dates against current promises; tune shifts, instances, groups, setups |
+| 5 | Lock the recurring rhythm: mask order, scheduler mode, export back to Epicor |
+
+Starting from an empty EDGEBIC database? The [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) sequences the whole build.
+
+## Test it with your own export
+
+Feature tables do not answer "will my dates be right?" Your own data does. Export this week's open jobs and your routing file from Epicor, and [bring both to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity.
+
+<Accordion title="Is EDGEBIC a certified Epicor connector?">
+No. EDGEBIC integrates with Epicor through reusable Excel/CSV/database import masks, not a certified per-ERP connector. Epicor's exports feed the masks; you map the columns once and re-run the same mask whenever the data changes. This universal approach is deliberate: it works identically across Epicor versions and every other ERP, and there is no connector to re-certify when either system upgrades.
+</Accordion>
+
+<Accordion title="What Epicor data does EDGEBIC import?">
+Items, work centers and their capacity data, routings with operation sequences and times, open orders or jobs, and optionally shop-floor actuals. Each entity has its own import mask; routings import through a two-pass process that wires step sequences automatically. Records match by natural key, and every row reports back as Created, Updated, Reused, or Failed with a per-run log file.
+</Accordion>
+
+<Accordion title="How do EDGEBIC work center groups compare to Epicor resource groups?">
+Both model a pool of interchangeable machines that an operation can run on. The difference EDGEBIC adds is re-shopping: a routing step bound to a work center group re-evaluates the whole pool on every reschedule, picking the member by strategy (earliest completion, primary first, or earliest start) with per-machine efficiency factors. Started work keeps its assigned machine; only unstarted operations re-shop.
+</Accordion>
+
+<Accordion title="Do schedules flow back into Epicor automatically?">
+Schedules and dates export to Excel, and from there they return to Epicor through whatever update path your team already uses. EDGEBIC's Job View exports the full job schedule as a workbook, and every report exports to Excel or PDF. Epicor remains the system of record; EDGEBIC supplies the finite capacity dates worth recording.
+</Accordion>

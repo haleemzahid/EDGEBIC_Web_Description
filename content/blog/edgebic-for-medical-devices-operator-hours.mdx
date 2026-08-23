@@ -1,0 +1,85 @@
+---
+title: "Medical Device Scheduling: Planning on Operator Hours, Not Just Head Count"
+description: "Medical device operator hours scheduling tracks a per-person hours ledger, so a plan books only the certified-operator time you have and slides work when it runs out."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - medical device operator hours scheduling
+  - operator capacity scheduling
+  - certified operator hours ledger
+  - labor constraint medical devices
+  - cleanroom staffing schedule
+  - operator attend fraction
+targetPhrase: "medical device operator hours scheduling"
+wordCount: 1940
+readingTime: 10
+faqQuestions:
+  - question: "How does an operator hours ledger differ from just checking who is certified?"
+    answer: "A certification check answers whether a qualified person exists, which lets five jobs all pass and share one person. An hours ledger answers how many hours that person actually has left on a given day and shift. The scheduler tracks each operator's committed hours and only offers a window when a qualified operator still has time, capping what it books at what the pool can afford. Presence says yes to everyone; the ledger says how much, so a day can never oversell a person."
+  - question: "What happens when a job needs more operator hours than one shift holds?"
+    answer: "The step spills across shifts. The scheduler's gate treats a shift with any staffed hours as usable, then the allocation clamp caps the hours committed there to what the operator pool affords. A twelve-hour job with one qualified operator working eight-hour days books eight hours on the first day and the remaining four on the next, finishing at midday. The gate never rejects a shift just because the full remaining work exceeds one day's staffing, which is what would make the job unschedulable."
+  - question: "How do you model a step that needs two people, or one person on two machines?"
+    answer: "Set the run attention figure. One point zero means one operator-hour per machine-hour, fully attended. Two point zero means a two-person job, so each machine-hour books two operator-hours and, with one qualified operator, the machine's day is capped at that operator's hours divided by two. A half means one person tends two machines. Setup always books one full operator regardless. The attention figure scales only the run phase, so the plan reflects how many hands each operation really needs."
+  - question: "Do operator hours get re-planned when someone takes leave?"
+    answer: "Enter the leave as an inclusive date range on the operator. On the next scheduling run, any step depending on that person's hours, with no other qualified operator available, slides past the leave to their first day back. If the step is pinned to that specific person, it slides through the absence rather than handing the work to someone uncertified. The plan turns a staffing gap into visible schedule movement instead of a silent, uncertified substitution."
+qaQuestions:
+  - question: "We know who is certified on each process, but the plan still overcommits our inspectors because it assumes any certified person can be everywhere at once. How does tracking hours fix that?"
+    answer: "The overcommit happens because a presence check says yes as long as one certified inspector exists, no matter how many jobs ask at once. An hours ledger changes the question from whether to how much. Each inspector has a finite number of hours per day and shift, and the scheduler debits those hours as it books work, so two jobs that both need the same inspector on Monday cannot both land Monday if she only has eight hours. The second one moves to Tuesday, in the plan, before it becomes a queue at the inspection bench. You keep the certification requirement and add the capacity reality that presence alone was missing."
+  - question: "Our validation requires a two-person operation on one assembly step, and the plan never accounts for the second person. Can it schedule crews?"
+    answer: "Yes, through the run attention figure. Set that step to two point zero and every machine-hour books two operator-hours, so the plan demands two qualified people for the duration and caps the operation at what your certified pool can staff. With only one qualified operator on shift, the operation's day is limited to that person's hours divided by two, and the rest spills to when more staffing is available. Setup still books one full person because one person sets up. You get a plan that reserves the crew the validation requires rather than one that quietly assumes a single operator can do a two-person job."
+---
+
+**Medical device operator hours scheduling plans on a per-operator ledger of available hours, not just a yes-or-no certification check, so EDGEBIC by User Solutions books only the certified-operator time you actually have and slides work when it runs out.** For a medical device manufacturer, the certification question is necessary but not sufficient. Knowing an inspector is qualified does not stop the plan from assuming she can be at five benches at once. This post is about the hours behind the qualification, and how they keep the schedule staffable.
+
+The base finite-capacity model is [what is production scheduling](/blog/what-is-production-scheduling), and identifying the resource that really limits throughput is [production bottleneck identification](/blog/production-bottleneck-identification). In a regulated device line, that resource is often a person, and the limit is their hours.
+
+This post is the hours-and-capacity companion to [operator certifications for medical devices](/blog/edgebic-for-medical-devices-operator-certifications). Certifications establish who may do the work; the ledger establishes how much of it they can do in a day.
+
+## Certification is a yes; hours are a how-much
+
+A pure certification check answers one question: does a qualified person exist for this step? That is essential in a device shop, where only certified operators may perform validated processes. But it has a blind spot. If the answer is simply yes, then five jobs that all need the same certified inspector all pass the check and all schedule at once, sharing one person who can only be in one place. The plan looks staffed and is not.
+
+The consequence shows up as a queue at the bench. The plan promised parallel inspections that were never possible, the floor serializes them by hand, and every downstream date built on the fiction slips. Presence checking overcommits people precisely because it never asks how many hours they have.
+
+## The per-operator hours ledger
+
+The fix is to track hours, not just presence. The engine keeps a ledger of each operator's hours keyed by day and shift. When it schedules a step that needs a skill, it debits the qualified operator's hours as it books work, and it only offers a window where a qualified, rostered, not-on-leave operator still has time. It caps what it commits at what the pool can afford, so a day can never oversell a person.
+
+Now the everyday overcommit is impossible. Two jobs that both need the same certified inspector on Monday cannot both land Monday if she only has eight hours; the second moves to Tuesday, in the plan, before it becomes a bench queue. The certification requirement is unchanged, but the capacity reality that presence alone missed is now enforced. A multi-skilled operator counts once, not once per skill, because the ledger tracks the person's hours, not a separate pool per qualification.
+
+## Hours that span shifts, without breaking the plan
+
+Device operations can run longer than one shift, and the ledger has to handle that without collapsing. The engine separates two decisions. A gate asks whether a shift is usable at all: a shift with any staffed hours passes. Then an allocation clamp decides how much to book there: no more than the operator pool affords on that window.
+
+That split is what makes long jobs schedulable. Take a 12-hour operation, one qualified operator working eight-hour days.
+
+| Day | Operator hours | Booked | Remaining |
+|---|---|---|---|
+| Monday | 8 | 8 | 4 |
+| Tuesday | 8 | 4 | 0 |
+
+Monday takes eight, Tuesday takes the remaining four, and the job finishes at midday. If the gate had instead rejected any shift where the full remaining work exceeded one day's staffing, every eight-hour shift would fail a twelve-hour job and the operation would be unschedulable despite a week of staffed hours. The gate stays permissive; the clamp keeps it honest.
+
+## Crews and partial attention
+
+Not every device operation needs one operator for its whole run, and some need two. The run attention figure captures that. One point zero is fully attended, one operator-hour per machine-hour. Two point zero is a two-person operation: each machine-hour books two operator-hours, and with a single qualified operator on shift the operation's day is capped at that person's hours divided by two. A half means one person tends two machines. Setup always books one full operator, because one person sets a machine up; the attention figure scales only the run phase. The full concept is defined in [what attend fraction means in operator scheduling](/blog/what-is-attend-fraction-operator-scheduling).
+
+For a validated two-person assembly step, setting the attention to two point zero makes the plan reserve two qualified people for the duration and limit the operation to what your certified pool can staff. That is a plan that respects the validation, not one that quietly assumes a single operator can do a two-person job.
+
+## Leave that moves work, not a silent substitution
+
+When a certified operator takes leave, you enter it as an inclusive date range on that operator. On the next scheduling run, any step that depends on their hours and has no other qualified operator slides past the leave to their first day back. If a step is pinned to that specific person, because validation ties the work to a named, qualified individual, it slides through the absence rather than being handed to someone uncertified.
+
+For a regulated manufacturer, that last property is the important one. The plan never substitutes an unqualified person to hit a date. A staffing gap becomes visible schedule movement that a planner sees and approves, which is exactly the traceable, defensible behavior a device shop needs. It sits naturally alongside the [audit trail](/blog/edgebic-for-medical-devices-audit-trail) and [routing snapshots](/blog/edgebic-for-medical-devices-routing-snapshots) that preserve what each job was built to and who changed what.
+
+## Setting up operator-hours scheduling
+
+Three steps get you there. Define the skills your validated processes require, and certify the operators qualified on each, with expiry dates so lapsed certifications drop out of the plan automatically. Roster the shifts each operator works, and enter their leave as it comes up. Then set the attention on each skill-bearing step: one for fully attended work, more for crews, a fraction where one person covers several stations.
+
+When no operator data is loaded, or on steps with no skill, every check does nothing and the plan behaves as a machine-only plan would, so you add the labor constraint precisely where regulation requires it. This is the capacity realism User Solutions has built into manufacturing systems since 1991, the difference between a plan that assumes people are infinitely divisible and one that respects that a certified operator has eight hours in a day. It is the same discipline behind programs that sequence tens of thousands of tasks for defense and regulated customers.
+
+See it plan against your certified pool. [Bring a validated operation and your qualified operators to a demo](/edgebic) and watch the schedule book only the operator hours you actually have. The [EDGEBIC by industry guide](/blog/edgebic-by-industry) shows how this fits the rest of a device manufacturer's plan.

@@ -1,0 +1,102 @@
+---
+title: "The Same Job Shows Different Hours in Two Places"
+description: "Two screens disagreeing on a job's hours usually means one reads the estimate and the other the schedule, or two internal stores drifted. How to find the true number."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job hours differ two places
+  - schedule hours mismatch screens
+  - capacity report vs job view hours
+  - hours drift consistency check
+  - estimate vs scheduled hours
+  - hours troubleshooting
+targetPhrase: "same job shows different hours in two places"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "Why does the same job show different hours on two screens?"
+    answer: "Usually because one screen reads the order's stored estimate and the other reads the scheduled operations. The estimate is a quote figure from when the order was entered, often zero for a scheduled job, while the scheduled rollup sums the real operations and stays current. A second, rarer cause is a genuine internal drift between the two stores of the same scheduled number, which the anomaly report flags as critical. Identify which surface reads which source before assuming a fault."
+  - question: "Which screen shows the true hours for a job?"
+    answer: "The screen that reads the scheduled operations, not the stored estimate. The job header and any surface bound to the schedule graph sum the actual scheduled work and stay accurate as the plan changes. The order estimate is a quoting figure and is often zero for a fully scheduled job, so a screen showing it makes a busy job read empty. If two screens disagree, the one summing the operations is the operating number; the one showing the estimate is not."
+  - question: "Can capacity reports and job totals legitimately differ for one job?"
+    answer: "They should not differ for the scheduled number, because both are meant to read the same hours from the schedule. If a capacity report and a job total disagree by more than rounding, it is either that one is reading the estimate rather than the schedule, or the two internal stores that feed those surfaces have drifted, which the anomaly report flags as a critical consistency issue. A clean scheduling run rewrites both stores together and resolves a genuine drift."
+qaQuestions:
+  - question: "Our capacity report shows a work center loaded with hours for a job, but the job header shows fewer. Same job. What is going on?"
+    answer: "Two possibilities. If the job header shows zero or a suspiciously round number, it is reading the order estimate rather than the scheduled rollup, and the capacity report reading the schedule is the true figure. If both are clearly reading the schedule but disagree by more than rounding, the two internal stores of the same hours have drifted, which the anomaly report flags as critical. Re-run scheduling for the job; a clean run rewrites both stores together so the capacity report and the header agree."
+  - question: "One screen updated after our reschedule and another still shows the old hours. Is that a drift?"
+    answer: "Not necessarily a data drift, more likely a stale view. The anomaly report reads the database at the moment you run it, and some screens hold their last load until refreshed. If you rescheduled and only one surface reflects it, refresh or reopen the other before concluding the stores disagree. If both are freshly loaded and still differ, then run the anomaly report scoped to the job to check for a real consistency drift, which has a single fix: re-run scheduling for the job."
+---
+
+**Two screens disagreeing on a job's hours almost always means one is reading the order's stored estimate while the other reads the scheduled operations, and only the scheduled figure is the operating number.** The rarer cause is a genuine drift between the two internal stores of the same scheduled hours, which the anomaly report flags and a clean run fixes.
+
+[EDGEBIC by User Solutions](/edgebic) derives a job's operating hours from its scheduled operations, not from a stored estimate, so the number stays true as the schedule changes. When two surfaces show different totals, the first question is which source each is reading. This post is the two-screens version of the reconciliation; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and is the companion to [the hours do not add up on a job](/blog/hours-do-not-add-up-on-a-job-edgebic).
+
+## First, Identify What Each Screen Reads
+
+A job carries an order estimate and a scheduled rollup, and they mean different things. The estimate is a quote figure from when the order was entered, frequently zero for a fully scheduled job. The rollup sums the actual scheduled operations and is the operating number. Before calling two screens inconsistent, work out which source each is reading. A screen showing zero or a suspiciously round total for a busy job is reading the estimate. The rollup also has known, deliberate exclusions: it leaves out sub-assembly rollup rows, and when the primary-hours-only setting is on it leaves out parallel siblings, so two surfaces that apply those rules differently can differ for a good reason as well as a bad one.
+
+## Cause 1: One Surface Reads the Estimate, the Other the Schedule
+
+The classic split. A report or header bound to the order estimate shows a stale or zero figure, while a surface bound to the schedule shows the real hours. They differ because they are different numbers, not because one miscounted.
+
+**How to tell:** one screen shows zero or an obviously round figure for a scheduled, in-progress job; the other shows a detailed total that matches the operations.
+
+**Fix:** trust the screen reading the schedule. If a surface is showing the estimate operationally, that is the surface to correct: operating numbers should bind to the scheduled rollup, never the estimate. Reading the operating figures is covered in [reading the EDGEBIC Gantt: planned versus actual](/blog/reading-the-edgebic-gantt-planned-vs-actual).
+
+## Cause 2: The Two Internal Stores Drifted
+
+The scheduled hours are held in two places that feed different surfaces: one drives the job totals you see on the job header, the other drives capacity and load reporting. They are two stores of the same number, written by different parts of the persist step, and they should always agree. When they do not, the anomaly report flags a critical consistency drift, and the two surfaces read different numbers as a direct result. This is the one case where two screens disagreeing is a genuine data problem rather than a difference in what each is reading.
+
+**How to tell:** both screens are clearly reading the schedule, not the estimate; they disagree by more than rounding; and the anomaly report's consistency-drift check flags the job as critical. Scope the report to the single job to confirm it quickly, which is covered in [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic).
+
+**Fix:** re-run scheduling for the job. Both stores are recomputed and written together on a clean run, which resolves the drift. The fix has exactly one form, so a surviving disagreement after a fresh, refreshed run is not something to keep re-running against; export the flagged row for a support ticket instead.
+
+## Cause 3: One View Is Stale
+
+The anomaly report reads the database live, but some screens hold their last load until refreshed. After a reschedule, one surface can reflect the new plan while another shows the old figure simply because it has not reloaded.
+
+**How to tell:** you rescheduled and only one surface updated; the other still shows pre-run numbers.
+
+**Fix:** refresh or reopen the lagging screen. If both are freshly loaded and still differ, move on to the drift check above.
+
+## Cause 4: Primary-Hours-Only Changes the Total
+
+The job total can exclude parallel siblings when the primary-hours-only setting is on, and it excludes sub-assembly rollup rows. A surface applying that rule and one that does not will show different totals for the same job by design.
+
+**How to tell:** the job has parallel or sub-assembly work, and the difference matches those excluded hours.
+
+**Fix:** none; the totals are answering different questions. Compare like with like by knowing which surface applies the primary-hours-only rule.
+
+## The Reconciliation, in Order
+
+1. **Identify each screen's source:** estimate or scheduled operations.
+2. **Trust the scheduled rollup;** the estimate is a quoting figure, often zero.
+3. **Refresh a lagging screen** before concluding the data disagrees.
+4. **Run the anomaly report scoped to the job** for a genuine consistency drift.
+5. **Re-run scheduling** to rewrite both stores together and clear a real drift.
+
+## Prevention
+
+- **Bind operating surfaces to the scheduled rollup,** never the order estimate.
+- **Refresh views after a reschedule** so every screen reads the same run.
+- **Treat a critical consistency-drift flag as a re-run trigger,** since it has one fix.
+- **Know which surfaces apply primary-hours-only,** so parallel and sub-assembly hours are compared consistently.
+- **Log actuals before rescheduling,** so the planned, actual, and remaining figures stay coherent across every surface rather than diverging when the engine plans against stale reality.
+
+For the broader question of reconciling planned, actual, and expected hours on a single job, see [the hours do not add up on a job](/blog/hours-do-not-add-up-on-a-job-edgebic).
+
+<Accordion title="Why does the same job show different hours on two screens?">
+Usually because one screen reads the order's stored estimate and the other reads the scheduled operations. The estimate is a quote figure from when the order was entered, often zero for a scheduled job, while the scheduled rollup sums the real operations and stays current. A second, rarer cause is a genuine internal drift between the two stores of the same scheduled number, which the anomaly report flags as critical. Identify which surface reads which source before assuming a fault.
+</Accordion>
+
+<Accordion title="Which screen shows the true hours for a job?">
+The screen that reads the scheduled operations, not the stored estimate. The job header and any surface bound to the schedule graph sum the actual scheduled work and stay accurate as the plan changes. The order estimate is a quoting figure and is often zero for a fully scheduled job, so a screen showing it makes a busy job read empty. If two screens disagree, the one summing the operations is the operating number; the one showing the estimate is not.
+</Accordion>
+
+<Accordion title="Can capacity reports and job totals legitimately differ for one job?">
+They should not differ for the scheduled number, because both are meant to read the same hours from the schedule. If a capacity report and a job total disagree by more than rounding, it is either that one is reading the estimate rather than the schedule, or the two internal stores that feed those surfaces have drifted, which the anomaly report flags as a critical consistency issue. A clean scheduling run rewrites both stores together and resolves a genuine drift.
+</Accordion>

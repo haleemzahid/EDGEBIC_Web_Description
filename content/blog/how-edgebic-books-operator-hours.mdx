@@ -1,0 +1,172 @@
+---
+title: "How EDGEBIC Books Operator Hours"
+description: "The operator hours scheduling constraint in EDGEBIC: the per-person hours ledger, the gate and clamp that allow multi-shift spill, and lights-out staffing math."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - operator hours scheduling constraint
+  - labor capacity scheduling
+  - operator pool scheduling
+  - lights out machining scheduling
+  - operator pin scheduling
+  - qualified operator availability
+targetPhrase: "operator hours scheduling constraint"
+wordCount: 2030
+readingTime: 10
+faqQuestions:
+  - question: "How does EDGEBIC track operator availability during scheduling?"
+    answer: "As a per-person hours ledger, keyed by operator, date, and shift. Each qualified operator holds one budget of hours per shift per day, and every operation that books their time draws that budget down. The ledger is rebuilt from scratch on every scheduling run alongside machine capacity, so it always reflects the plan being built rather than a stored state that could drift."
+  - question: "Can one operator be booked on two machines in the same shift?"
+    answer: "Their hours can be split across two machines, but their total can never be oversold. The ledger accounts for hours per shift, not exact clock intervals, so two bookings within one shift may overlap on the wall clock in the same way machine allocations do. What is impossible is booking more than the shift's hours for that person on that day, which is the guarantee the whole model exists to provide."
+  - question: "Why can a 12-hour job be scheduled when the operator only has 8 hours a day?"
+    answer: "Because the availability check is a yes-or-no gate and the quantity is bounded separately. A shift with any staffed hours is usable, and the allocation is then clamped to what the operator pool can actually afford in that window. A 12-hour job with one qualified operator takes 8 hours Monday and spills 4 to Tuesday. A strict hours comparison at the gate would reject every single shift and make the job unschedulable."
+  - question: "What happens to operator bookings when a job is rescheduled?"
+    answer: "Completed operations never book operator hours again, because their work is history and the person who did it is free in the new plan. Preserved but not-yet-started operations do consume the pool, so the remaining work is planned against honest availability. Crew assignments are regenerated wholesale on every run, which is why the Dispatch list can show different people than it did yesterday."
+qaQuestions:
+  - question: "We run seven CNC mills with one setter. Does a skill requirement make that impossible to schedule?"
+    answer: "No, and this is exactly what the attention fraction is for. Give the step a required skill and set operator attention to 0.0, meaning setup only. With one hour of setup and nine hours of run per job, each job costs one hour of the setter's time: setup books a full person, the run books nobody. Seven jobs start Monday and the setter has used seven of eight hours. An eighth setup still fits Monday, and a ninth slides to Tuesday. The machines run themselves into unstaffed evening hours if machine capacity allows, which is what lights-out machining actually means."
+  - question: "Why did our pinned step wait three days while a qualified colleague sat available?"
+    answer: "Because a pin is deliberately hard: the pinned person's hours are the only hours that count for that step, and the rest of the qualified pool is never a fallback. If the pinned operator has leave Monday through Wednesday, the step slides to Thursday even when a colleague could have run it Tuesday. That visible slip is the design. A pin exists because the identity of the person is a requirement, so silently handing the work to somebody else would be the wrong answer dressed as convenience. If a substitute is acceptable, clear the pin and let the scheduler staff from the pool."
+---
+
+**EDGEBIC by User Solutions models operator availability as a per-person hours ledger: each qualified operator holds one budget of hours per shift per day, and every operation that needs them draws that budget down until it is gone.** Not a presence flag, not a pool of hours per skill, and not a wall-clock calendar. That one modeling choice determines nearly everything else about how labor-constrained scheduling behaves, including several behaviors that look surprising until you know the rule.
+
+This post is the mechanism. For what the constraint is and why it exists, see [operator and skill scheduling explained](/blog/edgebic-operator-and-skill-scheduling-explained). For the configuration screens, see [setting up operators, skills, and rosters](/blog/how-to-set-up-operators-skills-and-rosters-in-edgebic).
+
+## Three Models That Do Not Work
+
+The ledger design is easier to trust once you see what it replaced.
+
+**Presence checks.** "Is a qualified operator rostered on this shift?" Five jobs on five machines all pass that check and share one welder. This is the exact failure the feature exists to kill, so a model that reproduces it is not a model.
+
+**Per-skill pools.** Give TIG-Weld eight hours a day and Inconel eight hours a day, then draw from each. An operator certified in both is now sold into both pools: sixteen hours of one person per day. The double-count moved rather than disappearing.
+
+**Wall-clock intervals.** Book Joe from 08:00 to 12:00 on Machine A, exactly. This is more precise than the machine model itself, since [EDGEBIC](/edgebic) tracks machine allocations as hour quantities inside shift windows rather than as exact intervals. Adding interval-exact people to quantity-based machines produces a system that is precise about the wrong half.
+
+What ships is the [operator-hours ledger](/blog/what-is-an-operator-hours-ledger-in-scheduling): one budget per person per shift per day, regardless of how many skills they hold. Joe has eight hours on Monday's Day Shift, full stop. Booking him through his TIG work leaves fewer hours for his inspection work, which is exactly what happens in reality.
+
+## Who Counts as Available
+
+For any given skill in any given shift window, the **qualified pool** is the set of operators who satisfy all four conditions:
+
+1. **Certified** in the required skill, with the certification active and **not expired**.
+2. **Rostered** for that shift on that weekday.
+3. **Not on time off** on that date.
+4. **Allowed by the pin**, if the step names one person.
+
+Each qualifying person contributes their remaining unbooked hours, and the pool is the sum. Expired certifications, inactive operators, and inactive roster rows never reach the scheduling engine at all, which is why a person who "stopped being scheduled although nothing changed" is nearly always an expiry date that passed.
+
+Operator availability stacks **on top of** the machine calendar rather than replacing it. A window must first survive the machine's own availability: shifts, holidays, downtime, capacity overrides. Only then does the labor gate ask whether anybody qualified can actually stand there. Machine capacity is still computed exactly as described in [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling); labor narrows it further.
+
+## The Gate and the Clamp
+
+Here is the mechanism that most repays understanding, because it explains a behavior that looks wrong at first glance.
+
+The availability check at the capacity chokepoint is **binary**: a shift with any staffed hours at all is usable. It does not compare the operation's full remaining hours against the pool. The **quantity** is bounded separately, by a clamp applied when hours are actually allocated: an allocation can never exceed what the operator pool affords in that window.
+
+Why split it that way? Because of multi-shift spill. When a 12-hour operation is being placed, the validator is asked about Monday carrying the **full remaining requirement** of 12 hours. Monday's pool is 8 hours.
+
+| Design | Monday | Tuesday | Result |
+|---|---|---|---|
+| Strict comparison at the gate | 12 > 8, rejected | 12 > 8, rejected | Unschedulable, despite 40 staffed hours in the week |
+| Binary gate plus allocation clamp | Some staffed hours, passes. Clamped to 8 | Remaining 4 hours, pool affords them | Monday 8 h plus Tuesday 4 h, finishing Tuesday at noon |
+
+Every single shift is smaller than 12 hours, so a strict comparison rejects all of them and the job can never be placed anywhere. The gate answers "is this window usable at all", the clamp answers "how much fits". Together they book honestly without breaking work that spans days.
+
+## Setup Books a Person, the Run Books a Fraction
+
+Not every machine needs somebody standing at it. The step's **operator attention** fraction scales the run phase's labor cost, while **setup always books one full person**, because a machine does not set itself up.
+
+Per allocated slice, the operator cost is setup hours at full attention plus the remaining run hours at the fraction. The gate and clamp use the exact inverse to answer the other question: given this pool, how many machine-hours can we afford here.
+
+| Attention | Meaning | What the pool buys |
+|---|---|---|
+| `0.0` (default) | Setup only, lights out | Setup consumes a person, the run consumes nobody |
+| `0.5` | One person tends two machines | 8 operator-hours buy 16 run machine-hours |
+| `1.0` | Fully attended | One operator-hour per machine-hour |
+| `2.0` | Two-person crew | Each machine-hour books 2 operator-hours, so one qualified person caps the machine day at half |
+
+### The lights-out example, with numbers
+
+Seven CNC mills, one instance each, eight-hour Day Shift. Each of seven jobs has a step with **1 hour setup and 9 hours run**, a required skill, and attention `0.0`. Joe is the only qualified operator, with eight hours a day.
+
+Per job, the operator cost is 1 hour of setup at full attention plus 9 hours of run at zero: **1 hour of Joe per job**.
+
+Jobs one through seven all start Monday. Seven machines run, and Joe is booked for seven of his eight hours. The run hours past setup are unconstrained, so the machines keep going into unstaffed evening hours if machine capacity allows. An eighth job's setup still fits Monday, using Joe's last hour. A **ninth setup slides to Tuesday**, because Joe is out of hours and nobody else is certified.
+
+That is one operator legitimately starting a lights-out cell, with no overselling anywhere. Change the fraction to `0.5` and Joe's eight hours would afford roughly fifteen machine-hours per day on one machine instead. Change it to `2.0` with only Joe qualified and a machine's day caps at three and a half run hours after setup.
+
+One rule closes the loop: a step with a required skill, **zero setup and zero attention** has no labor involvement at all, so the constraint is skipped entirely. It schedules as if it had no skill. That is consistent arithmetic rather than a loophole, but it is worth knowing when a skill-gated step appears to ignore your operators. Deeper treatment of the fraction, including the reasoning behind the `0.0` default, is in [the attend fraction](/blog/what-is-attend-fraction-operator-scheduling).
+
+## Who Gets Booked, and How Hours Split
+
+When several qualified people are available, the scheduler books **least loaded first**: whoever has the most free hours in that window. One operation's hours may be split across several people, because the model accounts for hours rather than assigning a named crew to a whole operation.
+
+That is why the Dispatch list can legitimately show two names against one operation, and why it can show different names than it did yesterday. Crew assignments are **plan data**, regenerated wholesale on every scheduling run. They answer who is planned to do this work. Who actually did it stays where it has always been, in punches and actual dates from the [shop-floor kiosk](/blog/edgebic-shop-floor-guide).
+
+If who matters, pin the step.
+
+## The Pin: Deliberately Hard
+
+A pin narrows the qualified pool to exactly one person, everywhere: every availability check, every allocation clamp, every booking. The consequences follow directly:
+
+- **The step schedules only when that person has hours.** The rest of the pool is never a fallback.
+- **The step slides through their absence.** With a pin on Joe and Joe away Monday to Wednesday, the step lands Thursday even if a certified colleague was free Tuesday.
+- **A pinned person who is inactive or not certified for the step's skill fails fast**, with a message naming the problem rather than a vague "no capacity" after a long search.
+
+The sliding is the feature. A named person's absence should surface as visible schedule movement, not as a silent substitution the planner never approved. That is the whole reason a pin exists: customer requirement, sign-off authority, the one person you trust with that fixture.
+
+The pin also travels with the job's preserved routing, not just the master routing, so it survives reschedules that read the job's own snapshot. A pin that quietly reverted on the next reschedule would be worse than no pin.
+
+## What a Reschedule Does to the Ledger
+
+Rescheduling rebuilds the ledger from the plan being preserved, and the rules match the rest of EDGEBIC's actuals handling:
+
+| Operation state | Effect on the operator ledger |
+|---|---|
+| Completed | Books nothing. The work is history and the operator is free in the new plan |
+| Started but unfinished | Keeps its machine and its crew. Recorded work is never moved |
+| Preserved, not started | Consumes the pool, so the remaining work is planned against honest availability |
+| New work | Books against whatever the pool has left |
+
+The reason completed work books nothing is worth stating plainly: the hours were spent in the past, and holding them against a future day would shrink capacity that genuinely exists. Reschedule behavior for machines follows the same principle, described in the [rescheduling walkthrough](/blog/why-did-my-job-jump-after-a-reschedule-edgebic).
+
+## Overlap Is Legal, Overselling Is Not
+
+Two of one operator's bookings on different machines can overlap on the wall clock inside a shift. That is not a defect, it is the direct consequence of accounting in hours rather than intervals, and machine allocations have the same property. What is impossible is booking more hours for a person, on a date, in a shift, than that shift holds.
+
+If interval-exact human sequencing matters in your process, model it with the attention fraction rather than expecting the ledger to enforce it: a genuinely hands-on operation at attention `1.0` consumes the person's hours at the same rate the machine consumes them. That is close enough for planning and it survives contact with a real shift, which pretending to know exact minutes three weeks out does not.
+
+## Diagnosing a Slide
+
+When a step lands later than the machine calendar suggests it should, the scheduling run's diagnostics carry the answer. Skipped windows record the work center, the date, the shift, and the skill that could not be staffed. Bookings record who was booked, how much, and the running ledger value. Structural problems, such as a pinned person who does not hold the step's skill, are named at the start of the run instead of after a long fruitless search.
+
+Between the diagnostics, the Dispatch tab, and the operator lens on the Resource Calendar, a slide is always explainable. The configuration errors that cause most of them are collected in [operator and skill mistakes](/blog/operator-and-skill-mistakes-edgebic).
+
+## How This Interacts With Machines and the Optimizer
+
+A step can carry both a machine pool and a skill. Machine selection is staffability-aware, so a pool member whose shifts cannot be staffed for the step's skill loses its bid rather than winning on machine capacity and then sliding. The machine side of that decision is in [how EDGEBIC picks the best machine in a pool](/blog/how-edgebic-picks-the-best-machine-in-a-pool).
+
+The mathematical optimizer does not model labor, so it never rearranges skill-required or pinned jobs. It reproduces the standard engine's plan for them exactly, which is the general rule described in [locked jobs and the never-worse guarantee](/blog/locked-jobs-and-the-never-worse-guarantee-in-edgebic). An optimizer that cannot see a constraint has no business moving work subject to it.
+
+For where labor sits in the whole platform, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) has the full pipeline, and the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) covers the machine-side allocation this constraint layers on top of.
+
+<Accordion title="How does EDGEBIC track operator availability during scheduling?">
+As a per-person hours ledger, keyed by operator, date, and shift. Each qualified operator holds one budget of hours per shift per day, and every operation that books their time draws that budget down. The ledger is rebuilt from scratch on every scheduling run alongside machine capacity, so it always reflects the plan being built rather than a stored state that could drift.
+</Accordion>
+
+<Accordion title="Can one operator be booked on two machines in the same shift?">
+Their hours can be split across two machines, but their total can never be oversold. The ledger accounts for hours per shift, not exact clock intervals, so two bookings within one shift may overlap on the wall clock in the same way machine allocations do. What is impossible is booking more than the shift's hours for that person on that day, which is the guarantee the whole model exists to provide.
+</Accordion>
+
+<Accordion title="Why can a 12-hour job be scheduled when the operator only has 8 hours a day?">
+Because the availability check is a yes-or-no gate and the quantity is bounded separately. A shift with any staffed hours is usable, and the allocation is then clamped to what the operator pool can actually afford in that window. A 12-hour job with one qualified operator takes 8 hours Monday and spills 4 to Tuesday. A strict hours comparison at the gate would reject every single shift and make the job unschedulable.
+</Accordion>
+
+<Accordion title="What happens to operator bookings when a job is rescheduled?">
+Completed operations never book operator hours again, because their work is history and the person who did it is free in the new plan. Preserved but not-yet-started operations do consume the pool, so the remaining work is planned against honest availability. Crew assignments are regenerated wholesale on every run, which is why the Dispatch list can show different people than it did yesterday.
+</Accordion>

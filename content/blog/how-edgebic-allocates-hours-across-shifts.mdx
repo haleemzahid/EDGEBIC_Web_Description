@@ -1,0 +1,187 @@
+---
+title: "How EDGEBIC Allocates Hours Across Shifts"
+description: "Shift capacity allocation scheduling explained: how EDGEBIC builds capacity slots, ranks them, clips a late start, and fills each one with worked numbers."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - shift capacity allocation scheduling
+  - how scheduling software allocates hours
+  - shift priority scoring
+  - partial shift scheduling
+  - capacity slot calculation
+  - multi-instance load balancing
+targetPhrase: "shift capacity allocation scheduling"
+wordCount: 1875
+readingTime: 9
+faqQuestions:
+  - question: "How does a scheduler decide which shift gets a job first?"
+    answer: "EDGEBIC scores every candidate shift slot and takes the highest score first. Three factors drive the score: a large bonus if the slot can start at or before the operation's earliest allowed start, a term proportional to the hours still available in that slot, and a small preference for shifts that begin earlier in the day. Slots are then walked in date order, so the nearest usable capacity is always consumed before later capacity."
+  - question: "What happens to a shift that has already ended when the job becomes available?"
+    answer: "It is rejected outright, not partially credited. A slot whose end time is at or before the operation's earliest start cannot hold any of the work, so the search skips it and moves on. The same rule removes any slot with less than a tenth of an hour of usable time left after trimming for a late start, which prevents the schedule from fragmenting into meaningless slivers."
+  - question: "How does EDGEBIC handle an operation that starts mid-shift?"
+    answer: "The slot is clipped to the portion of the shift still ahead of the earliest start, then multiplied by instances. On an 08:00 to 16:00 shift with two machines and an earliest start of 10:00, the slot offers 6 remaining hours times 2 instances, so 12 hours rather than the full 16. The engine always allocates against this clipped figure so the first day is never over-credited."
+  - question: "Can a work center have a fractional number of instances?"
+    answer: "Yes. A work center set to 2.5 instances is treated as 2.5 machines worth of capacity, so an 8-hour shift offers 20 hours. Allocation spreads the work across three physical slots, with the capacity lost to the fractional instance redistributed across the full instances, so the arithmetic stays consistent with the total the capacity formula produced."
+  - question: "Why does the Job View show hours like 8,4 instead of a single number?"
+    answer: "Because the allocation is genuinely made of separate pieces. The display lists what each day or shift group received, so 8,4 means 8 hours on the first day and 4 on the second. It is the fastest way to see that an operation spanned two days and how the split fell, which a start and end date pair cannot tell you on its own."
+qaQuestions:
+  - question: "A 28-hour milling operation on two machines with day and night shifts cannot start before Monday 10:00. Walk me through the arithmetic."
+    answer: "Monday's day shift runs 08:00 to 16:00, so six hours remain from 10:00, times two instances equals 12 usable hours. That slot ranks first because it can start immediately. The engine places 12 hours there, split 6 and 6 across the two machines, leaving 16. Monday's night shift offers 8 hours times 2 instances equals 16, exactly what remains, split 8 and 8. The operation runs Monday 10:00 to midnight and the hour display reads 12,16."
+  - question: "Two jobs want the same shift on the same machine tomorrow. How is the second one handled?"
+    answer: "The first job to be scheduled consumes its hours from the slot, and the slot's remaining capacity drops immediately. When the second job's search reaches that slot it sees only what is left, takes that much, and continues into later slots for the rest. There is no double booking and no reservation queue: capacity is consumed in the order jobs are scheduled, which is why job priority and the run order matter more than they appear to."
+---
+
+**EDGEBIC allocates an operation's hours by pre-building one capacity bucket for every work center, date, and shift, scoring those buckets, and then consuming them highest score first until the operation's remaining hours reach zero.** Nothing about that is heuristic guesswork: each step is arithmetic you can reproduce by hand, which is what makes a schedule from [EDGEBIC by User Solutions](/edgebic) defensible when someone asks why a job landed where it did.
+
+This post is the mechanism. For the plain-language version, read [multi-shift scheduling explained](/blog/edgebic-multi-shift-scheduling-explained). For configuration, read [how to make jobs span shifts](/blog/how-to-make-jobs-span-shifts-in-edgebic).
+
+## Stage 0: Building the Capacity Map
+
+Before any order is scheduled, the engine builds the map it will search. For every work center, every date the calendar covers, and every shift that work center runs on that weekday, it creates one slot and computes its size once:
+
+```
+capacity = (shift hours − downtime − partial holiday hours)
+           × max(1, instances)
+           × utilization %
+```
+
+Three sources can set that number, and they are consulted in strict priority order:
+
+1. **A per-shift daily override** for that exact work center, shift, and date is used verbatim. Nothing else is considered.
+2. **A date-range override** is divided across the days it covers and the shifts running on each date.
+3. **The formula** above, if no override applies.
+
+That priority order is why a Saturday of authorized overtime works even when the standing calendar says no shift runs. An override on a day with no regular shift creates a slot for that day so work can be placed there. Without the override, the day simply does not exist in the map and is skipped.
+
+The map is rebuilt on every scheduling run. Change a shift, change an instance count, add a holiday, and the next run reflects it with no migration step.
+
+## Stage 1: The Day-by-Day Search
+
+The search begins at the operation's earliest allowed start. That value comes from upstream: the latest finish among the operation's predecessors, adjusted for queue time, lot streaming overlap, or transit days, and never earlier than the job's own start date. The [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) covers how that value is derived.
+
+From there the engine walks forward one calendar day at a time. Each day passes through four checks:
+
+**Is the work center available at all?** A whole-day plant holiday, a work center holiday, or a day with no configured shift removes the date. Days covered by a capacity override bypass the weekend check, which is exactly the point of the override.
+
+**Which shifts run on this weekday?** Only shifts assigned to this work center, and only if their definition includes this day of the week. A day shift with zero Saturday hours contributes nothing on Saturdays even though the shift is assigned.
+
+**Does the slot still have room?** A slot is a candidate only if unconsumed capacity remains. Slots consumed by earlier-scheduled jobs are already smaller by the time this job's search arrives, which is why run order matters.
+
+**Can the operation actually start in it?** A slot whose end time is at or before the earliest start is rejected: the job cannot use time that has already passed. When the earliest start falls inside the shift, the slot is clipped, and this is where the arithmetic gets interesting.
+
+## Stage 2: Clipping the First Slot
+
+Suppose an 08:00 to 16:00 shift on a two-instance work center, and an operation that cannot start before 10:00.
+
+The slot's nominal capacity is 8 hours times 2 instances, so 16 hours. But six hours of shift remain from 10:00, so only 6 times 2, or 12 hours, are actually reachable by this job. EDGEBIC records both numbers: the slot's total remaining capacity, and the capacity available from the effective start time. Allocation always uses the second.
+
+That distinction prevents a specific and common class of error. If the engine allocated against the full 16, it would place 16 hours of work into a 6-hour window and produce a finish time that is physically impossible. Charging the clipped 12 produces a plan the crew can actually run.
+
+One threshold guards the low end. A slot with less than a tenth of an hour of usable time after clipping is discarded rather than offered. Without it, an operation could fragment into a trail of two-minute slivers across a dozen shifts, technically valid and practically worthless.
+
+## Stage 3: Scoring the Candidates
+
+Every surviving candidate gets a score:
+
+```
+score = (can start immediately ? 1000 : 0)
+      + available hours from effective start × 10
+      + (100 − shift start hour)
+```
+
+Read it as three ranked instincts:
+
+| Term | Weight | The instinct |
+|---|---|---|
+| Immediate availability | 1000 | Capacity you can use now beats capacity you must wait for |
+| Available hours | 10 per hour | A slot with room beats one nearly full |
+| Earlier shift start | up to 100 | Fill the day shift before the night shift |
+
+Two slots, both with 8 hours free, on the same work center:
+
+| Slot | Immediate? | Hours | Shift start | Score |
+|---|---|---|---|---|
+| Day, 08:00 | Yes | 8 | 08:00 | 1000 + 80 + 92 = **1172** |
+| Night, 20:00 | No | 8 | 20:00 | 0 + 80 + 80 = **160** |
+
+The day shift wins by a factor of seven, which is the correct answer for an operation that could start this morning. The 1000-point term is deliberately large enough that available capacity can never outvote availability now: a night slot with 40 free hours still scores below a day slot with 1 free hour that can start immediately.
+
+After scoring, slots are ordered by date first, then by shift, then by remaining capacity descending. Date ordering is the outer key on purpose. Scoring answers "which slot is most attractive"; date ordering guarantees the engine never leaves usable capacity behind today in order to take a more attractive slot on Thursday.
+
+## Stage 4: Consuming the Slots
+
+The fill loop is short:
+
+```
+for each slot in ranked order:
+    if remaining hours ≈ 0        → done
+    hours here = min(remaining, slot's available-from-time capacity)
+    if hours here < 0.01          → skip this slot
+    allocate hours here across the work center's instances
+    subtract from remaining
+```
+
+Each allocation immediately reduces the slot's remaining capacity, so a second allocation into the same slot in the same run sees the reduced figure. When the loop ends with hours still unplaced, the run reports that the operation could not be scheduled rather than silently truncating it.
+
+### Worked example: 28 hours, two machines, two shifts
+
+Work center: two instances, 100 percent utilization. Day shift 08:00 to 16:00, night shift 16:00 to midnight. Operation needs 28 hours. Earliest start Monday 10:00.
+
+Capacity map for the relevant slots:
+
+| Slot | Nominal | Available from effective start | Score |
+|---|---|---|---|
+| Mon Day | 16 h | 12 h (clipped from 10:00) | 1000 + 120 + 92 = **1212** |
+| Mon Night | 16 h | 16 h | 0 + 160 + 84 = **244** |
+| Tue Day | 16 h | 16 h | 0 + 160 + 92 = **252** |
+
+The fill:
+
+| Pass | Slot | Placed | Split across 2 instances | Remaining |
+|---|---|---|---|---|
+| 1 | Mon Day | min(28, 12) = **12 h** | 6 h each, 10:00 to 16:00 | 16 h |
+| 2 | Mon Night | min(16, 16) = **16 h** | 8 h each, 16:00 to midnight | **0** |
+
+Start Monday 10:00, finish Monday midnight, hour display "12,16". The operation never reaches Tuesday, and the second shift is the whole reason: on a day-shift-only calendar the same 28 hours would run into Wednesday.
+
+### Worked example: the weekend gap
+
+Single-instance assembly work center, day shift weekdays only, 20-hour operation, earliest start Friday 12:00.
+
+| Day | Slot | Available | Placed | Remaining |
+|---|---|---|---|---|
+| Friday | Day | 4 h (clipped from 12:00) | 4 h | 16 h |
+| Saturday | none | skipped | 0 | 16 h |
+| Sunday | none | skipped | 0 | 16 h |
+| Monday | Day | 8 h | 8 h | 8 h |
+| Tuesday | Day | 8 h | 8 h | **0** |
+
+Friday 12:00 to Tuesday 16:00: four calendar days elapsed, 20 machine hours consumed. The weekend costs the job two days of lead time and zero hours of capacity. That is the correct model, and it is why quoted lead times that ignore the calendar are always optimistic.
+
+## Stage 5: Instance Allocation
+
+Once the engine knows how many hours go into a slot, it decides which physical machines take them. Three strategies apply.
+
+**Load balancing** is the default for multi-instance work centers. Hours are divided evenly so all instances finish at the same moment, which is why a 20-hour operation on four instances completes in 5 elapsed hours rather than 20.
+
+**One job per instance per day** applies when the work center is flagged for it. A job claims one instance and keeps that same instance across shifts and days rather than hopping between machines. Three 6-hour jobs arriving at a three-chamber furnace take chambers 1, 2, and 3, and all finish the same afternoon with no chamber shared. A fourth job waits for tomorrow.
+
+**Single instance** puts everything on machine 1, which is what single-machine work centers do naturally.
+
+Fractional instance counts are supported. A work center set to 2.5 instances on an 8-hour shift offers 20 hours. Allocation spreads across three physical slots, with the capacity that the half instance cannot carry redistributed across the two full instances, so the placed total still matches the 20 hours the formula produced.
+
+## What Comes Back
+
+The allocator returns the operation's true start, its true end, and the per-instance, per-shift breakdown behind them. That breakdown is not a display artifact: it persists with the schedule and feeds the hour columns in the Job View, the utilization reports, the capacity calendars, and the daily hour records that shop-floor actuals are later compared against.
+
+It is also the audit trail. When someone asks why an operation finished Tuesday rather than Monday, the breakdown shows exactly which slots were offered, what each contributed, and where the hours ran out. Combined with the deterministic run order, the same inputs always produce the same schedule, so any change in output traces back to a change in input.
+
+## Where This Fits
+
+Multi-shift allocation is the placement layer that every other scheduling feature sits on. [Anchor scheduling](/blog/toc-buffers-and-direction-precedence-in-edgebic) uses it to place work around a pinned constraint. [Parallel work centers](/blog/how-edgebic-validates-simultaneous-capacity) run it once per machine after agreeing on a common start moment. Reschedules run it only for the work that has not started, because completed operations are never moved.
+
+If your results do not match the arithmetic above, the cause is almost always configuration rather than the engine. [Multi-shift scheduling mistakes](/blog/multi-shift-scheduling-mistakes-edgebic) lists the specific settings that produce the specific symptoms, and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide) shows how the pieces connect.

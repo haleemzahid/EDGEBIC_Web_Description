@@ -1,0 +1,91 @@
+---
+title: "How a Scheduler Handles a Re-Entrant Routing"
+description: "A re-entrant routing visits the same work center more than once. See how a finite scheduler treats each visit as a separate claim on the shared capacity pool, with worked numbers."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - re-entrant routing
+  - re-entrant flow scheduling
+  - revisiting a work center
+  - finite capacity scheduling
+  - routing sequence
+  - shared capacity pool
+targetPhrase: "re-entrant routing"
+wordCount: 1520
+readingTime: 8
+qaQuestions:
+  - question: "A part visits my grinder twice in its routing. Will the scheduler double-count the machine or get confused?"
+    answer: "No. Each visit is a separate operation with its own sequence number and hours, and each one claims capacity from the grinder's shared availability independently. The engine does not treat the second visit as the same event as the first; it treats it as a later job competing for the same machine, alongside every other job that needs the grinder. The two visits compete for the same finite hours, so the second visit waits if the first visit plus other work has already filled the day."
+  - question: "The second grinding step keeps landing days after the first. Is that a bug?"
+    answer: "Usually not. Between the two grinder visits sit other operations (heat treat, cooling, an outside step) that take time, and when the part returns to the grinder it rejoins the queue behind whatever else has claimed the machine in the meantime. The gap is the sum of the in-between steps plus any wait for grinder capacity to open up. If the gap looks wrong, check the run times and queue times on the steps between the two visits, and check how loaded the grinder is on those days."
+faqQuestions:
+  - question: "What is a re-entrant routing?"
+    answer: "A re-entrant routing is a process where a part returns to the same work center more than once during its journey through the shop, instead of visiting each resource only one time. A classic example is mill, then heat treat, then mill again for a finishing cut. Each visit is a distinct operation in the routing with its own sequence number, run time, and setup, even though it uses the same physical machine. Re-entrant flow is common in machining, semiconductor, and heat-treat-heavy processes."
+  - question: "How does a finite scheduler handle a work center visited twice?"
+    answer: "It treats each visit as an independent operation that claims capacity from the work center's shared pool of available hours. The two visits are not merged; they compete for the same finite capacity along with every other job routed to that machine. The engine places the first visit, lets the intermediate steps run, then places the second visit into whatever capacity remains when the part returns. Because both visits draw from one pool, a busy machine visited twice can become its own constraint."
+  - question: "Why can a re-entrant work center become a bottleneck?"
+    answer: "Because every job that uses it consumes its capacity more than once, so its effective load is multiplied. If a grinder is visited twice by every part and each visit takes 2 hours, then 20 parts demand 80 grinder hours, not 40. That doubled demand often makes a re-entrant resource the tightest constraint in the shop even when it looks like an ordinary machine on paper. Watching its total load, not just per-visit load, is the key to scheduling it well."
+---
+
+**A re-entrant routing is one where a part returns to the same work center more than once, and a finite scheduler handles it by treating each visit as a separate operation that claims capacity from the machine's shared pool of available hours.** The two visits are not merged into one event; they compete for the same finite capacity along with every other job routed to that machine. That is why a re-entrant resource, visited twice by every part, often becomes the tightest constraint in the shop: its real load is doubled. EDGEBIC by User Solutions schedules each visit independently against the work center's capacity, so the second pass waits its turn exactly like a fresh job would.
+
+## Each visit is its own operation
+
+The key idea is simple: the scheduler does not think in terms of "the part visited the grinder." It thinks in terms of operations. A routing that goes mill, heat treat, mill again is three operations, and the first and third both happen to point at the same physical mill. Each has its own sequence number, its own run time, its own setup, and its own place in the queue. How a routing is read step by step is covered in [how EDGEBIC reads a routing](/blog/how-edgebic-reads-a-routing).
+
+When the engine schedules, it places operations in dependency order. The first mill operation claims capacity from the mill's available hours. Heat treat runs on its own machine. Then the third operation returns to the mill and claims capacity again, from whatever the mill has left after the first operation and every other job that has booked time in between. The mill sees two demands from this one part, spaced apart by the heat-treat step, and it honors each one as a distinct booking against its finite capacity.
+
+## Why the shared pool matters
+
+Because both visits draw from the same pool, a re-entrant machine carries a hidden capacity tax. Every part that passes through it consumes its hours more than once. On paper the machine looks ordinary. In load terms it is doing double duty.
+
+This is the single most important fact about re-entrant flow, and it is why such resources so often turn into [bottlenecks](/blog/production-bottleneck-identification). The trap is measuring load per visit and missing that the total is multiplied. A finite engine avoids the trap because it books every visit against the shared pool, so the machine's total commitment is always visible: two visits from 20 parts is 40 bookings, not 20.
+
+## A worked example
+
+A shaft routes through four steps:
+
+| Seq | Operation | Work center | Run time (per part) |
+|---|---|---|---|
+| 10 | Rough mill | Mill-1 | 1.0 h |
+| 20 | Heat treat | Oven | 3.0 h |
+| 30 | Finish mill | Mill-1 | 0.8 h |
+| 40 | Inspect | QC | 0.3 h |
+
+Mill-1 is re-entrant: steps 10 and 30 both land on it. Run a batch of 25 shafts.
+
+Total Mill-1 demand is (1.0 + 0.8) hours times 25 parts, which is 45 hours. If you had only counted the rough-mill visit, you would have budgeted 25 hours and been short by 20. The finish-mill visits alone add 20 hours, and they arrive later, after the 3-hour heat-treat step per part, so they hit Mill-1's queue on different days than the rough-mill visits.
+
+Here is the sequence for a single shaft, assuming capacity is open when it needs it. Rough mill runs and finishes. Heat treat runs for 3 hours. The shaft returns to Mill-1 for the 0.8-hour finish cut, but only after rejoining the queue behind any other work that claimed Mill-1 during the heat-treat window. Then inspect. The gap between the two Mill-1 visits is at least the 3-hour heat treat plus any wait for Mill-1 capacity to open. On a loaded machine, that wait is the difference between the finish mill landing the same day and landing two days later.
+
+## Reading a re-entrant schedule
+
+When the second visit lands later than you expected, walk the same path the engine did:
+
+1. **Sum the total load on the re-entrant machine**, counting every visit. That number, not the per-visit time, tells you whether the machine is the constraint.
+2. **Check the steps between the two visits.** Their run time, queue time, and any transit set the minimum gap before the part can return.
+3. **Check how loaded the machine is on the return day.** If it is full, the second visit waits for the next open slot, which is finite capacity doing its job.
+
+None of this is special-case logic. It falls out of the ordinary rule that each operation claims capacity independently, which is also why [the same routing can schedule differently each day](/blog/why-the-same-routing-schedules-differently-each-day): the return visit lands in whatever capacity the rest of the plan has left. A finite engine handles re-entrant flow without any dedicated feature, precisely because it never pretended a machine could do two things at once in the first place.
+
+## Scheduling a re-entrant resource well
+
+The practical levers are the same ones you use for any tight machine, applied with the doubled load in mind. If a re-entrant machine is your constraint, protect its capacity: minimize setups on it, avoid scheduling it to 100 percent so it can absorb the return traffic, and consider whether an [alternate work center](/blog/how-a-scheduler-chooses-between-alternate-machines) can take one of the two visits off it. If the two visits are genuinely different operations (rough versus finish), splitting them onto two machines removes the re-entrant load entirely and can uncork the shop.
+
+The scheduler will schedule re-entrant flow correctly no matter what, because it books every visit honestly. Your job is to notice when a doubled-up machine has quietly become the bottleneck, and to plan its capacity for the real demand rather than the per-visit illusion. See the total load on every work center, including the ones your parts revisit, in [EDGEBIC](/edgebic), and read the full placement logic in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="What is a re-entrant routing?">
+A re-entrant routing is a process where a part returns to the same work center more than once during its journey through the shop, instead of visiting each resource only one time. A classic example is mill, then heat treat, then mill again for a finishing cut. Each visit is a distinct operation in the routing with its own sequence number, run time, and setup, even though it uses the same physical machine. Re-entrant flow is common in machining, semiconductor, and heat-treat-heavy processes.
+</Accordion>
+
+<Accordion title="How does a finite scheduler handle a work center visited twice?">
+It treats each visit as an independent operation that claims capacity from the work center's shared pool of available hours. The two visits are not merged; they compete for the same finite capacity along with every other job routed to that machine. The engine places the first visit, lets the intermediate steps run, then places the second visit into whatever capacity remains when the part returns. Because both visits draw from one pool, a busy machine visited twice can become its own constraint.
+</Accordion>
+
+<Accordion title="Why can a re-entrant work center become a bottleneck?">
+Because every job that uses it consumes its capacity more than once, so its effective load is multiplied. If a grinder is visited twice by every part and each visit takes 2 hours, then 20 parts demand 80 grinder hours, not 40. That doubled demand often makes a re-entrant resource the tightest constraint in the shop even when it looks like an ordinary machine on paper. Watching its total load, not just per-visit load, is the key to scheduling it well.
+</Accordion>

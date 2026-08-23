@@ -1,0 +1,92 @@
+---
+title: "What Is a Shift Priority Score in Scheduling?"
+description: "A shift priority score ranks candidate shifts before the scheduler books any hours, weighting immediate availability first, then free capacity, then how early in the day the shift starts."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - shift priority score
+  - shift ranking scheduling
+  - capacity search order
+  - which shift the scheduler picks
+  - candidate shift scoring
+  - multi shift allocation order
+targetPhrase: "shift priority score"
+wordCount: 1240
+readingTime: 6
+faqQuestions:
+  - question: "What is a shift priority score in scheduling?"
+    answer: "It is a number computed for each candidate shift before any hours are booked, expressing how attractive that shift is for the operation being placed. Three things contribute: a large bonus if the shift can start at or before the moment the operation becomes eligible, a moderate contribution proportional to the free capacity available from that moment, and a small preference for shifts that start earlier in the day. The score decides preference; a subsequent sort by date decides the actual walk order."
+  - question: "Why does a day shift usually beat a night shift for the same day?"
+    answer: "Because two of the three terms favor it. If the operation becomes eligible in the morning, the day shift can start immediately and collects the large availability bonus while the night shift cannot and collects nothing. The day shift also starts earlier in the day, so it collects more of the small tie-breaking term. The gap those two produce is wide enough that free capacity rarely closes it, which is why work tends to fill days before nights rather than spreading evenly."
+  - question: "Can I change how shifts are ranked?"
+    answer: "Not by editing the weights, because they are not exposed as settings. What you can change is the inputs. Removing capacity from a shift through an override, closing it with a holiday, or simply not associating a shift with a work center all change which candidates exist and what they offer. In practice this is the more useful lever anyway: shaping the calendar is a decision a planner can explain, whereas retuning a scoring formula is not."
+qaQuestions:
+  - question: "My night shift has far more free capacity than the day shift, so why does work keep landing on days?"
+    answer: "Because free capacity is only one of three terms and it is not the strongest one. The big bonus goes to a shift that can start at or before the moment the operation becomes eligible, and for a job that becomes eligible in the morning that is the day shift and not the night one. Capacity contributes proportionally but at a much smaller weight, so a night shift with several extra free hours still loses to a day shift that can start now. If you genuinely want work on nights, the lever is what the day shift offers, not the ranking."
+  - question: "The scheduler skipped a shift that clearly had hours free. What happened?"
+    answer: "Scoring only ranks shifts that survived validation, so a skipped shift usually failed a check before it was ever scored. The most common causes are that the shift ends before the operation becomes eligible, that the hours remaining from the eligible moment fall under the minimum allocation floor, or that a holiday or downtime removed the hours the grid still appears to show. Checking the day's capacity resolution for that work center normally identifies which of the three applies."
+---
+
+**A shift priority score is a number computed for every candidate shift before any hours are booked, expressing how attractive that shift is for the operation being placed.** It weights three things in descending order of importance: whether the shift can start at or before the moment the operation becomes eligible, how much free capacity it offers from that moment, and how early in the day it begins. The score is a preference, not a schedule; a second sort by date is what determines the order the engine actually walks. EDGEBIC by User Solutions computes it for each candidate the day-by-day capacity search turns up.
+
+## How it works
+
+Placing one operation begins with a search. The engine walks forward day by day from the moment the operation becomes eligible, and for each day it examines every shift the work center is associated with. Shifts that fail validation are discarded before scoring: a shift that ends before the eligible moment offers nothing, and so does one whose remaining hours fall below the minimum worth allocating.
+
+Whatever survives gets scored, and three terms contribute.
+
+**Immediate availability, weighted heavily.** A shift that can begin at or before the moment the operation becomes eligible receives a large fixed bonus. One that cannot receives nothing for this term. This is the dominant factor by a wide margin, and it encodes a simple principle: starting now beats starting later, almost regardless of what else is on offer.
+
+**Free capacity, weighted moderately.** The score rises in proportion to the hours available from the eligible moment onward, at a modest multiplier. Note that this is capacity from that moment, not the shift's total free capacity, which matters for an operation becoming eligible mid-shift.
+
+**Time of day, weighted lightly.** A small term prefers shifts that begin earlier in the day. This is essentially a tie-breaker, and its practical effect is that when two shifts on the same day are otherwise comparable, the earlier one is preferred.
+
+Scoring produces a ranking, and then a second sort runs over the same candidates by date ascending, then shift, then available capacity descending. This is the part that surprises people. The date sort means the engine always considers earlier days before later ones, so a very high scoring shift on Tuesday will never jump ahead of a lower-scoring one on Monday. The score decides preference within what the calendar makes possible; the date sort ensures the calendar wins.
+
+## A concrete example
+
+A work center runs two shifts: a day shift from 08:00 to 16:00 and a night shift from 20:00 to 04:00. An operation becomes eligible on Monday at 08:00, and both shifts have eight free hours.
+
+**Monday day shift.** It can start at or before 08:00, so it collects the large availability bonus of 1000. Eight free hours contribute 80. Starting at hour eight of the day contributes 92. Total: 1172.
+
+**Monday night shift.** It starts at 20:00, which is after the operation became eligible, so it collects nothing for availability. Eight free hours contribute 80. Starting at hour twenty contributes 80. Total: 160.
+
+The gap is not close, and it is not close because of capacity. Both shifts offer identical hours. The entire difference is the availability bonus plus a small time-of-day preference. A night shift would need an implausible amount of extra free capacity to overhaul a day shift that can start immediately, which is precisely the behavior a planner wants: an operation ready to run at eight in the morning should run at eight in the morning, not wait twelve hours for a roomier slot.
+
+Now extend to Tuesday. Tuesday's day shift scores well too, and might even outscore Monday's night shift. But the date sort places both Monday shifts ahead of it regardless, so the engine fills Monday day, then Monday night, then Tuesday day. Whatever the scores say, the walk goes forward in time.
+
+## How EDGEBIC uses it
+
+Scoring sits inside the multi-shift allocator, between finding candidate shifts and booking hours into them. It is not a setting and it is not exposed, because it is not a policy decision so much as a formalization of what any planner would do by hand: take the slot you can start in now, prefer the one with more room, and prefer earlier in the day when it makes no difference. The search it orders is described in [how shift priority scoring orders the capacity search](/blog/how-shift-priority-scoring-orders-the-capacity-search).
+
+The scored candidates are what the allocator then fills, splitting an operation across as many of them as its hours require. That behavior is covered in [how EDGEBIC allocates hours across shifts](/blog/how-edgebic-allocates-hours-across-shifts) and in [what is a cross-shift operation in scheduling](/blog/what-is-a-cross-shift-operation-in-scheduling).
+
+Two inputs to the score deserve attention because they are the ones a planner actually controls. What a shift reports as free is described in [what is available capacity in scheduling](/blog/what-is-available-capacity-in-scheduling), and it is not simply total hours minus booked hours once an operation becomes eligible partway through a shift. And the slot being scored is the structure described in [what is a shift resource allocation in scheduling](/blog/what-is-a-shift-resource-allocation-in-scheduling). For the wider allocation picture see [EDGEBIC multi-shift scheduling explained](/blog/edgebic-multi-shift-scheduling-explained).
+
+## The takeaway
+
+A shift priority score answers which of these shifts would I rather use, and the answer is dominated by one question: can it start now. Capacity and time of day matter, but neither comes close to overturning immediate availability, which is why a schedule fills days before nights and earlier days before later ones even when the later slots look roomier. When work lands somewhere unexpected, the productive question is almost never about the ranking and almost always about the inputs: what did that shift actually offer from the moment the operation became eligible, and did anything remove hours the grid still appears to show. For the wider vocabulary see the [manufacturing glossary](/blog/manufacturing-glossary), and for the product itself see [EDGEBIC](/edgebic).
+
+<Accordion title="What is a shift priority score in scheduling?">
+It is a number computed for each candidate shift before any hours are booked, expressing how attractive that shift is for the operation being placed. Three things contribute: a large bonus if the shift can start at or before the moment the operation becomes eligible, a moderate contribution proportional to the free capacity available from that moment, and a small preference for shifts that start earlier in the day. The score decides preference; a subsequent sort by date decides the actual walk order.
+</Accordion>
+
+<Accordion title="Why does a day shift usually beat a night shift for the same day?">
+Because two of the three terms favor it. If the operation becomes eligible in the morning, the day shift can start immediately and collects the large availability bonus while the night shift cannot and collects nothing. The day shift also starts earlier in the day, so it collects more of the small tie-breaking term. The gap those two produce is wide enough that free capacity rarely closes it, which is why work tends to fill days before nights rather than spreading evenly.
+</Accordion>
+
+<Accordion title="Can I change how shifts are ranked?">
+Not by editing the weights, because they are not exposed as settings. What you can change is the inputs. Removing capacity from a shift through an override, closing it with a holiday, or simply not associating a shift with a work center all change which candidates exist and what they offer. In practice this is the more useful lever anyway: shaping the calendar is a decision a planner can explain, whereas retuning a scoring formula is not.
+</Accordion>
+
+<Accordion title="My night shift has far more free capacity than the day shift, so why does work keep landing on days?">
+Because free capacity is only one of three terms and it is not the strongest one. The big bonus goes to a shift that can start at or before the moment the operation becomes eligible, and for a job that becomes eligible in the morning that is the day shift and not the night one. Capacity contributes proportionally but at a much smaller weight, so a night shift with several extra free hours still loses to a day shift that can start now. If you genuinely want work on nights, the lever is what the day shift offers, not the ranking.
+</Accordion>
+
+<Accordion title="The scheduler skipped a shift that clearly had hours free. What happened?">
+Scoring only ranks shifts that survived validation, so a skipped shift usually failed a check before it was ever scored. The most common causes are that the shift ends before the operation becomes eligible, that the hours remaining from the eligible moment fall under the minimum allocation floor, or that a holiday or downtime removed the hours the grid still appears to show. Checking the day's capacity resolution for that work center normally identifies which of the three applies.
+</Accordion>

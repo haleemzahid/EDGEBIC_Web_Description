@@ -1,0 +1,68 @@
+---
+title: "What Is an Instance Collision in Scheduling?"
+description: "An instance collision is when one machine is booked to two jobs at overlapping times. Definition, how it differs from over-utilization, and how EDGEBIC catches it."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - what is an instance collision
+  - instance collision scheduling
+  - machine double booking
+  - resource conflict production
+  - one job per instance
+  - overlapping schedule windows
+targetPhrase: "what is an instance collision"
+wordCount: 940
+readingTime: 5
+faqQuestions:
+  - question: "What is an instance collision?"
+    answer: "An instance collision is when a single machine instance is booked to two different jobs whose clock windows overlap on the same date. One physical machine cannot run two jobs at the same moment, so a collision is a critical anomaly that points to a scheduling or data fault. It is detected per machine instance, per date, by finding any two schedule rows on the same instance whose start-and-end times cross each other."
+  - question: "How is an instance collision different from over-utilization?"
+    answer: "Over-utilization is about total hours: a work center booked past the hours it physically has in a day. An instance collision is about the same moment: two jobs assigned to one machine at overlapping clock times, even if the daily total is well within capacity. A cell can pass the hours test and still have a collision if two four-hour jobs both land at 8 a.m. on the same machine. Collisions are always critical because they describe an impossible instant."
+  - question: "What is a one-per-day collision?"
+    answer: "A one-per-day collision is a specific violation on work centers set to run one job per machine per day, such as heat-treat furnaces or paint booths where mid-day changeover is infeasible. If the same machine instance appears on two different jobs on the same date, that breaks the one-job-per-instance-per-day contract even if the clock windows do not overlap. The check flags it as a critical anomaly so the planner can re-separate the two jobs onto different days or instances."
+qaQuestions:
+  - question: "Two jobs got booked to the same CNC at 8 a.m. on the same day. The daily hours look fine. Why did the collision check fire but not the capacity check?"
+    answer: "Because they measure different things. The capacity check sums hours and finds the day within limits. The collision check looks at the actual clock windows and sees two jobs occupying the same machine at the same instant, which is impossible regardless of the daily total. Re-run the schedule so the allocator separates them onto different instances or start times. A collision that survives a re-run usually means duplicate resource rows from a reschedule that did not merge a split operation."
+  - question: "Our heat-treat furnace runs one batch per day. The report flagged the same furnace on two jobs on Monday even though their times do not overlap. Is that a real problem?"
+    answer: "Yes, for a one-per-day work center. The rule there is one job per machine per day, not just non-overlapping times, because you cannot change the furnace load mid-cycle. Two jobs on the same furnace instance on Monday violates that contract. Move one job to Tuesday or to a second furnace instance. If you genuinely can run two batches a day, the work center should not be flagged one-per-day; review that setting instead."
+---
+
+**An instance collision is when a single machine instance is booked to two different jobs whose clock windows overlap on the same date: one physical machine cannot run two jobs at the same moment, so a collision is a critical anomaly. It is detected per machine instance, per date, by finding any two schedule rows on the same instance whose start-and-end times cross.** It is the resource-conflict form of a scheduling anomaly, and it is always impossible rather than merely inefficient.
+
+This entry is part of the EDGEBIC glossary; see the [manufacturing glossary](/blog/manufacturing-glossary) for the wider vocabulary and the [over-utilization check](/blog/what-is-an-over-utilization-check) for its close cousin.
+
+## How an Instance Collision Works
+
+A work center is a group of identical machines, and each individual machine is an instance. When [EDGEBIC by User Solutions](/edgebic) schedules a step, it assigns the hours to a specific instance for a specific window of clock time. The rule that must always hold is simple: one instance can carry only one job at any given instant.
+
+The collision check reads every schedule row, groups them by work center, instance, and date, and looks for any two rows whose time windows overlap. If job A holds instance 2 from 8 a.m. to noon and job B holds the same instance 2 from 10 a.m. to 2 p.m., their windows cross between 10 and noon. That crossing is the collision. Because it describes two jobs occupying one machine at the same second, it is physically impossible and reported as critical.
+
+This is a sharper test than counting hours. A day can be well within a machine's capacity and still contain a collision if two jobs are placed at overlapping times. The hours-based over-utilization check would pass; the collision check would still fire. The two checks are complementary, and a healthy plan clears both.
+
+The reason the two tests must both exist is that they fail independently. A machine can be over-booked on total hours without any single instant having two jobs (the excess is spread across a padded day), and a machine can have a collision at one instant while its total hours sit comfortably under capacity. Neither check subsumes the other, so both run, and a plan is only trustworthy when both come back clean. That is the practical meaning of finite capacity scheduling at the machine level: not just the right number of hours, but no two jobs on one machine at one moment.
+
+## The One-Per-Day Variant
+
+Some work centers cannot change their load mid-cycle. A heat-treat furnace runs one batch to temperature; a paint booth cannot switch colors between morning and afternoon without a full changeover. These are configured to run one job per machine per day.
+
+On those work centers, the collision rule tightens. It is no longer enough for the clock windows to avoid overlapping; the same instance simply may not appear on two different jobs on the same date at all. If it does, the plan has broken the one-job-per-instance-per-day contract, and the check reports it as critical. The fix is to move one of the jobs to another day or another furnace, or, if the work center genuinely can run two loads a day, to correct the one-per-day setting that no longer matches reality.
+
+## A Concrete Example
+
+A machining cell has two CNC instances and plenty of daily capacity. After a reschedule, the anomaly report flags a collision: both a four-hour bracket job and a four-hour housing job were assigned to CNC instance 1, both starting at 8 a.m.
+
+The daily hours for the cell are only eight against a much larger ceiling, so the capacity check stays green. But the two jobs occupy the same machine from 8 a.m. to noon, which cannot happen. The planner opens the flagged job and re-runs the schedule; the allocator places the second job on CNC instance 2, the windows no longer share a machine, and the collision clears. Had the two rows come from a split operation that failed to merge, deleting the duplicate would have been the fix instead.
+
+## How EDGEBIC Catches Instance Collisions
+
+In EDGEBIC, collision detection lives in the Scheduler Anomalies report under the Reports menu, in the instance-collision category. Run it for a specific job or plant-wide. The summary strip shows the collision chips: green when no machine is double-booked, red when a collision is found. Clicking a flagged row opens the owning schedule so you can see which two jobs landed on the same instance and when.
+
+Collisions are prevented in the first place by the multi-shift allocator, which tracks per-instance bookings and steers each new job to a free instance and a free window. When a collision still appears in the report, it usually points at a reschedule artifact (a split operation that left duplicate resource rows) rather than a fresh allocation mistake. Re-running the schedule is the first thing to try; a collision that survives a clean run means two code paths wrote the same machine, and the flagged row names the job to inspect.
+
+The related capacity views help you see the load context: the [work center utilization report](/blog/how-to-run-the-work-center-utilization-report-in-edgebic) shows how full each cell is, and [configuring instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic) covers how many instances a work center should have. For the full picture of validation, read [what the EDGEBIC anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for) and the [schedule diagnostics overview](/blog/edgebic-schedule-diagnostics-explained).
+
+A collision-free plan is the baseline promise of finite capacity scheduling: every machine is doing one thing at a time. When the check turns green after a run, you know no operator will show up to a machine already busy with someone else's job.

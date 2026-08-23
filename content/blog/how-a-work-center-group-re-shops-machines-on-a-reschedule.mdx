@@ -1,0 +1,89 @@
+---
+title: "How a Work Center Group Re-Shops Machines on a Reschedule"
+description: "A group step keeps its pool binding after the first schedule, so a reschedule can re-shop the machines. Started operations keep the machine they ran on, and only not-started ones re-resolve. Here is how EDGEBIC does it."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - work center group
+  - machine pool
+  - reschedule
+  - resource group scheduling
+  - alternate work center
+  - finite capacity scheduling
+targetPhrase: "work center group reschedule"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "What happens to a machine-pool assignment when a job is rescheduled?"
+    answer: "In EDGEBIC a group step keeps its pool binding as intent, not just the machine it happened to resolve to. On a reschedule, a not-started group operation re-shops the pool and can move to a different member if that is now the better fit, while a started or completed one keeps the machine it actually ran on. So the pool stays a pool across reschedules instead of being permanently pinned to one machine after the first run."
+  - question: "Does a group step remember its pool or the machine it resolved to?"
+    answer: "Both, and that is the point. The resolved machine is what every screen shows after scheduling, so you see the real assignment. But the group binding stays on the step underneath, so a later reschedule knows this operation may run on any member of the pool. If the engine overwrote the binding with the resolved machine, the pool's whole value on reschedule would be lost, because the step could never re-shop."
+  - question: "Will a reschedule move an operation that has already started to a different machine?"
+    answer: "No. A started or completed operation is treated as historical fact and keeps the machine it actually ran on. EDGEBIC only re-shops group operations that have not started. This means the pool flexibility applies to future work, while work already in progress stays exactly where it physically happened, which keeps actuals honest and never asks the floor to move a job that is already on a machine."
+qaQuestions:
+  - question: "We route a step to a machine pool, it resolved to Mill-2 last week, and now on reschedule it jumped to Mill-1. Did something break?"
+    answer: "No, that is the pool doing its job. A group step is bound to the pool, not pinned to the machine it resolved to the first time, so on a reschedule EDGEBIC re-shops the members and picks whichever now completes the operation best. If Mill-2 has since filled up with higher-priority work, Mill-1 may now be the earlier finish, so the operation correctly moved. The change shows up through the normal replaced-machine indicator, from Mill-2 to Mill-1, so you can see exactly what re-shopped and why."
+  - question: "Half our pool job is done on one machine and half is still to run. Will a reschedule split it across two machines?"
+    answer: "The part already run stays on the machine it ran on, because started work is historical and never re-shopped. The not-started remainder re-resolves against the pool and lands on whichever member is the best fit at reschedule time, which may or may not be the same machine. In practice a resource-locked guard keeps in-progress work matched to the machine it started on, so you never get a job yanked off a machine mid-run. Only the genuinely unscheduled remainder is free to shop the pool again."
+---
+
+**A work center group step keeps its pool binding after the first schedule, so a reschedule can re-shop the machines rather than being locked to whichever one it resolved to. EDGEBIC by User Solutions re-resolves not-started group operations against the whole pool on every reschedule, while started and completed operations keep the machine they actually ran on.** This is what makes a machine pool a pool over time: the flexibility does not evaporate the moment the first plan is built.
+
+A [work center group](/blog/how-a-work-center-group-shops-a-pool-of-machines) is a named set of interchangeable machines that a routing step can target instead of a single machine. On the first schedule, the engine explodes the group into candidates and resolves one member. The interesting question is what happens next, when conditions change and the plan is rebuilt.
+
+## Intent versus outcome
+
+The key design choice is that a group step stores two different things at once: the intent and the outcome. The intent is the pool binding, the fact that this step may run on any member of the group. The outcome is the member it actually resolved to on the current schedule.
+
+After scheduling, every screen shows the outcome, the real machine, so a planner sees "this ran on Mill-2," not "this ran on some pool." But underneath, the step still carries the group binding. That binding is what a reschedule reads. If the engine threw the binding away and kept only the resolved machine, the step would be permanently pinned to Mill-2, and the pool's entire value, the freedom to re-shop when the situation changes, would be gone after one run.
+
+Keeping both means display is honest and re-shopping is possible. You see the machine that was chosen, and the engine remembers it was a choice.
+
+## What re-shops and what does not
+
+On a reschedule, EDGEBIC treats the operations of a group step according to their state:
+
+- **Not-started operations** re-shop the pool. The engine re-explodes the group and re-resolves the member by the pool's strategy against current conditions. If a different member is now the better fit, the operation moves there.
+- **Started or completed operations** keep the machine they actually ran on. Started work is historical fact, so it is never re-shopped. A resource-locked guard ensures an in-progress operation stays matched to the machine it started on, so the floor is never asked to move a job that is already running.
+
+This split is the same discipline that governs the rest of rescheduling, where [completed work is preserved](/blog/how-a-scheduler-preserves-completed-work) and only the remaining work is replanned. The pool flexibility applies precisely to the future part of a job, never to what has physically happened.
+
+When a not-started operation does move to a different member, the change surfaces through the normal replaced-machine indicator, shown as "from Mill-2 to Mill-1," so a planner can see exactly what re-shopped and infer why. Nothing moves silently.
+
+## A worked example: a pool across two reschedules
+
+Take a step routed to a milling pool of Mill-1 and Mill-2, shopped by earliest completion. A job needs 10 hours on that step.
+
+**First schedule.** Both machines are lightly loaded. The engine resolves to Mill-2 because it happens to finish soonest, and the plan shows the operation on Mill-2.
+
+**A week later, before it starts.** A batch of higher-priority work has landed on Mill-2, filling its near-term capacity. The plan is rebuilt. Because the step still carries the pool binding, the not-started operation re-shops: Mill-1 now offers the earlier completion, so the operation moves to Mill-1. The replaced-machine indicator reads "Mill-2 to Mill-1." The pool did exactly what a pool is for, it absorbed the load shift by moving work to the freer machine.
+
+**Later still, mid-run.** Suppose instead the operation had already started 4 hours of its 10 on Mill-1 when the reschedule fires. Those 4 hours are historical and stay on Mill-1. The engine only re-resolves the remaining 6 hours, and the resource-locked guard keeps that remainder on Mill-1 too rather than yanking a running job to another machine. Re-shopping resumes only for operations that have not begun.
+
+Same step, same pool, and the behavior differs entirely based on state: freely re-shopped before it starts, pinned to reality once it does.
+
+## Why this is the right behavior
+
+The alternative, pinning a group step to its first resolved machine, would quietly defeat the reason to use a pool at all. Pools exist to give the schedule slack: when one machine gets busy, work flows to another. That benefit is worth the most precisely on reschedule, when the situation has changed since the original plan. Discarding the binding would make a pool behave like a single machine after day one.
+
+At the same time, letting a reschedule move started work would corrupt actuals and confuse the floor. So the rule is asymmetric on purpose: future work re-shops freely, in-progress and completed work stays put. That mirrors how EDGEBIC treats the whole reschedule, where [a job resumes from where actuals left off](/blog/how-a-job-resumes-from-where-actuals-left-off) and only the unstarted remainder is replanned.
+
+There is one honest guardrail worth knowing. If a pool ends up empty or unknown at schedule time, for example because every member was deactivated, the step is left unexpanded and flagged with a diagnostic warning rather than silently scheduled on a wrong machine. Failing loudly is deliberate: a visible warning is better than a plan that quietly put work somewhere it cannot run.
+
+For the initial explosion and the strategy that picks a member, see [how a work center group shops a pool of machines](/blog/how-a-work-center-group-shops-a-pool-of-machines), and for choosing a pool versus a manual alternate, [when to use a machine pool versus an alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center). The [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) places re-shopping in the full reschedule pipeline, and [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) covers why pool flexibility matters when capacity is tight. To watch your own pools re-shop against changing load, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="What happens to a machine-pool assignment when a job is rescheduled?">
+In EDGEBIC a group step keeps its pool binding as intent, not just the machine it happened to resolve to. On a reschedule, a not-started group operation re-shops the pool and can move to a different member if that is now the better fit, while a started or completed one keeps the machine it actually ran on. So the pool stays a pool across reschedules instead of being permanently pinned to one machine after the first run.
+</Accordion>
+
+<Accordion title="Does a group step remember its pool or the machine it resolved to?">
+Both, and that is the point. The resolved machine is what every screen shows after scheduling, so you see the real assignment. But the group binding stays on the step underneath, so a later reschedule knows this operation may run on any member of the pool. If the engine overwrote the binding with the resolved machine, the pool's whole value on reschedule would be lost, because the step could never re-shop.
+</Accordion>
+
+<Accordion title="Will a reschedule move an operation that has already started to a different machine?">
+No. A started or completed operation is treated as historical fact and keeps the machine it actually ran on. EDGEBIC only re-shops group operations that have not started. This means the pool flexibility applies to future work, while work already in progress stays exactly where it physically happened, which keeps actuals honest and never asks the floor to move a job that is already on a machine.
+</Accordion>

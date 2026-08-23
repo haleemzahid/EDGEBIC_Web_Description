@@ -1,0 +1,88 @@
+---
+title: "Why a Bottleneck Needs a Target Date to Anchor a Schedule"
+description: "Why marking a work center as the bottleneck is not enough to trigger anchor scheduling in EDGEBIC, and how a target start date on the constraint step activates it."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - anchor scheduling
+  - theory of constraints
+  - bottleneck scheduling
+  - target start date
+  - constraint scheduling
+  - backward scheduling
+targetPhrase: "anchor scheduling target date"
+wordCount: 1530
+readingTime: 8
+faqQuestions:
+  - question: "What triggers anchor scheduling in EDGEBIC?"
+    answer: "Anchor scheduling is triggered by a target start date set on the bottleneck step's schedule row, not by the bottleneck flag alone. The engine looks for an existing schedule row that carries a target start date, matches it to the routing step on that work center, and only then pins that step and schedules the rest of the job around it. Marking a work center as the bottleneck without setting a target date has no scheduling effect."
+  - question: "What does the bottleneck flag actually do if it does not trigger anchoring?"
+    answer: "The bottleneck flag identifies which work center the engine should treat as the constraint when it validates and sizes buffers. During anchor scheduling the engine confirms the flagged work center is genuinely the highest-load resource for the job, and if buffers are enabled it applies the larger, demand-proportional buffer sizes. The flag shapes the constraint math; the target date is what actually switches the job into anchor mode."
+  - question: "What happens if I set a target date but the work center is not the true bottleneck?"
+    answer: "Anchor scheduling still runs, because the target date alone triggers it, but the engine notices the anchored work center is not the highest-load resource. When buffers are enabled it then applies small fixed buffers instead of the large demand-proportional ones. The job is still pinned and planned around the target date, just with more conservative safety margins that reflect the anchor not being the real constraint."
+qaQuestions:
+  - question: "I flagged my heat-treat oven as the bottleneck weeks ago but the schedule still runs simple forward. Why is nothing anchoring?"
+    answer: "The flag by itself does nothing to the direction of scheduling. Anchor mode only activates when a target start date exists on the schedule row for the oven step of a job. On a first-ever scheduling run there are no existing schedule rows to carry that date, so there is nothing for the engine to find, and the job forwards normally. To anchor a job, open its schedule view, set a target start date on the oven step, and re-run. The next run detects the date, pins the oven step to it, back-schedules the upstream steps to feed it, and forward-schedules the downstream steps. Both the flag and the date are required together."
+  - question: "If I set a target date, does the engine change my customer due date to match the computed finish?"
+    answer: "No. The customer due date you entered on the order is never overwritten by scheduling. Anchor mode pins the constraint step to your target start date and computes a finish, but that finish is written to the schedule's own end date, not back onto the order's due date. The due date stays exactly as you promised it, so you can compare the computed completion against the commitment and see whether the anchor lands the job on time. Protecting the due date from being silently rewritten is a deliberate rule in the engine."
+---
+
+**In EDGEBIC by User Solutions, anchor scheduling is triggered by a target start date on the constraint step, not by the bottleneck flag alone. Marking a work center as the bottleneck tells the engine which resource is the constraint, but the job only switches into anchor mode when a target start date is present on that step's schedule row. The engine finds the date, pins the constraint step to it, back-schedules everything upstream to feed it, and forward-schedules everything downstream from it.** This two-part requirement, the flag and the date, is the single most common source of "why isn't my bottleneck anchoring?" confusion, and the answer is always that one of the two is missing.
+
+Anchor scheduling is EDGEBIC's implementation of the Theory of Constraints idea that a plant runs at the pace of its slowest resource. Instead of pushing work forward from step one and letting it pile up in front of the constraint, the engine reserves the constraint's time first and times everything else to serve it.
+
+## The flag and the date do different jobs
+
+It is tempting to assume that flagging a work center as the bottleneck is enough to change how a job schedules. It is not, and the split of responsibilities is worth understanding.
+
+The bottleneck flag is a property of the work center. It says "when this resource is the constraint, treat it as such." During anchor scheduling the engine uses the flag to confirm the constraint and to size protective buffers: a flagged, genuinely high-load work center earns the larger, demand-proportional buffers, while an anchored work center that is not the real constraint gets small fixed ones. But the flag never, by itself, changes the direction a job schedules.
+
+The target start date is a property of a specific schedule row. It says "this step must begin at this moment." When the engine sees a target date on a step, it stops forward-scheduling the whole job and instead pins that step and plans around it. The date is the switch; the flag is the calibration.
+
+## How the engine detects an anchor
+
+At the start of scheduling a job, the engine does not scan work centers for the bottleneck flag to decide whether to anchor. Instead it looks through the job's existing schedule rows for one that carries a target start date. If it finds such a row, it matches that row's work center to the routing step running on that same work center, confirms the match, and treats that step as the anchor. If no schedule row has a target date, or the date is on a work center that no longer matches any routing step, the job simply forwards.
+
+This detection order has a practical consequence that surprises new users. On a job's very first scheduling run there are no existing schedule rows yet, so there is nothing to carry a target date, so the first run always forwards. Anchoring is something you apply to a job that already has a schedule: you open its schedule view, set the target date on the constraint step, and re-run.
+
+## What anchor mode does once triggered
+
+Once the engine has an anchor, it plans in three moves.
+
+First it pins the constraint step to the target start date and schedules it with maximum priority, so the constraint claims its capacity before any other step of the job can compete for the same slots. Exploiting the constraint, never letting it starve or idle, is the whole point.
+
+Then it schedules the upstream steps backward from the anchor. Working from the anchor's start, it walks the feeder steps in reverse, placing each one so it finishes just in time to keep the constraint fed. Upstream operations end up with hard "must finish by" deadlines rather than "start whenever" freedom, which is why an anchored job can show upstream steps starting earlier than the job's nominal start.
+
+Finally it schedules the downstream steps forward from the anchor's finish, chaining them out toward completion exactly as a normal forward pass would, except that nothing downstream can begin before the constraint is done.
+
+## The due date is never rewritten
+
+One rule holds through all of this: the engine never overwrites the customer due date you entered on the order. Anchor mode pins the constraint to your target start and computes a completion, but that completion is written to the schedule's own end date, not back onto the order. The due date stays exactly as promised.
+
+This separation is what makes anchoring useful for commitment checking. You set the target start you believe the constraint needs, the engine computes when the job actually finishes, and you compare that finish against the untouched due date to see whether the anchor lands on time. If the two disagree, you move the target date and re-run, rather than discovering later that the software quietly changed your promise.
+
+## Getting anchoring to fire
+
+If a bottleneck refuses to anchor, the checklist is short. Confirm a target start date is actually set on the schedule row for the constraint step, not just on the order. Confirm the job has been scheduled at least once, so there are existing rows to carry the date. And confirm the routing still has a step on the flagged work center, since an edit that removed or moved that step breaks the match. Each of these is a data condition, and each is quick to verify.
+
+Anchor scheduling is one direction the engine can take, and it outranks the others: when a job carries a target date it takes the anchor path even if the order is also marked for backward scheduling, because a pinned constraint is a harder commitment than a due date. The general comparison of directions is covered in [forward versus backward scheduling](/blog/forward-vs-backward-scheduling), and the specific relationship between anchoring and a whole-order backward pass is in [anchor scheduling versus plain backward scheduling](/blog/anchor-scheduling-vs-plain-backward-scheduling). How the protective buffers around the anchor are sized is covered in [how anchor buffers protect a constraint and a due date](/blog/how-anchor-buffers-protect-a-constraint-and-a-due-date), and why the constraint sets the plant's rhythm at all is in [why the bottleneck sets the pace](/blog/why-the-bottleneck-sets-the-pace).
+
+Anchoring lives inside the wider machinery of the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and identifying which resource is your true constraint is the subject of [production bottleneck identification](/blog/production-bottleneck-identification).
+
+To see anchor scheduling pin your real constraint and time the rest of the job around it, [bring your data to a demo](/contact-us).
+
+<Accordion title="What triggers anchor scheduling in EDGEBIC?">
+Anchor scheduling is triggered by a target start date set on the bottleneck step's schedule row, not by the bottleneck flag alone. The engine looks for an existing schedule row that carries a target start date, matches it to the routing step on that work center, and only then pins that step and schedules the rest of the job around it. Marking a work center as the bottleneck without setting a target date has no scheduling effect.
+</Accordion>
+
+<Accordion title="What does the bottleneck flag actually do if it does not trigger anchoring?">
+The bottleneck flag identifies which work center the engine should treat as the constraint when it validates and sizes buffers. During anchor scheduling the engine confirms the flagged work center is genuinely the highest-load resource for the job, and if buffers are enabled it applies the larger, demand-proportional buffer sizes. The flag shapes the constraint math; the target date is what actually switches the job into anchor mode.
+</Accordion>
+
+<Accordion title="What happens if I set a target date but the work center is not the true bottleneck?">
+Anchor scheduling still runs, because the target date alone triggers it, but the engine notices the anchored work center is not the highest-load resource. When buffers are enabled it then applies small fixed buffers instead of the large demand-proportional ones. The job is still pinned and planned around the target date, just with more conservative safety margins that reflect the anchor not being the real constraint.
+</Accordion>

@@ -1,0 +1,74 @@
+---
+title: "What Are Lost Hours in a Production Schedule?"
+description: "Lost hours are hours a routing demands that the schedule never actually booked. Definition, the half-hour threshold, why completed steps are excluded, and how EDGEBIC reports them."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - lost hours production schedule
+  - schedule under-emit hours
+  - routing hours missing from plan
+  - partial completion missing hours
+  - scheduling anomaly hours check
+  - planned hours do not match routing
+targetPhrase: "lost hours in a production schedule"
+wordCount: 1130
+readingTime: 6
+faqQuestions:
+  - question: "What are lost hours in a production schedule?"
+    answer: "Lost hours are hours a routing step demands that the finished schedule never actually booked. The check compares the hours allocated to an operation against what the routing calls for, which is setup time plus the per-unit hours times the order quantity, adjusted by the alternative work center's factor if the step ran somewhere other than its primary machine. When the booked total falls short by more than half an hour, the operation is flagged. It is a warning, not a hard stop."
+  - question: "Why is the threshold half an hour rather than a percentage?"
+    answer: "Because the failure it catches is a chunk of a day going missing, not a rounding difference. A percentage gate would let a large job lose several hours quietly while flagging a tiny job for a two-minute discrepancy. A flat half-hour absolute threshold catches the real pattern, which is a partial day that never rematerialized, and ignores the small arithmetic noise that comes from setup and efficiency math."
+  - question: "Do completed operations get checked for lost hours?"
+    answer: "No, and that exclusion is deliberate. Once an operation has an actual end date, its hours are shop-floor fact, and real work legitimately diverges from what the routing estimated. Comparing a finished job's actuals against its routing estimate would flag every job that ran faster than planned. The check therefore skips completed operations entirely and looks only at work the engine still owns."
+qaQuestions:
+  - question: "A job shows twenty hours of milling in the plan, but the routing says twenty-six. Where did six hours go?"
+    answer: "That is a lost hours firing, and the most common cause is a partial completion that did not fully carry forward. When an operator logs part of a day, the schedule builds a historical portion from the actuals and is supposed to re-plan the remainder into a future slot. If the historical portion snapped its planned hours down to match what was actually logged and the matching forward portion never materialized, the difference simply disappears from the plan. Re-run the schedule for that job and check whether the total returns to twenty-six. If it does, the gap was a transient artifact of the partial; if it persists, open the operation and look at how its actuals were recorded."
+  - question: "Our job ran on an alternate machine and the check did not flag it even though the hours look different from the routing. Is that right?"
+    answer: "Yes, that is correct behavior. When a step runs on an alternate work center, that alternate carries its own speed factor, so the expected hours are the routing's base hours scaled by that factor. A machine with a factor of 0.5 legitimately books half the hours, and flagging that would be a false positive on every alternate routing in the plant. The check applies the factor before comparing, so it measures the gap against what that specific machine was supposed to take, not against the primary machine's number."
+---
+
+**Lost hours are hours a routing step demands that the finished schedule never actually booked. The check sums the hours allocated to an operation and compares them against what the routing calls for, which is the step's setup time plus its per-unit hours multiplied by the order quantity, scaled by the alternate work center's factor when the step ran somewhere other than its primary machine. If the booked total falls short by more than half an hour, the operation is flagged as a warning.**
+
+The plain way to say it: the plan promised less work than the recipe requires. The job will look shorter than it is, the machine will look freer than it is, and the shortfall shows up on the floor as an operation that was never going to finish in the time the board gave it.
+
+This entry belongs to the [EDGEBIC by User Solutions](/edgebic) glossary. For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the parent concept, the definition of a [scheduling anomaly](/blog/what-is-a-scheduling-anomaly).
+
+## How the Lost Hours Check Works
+
+The expected number is arithmetic straight off the routing step. Take the setup time, add the per-unit hours multiplied by the order quantity, and if the operation ran on an alternate machine, multiply by that alternate's factor. That gives what this operation should have consumed.
+
+The actual number is the sum of every hour block booked against the operation across all its days and machines.
+
+Subtract, and if the shortfall passes half an hour, the check reports a warning at job scope. The threshold is absolute rather than proportional on purpose. What it is hunting for is a slab of a day going missing, and a percentage gate would either miss that on a big job or fire constantly on small ones.
+
+Two guards keep the check honest. **Completed operations are excluded.** Once an operation carries an actual end date, its hours are what really happened, and real work diverges from estimates all the time; comparing the two would flag half the plant. **The alternate factor is applied.** A step that ran on a machine rated at half the primary's speed is supposed to book half the hours, so the expected number is scaled before the comparison rather than after.
+
+## Where Lost Hours Come From
+
+The dominant cause is a **partial completion that did not fully carry forward**. When an operator logs part of an operation, the schedule keeps a historical portion built from the actuals and re-plans the remainder into a future slot. In building the historical portion, the planned hours for that partial day are snapped down to match the hours actually logged. If the matching forward portion never materializes in the output, the difference between the routing's demand and the plan's total goes missing.
+
+That is why this check is best treated as a signal rather than a gate. It is informative, not enforced at save time. Its most valuable use is as a tripwire while you are working through a partial-completion situation on a live job, where the arithmetic gets subtle and a silent shortfall is easy to miss.
+
+## A Concrete Example
+
+A job runs 500 brackets. The milling step has a one-hour setup and 0.05 hours per bracket, so the routing demands 26 hours in total.
+
+On Tuesday the operator logs four hours against the step and does not close it. The planner reschedules on Wednesday morning. The plan now shows 20 hours of milling: the four logged on Tuesday plus 16 forward hours. Six hours are unaccounted for.
+
+The anomaly report flags the operation with a lost hours warning of six hours, comfortably over the half-hour threshold. The planner re-runs the schedule for that job. This time the historical and forward portions reconcile and the milling step reads 26 hours again, four historical and 22 forward. The warning clears.
+
+Had the step instead run on an alternate mill rated at a factor of 0.5, the expected total would have been 13 hours rather than 26, and a plan showing 13 would have been correct and unflagged.
+
+## How EDGEBIC Reports Lost Hours
+
+In EDGEBIC, the lost hours test runs inside the Scheduler Anomalies report under the Reports menu. It reports at job scope, so a firing hands you the specific job and operation to open rather than a plant-level summary.
+
+Because it is a warning rather than a critical, it will not block anything. Treat it as a prompt to re-run and re-check, particularly after a shift where partial completions were logged. If a re-run clears it, the gap was a transient artifact. If it persists across runs, the operation's actuals themselves are worth opening.
+
+The neighboring definitions are the [daily hour breakdown](/blog/what-is-a-daily-hour-breakdown) that holds the per-day numbers, [partial completion](/blog/what-is-a-partial-completion-in-scheduling) which is the usual cause, and the [over-utilization check](/blog/what-is-an-over-utilization-check) which catches the opposite failure of too many hours rather than too few. For the practical walkthrough, see [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic), and for the symptom-first version, [a job shows fewer hours than its routing requires](/blog/a-job-shows-fewer-hours-than-its-routing-requires-edgebic).
+
+A plan that under-promises is more dangerous than one that over-promises, because nothing on the board looks wrong until the operation runs out of time. That is the whole reason this check exists.

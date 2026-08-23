@@ -1,0 +1,74 @@
+---
+title: "What Is the Delay Composition Order in Scheduling?"
+description: "Queue time, lot-streaming overlap, and transit days are applied to a finished operation in one fixed order. Learn the sequence and why the order changes the answer."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - delay composition order
+  - queue time and transit order
+  - inter step timing scheduling
+  - lot streaming overrides queue
+  - earliest downstream start
+  - routing step handoff
+targetPhrase: "delay composition order"
+wordCount: 983
+readingTime: 5
+faqQuestions:
+  - question: "What is the delay composition order in scheduling?"
+    answer: "It is the fixed sequence in which a scheduler applies the between-step delays on a routing after an operation finishes. Queue time is applied first, then any lot-streaming overlap, then transit days. The result is a single timestamp: the earliest moment the next step is allowed to begin. The order matters because the three delays are not all additive. Lot-streaming overlap replaces the queue-adjusted result rather than adding to it, so a step carrying both settings does not get both effects."
+  - question: "Does queue time always add to transit time?"
+    answer: "Yes, when both are set and no lot-streaming overlap is configured on the step. Queue time advances the clock in shift hours from the operation's end, and transit days then advance from wherever queue left off, so the two compose. Where the composition surprises people is lot streaming. If a step carries a flow lag or a transfer batch, that calculation replaces the queue-adjusted end rather than stacking on top of it, so the queue time is effectively discarded for that step."
+  - question: "Why does the composition produce an earliest start rather than a real start?"
+    answer: "Because a delay says when work becomes eligible, not when capacity exists. The composed timestamp can land at midnight, on a Saturday, or in the middle of a holiday. The capacity allocator then takes that timestamp as a lower bound and searches forward for the first shift slot with room on the right work center. That separation keeps the two jobs distinct: routing settings decide eligibility, and the calendar decides placement. It is also why a one hour queue time can push a step to the next morning."
+qaQuestions:
+  - question: "I set a queue time and a flow step on the same operation and only one seems to apply. What happened?"
+    answer: "The composition order explains it. Queue time is computed first, producing an adjusted end. Then, because the step carries a flow setting, the lot-streaming calculation runs and replaces that adjusted end with its own result rather than adding to it. The queue time is therefore discarded for that step. This is deliberate, because the lot-streaming result is itself a statement about when the downstream step may begin. If you want a genuine handling delay on top of a streaming overlap, use the transfer delay field, which is designed to add to the streaming result."
+  - question: "Our parts go to an outside vendor after an in-house step. Which fields should carry what?"
+    answer: "Put the internal wait in queue time and the outbound trip in transit days. Queue time ticks only in shift hours, so a two hour cool-down starting at 15:00 on an eight hour day shift finishes at 16:00 and then resumes the next working morning. Transit days then advance from that point, and you choose whether they count calendar days, which is usually right for a carrier, or working days, which suits an internal move. Because queue runs first and transit second, the two compose in exactly the order the parts physically experience them."
+---
+
+**The delay composition order is the fixed sequence in which a scheduler applies a routing step's between-step delays after its operation finishes: queue time first, then any lot-streaming overlap, then transit days, producing one timestamp that is the earliest moment the next step may begin.** The order is not cosmetic. Two of the three delays add to what came before, while the middle one replaces it, so knowing the sequence is the difference between predicting a handoff correctly and guessing. EDGEBIC by User Solutions runs the same three stages in the same order on every non-material step, every run.
+
+## How it works
+
+When an operation is placed on the calendar, the engine knows when the machine work ends. That end time is rarely the moment the next step can start, because a routing can carry several kinds of deliberate delay. Three stages resolve them.
+
+**Stage one, queue time.** The step's queue time is added to the operation's end, counted in shift hours rather than clock hours. A two hour queue that begins at 15:00 on an eight hour day shift consumes the one hour left in that shift and then picks up the next working morning. If queue time is zero the stage returns immediately and the clock does not advance at all, not even past a holiday.
+
+**Stage two, lot-streaming overlap.** If the step carries either a flow lag in hours or a transfer batch in pieces, the streaming calculation runs. This is the stage that behaves differently from the others: its result **replaces** the value coming out of stage one rather than adding to it. Streaming can therefore pull the downstream start earlier than the operation's own end, which is the whole point of overlapping two stations, or push it later, depending on the setting. If neither streaming field is set, the stage is skipped and stage one's value passes straight through.
+
+**Stage three, transit days.** Unless the step is a material step, transit days are applied from wherever stage two left the clock. Transit advances in whole days and you choose whether those days count as calendar days or as days the work center actually operates. Material steps skip this stage, because a material step already absorbs its transit internally when its own end date is built, so applying it again would double-count.
+
+The composed timestamp is then published as the step's end time, and the next step reads it as a lower bound. It is an eligibility marker, not a placement. If it lands on a Saturday night, the allocator simply searches forward from there for the first shift slot with room on the correct work center.
+
+## A concrete example
+
+A plating operation feeds an inspection step. The plated parts need one hour on a wet rack to drip, then a one calendar day trip to an inspection lab in another building. The shift is Monday to Friday, 08:00 to 16:00. The plating operation finishes Friday at 15:00.
+
+| Stage | Setting | Applied from | Result |
+|---|---|---|---|
+| 1. Queue time | 1 h, shift-aware | Fri 15:00 | Fri 16:00 (the hour left in the shift) |
+| 2. Lot streaming | none set | Fri 16:00 | skipped, value unchanged |
+| 3. Transit days | 1 calendar day | Fri 16:00 | **Sat 16:00** |
+
+Inspection's earliest start is Saturday 16:00. No Saturday shift runs, so the allocator searches forward and places inspection Monday at 08:00.
+
+Change one setting and watch the arithmetic move. If transit is counted in working days instead of calendar days, Friday is day zero and the next working day is Monday, so stage three ends at Monday 16:00. Inspection cannot begin before then and lands Tuesday at 08:00, a full day later than the calendar-day version. Neither answer is wrong; they model different real-world delays, which is why the choice exists.
+
+Now add a flow lag to the plating step and leave the queue time in place. Stage one still computes Friday 16:00, but stage two overwrites it with the streaming result, and stage three works from that instead. The drip time you configured has quietly stopped contributing. That is the interaction most worth remembering.
+
+## How EDGEBIC uses it
+
+Each stage has its own field on the routing step, and each has its own definition worth reading separately: [queue time in manufacturing scheduling](/blog/what-is-queue-time-in-manufacturing-scheduling) for the shift-aware buffer, [what is lot streaming](/blog/what-is-lot-streaming) and [what is flowstep overlap](/blog/what-is-flowstep-overlap) for the middle stage, and [what is transit time in production scheduling](/blog/what-is-transit-time-in-production-scheduling) for the trip.
+
+The calendar-versus-working-day choice inside stage three has its own consequences, laid out in [working day vs calendar day in scheduling](/blog/working-day-vs-calendar-day-in-scheduling). And the reason material steps skip stage three entirely comes down to how those rows are built, which is covered in [what is a material step in a routing](/blog/what-is-a-material-step-in-a-routing).
+
+Practically, the order gives you a diagnostic recipe. When a gap between two operations looks wrong, work the three stages in sequence rather than staring at the whole gap. Confirm the queue time, check whether a streaming field is set and therefore overriding it, then confirm the transit count and its day mode. One of those three almost always explains the gap, and the order tells you which to suspect first.
+
+## The takeaway
+
+Three delays, one fixed order, and one of them overwrites instead of adding. That single asymmetry is why a routing step with both a queue time and a flow setting does not behave the way most planners expect, and why the composition order is worth knowing by name rather than by trial and error. Read it as the handoff arithmetic between two operations: eligibility first, placement second. For the individual pieces see [what is queue time in manufacturing scheduling](/blog/what-is-queue-time-in-manufacturing-scheduling) and [what is transfer delay in lot streaming](/blog/what-is-transfer-delay-in-lot-streaming), then explore [EDGEBIC](/edgebic) or, if you are migrating from the legacy product, [RMDB to EDGEBIC](/rmdb-to-edgebic).

@@ -1,0 +1,178 @@
+---
+title: "How EDGEBIC Orders Operations: Inside the Dependency Graph"
+description: "An operation sequencing dependency graph decides what runs first. See how EDGEBIC builds one, orders it, resolves joins, and handles repeated work centers."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - operation sequencing dependency graph
+  - topological sort scheduling
+  - routing dependency resolution
+  - join wait latest predecessor
+  - circular dependency routing
+  - sub assembly sequencing
+targetPhrase: "operation sequencing dependency graph"
+wordCount: 2200
+readingTime: 11
+faqQuestions:
+  - question: "What is a dependency graph in production scheduling?"
+    answer: "A dependency graph turns a routing into a network: every operation is a node and every next-in-sequence link is an arrow saying the second operation cannot start until the first has finished. Branches, joins and sub-assemblies are all shapes in the same network. The scheduler orders that network so no operation is ever placed before the work it depends on, whatever order the steps were entered in."
+  - question: "How does a scheduler decide which operation to place first?"
+    answer: "It repeatedly takes any operation with no unplaced predecessors, places it, and then releases the operations that were waiting on it. Steps with no predecessors go first, and each completion frees whatever it fed. When several operations are simultaneously ready, the order they were entered in breaks the tie, so a routing already in a sensible order comes back unchanged."
+  - question: "Why does an assembly step wait for the slower of two feeding operations?"
+    answer: "Because both feeding operations record their finish time against the same successor and the later time wins. If one leg finishes Tuesday at noon and the other Wednesday at 09:00, the assembly starts Wednesday at 09:00. That is physically correct: you cannot assemble until both halves exist. The fast leg's parts simply wait, which is why an idle window before a join is normal rather than a fault."
+  - question: "What happens if a routing contains a circular dependency?"
+    answer: "The scheduler does not crash and does not drop steps. Operations caught in a loop never become free of predecessors, so they are appended after everything that could be ordered properly, in entry order. The visible symptom is a group of tail operations that appear appended rather than sequenced, and whose start times only respect whichever predecessors happened to be placed first. Inspect the links for an A to B to A loop."
+  - question: "How does the scheduler handle the same work center used twice in a routing?"
+    answer: "Each operation carries its own identity, so two visits to the same machine remain distinct nodes in the graph. A downstream step resolves its predecessor by that identity rather than by the machine's name, which is what stops the second inspection from reading the first inspection's finish time. Distinct display names on the two visits protect the same behaviour for routings linked by name."
+qaQuestions:
+  - question: "Our sub-assemblies share work center names with the parent routing. Does that confuse the sequencing?"
+    answer: "Not when the steps are linked step to step. Sub-assembly operations are expanded into the parent's graph before the ordering pass, and each exploded operation carries its own identity even when it runs on a machine the parent also uses. Predecessor finish times are recorded against that identity, so one sub-assembly can never read another's finish. Where routings rely on work center names alone, give repeated machines distinct display identities, because a bare name can match the wrong occurrence."
+  - question: "A step in the middle of the routing started at the job's start date instead of after its predecessor. What does that indicate?"
+    answer: "That the step found no predecessor finish time to read, so it fell back to the job's own start. The rule is that a step starts at the latest finish among its predecessors and never before the job start, so falling back means the link is missing or points somewhere unexpected. Check the upstream step's next-in-sequence value first, then check that the two steps agree on identity if the routing uses names. The plan is not wrong given the data: the data says these two steps are unrelated."
+---
+
+**A routing is not a list, it is a network, and the scheduler orders that network before it places a single hour of work.** Every operation is a node, every next-in-sequence link is an arrow, and the ordering pass guarantees that no operation is ever placed before the work it depends on. That is the operation sequencing dependency graph, and it is what makes a routing entered in a strange order still schedule correctly in EDGEBIC by User Solutions.
+
+This post opens up the mechanism with worked numbers: how the network is built, how it is ordered, how joins resolve, and how repeated work centers and sub-assemblies stay distinct. For the configuration side, see [how to sequence operations with dependencies](/blog/how-to-sequence-operations-with-dependencies-in-edgebic); for the placement machinery this ordering feeds, see the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+## Step 1: Building the Network
+
+The engine reads each operation's next-in-sequence link and turns it into arrows. Two link forms exist, and they are tried in a fixed order:
+
+1. **Identity links** are primary. Each operation has a unique identity, and a link that names an identity produces an unambiguous arrow. A link naming two successors produces two arrows, which is how a branch is expressed.
+2. **Name links** are the fallback, used only when an operation resolved no identity link at all. The name is matched against each step's display identity first, then against the bare work center name.
+
+The precedence matters more than it looks. Every operation is a distinct row even when several of them run on the same machine, and sub-assembly expansion gives exploded operations their own identities. Matching on identity first means a routing that visits the same machine three times, or a parent and sub-assembly that share machine names, still wires the arrows to the right occurrences. Name matching is a compatibility path for older routings, not the mechanism of record.
+
+A three-step routing produces the simplest possible network:
+
+```
+Cut ──► Drill ──► Paint
+```
+
+A branch and a join produce this one:
+
+```
+Prep A ──┐
+         ├──► Assembly
+Prep B ──┘
+```
+
+## Step 2: Ordering the Network
+
+With the arrows built, the engine produces a sequence in which every operation appears after everything it depends on. The method is the standard one for this problem:
+
+1. Count, for every operation, how many arrows point into it. An operation with a count of zero has no prerequisites.
+2. Put every zero-count operation into a queue, in the order the steps were entered.
+3. Take one out, add it to the sequence, and reduce the count on everything it feeds. Anything reaching zero joins the queue.
+4. Repeat until the queue is empty.
+
+Two properties of this pass are worth knowing as a planner.
+
+**Ties keep entry order.** When several operations are simultaneously ready, the order they appear in the routing decides. A routing already entered in a sensible order therefore comes back in exactly that order, and a correct routing is never re-shuffled for no reason.
+
+**Nothing is ever dropped.** If a loop exists (operation A feeds B, B feeds A), neither ever reaches a count of zero, so neither would appear in the sequence. Rather than fail, the engine appends whatever could not be ordered, in entry order, at the end. The plan is still produced. The symptom you see is a group of tail operations that look appended rather than sequenced, with start times that only respect whichever predecessors happened to be placed first. That signature is your cue to look for a circular link.
+
+## Step 3: Turning Order Into Dates
+
+Ordering says what to place first. One further rule says when each placement may begin:
+
+> **An operation starts at the latest finish among all of its predecessors, and never before the job's own start date.**
+
+As each operation is placed, its finish time is recorded against every successor it feeds. When several predecessors write against the same successor, the **latest** time wins. That single "latest wins" behaviour is what implements the join, with no special case in the code and no configuration on your side.
+
+The finish that gets recorded is not the moment the machine stops. It is the moment the output becomes available to the next operation, which means it already includes queue time, any lot streaming overlap, and transit days. That composition is why two operations can show a gap between them that no capacity constraint explains: the gap is the handoff, and it was configured on the routing.
+
+## Worked Example: A Join With Real Numbers
+
+Ten units. Two preparation legs and an assembly. One machine each, eight hour day shifts, no other load, job starts Monday at 08:00.
+
+| Operation | Machine | Hours per unit | Total hours | Working days |
+|---|---|---|---|---|
+| Prep A | Mill 1 | 4.0 | 40 | 5.0 |
+| Prep B | Mill 2 | 6.0 | 60 | 7.5 |
+| Assembly | Assembly 1 | 2.0 | 20 | 2.5 |
+
+The network is Prep A and Prep B both feeding Assembly. Both prep steps have no predecessors, so both are ready immediately and both start Monday at 08:00.
+
+- **Prep A** runs 40 hours: five working days, finishing the following Monday at 08:00. It records that time against Assembly.
+- **Prep B** runs 60 hours: seven and a half working days, finishing the following Thursday at 12:00. It records that time against Assembly too, and because it is later, it wins.
+- **Assembly** reads Thursday at 12:00 and runs its 20 hours from there, finishing the Tuesday after.
+
+Prep A's parts sit finished for two and a half working days. That is not waste created by the scheduler: it is the honest consequence of an unbalanced routing, and it is now visible before the job runs rather than discovered on the floor. If that window costs money, the fix is capacity or a routing change on the slow leg. The plan is telling you where to look.
+
+## Repeated Work Centers and Sub-Assemblies
+
+Two situations stress the graph, and both are handled by the same idea: identity beats name.
+
+**A machine visited twice.** A routing that inspects at step 10 and again at step 40 has two operations on the same machine. Each keeps its own identity, so the second inspection resolves its predecessor as the assembly it follows, not as the first inspection. Giving the two visits distinct display identities protects the same behaviour on routings linked by name.
+
+**A sub-assembly sharing machines with its parent.** Sub-assembly operations are expanded into the parent's network before the ordering pass, and the expansion gives each exploded operation a unique identity with links rewritten to match. One sub-assembly can therefore never read another's finish time, even when both run through the same machine. This is the exact failure that identity-keyed lookups exist to prevent, and it is why [modeling sub-assemblies on the design canvas](/blog/sub-assemblies-in-the-edgebic-designer) requires no special sequencing work from the planner.
+
+## Material Steps Are Nodes Too
+
+A material step sits in the same network as everything else, with two differences that matter to the ordering.
+
+It **claims no machine capacity**, so it never competes for hours and never appears in a work center's load. And its bar is drawn **backward from the point of need** by the material's lead time, which means its bar can sit before the job's official start while its finish time still gates the operation that consumes it.
+
+The ordering treats it exactly like any other node: it records a finish against its successor, and the successor waits for the latest finish among all of its predecessors. A turning operation fed by both a purchased rod and a prior cut waits for whichever is later. That uniformity is why no special configuration is needed to mix bought and made components in one routing.
+
+The same uniformity extends to sub-assembly expansion. Because the expansion happens before the ordering pass, an exploded sub-assembly is just more nodes and more arrows in the same network, and it obeys the same latest-predecessor rule as the parent's own steps.
+
+## What Happens on a Reschedule
+
+When a job is replanned with work already recorded, the ordering pass runs on the same network, but the finish times are seeded differently:
+
+- **Completed operations** seed the network with their **actual** finish times. Their successors read reality rather than the old plan.
+- **Completed operations are then removed** from the work to place, since they are no longer work.
+- **Partially completed operations** are deliberately not seeded. They flow through the remaining-hours path instead, so the allocator places only the gap. Seeding their end and also scheduling the remainder would count their time twice.
+
+The practical effect: a step whose predecessor finished two days late starts two days later, because it read the actual finish rather than the plan. Nothing about the routing changed. This is the mechanism behind most of the moves cataloged in [why a job jumped after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic).
+
+## Reading a Sequencing Problem
+
+When operations land in an order you did not expect, the graph gives you a short diagnostic ladder:
+
+| Symptom | Likely cause |
+|---|---|
+| A middle step starts at the job's start date | No predecessor finish was found: the upstream link is missing or points elsewhere |
+| A join starts too early | Only one leg names the join step |
+| Two visits to one machine run out of order | Both are linked by bare machine name with no distinct identity |
+| Tail steps appear appended, not sequenced | A circular link, so those steps could not be ordered |
+| A large unexplained gap between two steps | Queue time, transit days or an overlap setting on the routing |
+
+The full triage sequence is in [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic), and the configuration errors behind these symptoms are in [dependency and sequencing mistakes](/blog/dependency-and-sequencing-mistakes-edgebic).
+
+## Why This Design Holds Up
+
+The ordering pass is deterministic, drops nothing, degrades gracefully on malformed input, and treats identity as the primary key throughout. Those four properties are what let a plant with sub-assemblies, repeated machines and branching routings trust the sequence without auditing it by hand.
+
+That reliability is what carries at scale. The USS Nimitz overhaul planned in the User Solutions line ran to more than 26,000 tasks, a network no planner reads end to end: the ordering has to be right by construction, not by inspection. The same guarantee applies to a four-step routing in a ten-person shop.
+
+For the direction that this ordering feeds, read [forward scheduling explained](/blog/edgebic-forward-scheduling-explained), and for the whole run around it, [inside an EDGEBIC scheduling run](/blog/inside-an-edgebic-scheduling-run).
+
+Bring your most tangled routing to a demo and we will draw its network and schedule it in the same session. [Contact US to arrange it](/contact-us), or start at the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="What is a dependency graph in production scheduling?">
+A dependency graph turns a routing into a network: every operation is a node and every next-in-sequence link is an arrow saying the second operation cannot start until the first has finished. Branches, joins and sub-assemblies are all shapes in the same network. The scheduler orders that network so no operation is ever placed before the work it depends on, whatever order the steps were entered in.
+</Accordion>
+
+<Accordion title="How does a scheduler decide which operation to place first?">
+It repeatedly takes any operation with no unplaced predecessors, places it, and then releases the operations that were waiting on it. Steps with no predecessors go first, and each completion frees whatever it fed. When several operations are simultaneously ready, the order they were entered in breaks the tie, so a routing already in a sensible order comes back unchanged.
+</Accordion>
+
+<Accordion title="Why does an assembly step wait for the slower of two feeding operations?">
+Because both feeding operations record their finish time against the same successor and the later time wins. If one leg finishes Tuesday at noon and the other Wednesday at 09:00, the assembly starts Wednesday at 09:00. That is physically correct: you cannot assemble until both halves exist. The fast leg's parts simply wait, which is why an idle window before a join is normal rather than a fault.
+</Accordion>
+
+<Accordion title="What happens if a routing contains a circular dependency?">
+The scheduler does not crash and does not drop steps. Operations caught in a loop never become free of predecessors, so they are appended after everything that could be ordered properly, in entry order. The visible symptom is a group of tail operations that appear appended rather than sequenced, and whose start times only respect whichever predecessors happened to be placed first. Inspect the links for an A to B to A loop.
+</Accordion>
+
+<Accordion title="How does the scheduler handle the same work center used twice in a routing?">
+Each operation carries its own identity, so two visits to the same machine remain distinct nodes in the graph. A downstream step resolves its predecessor by that identity rather than by the machine's name, which is what stops the second inspection from reading the first inspection's finish time. Distinct display names on the two visits protect the same behaviour for routings linked by name.
+</Accordion>

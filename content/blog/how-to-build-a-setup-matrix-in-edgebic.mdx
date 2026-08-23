@@ -1,0 +1,137 @@
+---
+title: "How to Build a Setup Time Matrix in EDGEBIC, Step by Step"
+description: "Build a setup time matrix in EDGEBIC: create families, assign products, fill the changeover grid in minutes, and verify it fired on a real schedule."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - build setup time matrix
+  - setup family configuration
+  - changeover matrix setup
+  - product changeover override
+  - setup matrix import export
+  - configure changeover times scheduling
+  - setup matrix verification
+targetPhrase: "build setup time matrix"
+wordCount: 1750
+readingTime: 9
+faqQuestions:
+  - question: "How do you build a setup time matrix?"
+    answer: "Start with one work center, group its products into setup families, then fill a grid of from-family to to-family changeover minutes. Add product-level overrides only for the pairs that break their family rule. A hundred products grouped into eight families produces a 64-cell grid, and you will usually fill fewer than a dozen cells that matter."
+  - question: "Where is the setup matrix configured in EDGEBIC?"
+    answer: "On the work center, under its Setup Matrix tab. That tab holds four things: the family list, the product assignments, the family matrix grid, and the product override grid. Because the matrix belongs to the work center, the same product pair can cost four hours on one machine and thirty minutes on another."
+  - question: "What unit are setup matrix values entered in?"
+    answer: "Minutes. Planners think in minutes on the floor, so a thirty-minute flush is entered as 30 and a four-hour changeover as 240. The engine converts to hours internally. Entering decimal hours by mistake is the single most damaging data-entry error here, because a 60 typed as hours becomes sixty hours of planned changeover."
+  - question: "Can a setup matrix be imported from Excel?"
+    answer: "Yes. Export the current matrix to CSV, edit it in Excel, and re-import. The import updates each row it finds and leaves cells you did not include unchanged, so a partial file is a safe way to update one family's row without touching the rest of the grid."
+  - question: "How do you confirm the matrix is actually being used?"
+    answer: "Schedule a job through the work center and add the Setup Source column to the job view. Rows showing a product-matrix or family-matrix source used the sequence-dependent value. Rows showing a cold start or a routing default fell back, either because it was the first job on that machine or because no cell matched the transition."
+qaQuestions:
+  - question: "We want to try a matrix without committing it to the live schedule. Is that possible?"
+    answer: "Yes. Enter the families and cells, then run a quote simulation against a hypothetical order rather than rescheduling production. The simulation uses the same matrix data and the same resolution logic, so the resulting dates reflect the changeover times you just entered. Discard the simulation when you are done. That gives you a real answer on real routings before anybody on the floor sees a changed plan."
+  - question: "Our team disagrees about whether red-to-black is 60 or 90 minutes. Who wins?"
+    answer: "Measure it three times, then encode the answer as a product-level override so the argument stops. Red sits in the light family, so the family rule would price red-to-black at the light-to-dark time of 60 minutes. A product override for exactly that pair at 90 minutes wins over the family rule, applies only to that transition, and carries a note field where you record why. Every other light-to-dark pair keeps the 60-minute family value."
+---
+
+**Building a setup matrix in EDGEBIC by User Solutions is a four-part job on one work center: create families, assign products to them, fill the changeover grid in minutes, then add overrides for the pairs that break the rule.** Most shops finish their worst machine in an afternoon. This guide walks the sequence and shows how to confirm the matrix is actually firing on a schedule.
+
+For what the matrix is and when it earns its keep, read [the setup matrix explained](/blog/edgebic-setup-matrix-explained). For the family concept on its own, see [what is a setup family](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+## Step 0: Pick One Work Center and Get Real Numbers
+
+Do not start with the whole plant. Start with the machine where sequence hurts most, which is usually obvious: the booth, the reactor, the furnace, the extruder that everybody plans around.
+
+Then get numbers you trust. Time the transitions that actually happen, three times each if you can, and write them down in minutes. Two rules make this less painful than it sounds:
+
+- **You only need the transitions that occur.** If nobody ever runs clear coat after primer, you do not need that cell.
+- **Round honestly, not optimistically.** A flush that takes "about four hours" is 240, not 180 because 180 fits the shift better.
+
+Every number you enter is a promise the schedule will make on your behalf. Ten minutes of measurement is worth an hour of arguing later.
+
+## Step 1: Create the Families
+
+Open the work center, go to its **Setup Matrix** tab, and add families in the Families section. Each family takes a name and a short code: "Light Colors" with code LIGHT, "Dark Colors" with DARK, "Metallics" with METAL.
+
+Aim for five to ten families. The whole point is the collapse: a hundred products stated pair by pair is a ten thousand cell problem, and grouped into eight families it is sixty-four cells. Fewer families means less to maintain; more families means finer control. Eight is a good target and you can split one later if the shop tells you it is too coarse.
+
+Group by **changeover behavior**, not by anything else. Two products belong in the same family when the machine treats them identically on the way in and on the way out. Sales category, customer, and part number series are all irrelevant here.
+
+## Step 2: Assign Products to Families
+
+In the Product Assignments panel, set each product's family from the dropdown. One family per product.
+
+Leaving a product unassigned is a real choice with a real consequence: an unassigned product is treated as its own family, so **only** a product-level override can describe its changeovers. Family cells will not apply to it. That is correct for a genuinely one-off product and a silent problem for everything else, which is why the assignment pass matters as much as the grid.
+
+The family lookup needs **both** sides assigned. If the previous product has a family and the next one does not, the family cell is skipped and the routing default applies instead. That is the most common reason a carefully built matrix appears to do nothing.
+
+## Step 3: Fill the Family Matrix
+
+The Family Matrix grid for this work center is a from-family by to-family table. Click a cell and type the changeover in **minutes**.
+
+A paint booth with two families:
+
+| From \ To | Light | Dark |
+|---|---|---|
+| **Light** | 0 | 60 |
+| **Dark** | 240 | 0 |
+
+Four cells, and they carry the entire economics of that booth. Light to light is free. Light to dark costs an hour. Dark to light costs four hours. Dark to dark is free.
+
+Three things to know while you are in the grid:
+
+- **Zero is a real value, not a blank.** A Light-to-Light cell of 0 tells the schedule that two different light colors run back to back with no changeover. Leave it blank and the engine falls back to the routing step's setup time instead, which is usually not what you meant.
+- **The same-product case needs no cell.** When the machine runs the identical product twice in a row, the engine returns zero automatically. Cells with the same from and to product are dead data.
+- **Negative values are rejected.** The field will not accept them and the engine clamps defensively, so a typo cannot produce negative planned time.
+
+## Step 4: Add Product Overrides
+
+Some pairs do not follow their family rule. Red sits in the light family, so red-to-black would price at the 60-minute light-to-dark cell, but red specifically needs an extra solvent flush that takes 90.
+
+In the Product Overrides grid, add a row for exactly that pair: from Red, to Black, 90 minutes, with a note explaining why. The override wins over the family rule for that one transition and changes nothing else. Every other light-to-dark pair keeps its 60 minutes.
+
+Keep overrides scarce. They are the escape hatch, and a matrix with fifty of them has usually been built with the wrong families. If you find yourself adding a fifth override in one direction, that is a signal to split a family instead.
+
+## Step 5: Import and Export for Bulk Work
+
+For anything beyond a handful of cells, work in a spreadsheet. Export the current matrix to CSV, which produces rows of type, from, to, minutes, and notes. Edit in Excel where a grid is easier to reason about, then re-import.
+
+The import updates each row it finds and leaves cells you did not include unchanged. That makes a partial file safe: you can send one family's row to a supervisor, get it back with real numbers, and import just that without disturbing anything else.
+
+## Step 6: Verify It Fired
+
+Schedule a job through the work center, open the job view, and add the **Setup Source** column.
+
+| What you see | What it means |
+|---|---|
+| Product matrix | An override cell matched. The matrix is working at the finest level |
+| Family matrix | A family cell matched. This should be most of your rows |
+| Same product | Back-to-back identical product, zero changeover, as designed |
+| Cold start | First job on the machine, so the routing default applied. Expected on the first row |
+| Routing default | No cell matched. Investigate: usually a missing family assignment |
+
+The job view shows matrix-driven rows at full brightness and fallback rows muted, so a screen full of muted rows is your signal that something is not connecting. Nine times out of ten it is step 2 rather than step 3: a product missing its family assignment, so the family lookup silently skips.
+
+Next to the source code sits a readable sentence, for example "Family matrix (Light to Dark) for White to Black: 60 min." That sentence is what you show a supervisor who asks why the plan reserved an hour.
+
+## Step 7: Test Without Committing
+
+If you want to see the effect before the floor does, run a quote simulation against a hypothetical order instead of rescheduling production. The simulation uses the same matrix and the same resolution logic, so the dates it produces reflect your new cells. Discard it when you are done. The [quoting guide](/blog/edgebic-quoting-guide) covers the simulation itself.
+
+## Maintaining the Matrix
+
+Three housekeeping rules save trouble later.
+
+**Deleting a family requires reassigning its products first.** The system blocks the delete while any product still points at it, which prevents a silent orphaning of assignments.
+
+**Deleting a family removes its family cells but leaves product overrides alone.** Those overrides do not reference families, so they survive the delete and keep applying. Review them when you restructure, because an override that made sense inside an old grouping may not make sense in the new one.
+
+**Revisit the numbers when the process changes.** A new purge procedure, a faster color-match system, or a different solvent all change the cells. A matrix that was measured once in 2024 and never revisited is a plan built on a memory.
+
+## What to Read Next
+
+[How EDGEBIC resolves setup time](/blog/how-edgebic-resolves-setup-time-the-five-level-chain) explains the five-level chain behind those source codes, including what happens on a reschedule when the machine has already run something. [Setup matrix mistakes](/blog/setup-matrix-mistakes-edgebic) covers the configurations that leave a matrix silently unused. For the payoff on real jobs, see the [paint-booth changeover walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic).
+
+For where this sits in the wider platform, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). Bring your product list and your two worst changeovers to a demo of [EDGEBIC](/edgebic) and we will build the first grid with you.

@@ -1,0 +1,148 @@
+---
+title: "EDGEBIC + Cetec ERP: The Scheduling Integration Guide"
+description: "Cetec ERP production scheduling integration with EDGEBIC: export parts, work centers, routings and open work orders, map columns once, then schedule at finite capacity."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Cetec ERP production scheduling integration
+  - Cetec ERP finite capacity scheduling
+  - Cetec ERP scheduling add-on
+  - EDGEBIC Cetec ERP integration
+  - Cetec ERP CSV export scheduling
+  - cloud ERP scheduling integration
+targetPhrase: "Cetec ERP production scheduling integration"
+wordCount: 1620
+readingTime: 8
+faqQuestions:
+  - question: "Does EDGEBIC connect to Cetec ERP through an API?"
+    answer: "No. EDGEBIC integrates with Cetec ERP through reusable import masks fed by the CSV or Excel exports the system already produces. There is no API integration to build, no code to maintain inside the account, and no certified connector to version-match when either side updates. You map the columns of an export once, and every later run is two clicks with a per-run log recording each row."
+  - question: "What Cetec ERP data does EDGEBIC need to schedule?"
+    answer: "Four exports carry a complete scheduling model: parts, work centers with capacity detail, routings with operation sequence plus run and setup times, and open work orders with quantities and dates. A fifth optional export carries labor hours from the floor. Each goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed."
+  - question: "Do imported Cetec ERP work orders schedule themselves?"
+    answer: "No, and the separation is deliberate. An import changes data while the scheduler changes the plan. Imported work orders appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor."
+qaQuestions:
+  - question: "We are a small electronics contract manufacturer running Cetec ERP with one planner. Is a file-based scheduling integration going to become a second job for her?"
+    answer: "It settles at about twenty minutes on a Monday, and less on other days. The setup cost lands once: four masks, built by dragging column headings onto fields, usually in a single session. After that the recurring work is export, pick the mask, press the run button, read the counts. A healthy weekly run reports something like Created 28, Reused 190, Failed 0 in a couple of minutes, because master data that already matches comes back Reused and untouched rather than being rewritten. The part that takes her real time is the useful part: looking at the schedule and deciding what to do about the two work centers that are over capacity next week."
+  - question: "Our routings are quoted in minutes per piece and some operations are quoted per panel rather than per board. Will that import correctly?"
+    answer: "Yes, through conversion factors, and you never edit a file to do it. Each numeric column in an import mask carries its own factor, applied before the value is stored, so a minutes column converts with 0.016667 and a per-hundred figure with 0.01. For a panel that yields four boards, express the operation as run time per board by dividing the per-panel time by four, either in the export or with a factor on the column. The check afterward is always the same: take one job, add setup plus run time times quantity across its operations, and confirm the schedule agrees. A gap that is a clean multiple of 60, 100, or your panel yield names the missing factor immediately."
+---
+
+**Integrating Cetec ERP with EDGEBIC means exporting the parts, work centers, routings, and open work orders the system already holds to CSV or Excel, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no API project, no code maintained inside the account, and no certified connector to version-match when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the Cetec ERP case: what to export, how the masks work, and what a realistic first week looks like.
+
+## Why a cloud ERP still needs a floor scheduler
+
+Cetec ERP runs the business: quotes, orders, inventory, purchasing, and the manufacturing records that hang off them. What most manufacturers running it report is that the daily sequencing decision still happens somewhere else, usually a spreadsheet, because the questions a planner asks each morning are finite capacity questions:
+
+- Which of these 60 open work orders fits on the two constrained cells this week?
+- If this rush order jumps the queue, which promise dates move and by how much?
+- Is the test bench loaded to 80 percent or 160 percent next Thursday?
+
+Answering those means modeling shifts, machine instances, changeover sequences, and operator availability against every open order at once. That is a different computational problem from recording transactions, which is why a dedicated finite capacity layer beside the ERP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, Cetec ERP included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Cetec ERP to EDGEBIC | Parts | CSV or Excel export to the Product import mask |
+| Cetec ERP to EDGEBIC | Work centers | Export to the Workcenter import mask |
+| Cetec ERP to EDGEBIC | Routings and operations | Export to the routing import mask, two-pass |
+| Cetec ERP to EDGEBIC | Open work orders | Export to the order import mask |
+| Cetec ERP to EDGEBIC | Labor hours (optional) | Export to the Actuals import mask |
+| EDGEBIC to Cetec ERP | Executable start and end dates, dispatch lists | Excel export from the job schedule and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, the format it arrives in (Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row is headings, whether text values are quoted, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto the target fields. Every run after that is two clicks.
+
+Every row produces exactly one outcome: **Created**, **Updated**, **Reused** (matched and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log records every row individually.
+
+## The file is the interface, and that is the advantage
+
+Cloud platforms change on the vendor's schedule, not yours. That is usually fine, and occasionally it breaks an integration built against an API surface. A file-based interface has a much smaller failure mode: the only thing that can break is a column heading, and the fix is re-mapping one row in a mask.
+
+Three practical consequences follow:
+
+- **Nothing is installed in your account.** No script, no extension, no custom record, so there is nothing to promote or maintain.
+- **No integration user or credential is created.** The scheduler never authenticates against the ERP, so there is no permission surface to review or rotate.
+- **Scheduling keeps working offline.** The plan is computed locally, so a connectivity problem stops the export, not the shop's dispatch list.
+
+The trade-offs between file exports and read-only database views are compared in [CSV versus database view export tradeoffs](/blog/csv-vs-database-view-erp-export-tradeoffs).
+
+## Step 1: the four exports
+
+1. **Parts.** The part identifier, description, unit of measure, and any cost or lead-time columns worth having visible. The identifier is the natural key, matched case-insensitively, so `BRK-200` in a file finds `brk-200` in the database.
+2. **Work centers.** Identifier, how many identical machines the center really holds, default setup hours, efficiency, and an hourly rate for cost rollups. If your ERP does not hold instance counts, build that list yourself using [the work center list guide](/blog/building-a-work-center-list-when-your-erp-has-none).
+3. **Routings.** One row per operation: end product, work center, sequence number, run time per unit, setup time, queue time.
+4. **Open work orders.** Product, quantity, order reference, and dates.
+
+Any list or report that saves to CSV is a valid source. You are not writing code and not asking for database access.
+
+## Step 2: map the columns once
+
+Build one mask per file and name it after the routine rather than the file: `Weekly Work Orders` outlives `wo-week29.csv`. Mandatory fields are flagged, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row.
+
+Two mask features carry most of the weight:
+
+**Unit conversion.** Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is 0.016667, seconds to hours 0.000278, and a standard quoted per lot of 100 becomes per piece with 0.01. Different columns in the same file can carry different factors. The wider treatment is in [mapping your ERP's units of measure](/blog/mapping-your-erps-units-of-measure-for-scheduling).
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value rather than wiping it, so a partial refresh file is safe. Watch the matching rule: a zero is a value, not a blank. Leave a column out of the export rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move between systems, because operations reference each other: step 10 feeds step 20 feeds step 30. A row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+The routing import runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product, so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Conventions that pay off immediately:
+
+- **Number sequences in gaps of 10** so a later insert becomes 25 and nothing renumbers.
+- **Keep all of one product's steps in one file.** A routing import wipes and recreates that product's steps once per run, which is what makes re-imports idempotent.
+- **Re-importing is safe for running work orders.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+Multi-level assemblies export one routing per level, covered in [importing sub-assembly routings from your ERP](/blog/importing-subassembly-routings-from-your-erp).
+
+## Step 4: work orders in, then run the scheduler
+
+The order import maps product, quantity, reference, and dates. When your export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as the reference followed by a line number, keeping a multi-line order together.
+
+**Imports never schedule anything.** Imported work orders sit as unscheduled demand until you run the scheduler, which states its scope in plain numbers before it plans. Reconcile first, using the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The job schedule grid exports as a workbook with colored cells and a legend sheet, the work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved. Revised dates then go back into Cetec ERP through the date-maintenance path your order process already uses. There is no automated write-back, which keeps your ERP data under your team's control. The mechanics are in [exporting the schedule back to your ERP](/blog/exporting-the-edgebic-schedule-back-to-your-erp).
+
+## A realistic first week
+
+| Day | Work |
+|---|---|
+| 1 | Export parts and work centers; build and run those two masks; verify counts |
+| 2 | Export routings; build the routing mask with unit conversions; review the routing designer |
+| 3 | Export open work orders; import; run the first full finite capacity schedule |
+| 4 | Compare EDGEBIC dates to current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 5 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+The documented benchmark in the User Solutions lineage is 5 days at Plastilite Corporation, where the ERP vendor itself recommended User Solutions scheduling. The day-by-day version is in the [first week ERP integration checklist](/blog/a-first-week-erp-integration-checklist), and the staged rollout is in the [go-live cutover plan](/blog/an-erp-and-edgebic-go-live-cutover-plan).
+
+## Test it with your own export
+
+Export this week's open work orders and a routing file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity. If you are evaluating more than one ERP, the [NetSuite](/blog/edgebic-netsuite-integration-guide) and [Odoo](/blog/edgebic-odoo-integration-guide) versions of this guide follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to Cetec ERP through an API?">
+No. EDGEBIC integrates with Cetec ERP through reusable import masks fed by the CSV or Excel exports the system already produces. There is no API integration to build, no code to maintain inside the account, and no certified connector to version-match when either side updates. You map the columns of an export once, and every later run is two clicks with a per-run log recording each row.
+</Accordion>
+
+<Accordion title="What Cetec ERP data does EDGEBIC need to schedule?">
+Four exports carry a complete scheduling model: parts, work centers with capacity detail, routings with operation sequence plus run and setup times, and open work orders with quantities and dates. A fifth optional export carries labor hours from the floor. Each goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="Do imported Cetec ERP work orders schedule themselves?">
+No, and the separation is deliberate. An import changes data while the scheduler changes the plan. Imported work orders appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor.
+</Accordion>

@@ -1,0 +1,121 @@
+---
+title: "Eight Lot Streaming Configuration Mistakes (and What They Look Like)"
+description: "Lot streaming configuration mistakes that silently disable operation overlap: batch sizes above order quantity, transit days, and continuous-process flags."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - lot streaming configuration mistakes
+  - transfer batch not working
+  - operation overlap troubleshooting
+  - lot streaming troubleshooting
+  - transfer batch size errors
+  - scheduling configuration audit
+  - production scheduling setup errors
+targetPhrase: "lot streaming configuration mistakes"
+wordCount: 1750
+readingTime: 9
+faqQuestions:
+  - question: "Why is my transfer batch not producing any overlap?"
+    answer: "The four usual causes are a transfer batch at or above the order quantity, transit days on the same routing step, a continuous-process flag on the upstream work center, and a downstream work center with no free capacity in the window. Check them in that order. Three of the four are reported by the built-in configuration audit with the routing step named."
+  - question: "What happens if I set both a transfer batch and a flow lag on one step?"
+    answer: "The piece-count model wins and the flow lag is ignored, assuming the work center is discrete. Nothing breaks, but the configuration no longer says what the planner meant, and the next person to read the routing has to guess. The configuration audit flags the pairing so one of the two fields can be cleared."
+  - question: "Does queue time still apply on a step that uses lot streaming?"
+    answer: "No. When streaming fires, its result becomes the successor's gate and queue time on that same routing step is discarded. This surprises planners who added a cooling buffer and then wondered where it went. Put the hours in transfer delay instead, which sits on top of the streaming gate, or put the queue time on the downstream step."
+  - question: "Is transfer delay affected by shifts and weekends?"
+    answer: "No, transfer delay is flat elapsed hours. A 2-hour transfer delay applied at 15:00 on a Friday resolves to 17:00 that same Friday, past the end of an 08:00 to 16:00 shift, even though nobody will move the material until Monday. Use queue time when the buffer should respect the shop calendar, and transfer delay for genuinely continuous handling like a conveyor."
+  - question: "Can lot streaming make a schedule wrong?"
+    answer: "It can make a schedule optimistic if the transfer batch does not match how material physically moves. If the routing promises a 10-piece handoff but the shop moves full 40-piece totes, the plan releases the downstream step three quarters of a tote too early and every job runs late against it. Set the batch to the real container size, then change the container if you want more overlap."
+qaQuestions:
+  - question: "We turned on streaming across 30 routings and lead times barely moved. Where did the gain go?"
+    answer: "Audit for the three silent killers before assuming streaming does not work. First, count how many of those 30 steps have a transfer batch at or above their typical order quantity: those behave exactly like no streaming. Second, count how many carry transit days, because one working day of transit lands the handoff at end of shift and pushes the successor to the next morning, wiping out an eight-hour overlap. Third, check whether the downstream work centers had free capacity. Streaming grants permission to start early; it does not create a slot."
+  - question: "A planner set the flow lag to 0.3 expecting a 30% head start. What did the schedule actually do?"
+    answer: "It released the successor 18 minutes after the upstream step started, because the flow lag is hours, not a fraction of the run. On a 20-hour operation the planner expected a 6-hour head start and got a near-immediate one, which usually shows up as a downstream step starting suspiciously early and then sitting idle waiting for parts that do not exist yet. If you want a 6-hour head start, type 6. If you want the gate to track pieces, use a transfer batch instead."
+---
+
+**Most lot streaming that "does not work" is working exactly as configured: the settings quietly describe a serial handoff.** Eight configuration patterns account for nearly every case where a planner turns on operation overlap in EDGEBIC by User Solutions and sees no change in the schedule. Each has a distinct symptom, and three of the eight are reported automatically by the built-in configuration audit with the routing step named.
+
+This post is the failure catalog for the chapter. The models are covered in [lot streaming explained](/blog/edgebic-lot-streaming-explained), the fields in [how to overlap operations](/blog/how-to-overlap-operations-in-edgebic), and the arithmetic in [transfer batch versus flow overlap](/blog/piece-count-vs-time-lag-overlap-in-edgebic).
+
+## 1. The Transfer Batch Is Larger Than the Order
+
+**Symptom.** The routing has a transfer batch set, the configuration looks right, and the downstream operation still starts only after the upstream one finishes.
+
+**Cause.** The engine caps the effective batch at the order quantity, because waiting for piece 100 on a 30-piece order means waiting for a piece that will never be cut. The cap keeps the schedule feasible, and the side effect is that the gate lands exactly at full completion. Streaming is on. It just has nothing to stream.
+
+**Fix.** Size the transfer batch below your smallest common order. A shop whose orders average 80 pieces should be running a batch of 20 or 25, not 100. The configuration audit flags any routing step whose transfer batch equals or exceeds the order quantity, so this one announces itself if you read the report.
+
+## 2. Transit Days on the Same Step
+
+**Symptom.** The gate is computed correctly, the arithmetic checks out, and the downstream operation still lands the next morning.
+
+**Cause.** Transit days are applied after streaming, and a single transit day is larger than most overlap wins. Give a streamed step one working day of transit and the handoff resolves to end of shift, so the successor's first feasible slot is the next day's opening. An eight-hour overlap disappears into a one-day transit without leaving a trace.
+
+**Fix.** Reserve transit days for genuine off-site or overnight sends: an outside heat treater, a plating vendor, an inter-plant move. For a forklift ride inside the same building, use transfer delay, which is measured in hours and does not push the handoff to the next calendar day.
+
+## 3. Piece Counts on a Continuous-Process Work Center
+
+**Symptom.** A transfer batch is set on a paint, coating, or reactor step and has no effect whatsoever.
+
+**Cause.** The engine only uses the piece-count model when the upstream work center is not flagged as a continuous process. On a paint booth that flag is correct, so the setting is ignored by design and the engine falls through to the flow lag. If the flow lag is zero as well, the step is fully serial.
+
+**Fix.** Use the flow lag on continuous-process work centers, expressed in hours after the upstream start. The configuration audit reports every routing step that sets piece counts on a continuous-process station, so you can clear the field and set the lag instead.
+
+## 4. Both Models Set on One Step
+
+**Symptom.** A step carries a transfer batch and a flow lag, and the schedule behaves like only one of them exists.
+
+**Cause.** It does. On a discrete work center the piece-count model wins and the flow lag is silently ignored. Nothing is broken, but the routing now records two different intents and the next planner to open it cannot tell which one is live.
+
+**Fix.** Clear one. Decide whether the handoff is governed by pieces or by hours, then delete the field that does not apply. The audit flags the pairing precisely because ambiguity in master data outlives the person who created it.
+
+## 5. Queue Time on a Streamed Step
+
+**Symptom.** A planner adds a two-hour cooling buffer to a streamed step, reschedules, and the buffer is nowhere in the plan.
+
+**Cause.** When streaming fires, its result becomes the successor's gate and the queue-adjusted end is discarded. The lot-streaming time is the answer, so the queue hours on that same step have no path into the schedule.
+
+**Fix.** Move the hours. Put them in transfer delay on the same step, which sits on top of the streaming gate, or put queue time on the downstream step where it applies after that step's own operation. The audit flags every step carrying both a flow lag and a queue time so the choice is deliberate. The full ordering is in [how EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing).
+
+## 6. Reading the Flow Lag as a Percentage
+
+**Symptom.** Somebody types 0.3 expecting a 30% head start, and the downstream step is released 18 minutes into a 20-hour operation.
+
+**Cause.** The flow lag is hours after the upstream step starts. It is not a fraction of the run, not a share of the hours, and not scaled by order quantity. A value of 0.3 means 18 minutes and a value of 6 means six hours, regardless of how long the operation is.
+
+**Fix.** If you want a six-hour head start, type 6. If you want the gate to track the process rather than a fixed policy, use a transfer batch, which recomputes from setup, batch size, and hours per piece every time you reschedule.
+
+## 7. A Batch Size That Does Not Match the Container
+
+**Symptom.** The schedule looks great and the floor runs late against it, every time, on the streamed jobs.
+
+**Cause.** The transfer batch is a physical statement about how material actually moves. Setting it to 10 when the shop moves full 40-piece totes releases the downstream operation three quarters of a tote too early. The plan is arithmetically correct and physically impossible.
+
+**Fix.** Walk the handoff. Count what is in the tote, the rack, or the tray, and put that number in the field. If you want more overlap than the container allows, change the container first and the routing second. This is where lot streaming stops being a software setting and becomes a materials-handling decision, which is the same point the [Manufacturing Extension Partnership](https://www.nist.gov/mep) makes about flow improvements generally: the process change comes before the system change.
+
+## 8. Streaming Into the Bottleneck
+
+**Symptom.** Overlap is configured correctly across the routing and total lead time is unchanged.
+
+**Cause.** The streaming gate is an earliest start, not a booking. Downstream still has to find a real shift opening at or after that time, and if the downstream work center is your constraint there is no opening to find. All the overlap has done is move the queue upstream of a different machine.
+
+**Fix.** Identify the constraint before you configure streaming, then stream *into* the non-constraint stations and protect the constraint separately. [Production bottleneck identification](/blog/production-bottleneck-identification) covers the diagnosis, and [why a schedule has idle gaps](/blog/schedule-has-idle-gaps-edgebic) covers reading the resulting plan.
+
+## Two Things That Look Wrong and Are Not
+
+**The successor is gated before its predecessor ends.** That is streaming working. A gate computed from the upstream *start* will often land in the middle of the upstream run, and the two bars overlapping on the Gantt is the result you configured. If it looks alarming, check the transfer batch against the container size rather than the overlap itself.
+
+**The overlap warning does not fire on streamed steps.** The engine deliberately exempts streamed operations from its unexpected-overlap check, because flagging every intentional overlap would train planners to ignore a check that is useful elsewhere. Silence on a streamed step is a design decision, not a missed inspection.
+
+Both cases have the same tell: the audit report is quiet and the Gantt shows overlap. That combination means the configuration is doing exactly what it says.
+
+## Working the List
+
+When streaming is not delivering, run the eight in this order: audit report first (it catches numbers 1, 3, 4, and 5 with the step named), then transit days, then the container check, then the downstream load. That sequence puts the cheapest checks first and the shop-floor walk last.
+
+Two habits keep the list short over time. Baseline the job's elapsed time before you change anything, so "it feels faster" becomes a number: the [results guide](/blog/edgebic-results-guide) covers how. And treat every overlap field as a claim about physical reality that somebody could verify by standing at the machine, because that is exactly what the schedule is promising.
+
+For the wider troubleshooting catalog, see the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). Bring a routing that is not delivering the overlap you expected to a demo of [EDGEBIC](/edgebic) and we will work the list with you.

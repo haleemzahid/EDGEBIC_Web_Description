@@ -1,0 +1,146 @@
+---
+title: "Overlapping Operations with Lot Streaming: An EDGEBIC Example"
+description: "A lot streaming production scheduling example: 1,000 pieces, cut then drill, and how a 100-piece transfer batch lets EDGEBIC save a full day of lead time."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - lot streaming production scheduling example
+  - transfer batch scheduling
+  - overlapping operations manufacturing
+  - lot splitting scheduling
+  - one piece flow scheduling
+  - makespan reduction
+  - start-to-start lag scheduling
+targetPhrase: "lot streaming production scheduling example"
+wordCount: 2300
+readingTime: 12
+faqQuestions:
+  - question: "What is lot streaming in production scheduling?"
+    answer: "Lot streaming lets a downstream operation start before the upstream operation has finished the entire order quantity. Instead of 1,000 pieces waiting at the saw until the last cut, the first transfer batch moves to the drill as soon as it is ready, so both machines run at once. In this example, overlapping cut and drill saves a full calendar day on a 1,000-piece order."
+  - question: "How does a transfer batch determine when the next operation starts?"
+    answer: "EDGEBIC computes the earliest downstream start as upstream setup time plus the transfer batch quantity times the run rate per piece, measured from the upstream start. With 0.5 hours of setup, a 100-piece batch, and 0.01 hours per piece, drilling may begin 1.5 hours after cutting starts, plus any transfer delay for material handling, here 15 minutes for the forklift move."
+  - question: "What is the difference between a transfer batch and a start-to-start lag?"
+    answer: "A transfer batch derives the overlap from physics: setup plus pieces times rate, and it re-anchors to actual progress on a reschedule. A start-to-start lag is a fixed number of hours the planner asserts, such as drill may begin 1.5 hours after cut begins, regardless of quantity or rate. Use piece counts for discrete parts; use the hours lag for continuous processes where counting pieces makes no sense."
+  - question: "Does lot streaming work with queue times and transit days?"
+    answer: "They compose in a defined order. When lot streaming fires, its gate replaces the upstream queue-time wait, so put a deliberate minimum wait in the transfer delay or on the downstream step instead. Transit days are applied after the streaming calculation; in this example a single working day of transit pushes the drill start to Wednesday morning and absorbs the entire overlap gain."
+qaQuestions:
+  - question: "We cut 1,000 brackets then drill them, and drilling takes twice as long as cutting. How much lead time can overlap realistically save us?"
+    answer: "About one full day on this exact profile. Serially, 10.5 hours of cutting ends Tuesday 10:30 and 20.5 hours of drilling then runs to Thursday 15:00. With a 100-piece transfer batch, drilling starts Monday 09:45, while cutting is still running, and finishes Wednesday 14:15. The drill is your longer operation, so every hour of overlap moves the whole order's finish earlier; the two machines run in parallel for nearly 25 hours of the schedule."
+  - question: "If cutting falls behind on the day, does the drill start EDGEBIC promised become fiction?"
+    answer: "No, because the piece-count model re-anchors to actuals on a reschedule. The gate is derived from the upstream's real start and recorded piece counts, not the original plan. If cutting actually started Tuesday instead of Monday, the drill's earliest start recomputes to Tuesday 09:45 automatically. That is the practical argument for transfer batches over a hand-picked lag, which stays fixed regardless of what the floor did."
+---
+
+**Lot streaming is the scheduling technique that lets a downstream operation begin before the upstream operation has finished the whole order, by moving work forward in transfer batches instead of one monolithic lot.** The payoff is measured in makespan: in this walkthrough, a 1,000-piece cut-and-drill order finishes Thursday 15:00 scheduled serially, and Wednesday 14:15 with a 100-piece transfer batch. Same machines, same hours of work, one configuration field, one day earlier. EDGEBIC by User Solutions supports two distinct overlap models, and this example runs the same order through both so you can see exactly where the numbers come from.
+
+## The Order: 1,000 Brackets, Two Operations
+
+Product Bracket-HD-1000 routes through two work centers, each a single machine on one Day Shift, 08:00 to 16:00:
+
+| Step | Work center | Setup | Run rate | Total work |
+|---|---|---|---|---|
+| Cut | CUT-SAW-01 | 0.5 h | 0.01 h/piece | 0.5 + 1,000 x 0.01 = **10.5 h** |
+| Drill | DRILL-BANK-01 | 0.5 h | 0.02 h/piece | 0.5 + 1,000 x 0.02 = **20.5 h** |
+
+The order is MO-77: 1,000 pieces, starting Monday June 22 at 08:00, due Friday June 26.
+
+Cutting needs 10.5 hours against an 8-hour shift, so it spans Monday plus Tuesday morning, ending **Tuesday 10:30**. Drilling needs 20.5 hours, more than two and a half shifts. Where drilling starts is the whole game, and it is exactly what lot streaming changes.
+
+## The Serial Baseline: Thursday 15:00
+
+With no streaming configured, the drill waits for the last cut piece. It starts Tuesday 10:30 and burns its 20.5 hours across Tuesday afternoon, Wednesday, and most of Thursday, finishing **Thursday 15:00**. Total span: three and a third days.
+
+Notice what the drill is doing Monday: nothing. A thousand pieces are queuing up at the saw while the longer of your two operations sits idle. That idle Monday is the cost of moving the lot as one block, and it is pure schedule waste, no machine ran faster or slower because of it. This is the classic transfer-batch insight from the Theory of Constraints literature: the batch you process and the batch you move do not have to be the same size. If the concept is new, our primer on [what a transfer batch is](/blog/what-is-a-transfer-batch) covers the theory; here we watch it move real dates.
+
+## Model 1: The Piece-Count Transfer Batch
+
+Configuration: on the cut step, set the transfer batch size to **100 pieces** and a transfer delay of **0.25 hours**, the 15-minute forklift move from saw to drill bank.
+
+EDGEBIC derives the drill's earliest start from the physics of the upstream step:
+
+> Overlap gate = setup + (transfer batch x run rate), measured from the cut's start
+>
+> = 0.5 h + 100 x 0.01 h = **1.5 hours after cutting begins**
+
+Cutting starts Monday 08:00, so the first 100 pieces exist at 09:30. Add the 15-minute handling move and the drill's earliest start is **Monday 09:45**, while the saw is still on roughly its 175th piece. The multi-shift allocator then books the drill's 20.5 hours from that gate:
+
+| Day | Drill hours |
+|---|---|
+| Mon Jun 22, 09:45 to 16:00 | 6.25 |
+| Tue Jun 23, 08:00 to 16:00 | 8.0 |
+| Wed Jun 24, 08:00 to 14:15 | 6.25 |
+
+Drilling finishes **Wednesday 14:15**. The two machines overlap for nearly 25 hours of the schedule, and the order lands a full day earlier than serial. Because the drill is the longer operation, every hour of overlap converts one-for-one into an earlier finish.
+
+## Model 2: The Start-to-Start Lag
+
+The second model skips piece counting entirely. You assert a fixed lag in hours: the downstream step may start exactly N hours after the upstream step starts, independent of quantity, rate, and setup.
+
+Set a lag of 1.5 hours on the cut step (deliberately chosen to equal Model 1's derived gate) and the drill's earliest start is Monday 08:00 plus 1.5 hours: **Monday 09:30**. No transfer delay in this configuration, so drilling runs 09:30 to 16:00 Monday, all day Tuesday, and finishes **Wednesday 14:00**.
+
+Fifteen minutes apart, the two models look interchangeable. They are not, and the differences decide which one belongs on which step:
+
+| | Transfer batch (piece count) | Start-to-start lag (hours) |
+|---|---|---|
+| Where the gate comes from | Derived: setup + pieces x rate | Asserted: a number you pick |
+| Follows actual progress on reschedule? | **Yes**, re-anchors to actual start and recorded piece counts | No, the lag is static |
+| Guardrails | Gate reflects real throughput | Nothing validates the lag against reality |
+| Right for | Discrete parts you can count | Continuous processes: paint lines, chemical reactors, extrusion |
+
+The reschedule row is the one that matters most in practice. Suppose drilling is underway and you reschedule mid-job: with a transfer batch, EDGEBIC reads the cut's actual start and its logged piece counts and recomputes the gate from reality. If the saw actually started Tuesday instead of Monday, the drill's gate slides to Tuesday 09:45 on its own, no planner intervention. A hand-picked lag does none of that; assert 1.5 hours and the engine trusts you at 1.5 hours, even if the saw's setup ran long and the first piece is not through. Pick the lag model only where pieces genuinely cannot be counted, and note that EDGEBIC enforces this boundary itself: mark a work center as continuous-process and the piece-count model is switched off for steps routed through it, falling back to the hours lag.
+
+## The Three Schedules Side by Side
+
+| Metric | Serial | Transfer batch 100 | Lag 1.5 h |
+|---|---|---|---|
+| Drill starts | Tue 10:30 | **Mon 09:45** | **Mon 09:30** |
+| Drill ends | Thu 15:00 | **Wed 14:15** | **Wed 14:00** |
+| Overlap with cut | none | 24 h 45 min | 25 h |
+| Calendar span | 3.3 days | 2.26 days | 2.25 days |
+
+One day of lead time recovered, and the capacity picture is unchanged: both machines do exactly the hours they always did. Lot streaming spends no capacity; it removes waiting. On a [finite capacity schedule](/blog/finite-vs-infinite-capacity-scheduling) that distinction is everything, because the one resource you cannot buy back is the calendar.
+
+## Pushing Further: One-Piece Flow
+
+Shrink the transfer batch to 1 and the gate collapses toward the setup time:
+
+> 0.5 h setup + 1 x 0.01 h = 0.51 h, plus the 0.25 h move = drill starts **Monday 08:45**
+
+Forty-five minutes after the saw's first stroke, the drill is running. This is the lean one-piece-flow ideal, and it is maximum overlap and minimum work-in-process. It is also a material-handling commitment: someone or something is ferrying pieces continuously between the machines all day. Choose a batch size your handling can actually sustain; a 100-piece batch that moves reliably beats a 1-piece batch that queues on the floor beside the saw.
+
+## How Streaming Composes with Queue, Handling, and Transit
+
+Routings carry other between-step times, and EDGEBIC composes them with lot streaming in a defined order. Three rules keep you out of trouble:
+
+**The streaming gate replaces the upstream queue wait.** Queue time on an upstream step means "downstream waits this long after I finish" in a serial schedule. When lot streaming fires, its earlier gate takes precedence and the upstream queue time becomes irrelevant, a combination EDGEBIC's built-in anomaly check flags so you can confirm the intent. If you want a guaranteed minimum wait, put it in the transfer delay or as queue time on the downstream step.
+
+**Transfer delay is for same-day handling.** The 0.25-hour forklift move rides on top of the piece-count gate. Use it for cooling, moving, or inspection measured in minutes and hours.
+
+**Transit days are applied after streaming, and they are bigger than the win.** Give the cut step one working day of transit, the send-out-to-heat-treat pattern, and the handoff lands at end of shift Tuesday; the drill's first feasible slot becomes Wednesday 08:00. The entire overlap gain is absorbed. Streaming buys you hours; a transit day costs you a day. Reserve transit days for genuine overnight sends, and keep same-building moves in the transfer delay.
+
+## Reading It on the Gantt
+
+Filter the Job View to MO-77 and the overlap is visible at a glance: the drill bar begins Monday morning while the cut bar is still running, with roughly a day of the two bars stacked in parallel. The schedule grid confirms drill resources booked on Monday, 6.25 hours, the direct evidence that streaming fired. And the engine's decision log records the branch it took for the step, the derived gate, and the transfer delay applied, so the "why does drilling start at 09:45?" question has a written answer.
+
+The arithmetic in this walkthrough is small enough to check by hand, which is precisely why we publish it this way in the [EDGEBIC worked examples](/blog/edgebic-worked-examples) series. On a real routing with six steps, three shifts, and shared work centers you will not do this by hand, and that is the point of [EDGEBIC](/edgebic): the same piece-count gate, the same composition rules, applied consistently across every step of every job, every time you press Schedule All. It is one field on one routing step. Manufacturers have been buying lead time this way since the Theory of Constraints made transfer batches famous, and User Solutions has been putting that math in planners' hands since 1991.
+
+Have a two-step pair of operations where the second machine always waits? [Bring that routing to a demo](/contact-us), and we will set the transfer batch together and watch the finish date move.
+
+<Accordion title="What is lot streaming in production scheduling?">
+Lot streaming lets a downstream operation start before the upstream operation has finished the entire order quantity. Instead of 1,000 pieces waiting at the saw until the last cut, the first transfer batch moves to the drill as soon as it is ready, so both machines run at once. In this example, overlapping cut and drill saves a full calendar day on a 1,000-piece order.
+</Accordion>
+
+<Accordion title="How does a transfer batch determine when the next operation starts?">
+EDGEBIC computes the earliest downstream start as upstream setup time plus the transfer batch quantity times the run rate per piece, measured from the upstream start. With 0.5 hours of setup, a 100-piece batch, and 0.01 hours per piece, drilling may begin 1.5 hours after cutting starts, plus any transfer delay for material handling, here 15 minutes for the forklift move.
+</Accordion>
+
+<Accordion title="What is the difference between a transfer batch and a start-to-start lag?">
+A transfer batch derives the overlap from physics: setup plus pieces times rate, and it re-anchors to actual progress on a reschedule. A start-to-start lag is a fixed number of hours the planner asserts, such as drill may begin 1.5 hours after cut begins, regardless of quantity or rate. Use piece counts for discrete parts; use the hours lag for continuous processes where counting pieces makes no sense.
+</Accordion>
+
+<Accordion title="Does lot streaming work with queue times and transit days?">
+They compose in a defined order. When lot streaming fires, its gate replaces the upstream queue-time wait, so put a deliberate minimum wait in the transfer delay or on the downstream step instead. Transit days are applied after the streaming calculation; in this example a single working day of transit pushes the drill start to Wednesday morning and absorbs the entire overlap gain.
+</Accordion>

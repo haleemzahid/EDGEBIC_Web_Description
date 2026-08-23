@@ -1,0 +1,106 @@
+---
+title: "How to Set Up Sequence-Dependent Setup Times in EDGEBIC"
+description: "Set up a sequence-dependent setup matrix in EDGEBIC: create setup families, assign products, and fill the from-to changeover grid so the plan tells the truth."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - sequence-dependent setup time
+  - setup matrix
+  - changeover time scheduling
+  - setup family
+  - work center setup matrix
+  - campaign sequencing
+targetPhrase: "sequence-dependent setup times"
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "What is a sequence-dependent setup time in EDGEBIC?"
+    answer: "A sequence-dependent setup time is a changeover value that depends on what a work center ran last, not just what it runs next. A paint booth going light to dark might need 60 minutes, while dark to light needs 240 minutes for a full solvent flush. EDGEBIC stores these as a per-work-center matrix of from-family to to-family minutes, and the scheduler adds the matching cell to each operation based on the previous job on that machine."
+  - question: "Do I need a setup matrix on every work center?"
+    answer: "No. Configure a setup matrix only where changeover genuinely depends on sequence, such as paint, coating, alloys, food or allergen lines, and plastics colors. Everywhere else the flat setup ladder from the work center and routing step is simpler and sufficient. A work center with no matrix behaves exactly as it did before, so the feature is opt-in per machine and changes nothing until you configure it."
+  - question: "Are setup matrix values entered in minutes or hours?"
+    answer: "The setup matrix grid is in minutes. The column is labeled Setup (min), so a 30-minute flush goes in as 30. This differs from the flat fields elsewhere in EDGEBIC, where the work center Setup Time and the routing step setup are both in hours. Mixing the two units is the most common mistake, and it produces changeover values that are sixty times too large or too small on the plan."
+qaQuestions:
+  - question: "I filled in the family matrix but every scheduled row still shows the flat setup. What did I miss?"
+    answer: "Almost always the products are not assigned to families, or only one product in the pair has a family. A family cell fires only when both the previous and the next product carry a family assignment, otherwise the lookup falls back to the routing step or work center default. Open the Product Families tab and confirm both products point at a family, then re-run Drive Schedule and check the Setup Reason column in Job View. It should read Matrix (family) rather than BOR default."
+  - question: "The first job of the day on my paint booth still gets a big setup even though the matrix says the same-color cell is zero. Is that a bug?"
+    answer: "No, that is a cold start, and it is working as designed. When nothing ran on the machine before the first operation, there is no previous product to look up, so EDGEBIC applies the flat fallback rather than zero. The machine really does need its initial preparation. Only the identical product back to back yields a genuine zero automatically. The Setup Reason column labels that first row Cold start so you can tell it apart from a matrix miss."
+---
+
+**A sequence-dependent setup matrix in EDGEBIC by User Solutions replaces a single flat changeover number with a per-work-center from-to lookup, so the plan reflects that light to dark takes 60 minutes while dark to light takes 240.** You build it by creating setup families, assigning products to them, and filling the family matrix. This turns setup from a guess into a value the scheduler and the floor both agree on.
+
+If you only need the same changeover on every job, a flat number is simpler: see [how to set a default setup time for a work center](/blog/how-to-set-a-default-setup-time-for-a-work-center-in-edgebic). This page is the sequence-aware version, one of many tasks mapped on the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub).
+
+## Before You Start
+
+- The work center exists and is saved. The matrix is keyed to a saved work center, so a brand-new unsaved one asks you to save it first and reopen it.
+- The products that run on this machine exist. Families and matrix cells reference real products.
+- You know the real changeover times per direction. Ask the floor the exact question: coming from X, how long to start Y? The direction is the whole point.
+
+## Step 1: Open the Setup-Matrix Editor
+
+Open the **Workcenter** tab. On the machine's row in the grid, click the **gear** button in the Actions column, whose tooltip reads Sequence-dependent setup matrix. You can also open the work center for edit and use the **Setup Matrix** tab, then **Open Setup-Matrix Editor**.
+
+The dialog is headed Setup Matrix followed by the work center name. It is keyed to that one machine, because changeover physics are per machine: a paint booth's matrix says nothing about a weld station. The dialog has four tabs, Family Matrix, Product Overrides, Families, and Product Families, with Export CSV, Save, and Close in the footer.
+
+## Step 2: Create Setup Families
+
+Families keep the matrix small. One hundred products in eight families need at most 64 family cells instead of ten thousand product cells.
+
+1. Open the **Families** tab.
+2. Click **Add family** and fill the row. The **Name** is required, for example Light Colors. The **Code** is an optional short code such as LIGHT.
+3. Repeat for each group. For a paint booth that is Light Colors and Dark Colors.
+4. Click **Save**.
+
+Group by the attribute that physically drives cleaning or re-tooling, so color tone, alloy group, allergen class, or viscosity. Do not group by catalog category, because catalog category does not dictate a flush.
+
+## Step 3: Assign Products to Families
+
+1. Open the **Product Families** tab. It lists every product with a **Setup family** dropdown.
+2. Set the family per product. Widget-A painted white goes to Light Colors, Bracket-B painted black goes to Dark Colors.
+3. Leave the dropdown empty for any product that should not follow a family rule. Only product-level overrides will apply to it.
+4. Click **Save**.
+
+A family cell fires only when both products in the pair have a family. If either is unassigned, the lookup silently falls back to the flat setup, so assign both.
+
+## Step 4: Fill the Family Matrix
+
+1. Open the **Family Matrix** tab. It is a flat list of from-to cells with columns From family, To family, Setup (min), and Notes.
+2. Click **Add cell**, pick **From family** and **To family**, and type the changeover in **Setup (min)**, in minutes.
+3. Enter the directions that exist on the floor. Asymmetry is expected:
+
+| From family | To family | Setup (min) | Notes |
+|---|---|---|---|
+| Light Colors | Light Colors | 0 | Compatible tones, no flush |
+| Light Colors | Dark Colors | 60 | Mask plus extra coat |
+| Dark Colors | Light Colors | 240 | Full solvent flush and color match |
+| Dark Colors | Dark Colors | 0 | Compatible |
+
+4. Click **Save**.
+
+Zero is a valid cell for a within-family swap that truly needs no changeover. Negatives are rejected. Do not create same-product cells, because the identical product back to back is always zero automatically.
+
+## What Changes When You Save
+
+Saving the matrix changes no schedule by itself. The next Drive Schedule run, and every quote simulation, resolves setups through the new matrix, while existing bars keep the times they were planned with until then. Completed operations never change: on a reschedule, finished steps keep their historical setup, and only remaining work is re-resolved against the product that actually ran last.
+
+Sequence now matters, which is exactly what the optimizer exploits. Its setup-reduction goal reorders compatible jobs into light-before-dark campaigns using this matrix as its cost table: see [how to choose an optimizer goal](/blog/how-to-choose-an-optimizer-goal-in-edgebic).
+
+## How to Check It Worked
+
+Run Drive Schedule, then open Job View and show the **Setup Reason** column. Matrix-driven rows read Matrix (family) or Matrix (product). Fallback rows read Cold start, BOR default, or WC default. Take three paint jobs in due-date order: the first reads Cold start with the flat setup, the second reads Matrix (family) for a light-to-dark pair, and the third, going dark to light, carries the full 240-minute cell. If every row reads BOR default, the matrix never matched.
+
+## Common Mistakes
+
+- **Mixing minutes and hours.** The matrix is minutes; the flat work center and routing fields are hours. A value that is 60 times off is a unit mix-up.
+- **Products not assigned to families.** Both products in a pair need a family, or the cell is skipped.
+- **Editing the wrong machine's matrix.** The dialog header names the work center. Confirm you opened the right one.
+- **Treating cold start as a miss.** The first job of the day has no predecessor, so it uses the flat fallback, not zero.
+
+## Next Steps
+
+For the special pairs that break their family rule, add a per-pair exception in [how to add a product-level setup override](/blog/how-to-add-a-product-level-setup-override-in-edgebic). See how sequence-aware setup fits the wider engine on the [EDGEBIC product page](/edgebic).

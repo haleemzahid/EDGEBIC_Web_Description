@@ -1,0 +1,128 @@
+---
+title: "Eight Setup Matrix Mistakes That Leave Changeover Times Wrong"
+description: "Setup matrix mistakes in production scheduling: missing family assignments, minutes entered as hours, blank zero cells, and how each one shows up."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - setup matrix mistakes
+  - changeover matrix errors
+  - setup family assignment problem
+  - sequence dependent setup troubleshooting
+  - setup time not applying
+  - changeover configuration errors
+  - scheduling master data errors
+targetPhrase: "setup matrix mistakes"
+wordCount: 1700
+readingTime: 9
+faqQuestions:
+  - question: "Why is my setup matrix not being applied?"
+    answer: "The most common cause is a missing family assignment. The family lookup requires both the previous product and the next product to have a family, so if either one is unassigned the lookup is skipped and the routing step's setup time applies instead. The Setup Source column on the job view shows a routing-default source on exactly those rows, which is how you find them."
+  - question: "What happens if setup minutes are entered as hours?"
+    answer: "The schedule is wrong by a factor of sixty. Matrix cells are stored in minutes, so a four-hour flush is 240 and typing 4 produces a four-minute changeover. In the other direction, typing 60 when you meant one hour is correct, but typing 60 when you meant sixty hours is not something the field can express. Check any cell whose value looks unusually small against the transition it describes."
+  - question: "Should I create matrix cells for a product changing over to itself?"
+    answer: "No. A same-product transition returns zero automatically before any cell is consulted, so those cells are dead data that never get read. They also clutter the grid and make coverage gaps harder to spot. Delete them if a previous configuration created them."
+  - question: "Why did a first-of-the-day job get a setup time when nothing ran before it?"
+    answer: "Because a cold start is not a zero. When nothing is known to have run on the machine, there is no changeover to price, but the machine still needs its initial preparation, so the routing step's setup time applies. Only a genuine same-product transition returns zero hours."
+  - question: "Do I need to fill in every cell of the matrix?"
+    answer: "No. Any transition without a cell falls back to the routing step's setup time, which is exactly how the schedule behaved before the matrix existed. Fill the transitions that hurt, verify them with the audit column, and add more as the shop measures them. A partly filled matrix is a working matrix, not a broken one."
+qaQuestions:
+  - question: "We built a full matrix and scheduled hours barely changed. How do we find out why?"
+    answer: "Add the Setup Source column to the job view and count the rows. If most say routing default, the matrix is not being reached, and the cause is almost always missing family assignments rather than missing cells: the family lookup needs both products assigned, so a single unassigned product breaks every transition it participates in. If the rows say family matrix but the hours look small, check the cell values against the unit, because minutes entered as decimal hours produce a sixty-fold understatement."
+  - question: "Our matrix has 40 product-level overrides and the team keeps adding more. Is that a problem?"
+    answer: "It is a signal that the families are wrong rather than that the overrides are wrong. Overrides exist for genuine exceptions, so if a fifth one is going in for the same direction, the products involved are probably behaving as a group that has no family yet. Split the family, move those products into it, add one family cell, and delete the overrides it replaces. A grid of 64 family cells plus three overrides is maintainable; a grid plus 40 overrides is a list nobody will keep current."
+---
+
+**A setup matrix that produces no change in the schedule is usually not being reached, and there is one column that tells you why in about ten seconds.** Eight configuration patterns account for nearly every case where changeover times in EDGEBIC by User Solutions come out wrong or come out unchanged. Most are found by adding the Setup Source column to the job view and reading what it says.
+
+For the capability, read [the setup matrix explained](/blog/edgebic-setup-matrix-explained). For the build sequence, see [how to build a setup matrix](/blog/how-to-build-a-setup-matrix-in-edgebic). For the resolution order these mistakes interfere with, see [the five-level chain](/blog/how-edgebic-resolves-setup-time-the-five-level-chain).
+
+## 1. Only One Product in the Pair Has a Family
+
+**Symptom.** A carefully filled grid, and the job view still shows a routing default on transitions you know are covered.
+
+**Cause.** The family lookup requires **both** the previous product and the next product to have a family assigned. If either is unassigned, the lookup is skipped and the fallback applies. One unassigned product breaks every transition it participates in, which on a busy machine can be most of them.
+
+**Fix.** Open the product assignments panel and check for blanks. Assign every product that runs on the work center, including the ones that feel like exceptions: an unassigned product is treated as its own family, so only a product-level override can ever describe its changeovers. This is the single highest-yield check in the list, and there is no automatic warning for it today, so make the audit column your detector.
+
+## 2. Minutes Entered as Hours
+
+**Symptom.** Matrix-driven rows appear correctly in the audit column, but the reserved changeover time is implausibly small.
+
+**Cause.** Cells are stored in minutes. A four-hour flush is 240. Typing 4 produces a four-minute changeover, and the schedule then plans 236 minutes of work that will never happen, on every occurrence of that transition.
+
+**Fix.** Scan the grid for values under 10 and check each against the transition it describes. Anything expressed as a decimal is almost certainly an hours entry that should have been minutes. The field is labeled in minutes precisely because planners speak in minutes on the floor.
+
+## 3. Expecting a Cold Start to Be Zero
+
+**Symptom.** Somebody flags the first job of the day as having setup time it "should not" have.
+
+**Cause.** A cold start means no previous product is known, so there is no changeover to price. The machine still needs its initial preparation, so the routing step's setup time applies. Only a genuine same-product transition returns zero.
+
+**Fix.** Nothing to fix in the matrix. If the first job of a shift genuinely needs no preparation, the routing step's setup should be zero, which is a routing question rather than a matrix question.
+
+## 4. Blank Cells Where Zero Was Meant
+
+**Symptom.** Two different products in the same family are planned with a full setup between them, even though the shop runs them back to back.
+
+**Cause.** A blank cell is not a zero. When no cell matches, the engine falls back to the routing step's setup time. The same-product shortcut only covers the *identical* product, so two different light colors need an explicit light-to-light cell of 0 to be treated as free.
+
+**Fix.** Enter 0 in the family-to-self cells where the changeover really is nothing. Those are usually the most valuable cells in the grid, because they are what make campaigning like with like pay.
+
+## 5. Same-Product Cells
+
+**Symptom.** A grid cluttered with diagonal entries that never seem to matter.
+
+**Cause.** They do not matter. The same-product check runs before any cell is consulted and returns zero regardless of what the matrix says, so those cells are dead data.
+
+**Fix.** Delete them. A tighter grid makes genuine coverage gaps easier to see, which matters more as the product list grows.
+
+## 6. Too Many Product Overrides
+
+**Symptom.** Dozens of product-level overrides, and the team keeps adding more.
+
+**Cause.** Overrides are the escape hatch for pairs that break their family rule. Needing many of them in the same direction means the products involved are behaving as a group that does not have a family yet.
+
+**Fix.** Split the family. Move the products into it, add one family cell, delete the overrides it replaces. Sixty-four family cells plus three overrides is a grid somebody will maintain. Sixty-four cells plus forty overrides is a list that will go stale within a year.
+
+## 7. One Matrix Copied Across Machines That Differ
+
+**Symptom.** A schedule that is accurate on one machine and consistently off on the identical one beside it.
+
+**Cause.** The matrix is defined per work center because changeover physics belong to the machine. Two booths of the same model can differ by seal wear, line length, or age. Copying a grid from one to the other is a reasonable starting point and a poor finishing point.
+
+**Fix.** Copy the grid to start, then correct the cells the floor disputes. If the difference is large enough to matter, it is also large enough to be a routing decision: a pair that costs four hours on one booth and thirty minutes on the other tells the schedule where that job should run.
+
+## 8. Deleting a Family Without Checking the Overrides
+
+**Symptom.** After restructuring the families, a handful of transitions price oddly and nobody can say why.
+
+**Cause.** Deleting a family removes its family cells, but product-level overrides do not reference families, so they survive untouched and keep applying. An override that made sense inside the old grouping may contradict the new one.
+
+**Fix.** Before deleting a family, list the overrides that involve its products and decide which still apply. The system already blocks deleting a family while products are assigned to it, so the assignment pass forces you into the right neighborhood: use that moment to review the overrides as well.
+
+## Two Sources That Look Like Gaps and Are Not
+
+**Historical completed.** An operation that already ran keeps the setup time it was recorded with rather than being re-resolved. That is the same rule that protects every other piece of completed work: recorded hours are fact, and a reschedule re-plans only what remains.
+
+**Mirrored from parent.** A dependent-parallel operation running in lockstep with its parent inherits the parent's changeover by definition, so the chain does not run separately for it. Seeing that source on a synchronized machine is correct, not a coverage gap. The synchronized case itself is covered in the [multi-spindle example](/blog/synchronized-multi-spindle-scheduling-example-edgebic).
+
+Neither source means your matrix is incomplete, so exclude both before you count coverage.
+
+## Working the List
+
+Run the checks in this order, because the cheap ones catch the most.
+
+1. **Add the Setup Source column.** Count how many rows show a matrix source and how many show a fallback. That ratio is your coverage.
+2. **If fallbacks dominate, check family assignments** before touching the grid. This is mistake 1 and it accounts for most cases.
+3. **If matrix rows dominate but hours look wrong, check the unit.** That is mistake 2.
+4. **If specific pairs look wrong, read the reason sentence** on the row. It names which cell supplied the number, which usually ends the discussion.
+
+Two habits keep a matrix trustworthy over time. Measure transitions rather than estimating them, because every cell is a promise the schedule will make on your behalf. And revisit the numbers when the process changes: a new purge procedure or a faster color-match system invalidates cells that nobody thinks to review.
+
+One last thing worth saying plainly. The matrix reports changeover time, it does not reduce it. The reduction comes from the shop-floor work covered in [job shop setup time reduction](/blog/job-shop-setup-time-reduction) and from sequencing decisions, which the [paint-booth walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic) prices out on six real jobs. What an accurate matrix gives you is a target worth aiming at and proof afterwards that the aim was good, which is the same measurement discipline the [results guide](/blog/edgebic-results-guide) applies to every other scheduling change.
+
+For the wider catalog, see the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). Bring a machine whose changeovers you cannot explain to a demo of [EDGEBIC](/edgebic) and we will read the audit column with you.

@@ -1,0 +1,105 @@
+---
+title: "The Setup Matrix Is Not Being Applied: Causes and Fixes"
+description: "When changeover times fall back to the routing default instead of your sequence-dependent matrix, the cause is a missing cell, an unassigned family, or stale entries. How to tell which."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - setup matrix not being applied
+  - changeover time not applied
+  - setup matrix falls back to default
+  - setup source bor default
+  - sequence dependent setup not working
+  - setup family not assigned
+targetPhrase: "setup matrix not being applied"
+wordCount: 1397
+readingTime: 7
+faqQuestions:
+  - question: "Why is EDGEBIC using the routing's default setup time instead of my setup matrix?"
+    answer: "The engine consults the matrix only when there is a real changeover to price, and it falls back to the routing default when it finds no matching cell for the from-product to to-product pair on that machine. The usual reasons are that no cell exists for that specific pair, the product is not assigned to a setup family so family-level cells never match, or the machine was the first job of the run so there is no previous product to change over from. The setup source column on each scheduled row names which case applied."
+  - question: "What does the setup source column tell me?"
+    answer: "The setup source records why the engine charged the setup it did on each scheduled operation. Values include cold start for the first job on a machine, same product for a zero-changeover repeat, matrix product or matrix family for a real matrix hit, and default when the matrix was queried but no cell matched. A row reading default when you expected a matrix hit is the signal to add the missing cell or assign the product to a family."
+  - question: "Do I have to assign products to setup families for the matrix to work?"
+    answer: "Not for product-level cells, but family-level cells only match products that carry a family assignment. If your matrix is built at the family level, a product whose setup family is unset or points at a deleted family will never match a family cell and will fall back to the routing default. Assign every product that should share a changeover profile to an active setup family, or add product-level cells for the specific pairs that matter."
+qaQuestions:
+  - question: "My paint booth shows the same 30-minute setup on every job regardless of color change. The matrix has entries. What is wrong?"
+    answer: "A flat setup on every job usually means the matrix is not matching, so the engine falls back to the routing's default of 30 minutes. Add the setup source and setup reason columns to the job grid and read them: if they say default, the from-product to to-product cell for that booth is missing or the products are not in the setup families the cells use. Confirm each color is assigned to the right family, confirm the family-to-family cells exist for that machine, then re-run and the reason should show the matrix hit and the changeover minutes."
+  - question: "The matrix worked in testing but after importing a new matrix, half the changeovers went back to default. What changed?"
+    answer: "A fresh import commonly introduces stale or duplicate cells and family mismatches. Run the anomaly report on a full plant scan and check the setup-matrix rows: duplicate cells resolve unpredictably, cells referencing a deleted product or family never match, and products assigned to a missing family fall through to the default. Clean the duplicates, repoint the stale references, and reassign any orphaned products to active families, then re-run scheduling and re-check the setup source on the affected operations."
+---
+
+**When changeover times fall back to the routing's default instead of your sequence-dependent setup matrix, the cause is a missing cell, an unassigned setup family, or stale matrix entries, and the setup source column on each scheduled row tells you which.** [EDGEBIC by User Solutions](/edgebic) charges setup from the matrix only when it finds a matching cell for the changeover, and it falls back to the routing default when it does not.
+
+The control you use to diagnose this is the setup source column in the job grid, backed by the anomaly report for a plant-wide matrix audit. This post is the detailed version of the setup-matrix symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanism, [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover) and [sequence-dependent setup times](/blog/sequence-dependent-setup-times) cover how the matrix prices a changeover.
+
+## How the Engine Chooses a Setup Time
+
+The matrix answers a single question on each operation: given what this machine just finished, how long to change over to the next product? The engine resolves that in order. If this is the machine's first job of the run, it is a cold start and uses the routing default. If the previous product is the same as the next, setup is zero. Otherwise it looks for a product-level cell for the exact from-product to to-product pair, then a family-level cell for the two products' setup families, and only if neither matches does it fall back to the routing's default setup. Every operation records which of these fired in its setup source.
+
+## Read the Setup Source First
+
+Before changing any configuration, read the evidence. In the job grid, add the setup source and setup reason columns from the column chooser. The setup source names the resolution path, and the setup reason spells out the changeover in words, for example a product-matrix hit of a named changeover in minutes, or a plain default. [Using column details](/blog/how-to-use-column-details-in-edgebic) explains how to read any column's meaning in place.
+
+A row reading default when you expected a matrix hit is your diagnosis: the matrix was consulted and nothing matched. The rest of this post covers why nothing matched.
+
+## Cause 1: No Cell Exists for That Pair
+
+The simplest reason is that the matrix has no entry for that specific changeover. The engine looks for a product-level cell, then a family-level cell, on that machine; if the planner never entered one for that from-to pair, it falls through.
+
+**How to tell:** the setup source reads default. Open the machine's setup matrix and check whether a cell exists for the two products, or for their families.
+
+**Fix:** add the cell in the machine's setup matrix with the changeover minutes, then re-run scheduling. The setup source should then read matrix product or matrix family. [How to build a setup matrix](/blog/how-to-build-a-setup-matrix-in-edgebic) walks the editor.
+
+## Cause 2: The Product Is Not in a Setup Family
+
+Family-level cells price changeovers between groups of similar products, which keeps the matrix small. But a family cell only matches products that carry a family assignment. A product whose setup family is unset, or points at a family that was deleted, never matches a family cell and falls back to the default.
+
+**How to tell:** the anomaly report flags a product assigned to a missing or inactive setup family, and flags nothing for a product with no family at all, so check both: the product's family field, and whether that family is active.
+
+**Fix:** assign the product to an active setup family so the family cells apply, or add a product-level cell for the specific pair if it needs its own value. Product-level cells take priority over family cells when both exist. If you already reassigned the family and the schedule still charges the old changeover, [a setup family change that did not take effect](/blog/a-setup-family-change-did-not-take-effect-edgebic) covers the four reasons that happens.
+
+## Cause 3: Stale or Duplicate Matrix Entries
+
+A matrix that was imported or edited over time can carry entries that never match. A duplicate cell for the same machine and pair resolves unpredictably. A cell referencing a product, family, or machine that was later deleted can never match anything the planner sees. These do not usually cause a default fallback on their own, but they make the matrix untrustworthy and can hide the cell you meant to use.
+
+**How to tell:** run the anomaly report on a full plant scan. The setup-matrix checks flag negative minutes, duplicate cells, self-pair cells for a product changing over to itself, cells referencing deleted entities, and products in missing families. [Setup matrix mistakes](/blog/setup-matrix-mistakes-edgebic) catalogs these.
+
+**Fix:** remove duplicates, delete or repoint stale cells, and reassign orphaned products to active families. The matrix editor rejects negative values, so any negative minutes came from a direct import and must be corrected there.
+
+## Cause 4: There Was No Previous Product
+
+A matrix hit needs a previous product to change over from. On the first operation a machine runs in a scheduling session, there is no prior job, so the engine uses a cold start and the routing default. This is correct behavior, not a fault.
+
+**How to tell:** the setup source reads cold start, not default. Cold start and default look similar in effect but mean different things: cold start is the first job, default is a matrix miss on a real changeover.
+
+**Fix:** none needed. A cold start correctly uses the routing default because there is nothing to change over from.
+
+## How to Diagnose a Matrix Miss, in Order
+
+1. **Read the setup source and setup reason** on the affected operation. Default means a real miss; cold start and same product are correct.
+2. **Check the machine's matrix for a cell** covering the two products or their families.
+3. **Check the product's setup family** is set and active if your matrix is family-based.
+4. **Run the anomaly report on a full scan** for duplicate, stale, or self-pair cells, and missing family assignments.
+5. **Re-run scheduling after any fix** and confirm the setup source now shows the matrix hit.
+
+## Prevention
+
+- **Assign every product to a setup family before building family cells.** A family matrix is worthless to a product that has no family.
+- **Audit the matrix on a full scan after an import.** Imports are the usual source of duplicate and stale cells, and the anomaly report catches all five kinds in one pass.
+- **Use the setup source column as your acceptance test.** After configuring a changeover, schedule and confirm the source reads matrix product or matrix family, not default.
+- **Do not enter a self-pair cell.** A product changing over to itself is always zero, and a non-zero self-pair cell never applies. If a specific job's setup still looks wrong after the matrix resolves, [setup time looks wrong on a job](/blog/setup-time-looks-wrong-on-a-job-edgebic) covers the broader symptom.
+
+<Accordion title="Why is EDGEBIC using the routing's default setup time instead of my setup matrix?">
+The engine consults the matrix only when there is a real changeover to price, and it falls back to the routing default when it finds no matching cell for the from-product to to-product pair on that machine. The usual reasons are that no cell exists for that specific pair, the product is not assigned to a setup family so family-level cells never match, or the machine was the first job of the run so there is no previous product to change over from. The setup source column on each scheduled row names which case applied.
+</Accordion>
+
+<Accordion title="What does the setup source column tell me?">
+The setup source records why the engine charged the setup it did on each scheduled operation. Values include cold start for the first job on a machine, same product for a zero-changeover repeat, matrix product or matrix family for a real matrix hit, and default when the matrix was queried but no cell matched. A row reading default when you expected a matrix hit is the signal to add the missing cell or assign the product to a family.
+</Accordion>
+
+<Accordion title="Do I have to assign products to setup families for the matrix to work?">
+Not for product-level cells, but family-level cells only match products that carry a family assignment. If your matrix is built at the family level, a product whose setup family is unset or points at a deleted family will never match a family cell and will fall back to the routing default. Assign every product that should share a changeover profile to an active setup family, or add product-level cells for the specific pairs that matter.
+</Accordion>

@@ -1,0 +1,100 @@
+---
+title: "Efficiency vs Utilization: Two Different Capacity Dials"
+description: "Why efficiency and utilization are separate things in EDGEBIC: one scales the run time of the work and is set per pool member, the other scales the hours a work center offers and is shaped through the calendar."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - efficiency vs utilization
+  - work center capacity
+  - run time scaling
+  - available hours
+  - capacity planning
+  - finite capacity scheduling
+targetPhrase: "efficiency vs utilization"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between efficiency and utilization in a schedule?"
+    answer: "Efficiency scales the run time of the work: a machine faster or slower than the reference makes each piece in less or more time, so it multiplies an operation's run hours. Utilization scales the hours a work center makes available: it is the throttle term in the capacity formula, sitting alongside shift hours and the instance count. One changes how long the work takes; the other changes how much time there is to do it. They answer different questions and you reach them in different places."
+  - question: "Where do I actually set each one?"
+    answer: "The speed factor is a real editable value, but it lives on a work center group's member row rather than on the work center itself: each member of a pool carries its own factor, so a slower machine books longer run hours for the same operation. Utilization is different. Work centers run at 100 percent in current versions and there is no editor field for the value, so you shape available hours through the calendar instead: honest shift hours, downtime events, or a per-day capacity override."
+  - question: "Do efficiency and utilization both reduce throughput?"
+    answer: "They can both reduce how much a resource gets done, but through different math. A slower speed factor stretches each operation's run, so the same job consumes more hours. Fewer available hours per day shrinks the pool, so fewer job-hours fit before the day is full. The first makes the work bigger; the second makes the day smaller. The distinction matters because the fix for a too-tight plan differs depending on which one is really binding."
+qaQuestions:
+  - question: "I want to leave some slack on a busy work center so it can absorb surprises. Do I lower its efficiency or its utilization?"
+    answer: "Neither, as it turns out, because neither is a field on the work center screen. Lowering a speed factor would be the wrong tool anyway: that tells the engine every operation on the machine physically takes longer to run, which inflates your durations rather than reserving slack. What you want is fewer available hours, and the honest routes to that are the calendar and the capacity overrides. Define the shift as the genuinely productive window, add a downtime event for losses that recur on a pattern, or enter a per-day capacity override with a reason attached. Each leaves your run estimates truthful while shrinking the pool the engine may book into."
+  - question: "Our old mill genuinely runs parts slower than the new one. Is that efficiency or utilization?"
+    answer: "That is efficiency, because it is about how fast the machine runs the work, and it is the one of the two you can set directly. Put the two mills in a work center group and give the old mill a factor above one on its member row: its operations' run hours scale up accordingly, so a job on the old mill honestly shows a longer run than the same job on the new one, while setup stays at whatever that machine's own changeover really costs. Available hours are a separate question entirely, answered by each mill's shift calendar rather than by its speed. If you tried to represent slowness by shrinking the mill's hours instead, you would under-book the machine while still costing jobs at the fast run time, which misrepresents both."
+---
+
+**Efficiency and utilization are two separate things in EDGEBIC by User Solutions, and confusing them is one of the most common modeling mistakes. Efficiency scales the run time of the work, because a faster or slower machine makes each piece in less or more time. Utilization scales the hours a work center makes available, as the throttle term in the capacity formula. One changes how long the work takes; the other changes how much time there is to do it.** They compose differently, they answer different questions, and reaching for the wrong one produces a plan that is quietly wrong.
+
+Both can reduce how much a resource gets done, which is why they get mixed up. But they do it through different math, at different points in the calculation, and they are reached in different places in the app.
+
+## Efficiency scales the work
+
+Efficiency is a property of the machine's speed. A machine that runs parts faster than the reference carries a factor that shrinks run time; one that runs slower carries a factor that stretches it. It multiplies the run hours of an operation, the per-piece work, and only the run:
+
+```
+operation run = base run hours x speed factor
+```
+
+A slower old mill genuinely takes longer to make each part, so its operations show more run hours than the same job on a faster new mill. That is the factor doing its job: representing real speed differences between interchangeable machines. Crucially, it does not touch setup, because setup is preparation, not production, a distinction developed in [how efficiency scales run time but not setup](/blog/how-efficiency-scales-run-time-but-not-setup). A slow machine's changeover is not slower just because its run is.
+
+Where you set it matters. The factor is not a field on the work center itself; it belongs to a machine within a pool. Put the interchangeable machines in a work center group, and each member row carries its own factor and its own optional setup override, as covered in [how to add a machine to a pool](/blog/how-to-add-a-machine-to-a-pool-in-edgebic). Efficiency, then, is about the size of the work: a higher factor makes every operation on that member bigger in run hours.
+
+## Utilization scales the available hours
+
+Utilization is not a speed. It is the throttle term the engine multiplies in when it works out how many hours a work center offers on a given day:
+
+```
+available hours = shift hours x instances x utilization
+```
+
+The term is real and it is in the formula, which is why a report's available hours can differ from the clock. What it is not is a dial on the work center screen. Work centers created or imported in current versions run at 100 percent utilization, and there is no editor field for the value.
+
+That does not mean you must plan at the full clock. It means protective headroom goes somewhere visible instead: define the shift as the productive window rather than the gross span, record recurring losses as downtime events, or enter a per-day capacity override for the affected dates, which replaces the formula outright and stores a reason alongside the number. The case for not committing every hour is made in [why one hundred percent utilization is a trap](/blog/why-100-percent-utilization-is-a-trap), and the general idea of holding capacity in reserve is [protective versus productive capacity](/blog/protective-vs-productive-capacity).
+
+Utilization is about the size of the day. Fewer available hours means fewer job-hours fit before the day is full, without changing how long any single job takes to run.
+
+## The two compose at different points
+
+The reason they must be kept apart is that they enter the calculation at different points. A speed factor is applied to the work, per operation, when the engine computes how many run hours a job needs on a given machine. Available hours are computed for the resource, per day, before any job is placed.
+
+So the plan is built like this: the day's capacity sets the pool of available hours; the speed factor sets how many of those hours each operation consumes. A smaller pool and a slower factor both make the plan tighter, but one shrank the supply and the other enlarged the demand. They are not interchangeable, and folding them into one number would misapply whichever effect you did not mean, for example scaling setup by a speed factor or reserving protective time as if the machine had gotten slower.
+
+## A worked example: 20 percent, two ways
+
+Take a work center on an 8-hour day shift, single instance, and a job whose base run is 10 hours. Start with a speed factor of 1.0 and the standard 100 percent utilization.
+
+**Baseline.** Available hours per day: 8 x 1 x 1.0 = 8. Job run: 10 x 1.0 = 10 hours. The job fills all of day one and 2 hours of day two.
+
+**Make the machine 20 percent slower (factor 1.25) on its pool member row.** Available hours unchanged at 8. Job run: 10 x 1.25 = 12.5 hours. The job now needs a full day one and 4.5 hours of day two. The work got bigger; the day stayed the same.
+
+**Instead, take the day down to 6.4 hours** by defining the shift as its productive window, or by entering 6.4 on those dates in the per-day capacity dialog. Job run unchanged at 10 hours. The job now needs day one's 6.4 hours and 3.6 hours of day two. The work stayed the same; the day got smaller.
+
+Both changes push the finish later, but for opposite reasons and with different side effects. The speed change makes every estimate on that machine longer, which is correct only if the machine really is slower. The calendar change leaves estimates honest and reserves headroom, which is correct if the goal is protective slack. Reach for the wrong one and you either inflate your durations while pretending to reserve slack, or under-book the machine while costing jobs at the wrong run time.
+
+## Which one to reach for
+
+Use a speed factor to represent real speed differences: an older machine, a reduced-speed mode, a member of a pool that genuinely runs faster or slower. Set it on that member's row to the machine's true speed and leave it there.
+
+Use the calendar and the capacity overrides to represent how much of the clock you are willing to commit: protective headroom on a busy resource, a planned load target, deliberate slack for variability. Those are the levers for reserving capacity, not for modeling speed.
+
+Keep them distinct and the plan stays honest in both directions: durations reflect how long work actually takes, and daily capacity reflects how much you have chosen to commit. Both flow into the same capacity number described in [how capacity is computed for a work center, shift, and day](/blog/how-capacity-is-computed-for-a-work-center-shift-and-day), and the whole calculation sits inside the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). The reason getting them right matters is the reason behind [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling): every honest number in, every trustworthy date out. To model your own resources and see each effect, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="What is the difference between efficiency and utilization in a schedule?">
+Efficiency scales the run time of the work: a machine faster or slower than the reference makes each piece in less or more time, so it multiplies an operation's run hours. Utilization scales the hours a work center makes available: it is the throttle term in the capacity formula, sitting alongside shift hours and the instance count. One changes how long the work takes; the other changes how much time there is to do it. They answer different questions and you reach them in different places.
+</Accordion>
+
+<Accordion title="Where do I actually set each one?">
+The speed factor is a real editable value, but it lives on a work center group's member row rather than on the work center itself: each member of a pool carries its own factor, so a slower machine books longer run hours for the same operation. Utilization is different. Work centers run at 100 percent in current versions and there is no editor field for the value, so you shape available hours through the calendar instead: honest shift hours, downtime events, or a per-day capacity override.
+</Accordion>
+
+<Accordion title="Do efficiency and utilization both reduce throughput?">
+They can both reduce how much a resource gets done, but through different math. A slower speed factor stretches each operation's run, so the same job consumes more hours. Fewer available hours per day shrinks the pool, so fewer job-hours fit before the day is full. The first makes the work bigger; the second makes the day smaller. The distinction matters because the fix for a too-tight plan differs depending on which one is really binding.
+</Accordion>

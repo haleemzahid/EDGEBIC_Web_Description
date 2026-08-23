@@ -1,0 +1,155 @@
+---
+title: "8 Sales Order Management Mistakes That Distort Demand"
+description: "Sales order management mistakes in scheduling: orders stuck in draft, deletes that remove jobs, duplicate imported lines, and shipped quantities nobody updates."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - sales order management mistakes
+  - firm demand errors
+  - orphan manufacturing orders
+  - duplicate sales order lines
+  - sales order delete cascade
+  - order status draft confirmed
+targetPhrase: "sales order management mistakes"
+wordCount: 1700
+readingTime: 9
+faqQuestions:
+  - question: "Why do jobs disappear when a sales order is deleted?"
+    answer: "Deleting a sales order marks every linked manufacturing order as deleted in the same operation. The jobs leave the scheduling queue immediately. Their historical schedule rows and logged hours stay in the database for cost and time analysis, but the jobs themselves are gone from working views. Setting the order's status to Cancelled achieves the demand outcome without removing any job."
+  - question: "What happens if a sales order is never confirmed?"
+    answer: "Its lines contribute nothing to demand, indefinitely. Draft is the default status for orders created manually and for orders arriving through a bulk import, so an order book loaded overnight sits entirely outside planning until someone confirms it. The symptom is a planning grid showing zero firm demand for products that clearly have customer commitments behind them."
+  - question: "Why does a job show status Scheduled before it has been scheduled?"
+    answer: "Because the job status field defaults to Scheduled on creation, before the engine has ever touched the job. That is a known naming collision rather than a data error. The grouped order view therefore reports a dedicated scheduled flag alongside the status word, and that flag is the one to trust when asking whether a job has actually been through the scheduling engine."
+  - question: "Can two lines on one order name the same product and date?"
+    answer: "Yes, and both are accepted. There is no uniqueness rule on product plus due date within an order, so the two lines accumulate into the same demand bucket. That behavior is useful for staged releases against a single purchase order and is also what a repeated bulk import produces when nobody purges existing lines first, so the same structure can mean deliberate staging or accidental doubling."
+qaQuestions:
+  - question: "Our planner says the plan is building things nobody ordered. Where does phantom demand come from?"
+    answer: "Two sources account for most of it. The first is unshipped shipments: demand reads a line's open quantity, so if goods left the dock and nobody updated the shipped figure, the full original quantity keeps demanding capacity forever. The second is duplicated lines from a repeated import, because there is no rule preventing two lines with the same product and date, and both accumulate. Both are quick to check: open the affected product's demand bucket, trace it back to the contributing lines, and compare the line list against what the customer actually ordered and what actually shipped."
+  - question: "We deleted a cancelled order and now the inventory numbers look off. What did we miss?"
+    answer: "Deleting a sales order does not reverse inventory movements that were already posted against its jobs. If material had been issued to those jobs, or if a completed job had already posted a receipt, those ledger entries survive the delete because the ledger is append-only by design and reversals are new entries rather than edits. That is the right behavior for auditability and it does leave the on-hand picture reflecting work that no longer appears in any working view. Run the inventory integrity check after any order deletion with issued material, and post explicit reversal adjustments rather than trying to edit history."
+---
+
+**Sales order mistakes rarely look like errors. They look like a plan that is confidently wrong.** In EDGEBIC by User Solutions the rules governing demand are short and strict, which means a single missed status change or an unnoticed duplicate line can shift what the whole plant is asked to build. Here are eight that recur, with the symptom that gives each one away.
+
+For the structure, read [sales orders explained](/blog/edgebic-sales-orders-explained). For the demand mechanism, see [how sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic).
+
+## 1. Leaving orders in Draft
+
+**Symptom.** Sales insists the order book is loaded. Planning shows zero firm demand for products with obvious customer commitments behind them.
+
+**Cause.** Draft is the default status both for orders entered by hand and for orders arriving through a bulk import, and Draft lines are deliberately excluded from firm demand.
+
+**Fix.** Change the status to Confirmed. Then fix the process, because this one is organizational rather than technical: decide who confirms orders, when, and what triggers it. Bulk imports need a confirm step built into the routine, or an entire overnight order book sits outside planning until someone notices.
+
+Verification takes one screen. Open the demand view for a product on one of the lines and refresh, and the firm column should show that line's open balance in the matching bucket.
+
+## 2. Confirming too early
+
+**Symptom.** The plant is building quantities that were never commercially agreed. Unwinding it means scrapping or restocking material that has already been issued.
+
+**Cause.** Someone confirmed an order before prices and quantities were locked, and the lines entered the demand pipeline immediately.
+
+**Fix.** Confirm when the order is commercially locked, not when it is entered. The Draft state exists precisely so an order can be typed, priced, discussed, and revised without touching the plan. Treat the status change as the commercial handshake it represents.
+
+This mistake and the previous one are opposites, and both come from the same root: nobody owns the confirm step. Assign it.
+
+## 3. Deleting an order instead of cancelling it
+
+**Symptom.** Jobs vanish from the scheduling queue. The work was real, the material may already be issued, and the job rows are simply gone from working views.
+
+**Cause.** Deleting a sales order marks the header and **every linked manufacturing order** as deleted in the same operation. Historical schedule rows and logged hours survive in the database for cost analysis, but the jobs leave the queue.
+
+**Fix.** Cancel instead. Setting the status to Cancelled stops the lines counting as firm demand and leaves the jobs, schedules, and history intact. Reserve delete for orders entered in error with no real work behind them.
+
+Two follow-ups if a delete has already happened:
+
+- The cascade does not reverse inventory movements already posted against those jobs. Run the inventory integrity check afterwards and post explicit reversal adjustments rather than editing history.
+- The reference number becomes free for reuse, because the uniqueness check ignores deleted records.
+
+## 4. Duplicating lines through repeated imports
+
+**Symptom.** Demand for a product reads roughly double what the customer ordered. The order looks normal until you expand its lines.
+
+**Cause.** There is no uniqueness rule on product plus due date within an order. Two lines naming the same product and the same date are both accepted, and both accumulate into the same demand bucket. A nightly re-import that does not clear existing lines stacks a second set on top of the first.
+
+**Fix.** Purge the lines for each order before re-importing them. Test the purge-then-load cycle on a single order before automating the whole book. If you are already doubled, the line list on the order shows it plainly.
+
+The permissiveness is deliberate, because staged releases against one purchase order genuinely need two lines with the same product and date. That is why the software cannot tell the difference for you, and why the check belongs in your import routine.
+
+## 5. Trusting the header date instead of the line date
+
+**Symptom.** Demand lands in the wrong week. A multi-product order plans as if everything were due on one date.
+
+**Cause.** The header carries a requested date used for display and defaulting. **The line due date is what planning buckets against.** Someone filled in the header and left the line dates at their default.
+
+**Fix.** Set the due date on every line. A purchase order covering 200 brackets for July 15 and 50 fixtures for August 30 is one commercial document and two planning realities, and the line date is where that distinction lives.
+
+## 6. Never updating shipped quantity
+
+**Symptom.** Demand for a product persists long after the goods left the dock. The plan keeps reserving capacity for work that is finished.
+
+**Cause.** Demand reads the line's open quantity, computed as ordered minus shipped. If nobody raises the shipped figure, open quantity stays at the full order quantity forever.
+
+**Fix.** Update shipped quantity to the new **cumulative** total each time a shipment goes out, not the increment. Open quantity recalculates automatically, demand drops, and available-to-promise frees up by the same amount. There is no separate planning adjustment to remember, which is the upside of the computed design and the reason the one manual step matters so much.
+
+Shipping more than ordered floors open quantity at zero rather than raising an error, so an over-shipment does not need special handling.
+
+## 7. Reading the job status word as truth
+
+**Symptom.** A report or a conversation claims jobs are scheduled when the engine has never touched them.
+
+**Cause.** The job status field defaults to Scheduled on creation. A brand new job therefore reads as "Scheduled" before any allocation exists, which is a known naming collision rather than a data error.
+
+**Fix.** Use the dedicated scheduled flag that the grouped order view reports beside the status word. That flag answers whether the job has actually been through the engine. Build any report or filter on the flag, not the status text.
+
+The same view has a related reading rule: actual hours display as a dash rather than zero until at least one operation has logged real start and end times. A dash means nothing has run. A zero would imply something ran and took no time.
+
+## 8. Ignoring the unassigned grouping
+
+**Symptom.** A customer's progress view is missing a job that is definitely being built for them.
+
+**Cause.** The job has no sales order link. The link is optional, and jobs created directly rather than through an order or a quote conversion default to unlinked.
+
+**Fix.** Open the job, select the target order in the sales order field, and save. The job then appears under that order in the grouped view.
+
+The unassigned grouping is not an error list. Replenishment jobs and jobs firmed from a planning suggestion belong there permanently, because neither has a customer order behind it. Scan it periodically for the jobs that should not be there rather than trying to empty it.
+
+## Two smaller ones
+
+**Assuming reference numbers are globally unique.** They are unique per customer. Two customers can both send a purchase order numbered `ORD-2026-001`, and both are accepted. Any report or export that keys on reference number alone will collide.
+
+**Switching demand sources before the lines exist.** If a configuration begins reading sales order lines as the demand source before anyone has entered any, every stocked product shows zero firm demand and the plan suggests building everything from scratch. The demand did not disappear; it was never entered in the new form. Load the order book first, then switch.
+
+## A short prevention routine
+
+| Cadence | Check |
+|---|---|
+| Per import | Purge lines before reloading; review the per-row error log |
+| Daily | Confirm the orders that became commercially locked yesterday |
+| Weekly | Scan the unassigned grouping for jobs that should be linked |
+| Per shipment | Update cumulative shipped quantity on the line |
+| Before any delete | Ask whether Cancel achieves the same outcome |
+
+Five habits, none of them long, and between them they cover everything on this page. Sales order data is unusual among master data in that it changes daily, which is exactly why the routine matters more than the configuration.
+
+For the full demand mechanism with worked numbers, see [how sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic). For how a quote becomes an order and then a shipped job, follow the [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic). For the platform overview, read the [complete EDGEBIC guide](/blog/edgebic-complete-guide) or start at the [product hub](/edgebic).
+
+<Accordion title="Why do jobs disappear when a sales order is deleted?">
+Deleting a sales order marks every linked manufacturing order as deleted in the same operation. The jobs leave the scheduling queue immediately. Their historical schedule rows and logged hours stay in the database for cost and time analysis, but the jobs themselves are gone from working views. Setting the order's status to Cancelled achieves the demand outcome without removing any job.
+</Accordion>
+
+<Accordion title="What happens if a sales order is never confirmed?">
+Its lines contribute nothing to demand, indefinitely. Draft is the default status for orders created manually and for orders arriving through a bulk import, so an order book loaded overnight sits entirely outside planning until someone confirms it. The symptom is a planning grid showing zero firm demand for products that clearly have customer commitments behind them.
+</Accordion>
+
+<Accordion title="Why does a job show status Scheduled before it has been scheduled?">
+Because the job status field defaults to Scheduled on creation, before the engine has ever touched the job. That is a known naming collision rather than a data error. The grouped order view therefore reports a dedicated scheduled flag alongside the status word, and that flag is the one to trust when asking whether a job has actually been through the scheduling engine.
+</Accordion>
+
+<Accordion title="Can two lines on one order name the same product and date?">
+Yes, and both are accepted. There is no uniqueness rule on product plus due date within an order, so the two lines accumulate into the same demand bucket. That behavior is useful for staged releases against a single purchase order and is also what a repeated bulk import produces when nobody purges existing lines first, so the same structure can mean deliberate staging or accidental doubling.
+</Accordion>

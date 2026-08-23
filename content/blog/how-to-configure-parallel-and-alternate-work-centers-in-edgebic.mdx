@@ -1,0 +1,151 @@
+---
+title: "How to Configure Parallel and Alternate Work Centers in EDGEBIC"
+description: "Configure alternate work centers and parallel machines in EDGEBIC: the exact fields for independent split, dependent mirroring, and true fallback routing."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - configure alternate work centers
+  - parallel work center setup
+  - dependent parallel configuration
+  - fallback routing setup
+  - alternative machine routing
+  - synchronized machine configuration
+targetPhrase: "configure alternate work centers"
+wordCount: 1710
+readingTime: 9
+faqQuestions:
+  - question: "How do I add a second machine to a routing operation in EDGEBIC?"
+    answer: "Open the routing, select the step, and add an entry in its alternative work centers list. Three fields then decide what the second machine does: the category (parallel or true alternative), the finite capacity setting (checked for independent, unchecked for a synchronized mirror), and the factor. Category and finite capacity together determine which of the three behaviors you get, so set them deliberately rather than accepting defaults."
+  - question: "What is the difference between the parallel and true alternative categories?"
+    answer: "Parallel means the second machine runs alongside the primary on the same operation. True alternative means it can replace the primary: before scheduling begins, the resolver compares projected completion on every candidate and switches the operation to whichever finishes soonest. Parallel is the default on existing data, so an entry you add without changing the category will run alongside rather than replace."
+  - question: "What does the factor field actually change?"
+    answer: "For a dependent, mirrored machine the factor multiplies the hours credited to that machine while leaving its start and end times identical to the lead machine's. A factor of 1.25 records 25 percent more hours over the same clock window, which suits a slower machine keeping pace and makes cost roll-up correct when rates differ. The factor is not used at all for true alternatives, which carry their own run hours and setup time instead."
+  - question: "Do parallel machines need to share a shift?"
+    answer: "Yes, and they must share the same shift record rather than the same hours. EDGEBIC finds common shifts across a group by matching the shift itself, so two separately created rows both reading 08:00 to 16:00 are two different shifts and the group has nothing in common. Assign one shared shift row to every machine in the group, and verify it before troubleshooting anything else."
+  - question: "How do I take one machine out of a parallel group temporarily?"
+    answer: "Set its entry in the alternative work centers list to inactive rather than deleting it. Inactive entries are skipped when the candidate list is built, and scheduling proceeds with the remaining active machines. Re-enable it when the machine returns. This is different from marking downtime on the work center itself, which blocks that machine for every routing rather than for this one operation."
+qaQuestions:
+  - question: "We added a second mill as a parallel machine but the schedule still only shows one row. What is wrong?"
+    answer: "Two candidates. Either the entry is inactive, in which case it never enters the candidate list, or no simultaneous window was found and the run reported that rather than scheduling half the group. Check the shift records first: both machines must share the same shift row, matched by the record and not by the times. If both are on the same shift and both are active, look at whether the second mill's capacity is already consumed by other work in the window you expected."
+  - question: "Our backup CNC is slower and takes longer to set up. Will the alternate resolver still pick it when the primary is booked?"
+    answer: "Only when it genuinely finishes sooner. Enter the backup's own run hours and setup time on its alternative entry rather than leaving them blank, and the resolver projects a realistic completion for it. If the primary is queued until Wednesday and the backup can finish Monday despite the longer setup, the backup wins. If the extra setup pushes it past the primary's completion, the primary keeps the job. That is the point of storing per-alternative numbers."
+---
+
+**Configuring alternate work centers in EDGEBIC comes down to three fields on each entry you add to a routing step: the category, the finite capacity setting, and the factor.** Those three decide whether the second machine splits the work, mirrors the primary in lockstep, or replaces it. [EDGEBIC by User Solutions](/edgebic) reads them on every scheduling run, so a change takes effect the next time you schedule.
+
+This is the setup walkthrough. For what the three behaviors are and when to choose each, read [parallel and alternate work centers explained](/blog/edgebic-parallel-work-centers-explained). For the validation logic behind simultaneous placement, read [how EDGEBIC validates simultaneous capacity](/blog/how-edgebic-validates-simultaneous-capacity).
+
+## The Decision Table
+
+Set these before you touch the screen, because the fields are easy to enter and hard to guess at afterwards:
+
+| You want | Step's work center type | Category | Finite capacity | Factor |
+|---|---|---|---|---|
+| Two machines split the work | Independent parallel | Parallel | Checked | Relative speed, usually 1.0 |
+| Machines run in lockstep | Dependent parallel | Parallel | Unchecked | Hours credited, usually 1.0 |
+| A backup replaces the primary | Normal | True alternative | Checked | Not used |
+
+The parallel category is the default on existing data, so an entry added without changing the category runs alongside the primary rather than replacing it. That surprises people setting up their first fallback machine.
+
+## Setup A: Independent Parallel (Split the Work)
+
+Use this when two genuinely separate machines can each take part of the operation and the job finishes sooner.
+
+1. Open the routing for the product and select the step.
+2. Set the step's **Work Center Type** to independent parallel.
+3. In the step's **Alternative Work Centers** list, click **Add**.
+4. Choose the secondary machine.
+5. Set **Category** to `Parallel` (the default).
+6. Set **Is Finite Capacity** to checked. This is what makes the machine independent: its capacity is genuinely checked and consumed.
+7. Set **Factor** to `1.0` if it runs at the same rate as the primary, or adjust for a faster or slower machine.
+8. Set **Is Active** to true and **Priority** to 1.
+9. Save the routing and run **Generate Schedule**.
+
+The engine now searches for the earliest window where both machines have capacity at the same moment, then places each machine's share of the hours through the normal allocation path. You get one schedule row per machine, both starting together.
+
+Adding a third machine later is the same procedure with a new entry. Be aware that each additional member makes a simultaneous window harder to find, because all three calendars have to agree.
+
+Two optional controls live on the step's parallel processing settings rather than on the individual machine entries. **Enable load balancing** spreads hours across machines so they finish together, which is the default and usually what you want. **Max parallel work centers** caps how many machines run at once, and it defaults to 1, so raise it when you want more than one secondary machine active at the same time.
+
+## Setup B: Dependent Parallel (Synchronized Mirrors)
+
+Use this only when the machines are physically joined: ganged drill heads, twin robots on one frame, slaved stations on one line. If they merely tend to run at the same time, use independent parallel instead.
+
+1. Open the routing step and set its **Work Center Type** to dependent parallel.
+2. Add each secondary machine in the **Alternative Work Centers** list.
+3. Set **Category** to `Parallel`.
+4. Set **Is Finite Capacity** to **unchecked**. This single field is what turns the machine into a mirror.
+5. Set **Factor** to the hours this machine should be credited with relative to the lead: `1.0` for equal work, `1.25` for a slower machine keeping pace, `0.5` for one doing half the work.
+6. Optionally set **Requires Synchronous Execution** on the step's parallel processing settings.
+7. Save and reschedule.
+
+Only the lead machine goes through the capacity search. Each dependent machine then receives an exact copy of its schedule: identical start, identical end, identical shift, identical instance, with hours scaled by the factor and setup hours copied one to one.
+
+Two consequences follow from the copy, and both are intended.
+
+**The factor never moves the clock.** A machine at factor 1.25 records more hours across exactly the same window, because it is physically running for that window. Downstream operations are timed from the lead machine's actual finish, not from the scaled hours.
+
+**Mirrors bypass the capacity check.** A dependent machine can show more allocated hours than its shift nominally contains, because it is committed to the lead operation regardless. If you see a mirrored machine over 100 percent on a load view, that is the mechanism working, not a fault. It is also the reason to reserve this category for machines that really are joined.
+
+If you want to see the whole behavior with real timestamps before configuring it, the [synchronized multi-spindle walkthrough](/blog/synchronized-multi-spindle-scheduling-example-edgebic) traces a three-head gantry through a full run.
+
+## Setup C: True Alternates (Fallback Routing)
+
+Use this when only one machine will do the operation and you want the scheduler to pick the best one.
+
+1. Open the routing step. Leave its **Work Center Type** as `Normal`.
+2. In **Alternative Work Centers**, click **Add** and choose the backup machine.
+3. Set **Category** to `TrueAlternative`.
+4. Set **Is Active** to true and **Is Finite Capacity** to checked.
+5. Enter the backup's own **Setup Time** and, if it differs from the primary, its own **Runtime Per Unit**. Leave them at zero only if the backup genuinely matches the primary's numbers, in which case the primary's values are used.
+6. Set **Priority** to control ordering: 1 for the machine you would prefer, 2 for the next, and so on.
+7. Save and reschedule.
+
+Before any capacity is allocated, the resolver projects a completion time on the primary and on every active candidate, then switches the operation to whichever finishes soonest. Priority breaks ties; it does not override a meaningfully earlier completion.
+
+The per-alternative setup and runtime fields are what make this honest. A backup machine with a two-hour setup against the primary's half hour will only be chosen when the earlier availability outweighs the extra setup, which is exactly the trade you would make by hand.
+
+Two behaviors you get without configuring anything. Machines carrying actual dates for a job are locked, so a reschedule will not move in-progress work to a different machine. And the resolver works on a copy of the routing, so the master routing is not permanently rewritten by a scheduling run.
+
+If you find yourself maintaining the same list of alternates on many routing steps, stop and use a machine pool instead: bind the step to the pool once and let the members carry their own efficiency and setup. [What a work center group is](/blog/what-is-a-work-center-group-machine-pool) covers the trade-off. A step can be bound to a pool or carry a hand-built alternate list, never both, because the pool is the alternate list.
+
+## The Shift Requirement That Breaks Groups
+
+One prerequisite is worth its own section because it causes more failed parallel setups than everything else combined.
+
+Every machine in an independent or dependent group must share at least one shift **record** in common. EDGEBIC matches common shifts across a group by the shift itself, not by the hours printed on it. Two rows created separately that both read 08:00 to 16:00 are two different shifts, so a group split across them has no shift in common and no simultaneous window will ever be found.
+
+Before configuring a group:
+
+1. Open each machine's **Associated Shifts** tab.
+2. Confirm the same shift row appears on all of them.
+3. If the machines are on separate but identical shifts, delete one and assign the shared row.
+4. Confirm the shift covers the same weekdays on every member.
+
+Also check the **Use Global Shifts** flag, which bypasses per-machine assignments when it is on.
+
+## Verifying the Result
+
+After a schedule run, check the shape of the answer against the category you configured.
+
+**Independent parallel** should produce one schedule row per machine, with the same start, and roughly the hours split between them. If only one row appears, either the second entry is inactive or no simultaneous window was found. Sum the hours across both rows and compare to the operation's total.
+
+**Dependent parallel** should produce identical start and end dates on every row for the step, with hours differing by the factor. If the dates differ, the step's work center type is probably not set to dependent parallel on both the routing and its saved copy.
+
+**True alternates** should produce exactly one row, naming whichever machine won. If the machine you expected did not win, check its per-alternative setup and runtime values: an alternate with realistic numbers loses honestly, an alternate with blank numbers inherits the primary's and may look artificially good or bad.
+
+## Two Settings You Get for Free
+
+Two behaviors need no configuration and are worth knowing before you plan around them.
+
+**Buffer time after a synchronized group.** If a multi-machine operation needs a physical unmounting or refixturing window before the next step can start, the step's parallel processing settings carry a buffer in hours that is added to the group's end before downstream operations receive their earliest start. Use it for the fixture time itself. It is distinct from queue time, which is the shift-aware wait between ordinary operations, and from a transfer delay, which is the handling lag on a lot-streamed step.
+
+**Locked machines on reschedule.** Any machine carrying actual dates for a job is locked, so the alternate resolver will not move in-progress work to a different machine even if another one now projects an earlier finish. You do not enable this and you cannot accidentally lose it: the part is physically on that machine, and completed work is never moved by a reschedule.
+
+## Next Steps
+
+Read [parallel work center mistakes](/blog/parallel-work-center-mistakes-edgebic) before your first live run: the configuration errors on this feature have very distinctive symptoms, and knowing them turns a day of debugging into a two-minute check. For the gate-by-gate validation logic behind simultaneous placement, read [how EDGEBIC validates simultaneous capacity](/blog/how-edgebic-validates-simultaneous-capacity). The [complete guide to EDGEBIC](/blog/edgebic-complete-guide) places all of this in the wider platform.

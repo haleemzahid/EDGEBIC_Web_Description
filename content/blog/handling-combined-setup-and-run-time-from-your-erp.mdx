@@ -1,0 +1,134 @@
+---
+title: "Handling an ERP Export With Combined Setup and Run Time"
+description: "How to split an ERP's blended standard hours into setup and per-piece run time when you import into EDGEBIC, so small and large jobs both get accurate finite capacity dates."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - combined setup and run time ERP
+  - split setup and run time scheduling
+  - ERP standard hours import
+  - per piece run time finite capacity
+  - EDGEBIC routing import setup time
+  - unit conversion import mask
+targetPhrase: "combined setup and run time ERP export"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "Why does EDGEBIC need setup and run time as separate columns?"
+    answer: "Setup is incurred once per job and run time scales with quantity, so keeping them separate is what makes a schedule accurate across different lot sizes. A 5-piece job and a 500-piece job share the same setup but need wildly different run time. If both are folded into one blended number, one of the two jobs is always wrong. Separating them lets the finite capacity engine charge setup once and multiply run time by the real quantity."
+  - question: "My ERP only exports one standard hours value per operation. Can I still import it?"
+    answer: "Yes. If the value is genuinely per piece, map it to the run time field and set setup to zero. If it is a lot standard that already includes setup, either export the ERP's setup and run components as separate columns when it holds them, or divide the value into a fixed setup portion and a per-piece run portion before import. The import mask can apply a conversion factor per column, so per-hundred or per-minute figures convert automatically."
+  - question: "How do I convert minutes or per-hundred times during import?"
+    answer: "Set a conversion factor on the numeric column in the import mask and the multiplication happens before the value is stored. Minutes to hours uses 0.016667, seconds to hours uses 0.000278, and a run time quoted per hundred pieces becomes per piece with 0.01. Different columns in the same file can carry different factors, so a minutes setup column and a per-hundred run column both land correctly in one pass."
+qaQuestions:
+  - question: "Our shop quotes every operation as one lump standard hour figure per lot of 100. Half our jobs are 10 pieces and half are 1,000. Our current dates are always off. What is the fix?"
+    answer: "The lump figure is hiding two different behaviors, and that is exactly why the dates drift. Take one representative operation, say 2.5 standard hours per 100. Break it into a fixed setup portion and a variable run portion: if the machine takes about 30 minutes to set up regardless of quantity, that is 0.5 setup hours, leaving 2.0 hours of run across 100 pieces, or 0.02 hours per piece. Import setup as 0.5 and run as 0.02. Now a 10-piece job costs 0.5 + 0.2 = 0.7 hours and a 1,000-piece job costs 0.5 + 20 = 20.5 hours, both correct. Do this once per operation type, not per job."
+  - question: "We do not know the real setup split for older routings. Is there a safe default while we clean the data up?"
+    answer: "Yes. If you cannot separate setup from run for a given operation, put the whole blended per-piece figure into run time and leave setup at zero. That undercharges setup on very small jobs, but it never double-counts, and it keeps large jobs accurate because run time still scales correctly. Flag those operations, then correct the ones that run on genuine bottlenecks first, since that is where a missing 30-minute setup actually changes the schedule. Work centers that are never tight can keep the blended value indefinitely."
+---
+
+**When an ERP exports a single blended standard hours figure per operation, split it into a fixed setup time and a per-piece run time before you import it into EDGEBIC, because setup is charged once per job while run time multiplies by quantity.** A blended number is always wrong for either small jobs or large jobs, and the finite capacity schedule inherits that error directly. The fix lives entirely in the import mask and a small amount of one-time routing hygiene.
+
+EDGEBIC by User Solutions has moved routing data out of ERPs this way since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the combined-time export is one of the most common data shapes a planner has to unpack. This guide shows why the split matters and how to do it without editing files by hand.
+
+## Why one blended number cannot schedule two lot sizes
+
+Setup and run time answer different questions. Setup is the time to prepare a work center for an operation: mount the fixture, load the program, dial in the first article. It happens once per job regardless of quantity. Run time is the time to make one piece, so it multiplies by the order quantity.
+
+Fold them into one figure and the arithmetic breaks the moment lot sizes vary:
+
+- A per-piece figure that secretly includes setup over-charges large jobs, because it multiplies the setup portion by every piece.
+- A per-lot figure treated as run time under-charges large jobs and over-charges small ones, because it never scales.
+
+The general trade-off is covered in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling). The ERP-specific consequence is that your promise dates drift in a pattern: small jobs look slower than reality, big jobs look faster, and nobody trusts the schedule.
+
+## What EDGEBIC actually wants
+
+The routing import carries three time fields per operation, and they map cleanly onto how a shop thinks:
+
+| Field | Meaning | Scales with |
+|---|---|---|
+| Setup time | Preparation, once per job | Nothing (fixed per job) |
+| Run time (hours per unit) | Time to make one piece | Order quantity |
+| Queue time | Buffer before the operation starts | Nothing |
+
+The [routing versus operations mapping guide](/blog/mapping-routings-vs-operations-from-your-erp) covers the full column list. This post is about the one hard case: what to do when your export does not hand you setup and run as separate columns.
+
+## Case 1: the ERP holds setup and run separately
+
+Many ERPs store setup and run as distinct fields even when the standard report blends them. Before you do any math, check for a detailed operation export or a routing-detail view that exposes both. If it exists, this is trivial: map the setup column to setup time, map the run column to run time, and set a conversion factor on each if the units differ. You are done.
+
+The [minimum ERP fields EDGEBIC needs](/blog/which-erp-fields-edgebic-needs-to-schedule) lists which columns are mandatory and which only sharpen the dates.
+
+## Case 2: the export gives one number, and it is a lot standard
+
+This is the common one. The report gives, say, 2.5 hours for the operation at a standard lot of 100. That number already contains setup. Splitting it is a one-time decision per operation, not per job:
+
+1. Estimate the fixed setup for that work center and operation. If the machine takes about 30 minutes to prepare regardless of run length, setup is 0.5 hours.
+2. Subtract setup from the lot standard to get run across the standard lot: 2.5 minus 0.5 is 2.0 hours per 100 pieces.
+3. Convert run to per piece: 2.0 across 100 is 0.02 hours per piece.
+
+Import setup as 0.5 and run as 0.02. Now the schedule computes each job correctly:
+
+| Job quantity | Setup | Run | Total operation hours |
+|---|---|---|---|
+| 10 | 0.5 | 0.2 | 0.7 |
+| 100 | 0.5 | 2.0 | 2.5 |
+| 1,000 | 0.5 | 20.0 | 20.5 |
+
+The 100-piece job still reconciles to the original 2.5 standard, which is the check that tells you the split is right. The other two sizes are now correct instead of blended.
+
+## Case 3: the export gives one number, and it is truly per piece
+
+If the value is a genuine cycle time (seconds or minutes per piece with no setup baked in), map it straight to run time and leave setup at zero, then add setup separately from the work center default. EDGEBIC lets a work center carry a default setup that applies when an operation does not specify its own, so you can seed a sensible setup once per machine rather than on every routing line.
+
+## Doing the conversion in the mask, not in Excel
+
+You do not pre-edit files for any of this. The import mask applies a conversion factor to any numeric column, and the multiplication runs before the value is stored:
+
+- Minutes to hours: 0.016667
+- Seconds to hours: 0.000278
+- Per hundred pieces to per piece: 0.01
+- Per thousand pieces to per piece: 0.001
+
+Different columns in the same file carry different factors, so a setup column quoted in minutes and a run column quoted per hundred both convert correctly in one pass. See [import masks explained](/blog/edgebic-import-masks-explained) for the full set of mask options, including quoted-text handling and blank-cell preservation.
+
+Blank-cell preservation matters here: on an update run, a blank setup cell keeps the existing value rather than wiping it, so a partial refresh that only carries run times will not zero out your setups. A zero, though, is a value, not a blank, so never fill a setup column with zeros you do not mean.
+
+## When setup is sequence-dependent
+
+Some shops have setup times that depend on what ran before: a paint line that takes four hours to go from black back to white but minutes to go light to light. A single setup number cannot express that. EDGEBIC handles it with a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), which looks up the changeover cost from the previous job to the next and lets the optimizer group compatible work. That is a separate layer from the base setup you import here: import your standard setup as the fallback, then add matrix entries only for the work centers where sequence genuinely changes the number. The concept itself is defined in [what is a setup family](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+## A practical clean-up order
+
+You do not have to split every operation on day one. Work in priority order:
+
+1. Split operations that run on bottleneck work centers first, because a missing 30-minute setup there actually moves the schedule.
+2. Split high-mix operations next, where lot sizes swing widely and the blended error is largest.
+3. Leave operations on work centers that are never tight for last, or indefinitely, since the blended value costs you nothing when there is slack.
+
+Re-importing corrected routings is safe. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched. You can refine the split over several weeks without disrupting the floor.
+
+## The recurring routine after the split
+
+Once the split is built into your routing export or your mask, it is invisible from then on. Your weekly or nightly import runs the same two clicks, and every row returns Created, Updated, Reused, or Failed as usual. The one-time work is deciding the setup portion per operation; the recurring work is unchanged. The wider rhythm is in the [weekly ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine).
+
+## Bring your own routing file
+
+Export one routing file with your standard hours and [bring it to a demo](/contact-us). Splitting a handful of operations live takes minutes, and you leave with a mask that does the conversion on every future import. The full engine that consumes the result, including finite capacity across shifts and machine instances, is mapped on the [EDGEBIC product overview](/edgebic), and the universal import method is in [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way).
+
+<Accordion title="Why does EDGEBIC need setup and run time as separate columns?">
+Setup is incurred once per job and run time scales with quantity, so keeping them separate is what makes a schedule accurate across different lot sizes. A 5-piece job and a 500-piece job share the same setup but need wildly different run time. If both are folded into one blended number, one of the two jobs is always wrong. Separating them lets the finite capacity engine charge setup once and multiply run time by the real quantity.
+</Accordion>
+
+<Accordion title="My ERP only exports one standard hours value per operation. Can I still import it?">
+Yes. If the value is genuinely per piece, map it to the run time field and set setup to zero. If it is a lot standard that already includes setup, either export the ERP's setup and run components as separate columns when it holds them, or divide the value into a fixed setup portion and a per-piece run portion before import. The import mask can apply a conversion factor per column, so per-hundred or per-minute figures convert automatically.
+</Accordion>
+
+<Accordion title="How do I convert minutes or per-hundred times during import?">
+Set a conversion factor on the numeric column in the import mask and the multiplication happens before the value is stored. Minutes to hours uses 0.016667, seconds to hours uses 0.000278, and a run time quoted per hundred pieces becomes per piece with 0.01. Different columns in the same file can carry different factors, so a minutes setup column and a per-hundred run column both land correctly in one pass.
+</Accordion>

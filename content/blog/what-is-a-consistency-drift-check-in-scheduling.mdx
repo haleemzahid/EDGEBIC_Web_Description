@@ -1,0 +1,86 @@
+---
+title: "What Is a Consistency Drift Check in Scheduling?"
+description: "A consistency drift check catches two stores of the same number disagreeing: allocation hours versus daily breakdowns, mirror dates versus their parent, header dates versus their operations. Definition and how EDGEBIC reports it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - consistency drift check
+  - schedule numbers disagree
+  - mirror drift parallel machines
+  - job header dates wrong
+  - scheduling anomaly consistency
+  - hours totals do not match
+targetPhrase: "consistency drift check"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "What is a consistency drift check?"
+    answer: "A consistency drift check catches cases where two places that hold the same number disagree with each other. A schedule stores its hours both as machine allocations and as a per-day breakdown, and those two totals must match. Synchronized parallel machines must share their parent's start and end times. A job header's dates must equal the span of the operations underneath it. The check compares each of these pairs and flags any that have drifted apart beyond a tight tolerance."
+  - question: "Why does the same number get stored twice in the first place?"
+    answer: "Because different screens need it in different shapes. Machine allocations answer which physical machine was booked for how long, and the per-day breakdown answers how many hours land on each calendar day. Both are legitimate views of the same work, written by different code paths at different moments. When those paths disagree, one screen shows a different total from another, and the consistency drift check is what notices before a planner does."
+  - question: "What tolerance does the check use?"
+    answer: "It varies by test because the quantities are different. Hour totals compare to within a hundredth of an hour, which is under a minute. Date comparisons, such as a synchronized mirror against its parent or a job header against its operations, compare to within one minute. The wider hours test that measures a schedule against its routing expectation is deliberately loose: it needs both a gap of more than one hour and more than ten percent of the expected total before it fires."
+qaQuestions:
+  - question: "The job header shows a finish two days after the last operation ends. Is that a bug or a setting?"
+    answer: "Check the product's end-item lead time first, because a delivery, cure, or ship tail legitimately places the delivery-ready date after the last machine operation, and that is by design rather than drift. If the product has no lead time and the header still disagrees with the span of its operations by more than a minute, that is a genuine header drift firing. It means the header was written at a different moment from its children, usually after an edit that moved one operation without refreshing the parent. Re-run the schedule for that job and the header will be rebuilt from the operations underneath it."
+  - question: "We use three synchronized drill heads and the check flagged a mirror as critical. What does that mean on the floor?"
+    answer: "It means one of the mirrored machines no longer shares the parent's start and end times within a minute, and synchronized parallel processing only works if all machines genuinely run in lockstep. On the floor the symptom would be one head scheduled to begin while the others are still idle, which defeats the whole point of the setup. It is marked critical because the plan is describing something the equipment cannot do. Re-run the affected job so the mirrors are rebuilt from the parent, and if it persists, check whether one of the machines was edited or replaced after the plan was built."
+---
+
+**A consistency drift check is a scheduling anomaly test that catches two stores of the same number disagreeing with each other. A schedule holds its hours both as machine allocations and as a per-day breakdown, and those totals must match. Synchronized parallel machines must share their parent's start and end times. A job header's dates must equal the span of the operations beneath it. The check compares each pair and flags any that have drifted apart beyond a tight tolerance, at severities from warning up to critical.**
+
+The analogy is a set of books kept in two ledgers. Both are legitimate, both serve a purpose, and as long as they agree nobody thinks about it. The moment they disagree, every report built on either one becomes a coin flip, and the only honest response is to find out which ledger is right.
+
+This entry belongs to the [EDGEBIC by User Solutions](/edgebic) glossary. For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the parent concept, the definition of a [scheduling anomaly check](/blog/what-is-a-scheduling-anomaly-check).
+
+## How the Consistency Drift Check Works
+
+The family is a set of paired comparisons, each one testing a place where the same fact is recorded twice.
+
+**Allocations against daily breakdowns.** A schedule's hours are stored as machine allocations, which say which machine was booked for how long, and as a per-day breakdown, which says how many hours land on each date. Both totals describe the same work and must match to within a hundredth of an hour. A mismatch is critical, because two code paths have written the same number differently.
+
+**Booked hours against the routing expectation.** A looser test compares total allocated hours against what the routing asks for, allowing for actuals. This one is deliberately forgiving: it needs a gap of more than an hour *and* more than ten percent of the expected total before firing, so ordinary variance stays quiet.
+
+**Material steps carrying labor.** A material step consumes no capacity by contract, so any machine hours booked against one signal that something was classified wrongly.
+
+**Mirror drift on synchronized machines.** When several machines run one operation in lockstep, each mirrored schedule must share the parent's start and end within a minute. This is critical, because a mirror out of step describes something the equipment cannot do.
+
+**Bookings outside their shift's working hours.** An allocation whose clock window falls outside the shift's defined day is flagged. Overnight shifts are excluded from this test so they do not produce false positives.
+
+**A missing work center.** A schedule pointing at a work center that has been deleted or is absent is critical, since the plan commits work to a machine that is not there.
+
+**Days outside their operation's window.** A daily breakdown row dated outside its operation's own start-to-end range does not belong to that operation.
+
+**Header drift.** A job header's start and end must equal the earliest start and latest end of the operations underneath it, within a minute.
+
+## Why Drift Happens
+
+None of these disagreements are introduced deliberately. They appear at seams: a reschedule that touched a child operation without refreshing its parent, an edit applied to one store and not the other, a split operation that failed to collapse back into a single row, or master data that changed after a plan was already built.
+
+That is the reason the family is worth running as a group. Individually the firings look unrelated. Together they describe one condition: the plan's parts were written at different moments and have not been reconciled.
+
+## A Concrete Example
+
+A shop runs a large frame through three synchronized drill heads. The routing has one primary head and two mirrors, all required to start and finish together.
+
+A planner drags the primary head's bar forward by ninety minutes on the Gantt to make room for a rush job, then publishes. The anomaly report is run before the shift and comes back with a critical mirror drift firing: the primary now starts at 09:30 while both mirrors still start at 08:00.
+
+On the floor that plan is impossible. The frame cannot be under one head at 08:00 and another at 09:30. The planner re-runs the schedule for the job, the mirrors are rebuilt from the parent, all three read 09:30, and the critical chip goes green.
+
+The same run also produces a header drift warning on a different job: its header finish reads Thursday while its last operation ends Wednesday. That product carries a one-day delivery tail, so the planner checks the lead time, confirms Thursday is the delivery-ready date rather than the machine finish, and leaves it alone.
+
+## How EDGEBIC Reports Consistency Drift
+
+In EDGEBIC, the consistency drift tests run inside the Scheduler Anomalies report under the Reports menu, at job scope. A firing gives you the job, the operation, and which pair of numbers disagreed, so the investigation starts at the right row instead of a plant-wide summary.
+
+Severity is the triage guide. Critical firings, meaning the hours mismatch, the drifted mirror, and the missing work center, are stop-and-investigate before publishing. The warnings, meaning the loose hours comparison, material steps carrying labor, off-shift windows, stray breakdown dates, and header drift, are worth understanding but rarely block a week.
+
+One test deserves a note: comparing a booking's clock window against the shift's defined day requires reading the shift's daily hours, so it runs inside the application rather than in the raw database queries. That is why it appears in the in-app report and not in the exported query set.
+
+The neighboring definitions are the [daily hour breakdown](/blog/what-is-a-daily-hour-breakdown), [dependent parallel processing](/blog/what-is-dependent-parallel-processing) which produces the mirrors, and the [material step](/blog/what-is-a-material-step-in-a-routing) that must never carry labor hours. For the practical walkthrough, see [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic), and for the wider picture, [EDGEBIC schedule diagnostics explained](/blog/edgebic-schedule-diagnostics-explained).
+
+When every pair agrees, every screen in the product is telling the same story. That is the whole value of the check.

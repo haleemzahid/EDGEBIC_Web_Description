@@ -1,0 +1,98 @@
+---
+title: "Why Actuals Are Immutable in EDGEBIC (and Why That Protects You)"
+description: "Once an operation is finished, its actual dates and hours are permanent. Learn why EDGEBIC never moves completed work on a reschedule and what that guarantees."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - immutable actuals scheduling
+  - completed work never moves
+  - actuals preservation reschedule
+  - production history integrity
+  - finite capacity rescheduling
+  - shop floor audit trail
+targetPhrase: "immutable actuals scheduling"
+wordCount: 1750
+readingTime: 9
+faqQuestions:
+  - question: "Can a reschedule ever move a completed operation in EDGEBIC?"
+    answer: "No. Once an operation has both an actual start and an actual end recorded, no reschedule, mode, or setting will shift, shrink, or recompute it. EDGEBIC re-emits the completed row exactly as it was logged. The engine plans only remaining work forward from your real finishing point, so history stays a permanent record of what the shop actually did."
+  - question: "What counts as a completed operation that cannot be moved?"
+    answer: "A completed operation is one with both an actual start date and an actual end date set. That can come from an operator tapping Complete at the kiosk or a planner recording the end in the Log Actuals dialog. Until an end is recorded, the operation is in progress: its logged hours are still locked, but its remaining balance can be re-planned forward."
+  - question: "Does immutability mean I can never correct a wrong actual?"
+    answer: "You can correct actuals deliberately. A supervisor edits a punch in the history drawer with a mandatory reason, and every edit is kept forever alongside the original as an append-only adjustment. Immutability applies to the reschedule engine, which never silently rewrites finished work. Intentional corrections are audited, not blocked."
+qaQuestions:
+  - question: "A customer asked me to prove when a part actually ran, and my old system had already overwritten those dates with a reschedule. Does EDGEBIC avoid that?"
+    answer: "Yes, and this is one of the main reasons the three-zone model exists. In EDGEBIC a completed step's actual start, actual end, logged hours, and machine assignment are historical fact. A reschedule preserves that row verbatim and adds a new audit event with old versus new dates for the work that did move. So when a customer asks 'when did step 2 run,' you open the Job Audit trail and read the recorded actuals, not a plan that got stamped over yesterday."
+  - question: "If I run Reschedule All by mistake on a job that is fully finished, what happens?"
+    answer: "Nothing moves. The engine recognizes that every step already has an actual end, classifies the whole job as completed, and writes the same rows back unchanged. You see no date movement on any bar. One audit event is recorded noting a reschedule was attempted and produced no delta, so even the accidental run leaves a clean trace rather than a corrupted plan."
+---
+
+**In EDGEBIC by User Solutions, once an operation is finished it becomes permanent history: no reschedule, no scheduling mode, and no configuration setting will shift, shrink, or recompute a completed step.** This is immutable actuals scheduling, and it is the difference between a plan you can trust and a plan that quietly rewrites what your shop already did. Completed work is a record of reality. EDGEBIC treats it that way and reschedules only around it.
+
+Most scheduling tools treat a reschedule as a full reset: wipe every allocation, rerun the engine, stamp fresh dates over everything. That is convenient for the software and dangerous for you, because it destroys the one thing a shop floor produces that a plan cannot: the truth about what happened and when. EDGEBIC takes the opposite stance, and this article explains the mechanism and, more importantly, why it protects you.
+
+## The Three Zones of Work
+
+Every operation in a job sits in exactly one of three zones at the moment you reschedule.
+
+- **Completed.** Both an actual start and an actual end are recorded. This is frozen history. It never moves.
+- **In progress.** An actual start is recorded but no end yet. The hours already logged are locked on their real days. Only the remaining balance is re-planned forward, and it stays on the same work center.
+- **Not started.** No actuals at all. These steps are re-planned freely against current capacity and calendars.
+
+Immutability is the rule for the first zone, and it is absolute. The related guarantee for the second zone (that logged hours never get recomputed) flows from the same principle. For a fuller picture of the three-zone model, see [planned, in-progress, and completed work explained](/blog/planned-in-progress-and-completed-work-explained). For the reschedule mechanics that surround it, [how a reschedule uses last night's actuals](/blog/how-a-reschedule-uses-last-nights-actuals) walks the engine step by step.
+
+## How EDGEBIC Preserves Completed Work
+
+When a reschedule runs, EDGEBIC first analyzes each job's actuals and sorts every step into the three zones. Before it plans a single new hour, it re-emits the completed and in-progress rows into the output exactly as they were recorded. The engine reads the completed step's original row and writes it back with its dates unchanged. There is no code path in the reschedule pipeline that is permitted to alter an actual end on a finished step. That is not an accident of implementation. It is an enforced invariant, backed by a regression test suite that fails the build if any change tries to touch a preserved date.
+
+The engine then computes the job's resume point: the real end of the last completed step, or the projected end of the step currently running, whichever is later. Remaining steps queue behind that reality, not behind the old plan. This is how [EDGEBIC preserves completed work on reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule) while still giving you a live, honest forward plan.
+
+Because the completed rows are written first and the remaining work is planned around them, a reschedule can only ever change the future. The past is read-only by construction.
+
+## Why Immutability Protects You
+
+The convenience of "wipe and rerun" hides four real costs. Immutability removes all four.
+
+**Honest promise dates.** When the engine plans remaining work forward from where the shop actually is, the completion date it gives you reflects reality. If step 1 ran two hours long, downstream re-anchors to the real finish and the new promise date is one you can stand behind. A system that overwrites actuals plans against fiction, and its promise dates are fiction too. This is the same discipline that took User Solutions customers like GE Railcar from 30% to 90% on-time delivery: plan against reality, not against a plan.
+
+**A defensible audit trail.** Every reschedule leaves a trace. The completed rows are unchanged, and a new audit event records the old and new dates for the work that moved. When a customer, an auditor, or your own quality team asks "when did this part actually run on this machine," you have a recorded answer, not a guess. On complex programs this matters enormously. User Solutions software has scheduled the 26,000-plus tasks of a US Navy Nimitz-class carrier overhaul, work where "prove it ran when you say" is not optional.
+
+**Accurate variance and reporting.** Earned value, utilization, and progress reports all read logged actual hours. If a reschedule recomputed those hours, every report downstream would drift with each run. Because logged hours are preserved, your plan-versus-actual comparison stays meaningful. You can see that an operation planned for seven hours actually took nine, and act on it.
+
+**No accumulating corruption.** Systems that rewrite history tend to accumulate junk: orphaned rows, impossible date ranges, duplicated allocations. EDGEBIC's persist boundary collapses a partially completed step's history and remainder back into a single clean row per routing step per work center, so reschedule cycles do not pile up debris. The result is a database that stays clean run after run. For more on that hygiene, see [why one clean operation record matters](/blog/why-one-clean-operation-record-matters).
+
+## A Worked Example
+
+Consider job J-101 with three routing steps. By Monday afternoon steps 1 and 2 are finished and step 3 has not started.
+
+The plan and the recorded reality:
+
+| Step | Work center | Planned window | Actual start | Actual end |
+|---|---|---|---|---|
+| 1 - Cut | Saw-A | Mon 08:00 to 14:00 | Mon 08:30 | Mon 15:15 |
+| 2 - Drill | Drill-B | Mon 14:00 to Tue 10:00 | Mon 15:15 | Tue 11:00 |
+| 3 - Paint | Paint-1 | Tue 10:00 to 16:00 | not started | not started |
+
+When you reschedule, the engine classifies steps 1 and 2 as completed and preserves them verbatim: Saw-A Mon 08:30 to 15:15, Drill-B Mon 15:15 to Tue 11:00. It sets the resume point to Tuesday 11:00, the real end of step 2. Then it re-plans only step 3, finding Paint-1's first available slot after 11:00.
+
+| Step | Result | Dates |
+|---|---|---|
+| 1 - Cut | Preserved | Mon 08:30 to 15:15 |
+| 2 - Drill | Preserved | Mon 15:15 to Tue 11:00 |
+| 3 - Paint | Rescheduled | Tue 11:00 onward |
+
+Steps 1 and 2 did not move a minute. The drill finished 1 hour later than planned, so paint now starts 1 hour later than planned, and that is the honest answer. The audit trail records the change to step 3, with old and new dates side by side.
+
+## The One Exception: Deliberate Correction
+
+Immutability governs the reschedule engine, not human judgment. Operators make mistakes: a Complete tapped an hour early, a piece count fat-fingered. A supervisor corrects these in the kiosk history drawer, and every correction requires a reason and is stored forever as an append-only adjustment beside the original value. Nothing is deleted; the history drawer becomes a full forensic record of both the original entry and the correction.
+
+The distinction is precise. The engine never silently rewrites finished work. A supervisor can deliberately correct it, and that correction is itself audited. If you find an actual that looks wrong, [correct a wrong actual date](/blog/how-to-correct-a-wrong-actual-date-in-edgebic) through the proper path rather than expecting a reschedule to fix it, because a reschedule never will.
+
+## The Bottom Line
+
+Immutable actuals are the foundation of trustworthy [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling). Completed work is fact, the engine treats it as fact, and every forward plan is built around it rather than over it. That gives you promise dates you can defend, reports that stay accurate, and a clean [WIP management](/blog/wip-management) picture that does not decay with every run. See how the whole cycle fits together in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), and explore the platform at [EDGEBIC](/edgebic).

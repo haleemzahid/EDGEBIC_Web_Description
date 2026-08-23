@@ -1,0 +1,128 @@
+﻿---
+title: "What the Schedule Records for Your Next Audit"
+description: "A manufacturing schedule audit trail is only useful if it is specific. Here is what EDGEBIC records about access, routings, actuals and schedule change."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - manufacturing schedule audit trail
+  - production scheduling records medical device
+  - role based access manufacturing software
+  - schedule change history
+  - actuals immutability scheduling
+  - regulated manufacturing scheduling records
+targetPhrase: "manufacturing schedule audit trail"
+wordCount: 1745
+readingTime: 9
+faqQuestions:
+  - question: "What does a scheduling system record for audit purposes?"
+    answer: "EDGEBIC by User Solutions records four separate things: an append-only log of security events such as logins, permission denials, and user or role changes; the routing each job was scheduled against, frozen on the job at schedule time; the actual start and end dates and logged hours for completed work, which no reschedule rewrites; and the schedule change history that shows how a plan moved between runs. Each is a distinct record with its own behavior."
+  - question: "Is the security log editable or prunable?"
+    answer: "The security log is append-only and is never deleted by application code. Rows record the event kind, the username copied at event time so it survives a later rename or deletion, the timestamp in UTC, the permission code where relevant, and free-form detail. Viewing the log itself requires an explicit permission, so read access is controlled rather than open to anyone with a login."
+  - question: "Does a reschedule change what was already recorded as done?"
+    answer: "No. Completed work is never moved by a reschedule. Operations that carry an actual start and an actual end are classified as complete, preserved exactly as logged, and excluded from replanning. The scheduler resumes from where the job actually stands and replans only the operations still ahead of it. That behavior is a documented invariant rather than a setting somebody can turn off by accident."
+  - question: "Does any of this make a manufacturer compliant with a regulation?"
+    answer: "No, and no software can. EDGEBIC records planning facts and access events with defined behavior. Compliance is a property of an organization's quality system: its procedures, approvals, validation activities, training, and retention rules. These records can serve as inputs to that system. Deciding what is required, what is sufficient, and what must be validated is the manufacturer's responsibility, not the software's."
+qaQuestions:
+  - question: "An auditor asks who could have deleted a manufacturing order last quarter, and whether anyone tried. What can we actually produce?"
+    answer: "Two things. First, the permission structure: deletion of a manufacturing order is governed by its own permission code, granted through roles and adjustable per user, so you can show which roles carry it and who held those roles. A per-user deny overrides a role grant, which matters because a role matrix alone does not tell the whole story.\n\nSecond, the security log. Every blocked attempt writes a permission-denied row naming the user, the permission code, the command, and the UTC timestamp. So the question splits cleanly: the permission model answers who could, and the log answers who tried and was refused. What the log does not do is record the business content of successful edits, which is a different record."
+  - question: "We reschedule a lot because materials slip. How do we show that a job's completed operations were not quietly re-planned each time?"
+    answer: "By the record on the operations themselves. An operation with a logged actual start and actual end is classified complete and preserved verbatim through every subsequent run: same work center, same dates, same logged hours. Only the operations still ahead of it are replanned, and the job resumes from the last completed operation rather than from its original start.\n\nThe job's routing copy also carries a reschedule count and the timestamp of the most recent preservation, so a lot that has been rescheduled four times says so on its own record. That turns \"we rescheduled a few times\" into a number you can print."
+---
+
+**A manufacturing schedule audit trail is only worth anything if you can say precisely what it contains.** EDGEBIC by User Solutions keeps four distinct records: an append-only security log, a per-job copy of the routing that was scheduled, an immutable record of completed work, and the history of how the plan moved. This post describes each one and, just as importantly, what each one does not cover.
+
+The scope note, up front. Nothing here is a claim of certification, validation, or conformance with any regulation or standard. Software records facts. Compliance is a property of your quality system: its procedures, approvals, validation activities, and retention rules. These records can be inputs to that system. They cannot substitute for it, and no vendor who tells you otherwise is being straight with you.
+
+## Record One: Access and Security Events
+
+Every person who uses the system is a named user with a password stored as a salted hash, never in plain text. Users hold roles; roles carry permissions; a permission is an atomic capability written as a module and an action, such as generating a schedule or deleting a customer.
+
+The effective set for one person is computed as the union of everything their roles grant, plus any permission granted to them individually, minus any permission explicitly denied to them individually. An individual deny always beats a role grant. That asymmetry matters when someone asks who could perform an action: the role matrix alone will mislead you, because a specific person may carry a deny the matrix does not show.
+
+Enforcement is not a UI courtesy. Every command passes through a check before its handler runs, so hiding a button is a convenience rather than the control. A blocked command throws and writes a record.
+
+The security log itself is append-only and is never deleted by application code. Each row holds:
+
+| Field | What it holds |
+|---|---|
+| Event kind | Login succeeded, login failed, lockout, logout, password changed or reset, user created, updated, deleted, activated, deactivated, role created, updated, deleted, assigned, removed, permission granted, revoked, or denied |
+| Username | Copied at event time, so it survives a later rename or deletion of the account |
+| User id | Nullable, because a failed login for an unknown username still records |
+| Timestamp | UTC, indexed |
+| Permission code | Populated on denials and on grant or revoke events |
+| Detail | Free-form context, such as the command that was refused |
+
+Two behaviors are worth knowing before you rely on this. Account lockout applies after a configured number of failed attempts, by default five, for a configured window, by default fifteen minutes, and every one of those events records. And the audit writer deliberately swallows its own failures: if the log cannot be written, the original operation still succeeds and the failure is reported to the host log rather than to the user. That is a deliberate availability choice, and it means the host log is worth monitoring.
+
+Viewing the log requires its own permission. The [users and roles guide](/blog/edgebic-users-and-roles-explained) covers the model in full, and [how EDGEBIC protects your schedule data](/blog/how-edgebic-protects-your-schedule-data) covers the surrounding practices.
+
+### How the Permission Catalog Is Organized
+
+Permissions are grouped three deep: a section, a module inside it, and an action inside that. Sales holds customers, quotes and sales orders. Production holds manufacturing orders, schedules and routings. Master data holds products, work centers, departments, shifts and holidays. There are further sections for insights, data import, settings and security itself.
+
+Three behaviors of that catalog matter when someone asks how access is controlled.
+
+New permissions are not automatically granted to custom roles. When a new capability is added, only the administrator role receives it on startup. A planner or supervisor role gets it only when a security administrator assigns it deliberately. That is a security-first default and it means a new feature does not quietly widen anyone's access.
+
+Permission codes are never renamed. Old log rows reference the code string, so renaming would orphan history and make past events unreadable. Deprecated capabilities keep their code.
+
+And two records cannot be deleted: the founding administrator account and the administrator role itself. Both are flagged as system records, and the delete is refused in service code as well as in the interface, so nobody can lock the organization out of its own system.
+
+## Record Two: The Routing Each Job Was Scheduled With
+
+The first time a job is scheduled, the full routing is copied onto the job: every operation, work center, sequence link, setup and run time, queue time, yield, step type, status flag, and alternate machine with its multipliers and priority.
+
+Alongside the routing, the copy stores the scheduling context: the capture timestamp, the order quantity used, the scheduling mode, the original due date, and the work center utilization, instance count, and efficiency factor in force at the time.
+
+Every later reschedule reads that copy rather than the live master routing. So an engineering change made after a job was scheduled does not silently re-plan it. The copy is only rewritten in three situations: the first scheduling run, a run where the planner explicitly ticked the option to follow the master routing, and a direct edit of the job's own routing. Every other run carries it forward untouched.
+
+That is what lets you answer "which routing built this lot" from a record rather than from memory. Other regulated builders lean on the same copy: [scheduling fire protection equipment manufacturing around testing and certification](/blog/edgebic-for-fire-protection-equipment-manufacturing-scheduling) covers a sector where the proof has to survive years after the unit ships. The detail is in [routing snapshots explained](/blog/edgebic-routing-snapshots-explained) and [why frozen routings protect in-flight jobs](/blog/why-frozen-routings-protect-in-flight-jobs-edgebic).
+
+Two honest limits. The copy holds one current version: refreshing a job overwrites the previous copy rather than versioning it, so print or export before refreshing if the prior state matters. And a corrupt or empty copy falls back to the master routing rather than halting, logging a warning while it does so. That warning is worth reading, because a silent fallback is a routing change nobody chose.
+
+## Record Three: Completed Work Is Never Moved
+
+This is the one claim in this post that is unqualified, because it is a documented invariant of the engine rather than a configuration option.
+
+When a job is rescheduled, the engine first classifies its operations. An operation with both an actual start and an actual end is complete. An operation with an actual start and no end is in progress. Everything else is not started.
+
+Completed operations are preserved exactly as logged: same work center, same actual dates, same recorded hours. They are removed from the replanning set entirely. The engine computes where the job actually stands, resets the job's effective start to that point, and replans only the operations still ahead.
+
+The practical effect on a device lot is straightforward. A job that has run three of seven operations, late, keeps those three exactly as the floor logged them. Operations four through seven replan from the real finish of operation three rather than from the original optimistic date. The new promise reflects reality instead of pretending the delay did not happen.
+
+A set of automated checks runs against the data to catch conditions that would corrupt this picture, including an actual end date earlier than its actual start, duplicate daily hour rows for the same operation and date, and stray hour records with logged actuals but no planned hours. These are described in [what the anomaly checks look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for). Finding nothing is the expected result; finding something is a signal to investigate before trusting the numbers.
+
+## Record Four: How the Plan Moved
+
+A schedule that changes without a trace is hard to explain later. Three records address this.
+
+The job's routing copy carries a reschedule count and the timestamp of its most recent preservation. A job rescheduled four times says so on its own record.
+
+The routing comparison report walks a job's copy against the current master routing and prints, field by field, what differs. That is the record to produce when someone asks why a job ran a step on a machine that is not on today's routing.
+
+Each scheduling run also writes a structured session log, recording the decisions the engine took: which routing source was used, how actuals were classified, why a step slid, which operator hours were booked. It is a diagnostic record rather than a formal one, and it is the fastest way to answer "why did this job move" while the answer still matters. See [schedule diagnostics](/blog/edgebic-schedule-diagnostics-explained).
+
+## What Is Deliberately Not Covered
+
+Being clear about gaps is more useful than a longer list of features.
+
+There is no electronic signature capability, and none is claimed. There is no per-field business-data change log: the security log records security events, not the content of every successful business edit. Concurrent edits currently resolve last-write-wins rather than raising a conflict, which is a documented data-layer contract worth knowing if two planners work the same records simultaneously. The plan's operator bookings are plan data, regenerated on every reschedule, and are not an actuals or payroll record. And the job's routing copy is not versioned across refreshes.
+
+None of these are secrets. They are the boundary of what the software does, and knowing the boundary is what lets your quality system decide what else it needs.
+
+## A Practical Readiness Check
+
+If you are evaluating whether your current scheduling setup would survive a question from an auditor, four questions get you most of the way:
+
+1. Can you print the routing a shipped lot was actually planned against, or only today's routing?
+2. When someone was refused an action, is that refusal recorded with a name, a code, and a timestamp?
+3. If a job is rescheduled five times, do the operations already logged as complete stay byte-identical through all five?
+4. Can you show which roles carry the destructive permissions, and check whether any individual carries a deny that the role matrix does not show?
+
+One more thing is worth deciding before an audit rather than during one: who reads these records routinely. A security log nobody opens is a record, not a control. Assign the audit permission deliberately, agree how often the log is reviewed, and decide what a repeated permission denial or a run of lockouts on one account should trigger. The software will keep the rows either way. Whether anyone acts on them is a process decision, and it is the part auditors ask about second.
+
+For scheduling practice across device manufacturing, see the [medical device scheduling overview](/blog/medical-device-scheduling) and the [medical device manufacturing software page](/medical-device-manufacturing-software). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry). To see these records against your own data, bring an ERP export to a working session: start at [EDGEBIC](/edgebic).

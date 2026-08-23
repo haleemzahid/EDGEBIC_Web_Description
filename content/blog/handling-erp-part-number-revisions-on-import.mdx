@@ -1,0 +1,150 @@
+---
+title: "Handling ERP Part Number Revisions on Import"
+description: "Whether a revision should create a new product in EDGEBIC or update the existing one, how identifier matching decides it, and how to stop revisions creating duplicate part records."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ERP part number revision import
+  - revision in part number scheduling
+  - product identifier matching import
+  - duplicate part records scheduling
+  - EDGEBIC product import revision
+  - engineering revision master data
+targetPhrase: "ERP part number revisions on import"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "Should a new part revision be a new product in EDGEBIC or an update to the existing one?"
+    answer: "Update the existing product when only one revision is ever in production at a time, because every scheduled job already carries a frozen snapshot of the routing it was planned with, so history is preserved without a second record. Create a separate product when two revisions genuinely run side by side, since concurrent revisions need two live routings at once and one product record can only hold one."
+  - question: "How does EDGEBIC decide whether an imported row is a new part or an existing one?"
+    answer: "By the product identifier, matched case-insensitively, so BRK-200 in a file finds brk-200 in the database. That is why a revision suffix appearing in one export and not another creates duplicates rather than updates: BRK-200 and BRK-200-B are simply different identifiers. Decide the convention once, apply it to every export that names a part, and the matching takes care of itself."
+  - question: "What happens if a routing arrives under a part number that has no work orders?"
+    answer: "The routing import auto-creates any product it names that does not already exist, so the routing lands cleanly on a product with no demand and nothing schedules against it. Meanwhile the work orders referencing the other spelling still schedule with whatever routing that product holds, which may be the old revision. Nothing errors, which is why revision conventions belong on the reconciliation checklist."
+qaQuestions:
+  - question: "Our ERP holds the part number and the revision in separate fields, and our exports concatenate them differently depending on who built the report. What does that do to us?"
+    answer: "It produces a quiet duplication problem that grows with every import. One export emits BRK-200, another emits BRK-200 Rev B, a third emits BRK-200-B, and matching is on the identifier, so those are three different products. Each collects its own routing and its own jobs, and the capacity picture splits across records that describe one physical part. The tell is a high Created count on a routine import of master data that has not changed. Fix it by writing the convention down, rebuilding every export to follow it, then merging or removing the strays. Do it before you build the habit of ignoring a Created count that looks slightly high, because that is the number that would have told you."
+  - question: "We run Rev A and Rev B of the same casting at the same time because one customer has not requalified. How should that be modeled?"
+    answer: "As two products, because the two revisions have different routings and both are live. Put the revision in the identifier so BRK-200-A and BRK-200-B each carry their own routing, their own work orders, and their own load, and the schedule shows exactly which machines each version consumes. The cost is master data: two records to maintain while both are current. The benefit is that the plan is correct, which it cannot be when one product record has to stand for two different methods. When the old revision finally retires, stop exporting it and let its record go quiet, leaving the finished jobs intact for history."
+---
+
+**Whether a part revision becomes a new product in EDGEBIC or an update to an existing one is decided by one thing: whether the revision appears in the identifier you import, because product matching is on the identifier and nothing else.** Pick the convention deliberately, apply it to every export that names a part, and revisions stop producing duplicates. Leave it to whoever built each report and you will accumulate several records describing one physical part, each holding a fraction of its load.
+
+EDGEBIC by User Solutions has moved product master data through import masks since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, identifier conventions cause more quiet duplication than any other data decision.
+
+## First, separate two different questions
+
+A revision touches two things, and they are handled in different places.
+
+**The method changed.** New operation, revised time, different machine. That is a routing question, and it is answered by re-importing the routing, which wipes and recreates that product's steps once per run. The workflow is in [handling engineering changes with an ERP routing re-import](/blog/handling-engineering-changes-via-erp-re-import).
+
+**The identity changed, or did not.** Is this still the same part as far as scheduling is concerned? That is what this post is about, and the answer determines whether the routing lands on the record you expect.
+
+## How matching actually works
+
+Products match on the identifier, case-insensitively, so `BRK-200` in a file finds `brk-200` in the database. What matching will not survive is a difference in the string itself:
+
+| Identifier in the file | Matches BRK-200 | Result |
+|---|---|---|
+| brk-200 | Yes | Updated or Reused |
+| BRK-200 (trailing space) | No | A second product created |
+| BRK-200-B | No | A second product created |
+| BRK-200 Rev B | No | A second product created |
+| 'BRK-200 (spreadsheet apostrophe) | No | A second product created |
+
+The last three are the revision cases, and they are not errors. They are the system doing exactly what it was told with two different names.
+
+## Convention A: one product, revision as an attribute
+
+The identifier stays `BRK-200` through every revision. The revision letter travels in the description or a text field so planners can see it, and the routing is re-imported when the method changes.
+
+**Use this when only one revision is in production at a time**, which is the majority case.
+
+The reason it is safe is the routing snapshot. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a job planned under Rev A finishes on Rev A's method even after Rev B is imported. You get revision history where it matters, on the jobs, without a second master record.
+
+Benefits:
+
+- Master data stays small and readable.
+- Work orders match without anybody thinking about it.
+- The load for a part is in one place, so capacity and history are not split.
+
+## Convention B: revision in the identifier
+
+`BRK-200-A` and `BRK-200-B` are separate products, each with its own routing and its own work orders.
+
+**Use this when two revisions genuinely run side by side**, for example when one customer has not requalified the new version. A single product record can only hold one live routing, so concurrent revisions need two records. Anything less makes the plan wrong, because the two versions consume different machines for different times.
+
+The cost is real but bounded: two records to maintain while both are current. When the old revision retires, stop exporting it and let its record go quiet. Finished jobs stay intact for history.
+
+## Choosing between them
+
+| Question | Convention A | Convention B |
+|---|---|---|
+| Do two revisions run at once? | No | Yes |
+| Routings needed simultaneously | One | Two |
+| Master records per part | One | One per live revision |
+| Where as-planned history lives | The job's routing snapshot | The job's routing snapshot |
+| Risk if applied inconsistently | Duplicates | Duplicates |
+
+Notice the last row. Either convention works. Mixing them is what causes trouble, which is why the decision belongs in the same one-page ownership table as everything else in [choosing the system of record for each scheduling field](/blog/choosing-the-system-of-record-for-each-scheduling-field).
+
+## The failure mode worth rehearsing
+
+A routing exported under `BRK-200-B` while work orders still reference `BRK-200` produces a scenario with no error message anywhere:
+
+1. The routing import **auto-creates** product `BRK-200-B`, because it auto-creates any product or work center a file names that does not exist.
+2. The new routing lands on `BRK-200-B`, which has no work orders, so nothing schedules against it.
+3. Work orders for `BRK-200` schedule against `BRK-200`'s existing routing, which is the old revision.
+4. Every count looks green and the plan quietly uses the superseded method.
+
+The check that catches it is on the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist): after a routing import, look for products and work centers nobody asked for, and confirm the part you changed actually shows the new step count in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+## Reading the counts for revision drift
+
+You do not need a special report to detect this. On a repeat import of stable master data, most rows should come back **Reused**. A weekly product refresh reporting 34 Created and 240 Reused is healthy. The same refresh reporting 274 Created means the matching key stopped matching, and a revision suffix appearing where it did not before is one of the two or three usual causes. The identifier discipline is covered in full in [keeping product masters in sync](/blog/keeping-product-masters-in-sync-erp-edgebic).
+
+## Making the convention stick in the export
+
+Conventions survive when they live in the export rather than in people's heads.
+
+- **Emit the identifier from one place.** If the ERP holds part and revision in separate fields, build the concatenation once in a saved report or view and point every export at it.
+- **Trim before you export.** Trailing spaces are invisible and permanent.
+- **Watch spreadsheet round-trips.** A file opened and re-saved in a spreadsheet can pick up a leading apostrophe on a text-formatted key, and that apostrophe travels into the import.
+- **Name the mask after the convention**, so the next person can see what the identifier is meant to look like.
+
+The export mechanics, including when a saved database view is worth the effort over a CSV, are in [CSV versus database view export trade-offs](/blog/csv-vs-database-view-erp-export-tradeoffs).
+
+## Cleaning up duplicates you already have
+
+If several records already describe one part, work in this order:
+
+1. **Decide the convention** and write it down.
+2. **Fix every export** so the identifier is produced the same way in all of them.
+3. **Re-import** master data and routings, which will now update the intended record.
+4. **Close or remove the strays**, after checking whether any hold finished jobs you want to keep for history.
+5. **Re-run the reconciliation**, expecting a high Reused count and a low Created count.
+
+Re-importing is safe throughout. Completed work is never moved by a reschedule, and a routing change applies to future jobs while leaving work in progress on the method it started with.
+
+## What you get once it is settled
+
+Consistent identifiers are what make everything downstream reliable: master data that matches, routings that land where you intended, and a load picture that reflects one part rather than three fragments of one. The finite capacity engine then does its work across shifts and machine instances, with work center groups, sequence-dependent setups, lot streaming, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows where the product and routing masks sit.
+
+## Bring a revised part
+
+Export the product record, routing, and open orders for a part your engineering team revised recently and [bring them to a demo](/contact-us). Ten minutes on one real revision usually settles the convention for the whole catalog.
+
+<Accordion title="Should a new part revision be a new product in EDGEBIC or an update to the existing one?">
+Update the existing product when only one revision is ever in production at a time, because every scheduled job already carries a frozen snapshot of the routing it was planned with, so history is preserved without a second record. Create a separate product when two revisions genuinely run side by side, since concurrent revisions need two live routings at once and one product record can only hold one.
+</Accordion>
+
+<Accordion title="How does EDGEBIC decide whether an imported row is a new part or an existing one?">
+By the product identifier, matched case-insensitively, so BRK-200 in a file finds brk-200 in the database. That is why a revision suffix appearing in one export and not another creates duplicates rather than updates: BRK-200 and BRK-200-B are simply different identifiers. Decide the convention once, apply it to every export that names a part, and the matching takes care of itself.
+</Accordion>
+
+<Accordion title="What happens if a routing arrives under a part number that has no work orders?">
+The routing import auto-creates any product it names that does not already exist, so the routing lands cleanly on a product with no demand and nothing schedules against it. Meanwhile the work orders referencing the other spelling still schedule with whatever routing that product holds, which may be the old revision. Nothing errors, which is why revision conventions belong on the reconciliation checklist.
+</Accordion>

@@ -1,0 +1,102 @@
+---
+title: "How the Setup Time Resolver Picks a Changeover Time"
+description: "A single operation can draw its setup from six different places. Here is the precedence ladder EDGEBIC walks to decide which one wins, from a sequence matrix down to the work center default."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - setup time resolution
+  - changeover time
+  - setup matrix precedence
+  - routing setup override
+  - sequence-dependent setup
+  - finite capacity scheduling
+targetPhrase: "setup time resolution order"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "Where does a scheduler get an operation's setup time from?"
+    answer: "EDGEBIC can source setup from as many as six places for one operation: a product-pair matrix cell, a setup-family matrix cell, a per-scenario override, a per-alternative value, the routing step's own setup, or the work center default. It walks these in a fixed precedence order and takes the first one that applies, so the most specific value wins and there is always a defined fallback."
+  - question: "Which setup value wins when several are defined?"
+    answer: "The most specific applicable value wins. A product-to-product matrix cell for the exact pair beats a family cell, a family cell beats the routing step's flat setup, and a scenario or per-alternative override beats the routing default for the case it covers. If nothing more specific exists, EDGEBIC falls back to the work center's default setup, so the operation always receives a number."
+  - question: "What happens on the first job of the day, with nothing to change over from?"
+    answer: "That is a cold start. There is no previous product on the machine, so no changeover applies, and EDGEBIC uses the routing step's own setup time to cover the initial preparation the operation still needs. The sequence matrix only engages once the machine has a prior job to change over from, and if the next job is the same product back to back, the changeover resolves to zero."
+qaQuestions:
+  - question: "We entered a setup matrix but one operation still shows the old flat setup time. Did the matrix fail?"
+    answer: "Probably not. Check three things the resolver checks. First, is this a cold start, the first operation on that machine in the plan? If so, there is no changeover and the routing's flat setup is correct. Second, do both the previous product and this one belong to setup families with a matrix cell between them? If either product has no family and no exact product-pair cell exists, the resolver has nothing to match and falls through to the routing setup. Third, is the previous job the same product? Then the changeover is zero, not the flat number. EDGEBIC records why each operation got its setup, so the Job View will tell you which rung of the ladder fired."
+  - question: "Can we override the matrix for one difficult product pair without rebuilding the whole grid?"
+    answer: "Yes, that is exactly what the product-level cell is for. Keep your small family matrix as the workhorse and add a single product-to-product entry only for the pair that breaks its family rule, such as a transition that needs an extra solvent flush the family value does not account for. Because the resolver checks the exact product pair before the family, that one override wins for that one transition and nothing else changes. You get the exception handled without inflating the matrix everywhere else."
+---
+
+**The setup time resolver is the short decision procedure EDGEBIC by User Solutions runs for every operation to decide which of several possible changeover times actually applies. It walks a fixed precedence ladder, from the most specific product-pair value down to the work center default, and takes the first rung that matches.** The point of the ladder is that an operation always gets a defined setup, the most specific data available wins, and a planner can trace exactly why a given number was charged.
+
+Setup looks like one field, but in a real routing it can come from half a dozen sources, and they can disagree. A work center has a default. A routing step can override it. An alternate machine can carry its own. A what-if scenario can set another. And on top of all of that, a sequence matrix can price the changeover by what ran before. Something has to decide the winner, deterministically, every time. That something is the resolver.
+
+## Why one operation has six possible setups
+
+Each layer exists for a good reason, and each is more specific than the one below it.
+
+- The **work center default** is the baseline: a typical changeover for this machine when nothing more is known.
+- The **routing step setup** overrides it for a specific operation, because this particular step on this product may prepare differently.
+- A **per-alternative setup** applies when the operation runs on an alternate machine that changes over differently from the primary.
+- A **scenario override** lets a quote or what-if carry its own setup without disturbing the live routing.
+- A **setup-family matrix cell** prices the changeover by the group the outgoing and incoming products belong to.
+- A **product-pair matrix cell** is the exact answer for one specific from-product to to-product transition on one machine.
+
+Left unordered, these would be ambiguous. The resolver removes the ambiguity by ranking them.
+
+## The precedence ladder, top to bottom
+
+For every operation, EDGEBIC evaluates the rungs in order and stops at the first hit:
+
+1. **Cold start.** No previous product on this machine yet, so there is no changeover. Use the routing step's own setup for the initial preparation.
+2. **Same product back to back.** The machine just ran this product, so the changeover is zero.
+3. **Product-pair matrix.** An exact from-product to to-product cell exists for this machine. Use it.
+4. **Family matrix.** Both products belong to setup families and a family cell exists for the pair. Use it.
+5. **Scenario or per-alternative override.** A what-if or alternate-machine value applies for this case. Use it.
+6. **Routing and work center fallback.** Nothing more specific matched, so use the routing step's setup, or the work center default beneath it.
+
+The one input this needs that a flat setup does not is "what did this machine run last?" EDGEBIC answers by looking at the most recent operation already placed on the work center. The full sequence angle, including how families collapse a huge grid into a handful of rows, is covered in [how sequence-dependent setup shapes a schedule](/blog/how-sequence-dependent-setup-shapes-a-schedule); this post is about the precedence, the order in which those sources compete.
+
+Because the ladder is fixed, the resolution is reproducible. Run the same plan twice and every operation resolves the same setup, so a difference between two runs always traces to a difference in the data, never to a coin flip inside the engine.
+
+## A worked example: the same operation, four contexts
+
+Take a "Coat" operation on a paint line. The work center default setup is 20 minutes. The routing step setup is 30 minutes. There is a family matrix with Light to Dark = 60 minutes and Dark to Light = 240 minutes, and one product-pair override: Red to Black = 90 minutes.
+
+| Situation | Previous product | This product | Rung that fires | Setup charged |
+|---|---|---|---|---|
+| First job of the shift | none | White (Light) | 1. cold start, routing setup | 30 min |
+| Second White in a row | White | White | 2. same product | 0 min |
+| Light then dark | White (Light) | Black (Dark) | 4. family matrix | 60 min |
+| The special pair | Red (Dark) | Black (Dark) | 3. product-pair override | 90 min |
+| A product with no family | Primer (unfamilied) | White (Light) | 6. fallback to routing | 30 min |
+
+Notice the fourth row. Red and Black are both Dark, so the family rule alone would say Dark to Dark is a quick swap, but Red to Black actually needs an extra solvent flush. The product-pair override sits above the family in the ladder, so it wins for exactly that transition and nothing else. Notice the last row too. Primer has no family, so no family cell can match, and the resolver falls through to the routing setup rather than guessing. There is always a defined answer.
+
+## Why the ladder is designed this way
+
+Two design choices carry the whole thing. First, specific beats general: an exact product pair is more trustworthy than a family average, which is more trustworthy than a machine default. Ordering the rungs from specific to general means the best available data always wins without a planner having to disable the others. Second, there is always a fallback. The bottom rung is the work center default, so even a brand-new product with no matrix entries and no family still receives a sane setup and the operation can be scheduled.
+
+This matters for maintenance as much as for scheduling. It means you can run a small family matrix as the workhorse, roughly where most changeover values live, and add a product-pair override only for the rare exception, confident that the override will win where you placed it and nowhere else. You never have to fill in a giant grid to get correct behavior, because the ladder degrades gracefully.
+
+The resolved value does not stay a display figure. It is folded into the operation's hours before the capacity search runs, exactly as described in [how setup time composes into a step's duration](/blog/how-setup-time-composes-into-a-steps-duration), so a longer resolved changeover consumes more of the shift and can push the operation later. The resolver decides the number; composition puts it to work.
+
+For the screens where you build and import these values, the [setup matrix explainer](/blog/edgebic-setup-matrix-explained) walks each grid, and the [setup family definition](/blog/what-is-a-setup-family-sequence-dependent-changeover) covers the grouping that makes the ladder scale. If you are weighing whether sequence logic is worth configuring at all, the honest test in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) applies here too: a plan is only as trustworthy as the numbers underneath it, and the resolver is how EDGEBIC keeps the setup number honest.
+
+To watch the ladder resolve against your own routings and machines, explore [the EDGEBIC engine](/edgebic) or start with the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="Where does a scheduler get an operation's setup time from?">
+EDGEBIC can source setup from as many as six places for one operation: a product-pair matrix cell, a setup-family matrix cell, a per-scenario override, a per-alternative value, the routing step's own setup, or the work center default. It walks these in a fixed precedence order and takes the first one that applies, so the most specific value wins and there is always a defined fallback.
+</Accordion>
+
+<Accordion title="Which setup value wins when several are defined?">
+The most specific applicable value wins. A product-to-product matrix cell for the exact pair beats a family cell, a family cell beats the routing step's flat setup, and a scenario or per-alternative override beats the routing default for the case it covers. If nothing more specific exists, EDGEBIC falls back to the work center's default setup, so the operation always receives a number.
+</Accordion>
+
+<Accordion title="What happens on the first job of the day, with nothing to change over from?">
+That is a cold start. There is no previous product on the machine, so no changeover applies, and EDGEBIC uses the routing step's own setup time to cover the initial preparation the operation still needs. The sequence matrix only engages once the machine has a prior job to change over from, and if the next job is the same product back to back, the changeover resolves to zero.
+</Accordion>

@@ -1,0 +1,73 @@
+---
+title: "How to Add Queue Time Before an Operation in EDGEBIC"
+description: "Add a shift-aware queue buffer before an operation in EDGEBIC by setting Queue Time on the preceding routing step. Cooling, curing, and inspection waits without burning machine capacity."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - add queue time before an operation
+  - queue time routing step
+  - shift-aware buffer scheduling
+  - cooling curing wait time
+  - EDGEBIC queue time
+targetPhrase: "add queue time before an operation"
+wordCount: 1280
+readingTime: 6
+faqQuestions:
+  - question: "How do you add queue time before an operation in EDGEBIC?"
+    answer: "Open the routing, select the step that runs before the operation you want to delay, and set its Queue Time (hrs) to the buffer you need. Save the routing and reschedule. Queue time is a shift-aware wait applied after the step ends, so it pushes the next operation's earliest start forward without booking any machine capacity. It counts only during working shifts, never overnight or on holidays."
+  - question: "Does queue time use up work center capacity?"
+    answer: "No. Queue time is a buffer, not an operation. It delays the earliest start of the next step but reserves no hours on any machine, so the work center is free to run other jobs during the wait. This is the difference between queue time and adding more hours: hours consume capacity, queue time only holds the clock while parts cool, cure, or wait for inspection."
+  - question: "Why does a four-hour queue span more than four clock hours?"
+    answer: "Queue time is shift-aware, so it ticks only during active working shifts. A four-hour queue that starts at 14:30 on a shift ending at 16:00 consumes 1.5 hours that day, pauses overnight, then consumes the remaining 2.5 hours after the shift reopens. The overnight gap does not count. This matches how a real physical queue behaves: parts do not advance while the plant is dark."
+qaQuestions:
+  - question: "Parts need two hours to cool after welding before grinding can touch them. Where do I put the two hours?"
+    answer: "Put a Queue Time (hrs) of 2 on the welding step, not the grinding step. Queue time delays the successor and lives on the step whose completion starts the wait. Because it is shift-aware, a weld that ends at 15:00 on an 08:00 to 16:00 shift consumes one hour that day and the second hour after the shift reopens, so grinding will not start until the parts have genuinely had two working hours to cool."
+  - question: "I added queue time to a step that also has a flow step, and the queue vanished. What happened?"
+    answer: "When a lot-streaming gate fires on the same step, it replaces the queue-adjusted end entirely, so the queue is discarded. Flow step and transfer batch both behave this way. Keep queue time and a flow step off the same step. If you need a handling lag on top of a streaming gate, use Transfer Delay instead, or move the buffer onto the downstream step. The Scheduler Anomalies report flags this combination as check F2."
+---
+
+**To add queue time before an operation in EDGEBIC by User Solutions, set Queue Time on the routing step that runs immediately before it.** The control lives on the routing (Bill of Routing) step whose completion begins the wait, not on the operation that is waiting. Once you save and reschedule, the next operation cannot start until the queue hours have elapsed, and those hours are counted only during active working shifts. Queue time reserves no machine capacity, so it is the right tool for a real wait such as cooling, curing, drip time, or an inspection buffer.
+
+This recipe covers one specific task. For how queue sits alongside flow and transit in the timing pipeline, read [how EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing) and the concept overview [EDGEBIC queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained). To set all three buffers together, see the broader recipe [how to set queue, flow, and transit times](/blog/how-to-set-queue-flow-and-transit-times-in-edgebic).
+
+## Before You Start
+
+- The routing open, with the step that precedes the operation you want to delay identified. That upstream step is where the queue value goes.
+- The wait length in hours, and confirmation it is a genuine wait (cooling, curing, inspection) rather than machine work, which belongs in the step's hours instead.
+- Confirmation the same step does not carry a flow step or transfer batch, since a lot-streaming gate on the step discards the queue.
+
+## Step by Step
+
+1. Open the **BOR** tab and select the routing.
+2. In the grid, find the step whose completion starts the wait (for example, the welding step before grinding).
+3. In that row, set **Queue Time (hrs)** to the buffer you need, for example `2`. In the Designer, the same field appears as **Queue Time (hours)** in the node's Properties panel.
+4. Leave the **Flow Step (hrs)** and **Transfer Batch** fields on that step at 0.
+5. Click **Update Standard BOR**.
+6. Run **Generate Schedule** (Drive Schedule) so the plan picks up the new buffer.
+
+## What Changes When You Save
+
+On the next scheduling run, EDGEBIC walks the work center's shift calendar forward from the step's end and consumes the queue hours only inside active shifts. Nights, weekends, and holidays do not count. The result becomes the earliest start for the next step. A four-hour queue that begins at 14:30 on an 08:00 to 16:00 shift uses 1.5 hours that day and 2.5 hours after the shift reopens the following working day, so the downstream operation lands at 10:30. The machine that just finished is free to run other jobs during the queue, because queue time books no capacity of its own. Every step after the queued one shifts out by the buffer, and the job's finish date reflects the wait.
+
+## How to Check It Worked
+
+Open the Job View and compare the queued step's end time with the next step's start time. The gap should equal the queue you set, measured only in working hours. If the queue crosses an overnight or a weekend, the calendar gap will be longer than the queue value, which is correct. If the gap is zero or wrong, confirm the queue is on the upstream step and that no flow step or transfer batch is set on the same row.
+
+## Common Mistakes
+
+- **Putting the queue on the waiting step.** Queue time delays the successor, so it lives on the step whose completion starts the wait. Placing it on the downstream operation buffers that operation's own successor instead, which is not what you intended.
+- **Using queue time to model machine work.** Queue time reserves no capacity. If the delay is actually an operation (a bake, a cure that occupies an oven), model it as a step with hours so the work center is reserved. Use queue only for a true idle wait.
+- **Combining queue with a flow step on one step.** A lot-streaming gate replaces the queue-adjusted end, so the queue is silently discarded. The Scheduler Anomalies report surfaces this as check F2. Move the buffer to Transfer Delay or to the downstream step.
+- **Expecting queue to tick overnight.** Queue is shift-aware by design. A queue that starts near the end of a shift finishes after the next shift opens, not at a fixed clock offset. This is intentional and matches physical waiting.
+
+## Related Reading
+
+- [What is queue time](/blog/glossary/queue-time) for the plain definition.
+- [How to add transit days between two steps](/blog/how-to-add-transit-days-between-two-steps-in-edgebic) for the calendar or working-day gap that models off-site travel.
+- [EDGEBIC](/edgebic) for the platform overview, and the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub) for the full recipe index.
+
+Queue time is one of the quietest levers in a routing and one of the most useful. It lets you honor a real physical wait without pretending it is machine work, and because it respects your shift calendar, the buffer behaves the way the shop floor actually does.

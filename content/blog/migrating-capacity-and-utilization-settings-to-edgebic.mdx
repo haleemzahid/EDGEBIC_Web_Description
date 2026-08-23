@@ -1,0 +1,93 @@
+---
+title: "Migrating Capacity and Utilization Settings to EDGEBIC"
+description: "Moving work centers to EDGEBIC means carrying over the capacity knobs: instances, efficiency, batch sizes, and the one-per-day and bottleneck flags. Here is how to migrate them, and where a legacy utilization target goes."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Upgrade & Comparison
+author: user-solutions
+cluster: edgebic-migration
+pillarSlug: edgebic-migration-guide
+keywords:
+  - migrating capacity settings to EDGEBIC
+  - work center utilization migration
+  - capacity and efficiency import
+  - number of instances scheduling
+  - bottleneck flag migration
+  - validate work center capacity
+targetPhrase: "migrating capacity and utilization settings to EDGEBIC"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "Which work center capacity settings do I migrate to EDGEBIC?"
+    answer: "You migrate the settings that determine how much a work center can run and how the engine treats it. In EDGEBIC by User Solutions, those are the number of identical instances, the efficiency value, the capacity type and batch sizes, the one-per-day flag for setup-heavy operations, and the bottleneck flag. These come in on the work center import mask alongside the name and description. A legacy utilization target has no matching column, because work centers run at 100 percent and the value is not editable, so it is carried over by shaping shift hours instead."
+  - question: "How does EDGEBIC calculate a work center's available hours?"
+    answer: "EDGEBIC starts from shift hours, subtracts holidays and downtime, applies the utilization percentage, and multiplies by the number of instances. Since utilization sits at 100 percent, a work center running a seven-hour shift with three instances offers twenty-one hours of effective capacity per day, minus anything already allocated. If your old system planned that machine at eighty percent, define its shift as the five and a half productive hours instead, and the number matches what you expect."
+  - question: "How do I check that migrated capacity settings are correct?"
+    answer: "Schedule a known set of orders and compare the resulting work center load to your old system's load for the same orders. If a machine shows far more or far less capacity than expected, the usual cause is a mismatched instance count, a shift left at the gross clock when the old system planned below it, or a missing efficiency value. Validating load before you trust the schedule catches these settings errors early."
+qaQuestions:
+  - question: "In our old system a work center had three machines and a utilization factor. How do those two settings behave in EDGEBIC's engine?"
+    answer: "The instance count migrates directly; the utilization factor changes form. Three machines tells the engine it can run three jobs in parallel at that work center and roughly triples the daily hours available, and it is a column on the import mask. The utilization factor has no column, because EDGEBIC runs work centers at 100 percent and the value is not editable on the work center screen. Carry it over by shortening the shift: an old system planning a seven-hour shift at eighty percent was really planning five and a half productive hours, so define the shift that way and three instances give you about sixteen and a half hours a day, exactly as before. Get the instance count and the shift right and the load matches your expectation; get either wrong and the whole plant's plan shifts, which is why you validate load before trusting dates."
+  - question: "We have a heat-treat furnace that can only take one job per day no matter how many hours are left. Does that survive the migration?"
+    answer: "Yes, that is exactly what the one-per-day flag is for, and you carry it across on the work center import. When the flag is set, EDGEBIC assigns one job per instance per day and does not backfill the remaining hours with a second job, which matches a furnace, an oven, or any batch process where a changeover eats the day. If your work center has multiple identical instances, each takes one job per day. After import, confirm the flag imported as set by scheduling two jobs that would compete for that furnace on the same day and checking that the engine pushes the second to the next day rather than stacking both. That single test proves the setting survived."
+---
+
+**Migrating capacity and utilization settings to EDGEBIC means carrying over the work center knobs that decide effective capacity: the number of instances, the efficiency value, the capacity type and batch sizes, the one-per-day flag, and the bottleneck flag.** In EDGEBIC by User Solutions, these come in on the work center import mask, while an old utilization target is carried over in the shift definition instead, and together they determine the hours the finite capacity engine plans against. Getting them right is what makes the migrated schedule's load match the plant you know, so you migrate them carefully and validate load before you trust any dates.
+
+## Capacity is more than a work center name
+
+It is tempting to think of a work center as just a name and a description. The scheduling behavior lives in the settings around it. A machine's real capacity is a product of several numbers, and if any of them come across wrong, the engine will plan against a plant that does not exist. That is why capacity settings deserve their own attention during a migration, separate from the [broader work center and shift move](/blog/migrating-work-centers-and-shifts-to-edgebic).
+
+The settings fall into two groups: numbers that set how much a work center can run, and flags that change how the engine treats it.
+
+## The capacity numbers
+
+These feed directly into the engine's available-hours calculation.
+
+**Number of instances.** How many identical units the work center contains. Three identical mills means three jobs can run in parallel and the daily hours roughly triple. This is the single most impactful capacity number, and a wrong instance count skews the whole work center's load.
+
+**Efficiency.** A speed multiplier for the work center. A slower machine carries a lower efficiency so the engine allows more time for the same work.
+
+**Utilization target.** In EDGEBIC this is a term in the capacity formula that sits at 100 percent, with no column on the import mask and no editor field on the work center. An old system's eighty percent target migrates into the shift itself: describe the shift as the hours the machine genuinely delivers, or add a downtime event, or set a per-day capacity override for specific dates.
+
+EDGEBIC combines these into available hours per day as: shift hours, minus holidays and downtime, times utilization, times instances, minus hours already allocated. A five-and-a-half-hour productive shift with three instances offers roughly sixteen and a half hours of effective daily capacity, the same figure an old system would have produced from a seven-hour shift at eighty percent. Migrate the numbers correctly and that figure matches your expectation; migrate one wrong and it does not.
+
+## The behavior flags
+
+These do not change the hours; they change how the engine uses them.
+
+**One-per-day flag.** When set, the work center takes one job per instance per day and does not backfill the leftover hours with a second job. This matches a furnace, an oven, or any batch process where the changeover consumes the day. It is a common setting to overlook, and forgetting it lets the engine stack jobs a furnace could never run.
+
+**Bottleneck flag.** Marks the work center as the constraint. EDGEBIC uses this to drive [Theory of Constraints anchor scheduling](/blog/production-bottleneck-identification), planning the constraint first and working outward. If your old system knew which resource was the bottleneck, carry that knowledge across so the new engine schedules around it.
+
+**Capacity type.** Whether the work center is planned by hours, by pieces, or by whichever is limiting. A line rated in pieces per hour uses a different capacity basis than a machine rated in hours.
+
+## Bringing the settings in
+
+All of these ride on the work center import mask alongside the name and description. You export your work centers from the old system, map each capacity column to its EDGEBIC field once, and import.
+
+| Setting | What it controls | Common migration error |
+| --- | --- | --- |
+| Number of instances | Parallel capacity and daily hours | Defaulting everything to one |
+| Efficiency | Speed multiplier | Leaving it blank so the engine assumes full speed |
+| Utilization target | Realistic planning fraction | Entering 80 where a fraction was meant, or the reverse |
+| One-per-day flag | Batch and furnace behavior | Not migrating it, so the engine backfills |
+| Bottleneck flag | Constraint-driven scheduling | Losing the knowledge of which resource is the constraint |
+| Capacity type | Hours, pieces, or both | Mismatching the basis for a line |
+
+Clean these values before import so an old data-entry error does not carry forward, following the same discipline as [cleaning your data before importing to EDGEBIC](/blog/cleaning-your-data-before-importing-to-edgebic).
+
+## Validate load, not just the import
+
+An import that succeeds tells you the file loaded, not that the numbers are right. The real check is load. Schedule a known set of orders in EDGEBIC and compare the resulting work center load to what your old system showed for the same orders.
+
+Three checks catch most settings errors:
+
+- If a machine shows far more capacity than expected, look at the instance count and the shift definition first.
+- If a work center is oddly starved, check for a missing efficiency value or a shift that was shortened twice, once in the hours and again in a downtime event.
+- If a furnace stacks two jobs on one day, the one-per-day flag did not migrate.
+
+For the one-per-day flag specifically, run a deliberate test: schedule two jobs that would compete for that work center on the same day and confirm the engine pushes the second to the next day rather than stacking both. That single test proves the setting survived. This load-first mindset is the same one used when [validating a migrated schedule against RMDB](/blog/validating-a-migrated-schedule-against-rmdb).
+
+## The takeaway
+
+To migrate capacity and utilization settings to EDGEBIC, carry over the numbers that set effective capacity (instances, efficiency, batch sizes) and the flags that change engine behavior (one-per-day, bottleneck, capacity type) on the work center import mask, and carry an old utilization target into the shift definition. The engine computes available hours as shift hours minus downtime, times utilization, times instances, minus allocations, so every setting matters. Validate load against your old system before you trust any dates, and test the one-per-day flag with two competing jobs. See the platform on the [EDGEBIC overview](/edgebic), read the upgrade path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and pair this with [migrating work centers and shifts to EDGEBIC](/blog/migrating-work-centers-and-shifts-to-edgebic).

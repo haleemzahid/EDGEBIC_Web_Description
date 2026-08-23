@@ -1,0 +1,163 @@
+---
+title: "How to Set Up Operators, Skills, and Rosters in EDGEBIC"
+description: "Set up operator skills and rosters in EDGEBIC step by step: build the skills catalog, certify people with expiry dates, roster shifts, and gate a routing step."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - set up operator skills roster
+  - operator certification scheduling
+  - shift roster configuration
+  - required skill routing step
+  - operator time off scheduling
+  - labor scheduling setup
+targetPhrase: "set up operator skills roster"
+wordCount: 1730
+readingTime: 9
+faqQuestions:
+  - question: "In what order should you configure operators and skills in EDGEBIC?"
+    answer: "Create the skills catalog first, then add operators, then certify each operator in the skills they hold, then build the weekly roster, then record known time off. Only after that do you set the required skill on a routing step, because the step's operator picker is filtered to people already qualified for the skill you choose. Global shifts must exist before rostering, since roster rows attach to them."
+  - question: "What does a certification expiry date do to the schedule?"
+    answer: "An expired certification stops qualifying that operator on the next scheduling run, so they silently drop out of the qualified pool for that skill. A certification expiring in the middle of the planning horizon is treated as expired for the whole run, so renew the date before rescheduling if the person is genuinely still qualified for part of the window. Blank means the certification never expires."
+  - question: "Why does the roster attach to shifts rather than to work centers?"
+    answer: "Because rostering once should cover every machine that runs the same shift. Roster rows attach to global shifts, and a work center calendar derived from a global shift inherits that shift's roster automatically. A work center shift that is not derived from any global shift can never be staffed, so skill-gated steps routed there will visibly fail rather than silently pass."
+  - question: "How do you make one routing step require a certified operator?"
+    answer: "Open the step in the routing grid or the designer properties panel and set the required skill field. Then set operator attention, which is how much of a person the running machine consumes, with 0.0 meaning setup only and 1.0 meaning fully attended. Optionally pin the step to one named operator, or leave it on automatic so the scheduler staffs from the whole qualified pool."
+qaQuestions:
+  - question: "We rostered everyone but one work center still never staffs. What did we miss?"
+    answer: "Check whether that work center runs a custom shift that is not derived from any global shift. Roster rows attach to global shifts, so a fully custom parentless work center shift has nothing a roster row can reference, and every skill-gated step routed there finds an empty qualified pool. The fix is structural rather than a workaround: re-derive the work center's shift from a global parent, or roster people on the global shift the work center mirrors. EDGEBIC fails loudly here on purpose, since a silent pass would put you back in the one-welder-two-machines world."
+  - question: "How granular should our skills be? We have twelve welders and four kinds of welding."
+    answer: "Model skills at the level you certify, not the level you organize. TIG-Weld is a skill; Welder is a job title. Steps gate on certifications, so keep skills as specific as the tickets your quality system actually issues, which is usually four skills rather than one in your case. A step requires exactly one skill in this release, so an operation genuinely needing two certifications at once is modeled as its own combined skill, and you certify only the people who hold both. That keeps the qualified pool honest instead of approximate."
+---
+
+**Setting up the labor constraint in EDGEBIC by User Solutions is five configuration passes: build the skills catalog, add operators, certify them, roster them onto shifts, and record known time off.** A sixth step turns it on: setting the required skill and the operator attention on the routing steps that genuinely need a qualified person. Nothing changes on the schedule until you run it, and steps with no required skill are untouched throughout.
+
+If you have not decided whether you need any of this yet, [operator and skill scheduling explained](/blog/edgebic-operator-and-skill-scheduling-explained) covers what the constraint is and when it earns its place inside [EDGEBIC](/edgebic).
+
+## Before You Start
+
+| Prerequisite | Why it matters |
+|---|---|
+| Global shifts exist, such as Day Shift and Night Shift | The roster is a shift by weekday grid, and people are rostered onto **global** shifts |
+| Work centers using custom calendars derive them from a global shift | An operator can only cover a work center shift that traces back to a global shift they are rostered on |
+| A routing exists for the steps you want to constrain | The required skill, attention, and operator pin all live on the routing step |
+
+That middle row is the one that catches shops out later, so it is worth confirming before you begin rather than debugging afterward.
+
+## Step 1: Build the Skills Catalog
+
+Open the **Daily Hours** tab from the main navigation and select the **Operators** inner tab. In the Skills Catalog panel, type a **Code** (for example `TIG`) and a **Skill name** (for example `TIG-Weld`), then click **Add**. The skill appears in the catalog grid, where you can rename it and click Apply, or delete it.
+
+Two rules keep this catalog useful:
+
+- **Model skills at the level you certify, not the level you organize.** `TIG-Weld` is a skill. `Welder` is a job title. Steps gate on certifications, so keep skills as specific as the tickets your quality system issues.
+- **One step requires exactly one skill.** If an operation genuinely needs two certifications at once, create the combination as its own skill, such as `TIG-Weld+Inspection`, and certify the people who hold both.
+
+## Step 2: Add Operators
+
+Still on the Operators inner tab, click **Operator** to open the Add Operator dialog.
+
+| Field | Required | What it does | Example |
+|---|---|---|---|
+| **Operator Name** | Yes | Display name used everywhere in the app | `Joe Alvarez` |
+| **Code** | Yes | Badge or payroll code for imports and reports | `JA-01` |
+| **Notes** | No | Free text | `Night-shift capable on request` |
+| **Status: Active** | No | Unchecked means the person drops out of future scheduling but stays for history | Checked |
+
+Save, and the operator appears in the list. Repeat for everyone whose availability actually gates work. You do not need to enter the whole plant on day one, only the people who hold the certifications you plan to schedule against.
+
+## Step 3: Certify Each Operator
+
+Select the operator, open the **Skills** sub-tab, and click **Add / Remove Skills**. The Certify Operator dialog opens with a checklist of every skill. Check the ones this person holds and click OK. Each check produces a certification row, certified as of today, which you then refine in the grid and Apply:
+
+| Column | What it does | Example |
+|---|---|---|
+| **Skill** | The certified skill, read only | `TIG-Weld` |
+| **Certified On** | When the certification was earned, informational | `2025-03-10` |
+| **Expires On** | Blank means never. An expired certification stops qualifying the operator on the next scheduling run | `2027-03-10` |
+| **Level** | Optional site-defined proficiency number, informational in this release | `3` |
+| **Active** | Untick to suspend a certification without deleting its history, for example pending a re-test | Checked |
+
+One warning that saves real data: **unchecking a skill in the Certify Operator dialog deletes that certification**, taking its dates and level with it. To suspend a certification temporarily, untick **Active** on the grid row instead.
+
+Record real expiry dates on certifications that really expire. An expired certification simply stops counting on the next run, which is a far better way to find out than an audit finding.
+
+## Step 4: Build the Weekly Roster
+
+The roster answers who is at work, on which shift, on which weekday. It is a weekly pattern, exactly like a shift's weekly hours, and absences are recorded separately.
+
+1. Select the operator and open the **Roster** sub-tab.
+2. At the bottom, pick a shift in the **Add shift** selector and click **Add Row**.
+3. On the new row, tick the weekday columns the operator works that shift. Each tick saves immediately.
+4. Add further rows for other shifts if the person rotates, and use **Remove** to drop a shift row entirely.
+
+Roster rows attach to **global** shifts. A work center whose custom calendar is derived from Day Shift automatically inherits the Day Shift roster, so rostering Joe once covers every work center that mirrors that shift. A work center shift that is **not** derived from any global shift can never be staffed, and skill-gated steps routed there will visibly fail to schedule. That is intentional: a silent pass there would put you back in the one-person-two-machines world the feature exists to prevent.
+
+## Step 5: Record Time Off
+
+Select the operator, open the **Time Off** sub-tab, set **From** and **To** in the entry row, optionally type a reason, and click **Add**. Both dates are **inclusive**, so the operator is back the day after the To date.
+
+Recording time off changes nothing until the next scheduling run. EDGEBIC does not replan by itself, which means a vacation entered but never rescheduled protects nothing. Enter leave as soon as it is approved and run the schedule.
+
+## Step 6: Gate the Routing Step
+
+Now the constraint gets switched on, one step at a time. Open the **BOR** tab and select the step, or use the routing designer's properties panel, which carries the same fields.
+
+| Field | What it does | Example |
+|---|---|---|
+| **Required Skill** | Any operator holding this skill can staff the operation. None means no labor constraint | `TIG-Weld` |
+| **Operator attention** | Fraction of a person consumed per machine-hour during the run phase. Setup always needs one full person | `1.0` |
+| **Operator** | Hard-pins the step to one named, qualified person. Automatic means the scheduler staffs from the whole pool | `(Auto)` |
+
+The attention field and the operator picker are enabled only once a skill is set, and the operator list shows only people qualified for the skill you chose.
+
+**Set attention deliberately.** The default is `0.0`, which means setup only: a person sets the machine up and the machine then runs itself. That is correct for genuinely lights-out machining and wrong for hands-on work. Set `1.0` when someone must stand at the machine for the whole run, `0.5` when one person tends two machines, and above `1.0` for a crew. The full table with a worked example is in [the attend fraction](/blog/what-is-attend-fraction-operator-scheduling).
+
+Use the pin sparingly. Automatic load-balances across everyone qualified and gives the scheduler room to keep dates. A pin trades that flexibility for certainty about **who**, and a pinned step slides through the pinned person's absence rather than falling back to a colleague.
+
+## Step 7: Run the Schedule and Read the Crew Plan
+
+Nothing has moved yet. Run **Drive Schedule**, then check the plan:
+
+| Action | Immediate effect | Effect on the schedule |
+|---|---|---|
+| Create skills, operators, certifications, roster rows, time off | Master data updated | Nothing moves until the next scheduling run |
+| Set a required skill on a step | The step gains a person glyph on schedule surfaces | From the next run, the step lands only where a qualified, rostered, present operator has hours left |
+| Set operator attention | None | Changes how many operator-hours each machine-hour consumes on the next run |
+| Pin an operator | Pin stored with the step and with the job's preserved routing | From the next run, only that person's hours count for the step |
+| Certification expires, operator deactivated, roster row removed | None | The person stops counting on the next run. Work they already started is untouched |
+
+After the run, the **Dispatch** tab is the printable answer to who does what and when, grouped by operator and date with hours per group. The **Resource Calendar** operator lens shows availability against booked hours per person and per skill pool. The Gantt marks skill-required bars with a person glyph and adds a crew line to the tooltip.
+
+Remember what these surfaces are: the **current plan's** crew, regenerated wholesale on every scheduling run. They are not a record of who worked, which still comes from punches and actual dates through the [shop-floor kiosk](/blog/edgebic-shop-floor-guide).
+
+## A First Configuration Worth Copying
+
+A minimal, honest setup for a shop with one gated operation looks like this. One skill, `TIG-Weld`. Three operators entered, of whom two are certified and one is not, because rostered is not the same as qualified and modeling that difference is the entire point. Both certified people rostered on Day Shift Monday to Friday. One known vacation entered. One routing step with required skill `TIG-Weld` and attention `1.0`, left on automatic operator selection.
+
+Run the schedule, then open Dispatch. If the certified people's hours look like your reality, expand to the next skill. If they do not, fix the roster before adding anything, because every later skill inherits the same roster foundation.
+
+## Where to Go Next
+
+The mechanics behind what you just configured, including how hours are booked and why a pinned step slides, are in [how EDGEBIC books operator hours](/blog/how-edgebic-books-operator-hours). The configuration traps, from expiry surprises to unstaffable shifts, are collected in [operator and skill mistakes](/blog/operator-and-skill-mistakes-edgebic). If your gated operations also run on interchangeable machines, [creating a work center group](/blog/how-to-create-work-center-groups-in-edgebic) is the machine-side companion, and the two constraints compose on one step. For the wider platform, start at the [complete EDGEBIC guide](/blog/edgebic-complete-guide) or the [how-to hub](/blog/edgebic-how-to-hub).
+
+Bringing an operator or certification list out of an existing system? People and skills arrive the same way as every other master data table, through [import masks](/edgebic-erp-integration).
+
+<Accordion title="In what order should you configure operators and skills in EDGEBIC?">
+Create the skills catalog first, then add operators, then certify each operator in the skills they hold, then build the weekly roster, then record known time off. Only after that do you set the required skill on a routing step, because the step's operator picker is filtered to people already qualified for the skill you choose. Global shifts must exist before rostering, since roster rows attach to them.
+</Accordion>
+
+<Accordion title="What does a certification expiry date do to the schedule?">
+An expired certification stops qualifying that operator on the next scheduling run, so they silently drop out of the qualified pool for that skill. A certification expiring in the middle of the planning horizon is treated as expired for the whole run, so renew the date before rescheduling if the person is genuinely still qualified for part of the window. Blank means the certification never expires.
+</Accordion>
+
+<Accordion title="Why does the roster attach to shifts rather than to work centers?">
+Because rostering once should cover every machine that runs the same shift. Roster rows attach to global shifts, and a work center calendar derived from a global shift inherits that shift's roster automatically. A work center shift that is not derived from any global shift can never be staffed, so skill-gated steps routed there will visibly fail rather than silently pass.
+</Accordion>
+
+<Accordion title="How do you make one routing step require a certified operator?">
+Open the step in the routing grid or the designer properties panel and set the required skill field. Then set operator attention, which is how much of a person the running machine consumes, with 0.0 meaning setup only and 1.0 meaning fully attended. Optionally pin the step to one named operator, or leave it on automatic so the scheduler staffs from the whole qualified pool.
+</Accordion>

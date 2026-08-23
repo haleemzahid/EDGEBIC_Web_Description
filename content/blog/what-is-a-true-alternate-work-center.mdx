@@ -1,0 +1,64 @@
+---
+title: "What Is a True Alternate Work Center?"
+description: "A true alternate work center is a capacity-aware fallback that replaces a busy primary machine when it can finish the job sooner. Learn how the swap works."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - true alternate work center
+  - alternate work center definition
+  - fallback machine scheduling
+  - capacity aware routing
+  - alternative work center
+  - flexible routing manufacturing
+targetPhrase: "true alternate work center"
+wordCount: 1130
+readingTime: 6
+faqQuestions:
+  - question: "What is a true alternate work center?"
+    answer: "A true alternate is a fallback machine that can replace a routing step's primary work center when it finishes the job sooner. Before scheduling begins, the engine compares projected completion on the primary and each true alternate, then swaps the step to whichever candidate wins. The alternate uses its own run time, so a slower backup carries its own longer hours rather than the primary's."
+  - question: "How is a true alternate different from a parallel work center?"
+    answer: "A true alternate replaces the primary: only one machine runs the step. A parallel work center runs alongside the primary, either splitting the work to finish faster or mirroring it in lockstep. The alternate is about flexibility when the primary is busy. Parallel is about running more machines at once. The engine resolves alternates before scheduling and parallel machines during it."
+  - question: "What decides which machine a true alternate resolver picks?"
+    answer: "By default it picks whichever candidate, primary or alternate, finishes the operation earliest given each machine's own run time and current queue. A fast machine that is fully booked can lose to a slower one that is free today. You can change this with a selection strategy, for example always trying the designated primary first and spilling to alternates only when it is full."
+  - question: "Does a true alternate use the primary machine's run time?"
+    answer: "No. Each true alternate carries its own run time, and the engine uses the winning machine's hours, not the primary's. If a backup mill runs twenty percent slower, the step scheduled on it takes twenty percent longer. That is why the resolver compares projected completion rather than raw speed: a slower but available machine can still finish the job sooner overall, and its longer hours are planned honestly."
+qaQuestions:
+  - question: "Our primary CNC is always the bottleneck and jobs pile up behind it while two other CNCs sit half-idle. How do true alternates help?"
+    answer: "List the two idle CNCs as true alternates on that routing step, each with its own run time. Before scheduling, the engine projects completion on all three: the primary queued behind its backlog, and each alternate against its own lighter load. If an alternate finishes sooner even at a slower speed, the engine swaps the step to it and schedules there as if it had always been the primary. In a real case a job queued behind two days of work on the primary jumped to an alternate and finished the same Monday, two days earlier. You keep the primary as the preferred machine and let the engine relieve it only when a backup genuinely wins."
+  - question: "If I add a true alternate, will the engine scatter my jobs unpredictably across machines?"
+    answer: "Only if you leave it on the default earliest-completion strategy, which optimizes each job's lead time and will move work wherever it finishes soonest. If you want predictable routing, set the selection strategy to try the primary first and spill to alternates only when the primary has no capacity on the target date. Then jobs stay on their preferred machine until it is genuinely full, and the alternates act as pure overflow. Choose earliest completion when cycle time matters most, and primary-first when consistency and operator familiarity matter more."
+---
+
+**A true alternate work center is a capacity-aware fallback that replaces a routing step's primary machine when it can finish the job sooner, chosen before scheduling begins by comparing projected completion on each candidate.** It is the flexible-routing mechanism: instead of pinning every operation to one machine, you name backups, and the engine picks the machine that gets the work done fastest given real load. A true alternate uses its own run time, so a slower backup is planned honestly with its own longer hours.
+
+[EDGEBIC by User Solutions](/edgebic) resolves true alternates in a pre-scheduling pass. This article defines the term and how the swap is decided. The full resolver behavior and worked cases are in [how EDGEBIC handles parallel and alternate work centers](/blog/edgebic-parallel-work-centers-explained).
+
+## How It Works
+
+You list one or more true alternates on a routing step, each with its own run time. Before any capacity is allocated, the resolver runs. It projects completion for the primary and every alternate, factoring each machine's speed and its current queue depth, then swaps the step to whichever candidate finishes earliest.
+
+The swap is complete. Once an alternate wins, the step is scheduled on it exactly as if it had always been the primary, using the alternate's own run time rather than the primary's. A backup that runs slower carries its longer hours into the plan.
+
+A [selection strategy](/blog/what-is-a-selection-strategy-in-scheduling) governs the choice. The default is earliest completion, which minimizes each job's lead time and will move work to whichever machine finishes soonest. An alternative is primary-first, which tries the designated primary and spills to a backup only when the primary has no capacity on the target date. Earliest completion suits shops where cycle time rules; primary-first suits shops that want predictable, consistent routing. Whether the engine applies that strategy at all, or defers to machine choices you supply by hand, is set by the run's [alternative selection mode](/blog/what-is-an-alternative-selection-mode-in-scheduling).
+
+## A Concrete Example
+
+Think of an oven step written as "use Oven A, but if it is busy, use Oven B, which runs twenty percent slower." That is a true alternate. Now take three CNC machines: CNC-1 is the primary, CNC-2 and CNC-3 are true alternates with their own run times. CNC-1 is fully booked Monday, so a new job would queue behind existing work and finish Wednesday. CNC-2 can start Monday and finish at 16:00 with its six-hour run. CNC-3 could start Tuesday.
+
+The resolver compares projected completion: Wednesday on CNC-1, Monday 16:00 on CNC-2, Tuesday on CNC-3. CNC-2 wins. The step is swapped to CNC-2, uses CNC-2's six-hour run time, and schedules Monday 08:00 to 14:00, finishing two days earlier than it would have on the busy primary. The slower backup lost, the available one won, and its own hours were planned correctly.
+
+## What the Swap Preserves
+
+Once an alternate wins, the swap is thorough. The step is re-pointed to the winning machine, and any parallel machines that were attached to the old primary are re-pointed too, so the whole operation moves together rather than leaving pieces behind. The winning machine's own run time is used throughout, so the plan reflects that machine's real speed rather than the primary's.
+
+The choice is also stable through rescheduling. A step that has already started stays on the machine it started on, because completed and in-progress work is never moved. Only a not-yet-started step re-shops across its alternates on the next run, comparing projected completion against current load. That means the resolver relieves a busy primary without disturbing work already underway, and a job that jumped to a backup last week is free to jump back to the primary this week if the primary is now the faster finisher. The alternate is a live decision recomputed against reality, not a one-time reroute frozen into the routing.
+
+## How EDGEBIC Uses It
+
+True alternates surface wherever a routing step names backup machines. The engine resolves them before scheduling, reports which candidate won and why, and then schedules the step on the winner. Because the choice is capacity-aware, a fast machine buried under a backlog can lose to a slower one that is free, which is exactly how a planner would decide by hand.
+
+A work center group is a natural extension of this idea: instead of naming backups on each step, you point the step at a pool of interchangeable machines and the engine explodes it into a primary plus true alternates automatically. See [what is a work center group](/blog/what-is-a-work-center-group-machine-pool) for that model, the [manufacturing glossary](/blog/manufacturing-glossary) for related terms, and [how to set a true alternate with a speed factor](/blog/how-to-set-a-true-alternate-with-a-speed-factor-in-edgebic) for the configuration steps.

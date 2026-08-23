@@ -1,0 +1,98 @@
+---
+title: "What Is a Work Center Group? Machine Pools Explained"
+description: "A work center group is a machine pool: route a step to 'any mill' and the scheduler picks the best member each run, by speed, availability, or a set priority."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - work center group machine pool
+  - work center group definition
+  - resource group scheduling
+  - interchangeable machines scheduling
+  - machine pool routing
+  - alternate work centers vs groups
+targetPhrase: "work center group machine pool"
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "What is a work center group in production scheduling?"
+    answer: "A work center group is a named pool of interchangeable machines that a routing step can target instead of one specific machine. Rather than 'step 20 runs on Mill-1,' the routing says 'step 20 runs on any member of the MILLING group,' and the scheduler picks the best member on every run based on the group's selection strategy: earliest completion, a designated primary first, or earliest start."
+  - question: "What is the difference between a work center group and multiple instances?"
+    answer: "Instances model identical units inside one work center: same shift calendar, same speed, same utilization, one capacity formula. A group models different-but-interchangeable machines: each member keeps its own calendar, speed factor, and setup time. Three different-vintage mills belong in a group; three identical mills bought together can be one work center with three instances. The two compose: a group member can itself be a multi-instance work center."
+  - question: "Does a work center group have its own capacity?"
+    answer: "No, and deliberately so. A group is a routing concept, not a machine: only its members hold capacity, and any pool number a screen displays is a live sum of member capacity, computed for display. If the group itself held capacity, the scheduler could book hours no physical machine backs, double-counting the pool."
+  - question: "What happens to a group-routed job when you reschedule?"
+    answer: "A step that has not started yet re-shops the pool against current capacity, so Monday's plan putting a part on Mill-1 can legitimately become Wednesday's plan on Mill-2 if Mill-1 got jammed, with the change surfaced as a replacement indicator. A step that has started, or is completed, keeps its resolved machine: actuals never move, and started work never migrates."
+qaQuestions:
+  - question: "We have a 2015 Haas, a 2024 DMG that runs about twice as fast, and a 1998 Bridgeport that is 50% slower but simpler to fixture. How does a group express that honestly?"
+    answer: "With per-member factors, exactly as the EDGEBIC documentation's worked example models it. The Haas is the baseline at factor 1.0; the DMG gets factor 0.5 (a step planned at 0.04 hours per unit runs at 0.02 on it); the Bridgeport gets factor 1.5 plus a setup-time override of 0.25 hours to reflect the simpler fixturing. For a 100-unit order, the three members bid 4.5, 2.5, and 6.25 hours respectively, and the earliest-completion strategy books whichever finishes first given each machine's real availability."
+  - question: "If the fast machine is booked solid, does the job wait for it or run slower elsewhere?"
+    answer: "It runs elsewhere, which is the point of capacity-aware pooling. In the documented example, the fast mill being booked until Wednesday means its projected completion is Wednesday morning, while the baseline mill can finish Monday 12:30; earliest-completion picks the baseline mill. The fastest machine loses to the available one whenever waiting costs more than the speed saves. If you would rather force predictable routing, the primary-first strategy books the designated primary whenever it has capacity and spills to the others only when it is full."
+---
+
+**A work center group is a named pool of interchangeable machines that a routing step can target instead of a single machine: the planner routes "any member of MILLING," and on every scheduling run the engine picks the best member, weighing each machine's speed, setup time, and real-time availability under the group's selection strategy.** It is the scheduling answer to a question every multi-machine shop has: "any of our three mills can cut this part, so why does the routing pin it to one?"
+
+This is the APS industry's resource-group concept, and this entry is part of the EDGEBIC glossary; the broader dictionary lives in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## The Problem Groups Solve
+
+Before groups, a planner with three interchangeable-but-different mills had three unsatisfying options: pin each routing step to one machine (the others idle while jobs queue), hand-maintain the same alternate-machine list on dozens of routings (it drifts the first time a machine is added or retired), or model the trio as one work center with three instances (only correct when the machines are identical, sharing one calendar and one speed).
+
+A group is the centrally maintained fix: define the pool once, bind any number of routing steps to it, and let the scheduler shop the pool on every run. Add a fourth mill to the group and every group-bound step in every routing considers it immediately, with zero routing edits.
+
+## How It Works
+
+Each member row in a group carries its own scheduling knobs:
+
+- **Efficiency factor**: a run-time multiplier against the step's base hours. 1.0 is the baseline, 0.5 runs the work twice as fast, 1.5 runs it 50% slower. The factor applies to run time only, never to setup, and is always computed from the planner-entered base hours, so it can never compound across reschedules.
+- **Setup override**: a member-specific setup time replacing the step's default, for machines with simpler or harder changeovers.
+- **Primary flag and priority**: at most one member is the designated primary; priority orders the rest.
+
+The group itself carries a **selection strategy**:
+
+| Strategy | Behavior | When to choose it |
+|---|---|---|
+| Earliest completion (default) | Projects each member's finish time from its speed and current load; books the one that finishes first | Throughput first: the fast machine wins unless waiting for it costs more than its speed saves |
+| Primary first | Books the designated primary whenever it has capacity; spills to others only when full | Predictable routing, a preferred machine, spillover as the exception |
+| Earliest start | Books the member that can begin soonest, judged day by day | Shops where getting work moving today beats finishing sooner tomorrow |
+
+One design rule keeps everything honest: **a group has no capacity of its own**. Only members hold hours. Any pool total a dashboard shows is a live sum of member capacity, computed for display, because a group that held capacity would let the scheduler book hours no physical machine backs.
+
+## A Worked Example: Three Mills, One Step
+
+From the [EDGEBIC by User Solutions](/edgebic) documentation. Group MILLING, strategy earliest completion: Mill-1 (2015 Haas) at factor 1.0 as primary; Mill-2 (2024 DMG) at factor 0.5; Mill-3 (1998 Bridgeport) at factor 1.5 with a 0.25-hour setup override. A routing step at 0.04 hours per unit with 0.5 hours setup, order quantity 100:
+
+| Candidate | Effective hours for 100 units |
+|---|---|
+| Mill-1 | 0.04 × 100 + 0.5 = 4.5 |
+| Mill-2 | 0.02 × 100 + 0.5 = **2.5** |
+| Mill-3 | 0.06 × 100 + 0.25 = 6.25 |
+
+**All mills free Monday:** Mill-2 projects Monday 10:30 against Mill-1's 12:30 and Mill-3's 14:15, so Mill-2 gets the job. **Mill-2 booked until Wednesday:** its projection slides to Wednesday morning, Mill-1's Monday 12:30 now wins, and the fastest machine loses to the available one. That trade is the entire point of capacity-aware pooling, and it is recalculated from live load on every run.
+
+**After actuals land:** if the operator started the step on Mill-2 and a reschedule fires, the step stays on Mill-2 regardless of strategy, because started work keeps its machine. A not-yet-started step re-shops the pool against the new capacity picture, and any change is surfaced as a replacement indicator ("Replaced: Mill-2 → Mill-1") so nobody hunts for why the assignment moved.
+
+## How EDGEBIC Implements It
+
+In EDGEBIC, a routing step's target can be a specific machine, a machine with listed alternates, or a group; binding to a group replaces any hand-maintained alternate list, since the group is the alternate list, maintained once. Under the hood, the engine expands the group just before machine selection into a nominal primary plus one candidate per remaining member, each carrying its own pre-computed effective hours, and the same battle-tested selection machinery that handles alternate work centers picks the winner. The group binding survives saving, snapshots, and reschedules, which is what makes re-shopping possible run after run.
+
+Groups compose with the rest of the engine rather than competing with it: a member can be a multi-instance work center, a group-bound step can also carry an operator skill requirement (member selection then accounts for staffability, so a machine nobody qualified can staff loses its bid), and group-bound jobs are locked to their standard-engine result during mathematical optimization so the [optimizer](/blog/edgebic-optimizer-guide) can never emit an invalid assignment. A group Resource Calendar shows the pool's summed capacity by day for load balancing at a glance. For where machine selection sits in the wider pipeline, see the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide); for the constraint-thinking behind pooling decisions, [production bottleneck identification](/blog/production-bottleneck-identification) is the natural companion.
+
+<Accordion title="What is a work center group in production scheduling?">
+A work center group is a named pool of interchangeable machines that a routing step can target instead of one specific machine. Rather than 'step 20 runs on Mill-1,' the routing says 'step 20 runs on any member of the MILLING group,' and the scheduler picks the best member on every run based on the group's selection strategy: earliest completion, a designated primary first, or earliest start.
+</Accordion>
+
+<Accordion title="What is the difference between a work center group and multiple instances?">
+Instances model identical units inside one work center: same shift calendar, same speed, same utilization, one capacity formula. A group models different-but-interchangeable machines: each member keeps its own calendar, speed factor, and setup time. Three different-vintage mills belong in a group; three identical mills bought together can be one work center with three instances. The two compose: a group member can itself be a multi-instance work center.
+</Accordion>
+
+<Accordion title="Does a work center group have its own capacity?">
+No, and deliberately so. A group is a routing concept, not a machine: only its members hold capacity, and any pool number a screen displays is a live sum of member capacity, computed for display. If the group itself held capacity, the scheduler could book hours no physical machine backs, double-counting the pool.
+</Accordion>
+
+<Accordion title="What happens to a group-routed job when you reschedule?">
+A step that has not started yet re-shops the pool against current capacity, so Monday's plan putting a part on Mill-1 can legitimately become Wednesday's plan on Mill-2 if Mill-1 got jammed, with the change surfaced as a replacement indicator. A step that has started, or is completed, keeps its resolved machine: actuals never move, and started work never migrates.
+</Accordion>

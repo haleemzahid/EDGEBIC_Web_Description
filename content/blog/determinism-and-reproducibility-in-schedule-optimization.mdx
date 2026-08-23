@@ -1,0 +1,104 @@
+---
+title: "Determinism and Reproducibility in Schedule Optimization"
+description: "The EDGEBIC optimizer is deterministic: the same inputs and the same seed produce the identical plan every time. Here is why that matters for trust, audits, and support cases."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - deterministic schedule optimization
+  - reproducible optimizer
+  - random seed scheduling
+  - optimizer audit reproducibility
+  - production schedule optimization software
+  - repeatable optimization result
+targetPhrase: "deterministic schedule optimization"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "Is the EDGEBIC optimizer deterministic?"
+    answer: "Yes. Given the same inputs, the same goal, the same random seed, and the same worker count, the optimizer produces the identical plan every time. It records the seed in its solve statistics so a run can be reproduced later. Determinism is a deliberate contract, not a happy accident, and it is verified by repeat-solve tests that run the same problem twice and assert the plans match."
+  - question: "Why does a schedule optimizer use a random seed?"
+    answer: "The multi-run search generates some candidate job orderings by shuffling, and shuffling needs a source of randomness. The random seed fixes that source so the shuffles are the same every run. With the seed pinned, the search tries the same candidates in the same order and returns the same winner, which is what makes the result reproducible rather than varying run to run."
+  - question: "Can I reproduce an optimization result for a support case?"
+    answer: "Yes. The solve statistics record the random seed, and for the mathematical solver the worker count too. Give EDGEBIC the same inputs and the same seed and it returns the identical plan. The accepted audit record also carries the seed, so a plan changed months ago can be reproduced and explained exactly, which turns a vague 'the optimizer did something odd' into a repeatable, diagnosable case."
+qaQuestions:
+  - question: "Two planners ran the optimizer on what they thought was the same schedule and got different plans. Is the optimizer non-deterministic?"
+    answer: "Almost certainly not. The optimizer is deterministic on identical inputs, so different results mean the inputs differed: a job was added, an actual landed, a due date moved, or the goal or seed differed between the two runs. Check the solve statistics on each run for the seed, and check the schedule state each was built against. The staleness fingerprint exists precisely because the schedule can change underneath a run. Once you confirm the inputs match, the plans will match too."
+  - question: "Does giving the solver a longer time budget change the plan, and does that break determinism?"
+    answer: "A longer budget can change the plan, because the solver may find or prove a better answer it did not reach in the shorter window. That is not non-determinism: it is a different input, the time budget. Determinism means same inputs give the same output, and the budget is one of the inputs. Two runs with the same 30-second budget and the same seed match; a 30-second run and a 60-second run may legitimately differ, and both are reproducible on their own terms."
+---
+
+**The EDGEBIC optimizer is deterministic: the same inputs, the same goal, the same seed, and the same worker count produce the identical plan every time.** It records the random seed it used, so any run can be reproduced later, and its determinism is enforced by tests that solve the same problem twice and require the plans to match. This is what lets a planner trust a result, an auditor reproduce a decision, and a support engineer diagnose a puzzling run instead of shrugging at randomness. Reproducibility is a contract in EDGEBIC, not a hope.
+
+EDGEBIC by User Solutions treats determinism as a first-class property of the optimizer because a scheduling tool that gives different answers to the same question cannot be trusted or debugged. This post explains what determinism means here, why a random seed is involved at all, and how reproducibility supports audits and support cases. For the run itself, see [how to run and read an optimization in EDGEBIC](/blog/how-to-run-and-read-an-optimization-in-edgebic).
+
+## What determinism means for an optimizer
+
+Determinism is a simple promise: same question, same answer. For the optimizer, the "question" is the full set of inputs (the jobs, work centers, routings, capacity, the goal preset, the time budget, the seed, and the worker count) and the "answer" is the proposed plan. Hold the inputs fixed and the plan is fixed. Run it again tomorrow on the same data and you get the same plan, down to the operation start times.
+
+This is not automatic in optimization. Search procedures often use randomness, and solvers can behave differently depending on timing or thread scheduling if nothing pins them down. EDGEBIC pins them down. The multi-run search fixes its shuffling with a recorded seed, and the mathematical solver fixes its seed and records its worker count, so both are reproducible.
+
+## Why a seed is involved
+
+The multi-run search builds some of its candidate job orderings by shuffling. It also uses structured heuristics (earliest due date, shortest processing time, and others), but the shuffles need a source of randomness to generate different orderings to try. A random seed is that source, fixed to a known value.
+
+With the seed pinned, "random" shuffles are the same every run. The search generates the same candidate orderings in the same sequence and returns the same winner. Change nothing and the answer never wanders. The seed is recorded in the run's solve statistics precisely so the run can be repeated exactly.
+
+The mathematical solver uses the seed similarly and additionally records the number of parallel workers it ran with, because the way work is split across workers can affect which of several equally good plans it settles on. Pinning both makes the solver reproducible too.
+
+## Reproducibility and the audit trail
+
+When you Accept an optimization, EDGEBIC writes an audit record that carries the seed along with the goal, the solve statistics, and both the before-and-after key performance indicator sets. That record is the bridge between a decision made once and an explanation available forever.
+
+Months later, someone asks why a plan changed. You open the job's audit trail, read the plain-language story, and if you need to, reproduce the exact run: same inputs, same seed, same plan. A decision that would otherwise be a fading memory becomes a repeatable fact. This is the same story the Explain dialog showed at Accept time, described in [what happens when you accept an optimized schedule](/blog/what-happens-when-you-accept-an-optimized-schedule).
+
+## A worked example: diagnosing a "different result"
+
+Two planners believe they ran the optimizer on the same schedule and got different plans. Determinism turns this from a mystery into a checklist.
+
+| Check | What it reveals |
+|---|---|
+| Seed in each run's statistics | Different seeds would explain different multi-run shuffles |
+| Goal preset each chose | A different goal ranks plans differently, so a different winner is expected |
+| Time budget each used | A longer budget can find or prove a better plan |
+| Schedule state each built against | An added job or a landed actual changes the inputs |
+
+Run the checklist and one of these will differ. Perhaps one planner's schedule had a new job the other's did not, because it arrived between the two runs. The optimizer was deterministic the whole time; the inputs were not identical. The staleness fingerprint exists for exactly this reason: it catches the case where the schedule changed underneath a run, described in the Accept flow. Once the inputs are confirmed identical, the plans match.
+
+This is the practical payoff of determinism. "The optimizer did something odd" becomes "the inputs differed here," which is diagnosable in minutes instead of dismissed as randomness.
+
+## Time budget is an input, not a source of noise
+
+A common confusion: a longer time budget can produce a different plan, so is the optimizer non-deterministic? No. The time budget is one of the inputs. Determinism says the same inputs give the same output, and a 30-second run and a 60-second run have different inputs.
+
+Two runs with the same 30-second budget and the same seed produce the same plan. A 30-second run and a 60-second run may legitimately differ, because the longer window lets the solver find or prove a better answer, and each is fully reproducible on its own terms. Setting that budget deliberately is covered in [how to set the optimizer time budget in EDGEBIC](/blog/how-to-set-the-optimizer-time-budget-in-edgebic). The lesson is to compare like with like: fix the budget when you want two runs to match.
+
+## Determinism and the interrupt
+
+A subtle case shows how seriously EDGEBIC takes reproducibility: what happens when a run is interrupted. If you cancel a solve or the time budget expires before the mathematical solver has proven optimality, it still returns the best plan it found so far along with its current bound. That partial result is not random. Given the same inputs, seed, worker count, and budget, the interrupted run returns the same incumbent plan and the same bound every time.
+
+This means even a run you stopped early is reproducible. The solve statistics record the seed and the budget, so a support engineer can recreate the exact state you saw at the moment of interrupt. It also means you can safely use short budgets as a deliberate strategy: a 10-second run is not a gamble on what the solver happened to reach, it is a repeatable result you can rely on and rerun. Reproducibility holds not just for completed solves but for every stopping point along the way, which is what lets you treat the time budget as a real tuning knob rather than a source of surprise.
+
+## What determinism buys you
+
+For a planner and a plant, reproducibility translates into concrete benefits:
+
+- **Trust.** A result you can reproduce is a result you can believe. It did not depend on luck.
+- **Auditability.** Every accepted plan carries the seed, so the decision can be reproduced and explained long after the fact.
+- **Diagnosability.** A support case is a repeatable case. Same inputs, same seed, same plan, so an engineer can reproduce and investigate rather than guess.
+- **Confidence in comparisons.** When you test two goals or two budgets, you know the difference comes from the change you made, not from run-to-run noise.
+
+For the broader optimizer picture, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) and [the two layers of the EDGEBIC optimizer](/blog/the-two-layers-of-the-edgebic-optimizer). To place optimization in context, see [production schedule optimization](/blog/production-schedule-optimization). To explore the platform, visit [EDGEBIC](/edgebic).
+
+## Determinism does not mean rigidity
+
+A fair worry about a deterministic optimizer is that it might feel rigid, always grinding out the same answer regardless of what you want. The opposite is true. Determinism applies to a fixed set of inputs, and you control those inputs. Change the goal and you get a different, still-reproducible answer aimed at a different priority. Change the time budget and you may get a better answer, reproducible on its own terms. Add a job or update a due date and the plan updates accordingly.
+
+So determinism is not the optimizer refusing to adapt; it is the optimizer being predictable about how it adapts. Same question, same answer. Different question, different answer, and you decide which questions to ask by choosing the goal, the budget, and the data. That predictability is what makes experimentation meaningful: when you try two goals and see different plans, you know the difference came from the goal you changed, not from luck. Reproducibility is the foundation that makes every other comparison in the optimizer trustworthy.
+
+## The bottom line
+
+The EDGEBIC optimizer gives the same answer to the same question, every time. A recorded seed fixes the search, the mathematical solver pins its workers too, and the accepted audit record carries the seed so any decision can be reproduced. When two runs disagree, determinism turns the puzzle into a checklist of inputs rather than a shrug at randomness. The time budget is an input, not noise, so compare like with like. Reproducibility is what makes an optimization result trustworthy, auditable, and diagnosable, and in EDGEBIC it is a contract the product enforces rather than a property you have to hope for.

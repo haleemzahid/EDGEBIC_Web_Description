@@ -1,0 +1,110 @@
+---
+title: "How to Block a Time Window Across a Whole Shift in EDGEBIC"
+description: "How to block a time window for every work center on a shift in EDGEBIC using a partial plant holiday, for an all-hands meeting or a plant-wide power interruption."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - block a time window on a shift
+  - shift level downtime
+  - all hands meeting scheduling
+  - downtime for every work center
+  - shift downtime versus machine downtime
+  - plant wide time window block
+targetPhrase: "block a time window across a whole shift"
+wordCount: 1190
+readingTime: 6
+faqQuestions:
+  - question: "How do you block a time window for every machine on a shift in EDGEBIC?"
+    answer: "With a partial plant holiday. Open the Daily Hours tab, then the Holiday tab, click Add Holiday, untick Closes the whole day, and enter the window as a start and end time. The scheduler subtracts the overlap between that window and each shift's own hours, so a 09:00 to 11:00 all-hands costs every machine on the day shift two hours and costs a 16:00 night shift nothing. One record covers the whole plant. Rerun the scheduler so jobs shift out of the window."
+  - question: "What is the difference between blocking a shift and blocking one machine?"
+    answer: "A partial plant holiday blocks a window across the whole plant, and each shift is charged only its own overlap with that window, which is what makes it behave like a shift-level block. A single machine is blocked with a per-day capacity override on that work center, shift, and date. Use the partial holiday for events that stop the whole crew, such as a meeting or a power cut, and the override for one machine's maintenance."
+  - question: "Should a very long block be a partial holiday or a whole-day one?"
+    answer: "For a window of a few hours, use a partial holiday and let the overlap math charge each shift correctly. For a full day or longer, tick Closes the whole day instead, which zeroes capacity everywhere rather than carving hours out of each shift. Match the tool to the length of the closure: a partial holiday is designed for interruptions inside a working day."
+qaQuestions:
+  - question: "We have a two-hour all-hands meeting Friday morning that stops every machine. How do I model it?"
+    answer: "Add a partial plant holiday for that Friday. Open the Daily Hours tab, then the Holiday tab, click Add Holiday, name it All-hands meeting, set the date, untick Closes the whole day, and enter the start and end time of the meeting. Every shift whose hours overlap that window loses the overlap, so a morning meeting takes two hours off every machine on the day shift automatically, and a night shift starting at 16:00 loses nothing because the windows do not touch. That is exactly the behavior you want and it is one record rather than one per machine. Then rerun the schedule so the jobs that would have run in that window slide out of it."
+  - question: "The meeting window overlaps both our shifts, but only the day crew attends. What then?"
+    answer: "A partial plant holiday cannot tell the two crews apart: it charges every shift its own overlap with the window, so the night crew would lose hours it is actually working. When the window genuinely straddles two shifts and only one is stopping, use per-day capacity overrides instead, entered on the day shift for each affected work center with the reduced hours and a reason. It is more entries, but it lands the loss on the right crew. There is no shift-scoped closure record in the current release, which is why this case falls back to overrides."
+---
+
+**To block a time window across a whole shift in EDGEBIC by User Solutions, add a partial plant holiday for that window.** Open the **Daily Hours** tab, then the **Holiday** tab, click **Add Holiday**, untick **Closes the whole day**, and enter the start and end time. The scheduler charges each shift only its own overlap with the window, which is what makes one plant-wide record behave correctly shift by shift.
+
+This is the right tool for an interruption that stops the whole crew at once: an all-hands meeting, a safety stand-down, a utility power cut. For one machine's maintenance you want a per-day capacity override instead, which is a different page.
+
+## Why a Partial Holiday and Not a Downtime Record
+
+Worth clearing up first, because the instinct is to look for a downtime tab on the shift.
+
+EDGEBIC's scheduling engine understands shift-scoped closures and standalone downtime records, and it honors them if they exist. What the current release does not provide is a screen to create either one. There is no Downtime Events tab on a shift and no downtime editor anywhere else.
+
+The partial plant holiday covers this case properly, and arguably better. Because the engine subtracts the **overlap** between the holiday window and each shift's own hours, a single record lands different amounts on different shifts without you doing anything:
+
+```
+blocked hours = max(0, min(shift end, holiday end) − max(shift start, holiday start))
+```
+
+A 09:00 to 11:00 meeting against an 08:00 to 16:00 day shift blocks two hours. Against a 16:00 to 00:00 night shift it blocks nothing, because the windows never touch. One entry, correct per shift.
+
+## Before You Start
+
+- **You know the window:** the date and the exact start and end time.
+- **You know it hits every machine whose shift overlaps that window.** That is the point, and it is also the limitation covered at the end of this page.
+- **You can rerun the scheduler** so jobs move out of the window.
+
+## Step 1: Open the Plant Holidays Page
+
+Open the **Daily Hours** tab, then the inner **Holiday** tab. The **Plant Holidays** page lists closures affecting all work centers and shifts.
+
+## Step 2: Add the Holiday
+
+Click **Add Holiday**. Enter a **Name** that explains the block for the audit trail, such as `All-hands meeting` or `Utility power interruption`, and set the **Date**.
+
+## Step 3: Untick "Closes the Whole Day"
+
+This is the step that turns a full closure into a window. Unticking it reveals the **Start Time** and **End Time** fields.
+
+## Step 4: Enter the Window
+
+Type the start and end time of the interruption, for example `09:00` to `11:00`. Save.
+
+The grid shows **Scope** = **Partial** with the window in the **Window** column. Every shift that overlaps those hours now loses the overlap on that date.
+
+## Step 5: Reschedule
+
+Run **Schedule / Re-Schedule** so the jobs that would have run in the window slide out of it. Adding the holiday changes the calendar; it does not move existing bars until you rerun.
+
+## What Changes When You Save
+
+| Surface | Effect |
+|---|---|
+| Every shift overlapping the window | Loses its own overlap hours on that date |
+| Shifts that do not overlap | Unaffected, automatically |
+| Multi-instance work centers | Lose the overlap **per machine**, so the block scales with the size of the resource |
+| Existing schedules | Not moved until you rerun |
+
+That third row matters more than it looks. The subtraction happens before the instance multiplier, so a two-hour meeting on a three-machine work center removes six hours of schedulable capacity, exactly as it does in the building.
+
+## How to Check It Worked
+
+1. Reopen the **Plant Holidays** page and confirm the record shows **Scope** = **Partial** with the right date and window.
+2. Check capacity for that date across a couple of work centers and confirm it is reduced by the overlap, multiplied by their instance counts.
+3. Confirm a shift that should not be affected, such as nights for a morning meeting, still shows its normal hours.
+4. Rerun the scheduler and confirm no work is planned inside the blocked window.
+
+## Common Mistakes
+
+**Looking for a downtime tab on the shift.** There isn't one in this release. The partial plant holiday is the mechanism for a crew-wide window.
+
+**Using a partial holiday when only one of two overlapping shifts stops.** The record charges every overlapping shift. If the window straddles both shifts and only one crew is in the meeting, use per-day capacity overrides on the affected shift instead.
+
+**Using a partial holiday for a full day.** Tick **Closes the whole day** instead. Carving 8 hours out of an 8-hour shift works, but the whole-day flag says what you mean.
+
+**Forgetting to rerun.** The calendar shows the block, but existing bars stay until a reschedule moves them.
+
+## Next
+
+A partial plant holiday blocks a window across the plant and charges each shift its own overlap, which is the tool for an event that stops the crew rather than one machine. For a single machine's maintenance window, read [how to block a machine for a maintenance day](/blog/how-to-block-a-machine-for-a-maintenance-day-in-edgebic). For a full day off for one crew, read [how to close one shift for a holiday](/blog/how-to-close-one-shift-for-a-holiday-in-edgebic), and for the full calendar picture, [the shifts and holidays setup guide](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic). More single-task recipes are in the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and the platform overview is at [/edgebic](/edgebic).

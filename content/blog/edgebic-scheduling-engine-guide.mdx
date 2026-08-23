@@ -1,0 +1,211 @@
+---
+title: "Inside a Modern Finite Capacity Scheduling Engine"
+description: "How finite capacity scheduling works inside EDGEBIC: dependency graphs, multi-shift allocation, TOC anchors, queue time, and actuals preservation."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - how finite capacity scheduling works
+  - finite capacity scheduling engine
+  - production scheduling algorithm
+  - multi-shift scheduling
+  - theory of constraints scheduling
+  - dependency graph scheduling
+  - forward scheduling engine
+targetPhrase: "how finite capacity scheduling works"
+wordCount: 3300
+readingTime: 17
+faqQuestions:
+  - question: "How does finite capacity scheduling work?"
+    answer: "Finite capacity scheduling places each operation on real machine time instead of assuming unlimited capacity. The engine sorts jobs by priority, orders each job's steps so predecessors always come first, then searches the calendar shift by shift for available hours. Each shift's capacity is shift hours times machine instances times utilization percent, and once a slot is consumed no other job can claim it."
+  - question: "What determines when an operation starts in a finite capacity schedule?"
+    answer: "An operation's start time is the latest finish among all its predecessors, adjusted for queue time, lot streaming overlap, and transit days, and never earlier than the job's own start date. If two branches of a routing feed one assembly step, the assembly waits for whichever branch finishes last. The engine then allocates the operation's hours across shifts from that moment forward."
+  - question: "What is anchor scheduling in Theory of Constraints?"
+    answer: "Anchor scheduling pins the bottleneck operation of a job to a planner-chosen target date, then schedules everything upstream backward to feed that date and everything downstream forward from it. EDGEBIC protects the pinned operation with optional buffers: a constraint buffer before the anchor, a feeding buffer on the step that directly feeds it, and a shipping buffer after it."
+  - question: "Why does a reschedule never move completed operations?"
+    answer: "Completed operations are historical fact: the hours were worked, the costs were incurred, and the reports depend on them. EDGEBIC treats any operation with logged actual dates as immutable, preserves it verbatim through every reschedule, and re-plans only the remaining work forward from where the shop floor actually is. This keeps schedules honest and audit history intact."
+  - question: "Is queue time counted on weekends and holidays?"
+    answer: "No. Queue time in EDGEBIC is shift-aware: it ticks down only during active working shifts and pauses over nights, weekends, and holidays. A 4-hour queue that begins at 14:00 on a Friday with an 08:00 to 16:00 shift consumes 2 hours that afternoon and finishes the remaining 2 hours on Monday morning at 10:00."
+qaQuestions:
+  - question: "I have a 28-hour milling operation, two machines, day and night shifts, and the job cannot start before Monday 10:00. When does it finish?"
+    answer: "Two instances on an 8-hour day shift give 16 hours of capacity per shift. Monday's day shift can start at 10:00, so only 6 hours remain on each machine: 12 hours allocated, 16 remaining on the job. Monday's night shift contributes another 16 hours of capacity, of which the job needs 16, so the operation completes at the end of Monday's night shift. The engine splits the work across both machines in each shift so they finish together, which is why load balancing beats filling one machine at a time."
+  - question: "Two jobs both need the same machine tomorrow and both are priority 1. Which one wins?"
+    answer: "Ties break deterministically: after priority, the engine sorts by the job's start date, then by due date. So the job that was released earlier claims the machine first, and if those match too, the earlier due date wins. There is no randomness, which matters more than it sounds: run the same data twice and you get the same schedule twice, so a change in output always traces back to a change in input."
+---
+
+**Finite capacity scheduling works by placing every operation of every job onto machine time that actually exists: the engine sorts jobs by priority, orders each job's steps so no step runs before the work it depends on, then walks the calendar shift by shift until every hour of work has a real home.** No machine is ever booked past its capacity, and the result is a plan the shop floor can execute the moment it is generated. This post opens up the engine inside EDGEBIC by User Solutions and shows how those decisions actually get made: the pipeline, the dependency logic, the multi-shift search, the Theory of Constraints path, and the timing mechanisms between operations.
+
+You do not need any of this to use [EDGEBIC](/edgebic). You need it the day you look at a schedule and ask "why did that land there?" Every placement has a reason, and this is the catalog of reasons.
+
+## The Pipeline: What Happens When You Click Schedule
+
+A scheduling run is not one big calculation. It is a fixed sequence of phases, and understanding the sequence explains most surprising behavior.
+
+1. **Reset the working state.** The engine clears its in-memory allocations so every run starts from a clean slate. Nothing in the database changes yet.
+2. **Seed inventory availability.** For make-to-stock products, current on-hand quantities are loaded so orders can be netted against stock before consuming machine time.
+3. **Reconcile actuals.** If an operator logged completion on step 3 of a job but never logged steps 1 and 2, the engine infers that the earlier steps must also be done and locks them, so the rebuild sees a consistent picture of reality.
+4. **Protect committed capacity.** Jobs that are not part of this run keep every one of their reservations. Jobs that are being rescheduled keep only the operations with logged actuals; their stale future reservations are released. This one rule fixes a whole class of problems where a job's own old plan blocks its new plan.
+5. **Sort the orders.** Priority first (lower number wins), then start date, then due date. Your most important job gets first claim on contested machine time.
+6. **Schedule each job in turn.** For every order, the engine picks the routing source, analyzes actuals, resolves alternative work centers, nets against stock, then runs either the standard forward path or the Theory of Constraints anchor path.
+
+Which orders enter the run at all is decided by the scheduling mode you pick before clicking the button. Incremental New touches only orders that have no schedule yet, which is the daily default; Full Reschedule clears every reservation and rebuilds from scratch; Incremental All re-plans everything that has not started; Smart Incremental does the same but freezes the near term; and a targeted Reschedule re-plans a named set of jobs. The mode is the outermost decision of every run, and half of "why did that job move?" questions answer themselves at the mode level: the job moved because the mode you ran includes it, or held still because it does not.
+
+Two more properties worth knowing. First, if a single job fails (say its routing is missing a work center), the failure is recorded against that job and the run continues: one broken order never takes down the schedule for the other forty. Second, the whole pipeline is deterministic. There is no random tie-breaking anywhere, so the same inputs produce the same schedule every time, and a difference between two runs always traces to a difference in the data between them.
+
+## Dependencies: Why Steps Land in the Right Order
+
+A Bill of Routing is not just a list; it is a graph. Each step names its successor, routings can branch (one cutting step feeds two machining steps) and join (both machining steps feed one assembly), and sub-assemblies bring their own chains. The engine builds a dependency graph from those links and runs a topological sort over it, which is a precise way of saying: it produces an order in which every step appears after everything it depends on, no matter how the steps were entered.
+
+Then, for each step in that order, one rule decides the start time:
+
+> **A step starts at the latest finish among all of its predecessors, and never before the job's own start date.**
+
+The consequences fall out naturally. A linear routing chains end to start. A join waits for its slowest input: if machining leg A finishes Tuesday noon and leg B finishes Wednesday 09:00, assembly starts Wednesday 09:00. And a routing that reuses the same work center twice (inspect at step 10 and again at step 40) keeps the two visits distinct, because the engine tracks each step's identity, not just the machine's name.
+
+This ordering question is also where forward and backward scheduling diverge. The default direction is forward: start as early as possible and see when you finish. An order can instead be scheduled backward, right-aligned so its last step ends at the due date, which is the just-in-time posture. The engine reuses the same dependency graph either way; backward simply walks it in reverse. If the trade-off is unfamiliar, [forward vs backward scheduling](/blog/forward-vs-backward-scheduling) covers it in general terms.
+
+## Multi-Shift Allocation: Finding Real Hours for Real Work
+
+Once a step knows its earliest start, the engine has to find its hours. This is the multi-shift allocator, and it is the part that makes finite capacity finite.
+
+### What a shift slot is worth
+
+For every work center, date, and shift, the engine pre-computes a capacity bucket:
+
+```
+capacity = (shift hours − downtime − partial holiday hours)
+           × number of instances
+           × utilization %
+```
+
+A milling center with two instances on an 8-hour shift at 80% utilization offers 12.8 hours per shift. A whole-day holiday zeroes the bucket. A capacity override for one specific date replaces the formula entirely, which is how you model a Saturday of authorized overtime without touching the standing calendar.
+
+### The search
+
+Starting from the step's earliest start date, the engine walks forward day by day (the search window is effectively unbounded for practical purposes), and for each day checks: is the work center available at all, which shifts run on this weekday, and how much unconsumed capacity remains in each slot. Candidate slots are then ranked, and the ranking encodes sensible instincts:
+
+- A shift that can start immediately outranks everything else.
+- More available capacity outranks less.
+- Earlier shifts in the day outrank later ones.
+
+The engine then consumes the ranked slots in order until the step's hours run out. A 12-hour operation on a single-instance machine with one 8-hour shift takes 8 hours Monday and 4 hours Tuesday, finishing Tuesday at noon. A late constraint clips the first slot: a job that cannot start before 10:00 gets only the 6 remaining hours of an 08:00 to 16:00 shift on day one.
+
+### Instance selection
+
+When a work center has multiple instances, three strategies govern which machine gets the work:
+
+| Strategy | Behavior | Typical use |
+|---|---|---|
+| Load balancing (default for multi-instance) | Split the hours evenly so all instances finish together | General machining, assembly |
+| One-per-day | Each instance takes one job per day; a job keeps the same instance across shifts | Furnaces, paint booths, anything where changeover owns the day |
+| Single instance | Everything goes on instance 1 | Single-machine work centers |
+
+Load balancing is why a 20-hour operation on a four-instance work center can finish in 5 elapsed hours: each machine takes 5 hours and they run simultaneously.
+
+### What comes back
+
+The allocator returns the step's true start and end, plus a per-instance, per-shift breakdown that persists with the schedule. That breakdown is what powers the hour displays in the Job View ("8,4" for two days), the utilization reports, and the capacity calendars.
+
+## Between Operations: Queue, Lot Streaming, and Transit
+
+An operation's machine time ending is not the same as its successor being allowed to start. Three mechanisms compose, always in the same order, to produce the moment the next step may begin.
+
+**1. Queue time (shift-aware buffer).** Queue time models the waiting, cooling, or staging between operations, and it counts down only during active shifts. A 4-hour queue beginning Friday at 14:00 against an 08:00 to 16:00 shift consumes 2 hours Friday afternoon, pauses over the weekend, and finishes Monday at 10:00. Queue time never ticks on a day the calendar says nobody is working.
+
+**2. Lot streaming (may pull the start earlier).** Normally a successor waits for the full upstream lot. Lot streaming lets it start once a meaningful chunk is ready, and it is the one mechanism in the chain that can move the downstream start earlier than the upstream end. EDGEBIC supports the industry-standard piece-count model (start once, say, 100 pieces have accumulated: the trigger time is setup plus 100 times the hours per piece) and a start-to-start lag in hours for continuous processes where pieces are meaningless (downstream may start exactly N hours after upstream starts). A flat transfer delay can sit on top of either, modeling the forklift trip between stations. The mechanics and the makespan math live in [the transfer batch explainer](/blog/what-is-a-transfer-batch) and the [lot streaming walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic). One configuration note worth knowing: when lot streaming fires on a step, its result becomes the successor gate and replaces the queue-adjusted time, so use the transfer delay, not queue time, for handling lag on a streamed step. EDGEBIC's anomaly checks flag any step where both are set so you can confirm the intent.
+
+**3. Transit days.** Parts that leave the building (an outside heat-treater, a sister plant) carry transit days. Calendar-day transit adds flat days, weekends included, because the vendor's calendar is not yours. Working-day transit counts only days the receiving work center actually operates and lands the part at the end of the last shift, so the successor cannot start before the plant reopens.
+
+## One Job, Traced End to End
+
+The mechanisms are easier to hold onto attached to a concrete job, so here is a 20-unit bracket order traced through a three-step routing, using the same data as the [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic). The plant runs one day shift, 08:00 to 16:00, Monday to Friday. The routing:
+
+| Step | Work center | Hours per unit | Setup | Queue time | Instances |
+|---|---|---|---|---|---|
+| 10 Saw | Saw-1 | 0.25 | 0.5 h | 0 | 1 |
+| 20 Mill | Mill-1 | 1.50 | 1.0 h | 2 h | 2 |
+| 30 Inspect | QC-Bay | 0.20 | 0 | 0 | 1 |
+
+**Step 10.** No predecessors, so it starts at the order's start: Monday 08:00. Hours to place: 0.25 × 20 + 0.5 setup = 5.5 hours. One instance, one shift: the saw runs 08:00 to 13:30 Monday.
+
+**Step 20.** Its predecessor ends Monday 13:30, so that is its earliest start. Hours: 1.50 × 20 + 1.0 = 31 hours, but Mill-1 has 2 instances, and load balancing splits the work so both machines run together: about 15.5 hours of wall-clock time. Monday offers 2.5 remaining hours per instance (5 allocated), Tuesday a full 16, Wednesday the last 10. Milling ends Wednesday early afternoon.
+
+**Step 30.** Milling's end is not inspection's start: the step carries 2 hours of queue time, consumed shift-aware within Wednesday's remaining hours. Inspection's 4 hours then split across Wednesday's tail and Thursday morning.
+
+Every date in that trace came from a rule already covered: start at the latest predecessor end, capacity per shift from the formula, instances balanced to finish together, queue ticking only inside shifts. That is the whole engine in one job, and it is exactly the calculation you can reproduce on paper to audit any schedule EDGEBIC hands you.
+
+## The Theory of Constraints Path: Anchor Scheduling
+
+Everything above is the standard forward path. Jobs that run through a plant bottleneck can take a different one, and it inverts the whole approach. Instead of pushing work forward from the start, the engine pins the constraint operation to a target date and schedules in both directions around the pin.
+
+Here is the shape of it. You mark the bottleneck work center, and you set a target start date on the constraint operation of the job. On the next run the engine:
+
+1. **Validates the constraint.** It computes a load factor for every work center in the routing (demand hours divided by daily capacity) and checks that the anchor really is the tightest resource. In a typical example, a heat-treat oven at a load factor of 2.75 dwarfs the lathe at 1.06 and the grinder at 0.78: it is genuinely the drum the plant marches to.
+2. **Splits the routing** into pre-anchor steps (everything feeding the constraint) and post-anchor steps (everything after it).
+3. **Schedules the anchor first, at maximum priority,** with a capacity-packing strategy, so no other job's operations can steal the pinned slot.
+4. **Schedules the pre-anchor steps backward** from the anchor's start, latest first, so upstream work finishes just in time to feed the constraint.
+5. **Schedules the post-anchor steps forward** from the anchor's end through to completion.
+
+Optionally, three buffers protect the plan the way Goldratt intended: a constraint buffer between upstream work and the anchor (sized at 50% of upstream content when enabled), a shipping buffer after the anchor (25% of downstream content), and a feeding buffer added to the step that directly feeds the constraint (10%). With buffers disabled the plan is tight and unpadded; enabling them buys protection from variation at the cost of lead time.
+
+When multiple scheduling instructions collide on one job, precedence is fixed and explicit: an anchor pin beats everything, logged actuals beat a backward request (a job that has started always continues forward from where it is), planner-dragged step pins come next, then backward, then default forward. The [bottleneck anchor walkthrough](/blog/toc-bottleneck-anchor-scheduling-example-edgebic) plays a four-step turbine bracket through the whole sequence with date arithmetic, and if constraint thinking itself is the new part, start with [identifying your production bottleneck](/blog/production-bottleneck-identification).
+
+## Reschedules: The Engine's Most Important Promise
+
+Plans meet reality daily: a machine breaks, an operator logs 4 hours against a 19-hour operation and goes home, a rush order jumps the queue. The reschedule path is where a scheduling engine earns or loses the floor's trust, and EDGEBIC's is built on one non-negotiable rule: **an operation with logged actuals is never re-placed.**
+
+On a reschedule the engine classifies each of the job's operations:
+
+- **Completed** (actual start and end logged): preserved verbatim, carried into the new plan as history.
+- **In progress or partially complete** (actual start, no end): the work center assignment locks, and only the remaining hours are re-planned. The 19.2-hour operation with 4 hours logged reschedules exactly 15.2 hours forward from now.
+- **Not started:** fully re-planned, and their old reservations are released first so the job's own stale plan cannot block its new one.
+
+The job's resume point becomes the latest actual timestamp, and untouched downstream steps cascade from there. The result reads the way a supervisor expects: the past is frozen, the future is honest. The [machine breakdown walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic) shows a four-step job with two completed operations riding through a two-day outage untouched while the remaining steps slide.
+
+## One Engine, Two Uses: Live Schedules and Simulations
+
+A detail with outsized practical value: EDGEBIC's quote simulation and its live scheduling run identical engine code. When sales asks for a promise date, the system loads the real work centers, the real routings, and the real committed schedules, runs the same engine in memory, and reports the earliest completion, without writing anything. The two paths diverge only at the final persist step. That is why a quoted date and the schedule you get after converting the quote agree: they were computed by the same decisions against the same capacity. The [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic) shows the numbers matching end to end.
+
+The same property powers the optimizer: every candidate schedule it evaluates is a complete, real schedule produced by this same engine under a different job ordering, which is why an optimized plan is never a paper abstraction. The [optimizer guide](/blog/edgebic-optimizer-guide) picks that thread up.
+
+## Reading a Schedule Like the Engine Wrote It
+
+Pull these threads together and the schedule stops being a black box. When you see a placement that surprises you, walk the reasons in order:
+
+1. **Did a higher-priority job claim the slot?** Sort order is priority, start date, due date.
+2. **Was the step waiting on a predecessor?** Its start is the latest predecessor finish; find the slow branch.
+3. **Was capacity really there?** Check the shift calendar, instances, utilization, holidays, downtime, and any date overrides.
+4. **Did a between-step mechanism add time?** Queue time (shift-aware), transit days, or a lot-streaming gate.
+5. **Is the job anchored, backward, or carrying actuals?** Direction precedence decides which logic ran at all.
+6. **Was old capacity still reserved?** On reschedules, stale reservations are released for jobs in the run, but jobs outside the run rightfully keep their claims.
+
+Nine surprises out of ten resolve at step 1 or 2. The tenth is what the [troubleshooting guide](/blog/edgebic-troubleshooting-guide) is for, symptom by symptom.
+
+## From Understanding to Using
+
+Everything in this post is the machinery underneath a few buttons: Drive Schedule, the mode picker, and the Gantt. The [complete EDGEBIC guide](/blog/edgebic-complete-guide) places this engine in the context of the whole platform, the [how-to library](/blog/edgebic-how-to-hub) turns each mechanism into a step-by-step task, and the [worked examples](/blog/edgebic-worked-examples) run the engine against ten realistic scenarios with every number shown.
+
+If you want to see the engine make these decisions against your own routings, [bring your data to a demo](/contact-us). Watching your real bottleneck surface in the first run is worth more than any article.
+
+<Accordion title="How does finite capacity scheduling work?">
+Finite capacity scheduling places each operation on real machine time instead of assuming unlimited capacity. The engine sorts jobs by priority, orders each job's steps so predecessors always come first, then searches the calendar shift by shift for available hours. Each shift's capacity is shift hours times machine instances times utilization percent, and once a slot is consumed no other job can claim it.
+</Accordion>
+
+<Accordion title="What determines when an operation starts in a finite capacity schedule?">
+An operation's start time is the latest finish among all its predecessors, adjusted for queue time, lot streaming overlap, and transit days, and never earlier than the job's own start date. If two branches of a routing feed one assembly step, the assembly waits for whichever branch finishes last. The engine then allocates the operation's hours across shifts from that moment forward.
+</Accordion>
+
+<Accordion title="What is anchor scheduling in Theory of Constraints?">
+Anchor scheduling pins the bottleneck operation of a job to a planner-chosen target date, then schedules everything upstream backward to feed that date and everything downstream forward from it. EDGEBIC protects the pinned operation with optional buffers: a constraint buffer before the anchor, a feeding buffer on the step that directly feeds it, and a shipping buffer after it.
+</Accordion>
+
+<Accordion title="Why does a reschedule never move completed operations?">
+Completed operations are historical fact: the hours were worked, the costs were incurred, and the reports depend on them. EDGEBIC treats any operation with logged actual dates as immutable, preserves it verbatim through every reschedule, and re-plans only the remaining work forward from where the shop floor actually is. This keeps schedules honest and audit history intact.
+</Accordion>
+
+<Accordion title="Is queue time counted on weekends and holidays?">
+No. Queue time in EDGEBIC is shift-aware: it ticks down only during active working shifts and pauses over nights, weekends, and holidays. A 4-hour queue that begins at 14:00 on a Friday with an 08:00 to 16:00 shift consumes 2 hours that afternoon and finishes the remaining 2 hours on Monday morning at 10:00.
+</Accordion>

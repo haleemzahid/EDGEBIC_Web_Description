@@ -1,0 +1,116 @@
+---
+title: "How the EDGEBIC Gantt Refreshes After a Change"
+description: "Why the schedule board sometimes patches a few bars and sometimes reloads everything, what each behavior protects, and the one case that clears your pending drags."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Visual Scheduling
+author: user-solutions
+cluster: edgebic-visual-scheduling
+pillarSlug: edgebic-visual-scheduling-guide
+keywords:
+  - gantt chart refresh
+  - schedule board reload
+  - production schedule updates
+  - manufacturing gantt behavior
+  - pending schedule changes
+  - live schedule repaint
+targetPhrase: "gantt chart refresh"
+wordCount: 1440
+readingTime: 7
+faqQuestions:
+  - question: "Why does the EDGEBIC Gantt sometimes reload the whole board?"
+    answer: "Most saves update only the bars that changed, so your scroll position, job filter, and zoom survive. A full reload happens when the board can no longer trust its own copy: after a scheduling run, after clearing the schedule, and after you accept the prior-operations backfill, because that backfill changes earlier operations that were not part of your edit. A full reload refetches everything from the database."
+  - question: "Does a full reload lose my unsaved changes?"
+    answer: "Yes, and this matters in exactly one workflow. A full reload rebuilds the board from stored data, so any pending drags still sitting on screen are cleared with it. The case to watch is accepting the prior-operations backfill prompt, which triggers a reload. Save that change on its own rather than combining it with other pending drags you have not committed yet."
+  - question: "Will the board update if somebody completes a job somewhere else?"
+    answer: "Yes. Completing or reopening a job on the Drive Schedule screen repaints the completed shade on an open Gantt, so a bar you are looking at changes appearance without you doing anything. That is deliberate: completion is a fact about the job, and a board showing finished work as unfinished is worse than a board that repaints under you."
+qaQuestions:
+  - question: "I dragged four bars, then hit the prior-operations prompt on the fifth and clicked OK. My other drags vanished. What happened and how do I avoid it?"
+    answer: "Accepting that prompt backfills the earlier operations in that job with their planned values, which changes rows the board did not have in its pending set, so it refetches everything to stay honest. The reload rebuilt the board from stored data and your four uncommitted drags went with it. The habit that avoids it: when the prompt appears, click Cancel, save or discard the rest of your pending set first, then redo the one drag that needs the backfill and accept it on its own. It costs thirty seconds and never surprises you."
+  - question: "An operator logged hours from the kiosk while I had the Job View open. Do I have to close and reopen the tab to see it?"
+    answer: "No. The Job View reloads when the job changes elsewhere, including actuals logged from the kiosk or the live actual view, so the hours roll-up and the operation grid pick it up. Actuals saved inside the Job View itself also trigger a job-wide resync rather than a single-row patch, because one save can cascade onto sibling rows through the prior work center backfill and the parallel actuals mirror. Refreshing one row would show you a half-updated job, which is worse than a short pause while the whole job resyncs."
+---
+
+**The EDGEBIC by User Solutions schedule board has two update behaviors, and knowing which one is running explains most of what looks surprising after a save.** Usually it patches just the bars that changed and leaves everything else alone, including your scroll position, your job filter, and your zoom. Occasionally it refetches the entire board. Both are correct, and the difference is about how much the board can still trust its own copy of the data.
+
+This post explains when each happens, what it protects, and the one workflow where a reload will take pending work with it. If you have not read how staging works yet, pair this with [staging Gantt changes with Save and Discard](/blog/staging-gantt-changes-with-save-and-discard).
+
+## The Default: Patch What Changed
+
+When you press Save Changes on a normal set of drags, the board does not start over. It writes your changes, then updates the bars involved in place: each saved bar transitions out of the pending Overridden state into whichever saved state it earned, and later operations in the same job pick up the Downstream Changed flag if they now start before your saved bar's new end.
+
+Everything else on screen stays exactly where it was. That is not a small nicety. On a busy plant board you might have spent a minute narrowing the job filter and scrolling to a specific week, and a board that jumped back to the default view after every save would make planners stop saving in small batches.
+
+The states themselves are covered in [reading the Gantt planned versus actual](/blog/reading-the-edgebic-gantt-planned-vs-actual). What matters here is that the transition is a repaint, not a reload.
+
+## Discard Does Not Touch the Database at All
+
+Discard is the cheapest operation on the screen. Every pending bar snaps back to the position, machine, and color it had before you touched it, using the values captured when you first edited it. Nothing is written and nothing is fetched.
+
+Two consequences worth knowing. First, Discard reverts everything pending, not one bar, so a five-drag set is all or nothing. Second, because there is no database round trip, a Discard on a slow network is instant while a Save is not.
+
+## The Full Reload: Three Cases
+
+Sometimes the board's in-memory copy is no longer a fair picture of stored data, and patching a few bars would leave you looking at something half true. In those cases it refetches everything.
+
+| Trigger | Why a reload is required |
+|---|---|
+| A scheduling or reschedule run | The engine may have moved many operations across many jobs, not just the ones you touched |
+| Clearing the schedule | There is nothing left to patch |
+| Accepting the prior-operations backfill | Earlier operations in the job were filled in, and those rows were never in your pending set |
+
+The third one is the case to internalize, and it is the subject of the next section.
+
+## The One Case That Costs You Pending Work
+
+When you save a change on an operation whose earlier operations in the same job have no actuals recorded, EDGEBIC stops and asks. That is the prior-operations prompt, and it exists so nobody accidentally reports step five as finished while steps one through four have never been logged. The full behavior is in [the Gantt safety prompts](/blog/edgebic-gantt-safety-prompts-prior-operations).
+
+Choose Cancel and nothing is written. Your bars stay pending and orange, and you can go log the earlier operations properly.
+
+Choose OK and the earlier operations are filled in from their planned values, your save completes, and the board reloads. It has to: those earlier rows changed in stored data but were never part of the pending set on your screen, so the only honest way to show them correctly is to start fresh. The cost is that any other pending drags you had not committed are cleared along with the rest.
+
+The habit that avoids this entirely: when the prompt appears, click Cancel, deal with the rest of your pending set first, then redo the one drag and accept the backfill on its own.
+
+## Repaints That Arrive Without You
+
+Some updates land on an open board because something happened elsewhere in the system.
+
+Completing or reopening a job on the Drive Schedule screen repaints the completed shade on an open Gantt. The shade is an opaque fill painted over whatever state color the bar had, so a bar can visibly change character while you are looking at it. That is intended. Completion is a fact about the job, and a board that shows finished work as unfinished until somebody remembers to refresh is worse than a board that repaints under you.
+
+The Job View behaves the same way for its own job. It reloads when that job changes elsewhere, including actuals logged from the shop floor kiosk or the live actual view. That is what makes it usable as a status screen during a shift rather than a snapshot from when you opened it.
+
+## Why Job View Actuals Resync the Whole Job
+
+Inside the Job View, saving actuals triggers a resync of the entire job rather than a patch of the row you edited. That looks heavier than necessary until you know what one save can touch.
+
+Logging an actual can cascade. Earlier work centers may be backfilled by the prior-operations rule, and a parallel step's actuals mirror the primary step it runs alongside. A single edit can therefore change three or four rows you never selected. Patching only the row under your cursor would leave the grid showing a job that is partly updated, and a partly updated job is exactly the kind of thing planners lose trust over. The details of that mirroring are in [logging actual hours and pieces](/blog/how-to-log-actual-hours-and-pieces-in-edgebic).
+
+## What Survives a Refresh
+
+A manual Refresh refetches the schedule, and a short list of your working context survives it:
+
+- **Your job filter.** Every job is checked the first time you open the board; after that your selection is preserved.
+- **Your grid and tree layouts.** Column widths, order, visibility, sorting, and grouping are remembered per user, with no Save Layout button to press.
+- **The jobs you have saved changes on.** The Re-Schedule button stays armed for those jobs across a refresh. It clears when a reschedule completes or when you discard.
+
+What does not survive is anything still pending. Pending means "on your screen only," which is the whole point of the staging model. Save it or discard it before you leave the screen.
+
+## Predictable Beats Clever
+
+A schedule board that refreshed everything after every action would be safe and unusable. One that never refreshed would be fast and wrong. The split here is the practical middle: patch when the board can still be trusted, reload when it cannot, and repaint immediately when a fact like completion changes underneath you.
+
+That is the same reliability instinct User Solutions has brought to manufacturing scheduling since 1991, for ten-person shops and for organizations including GE, Cummins, and the US Navy. Planners commit to a tool that behaves the same way twice.
+
+[See the full EDGEBIC platform](/edgebic), start from the [visual scheduling pillar guide](/blog/edgebic-visual-scheduling-guide), or bring a normal Tuesday's worth of schedule changes to a demo and watch how little of your screen moves.
+
+<Accordion title="Why does the EDGEBIC Gantt sometimes reload the whole board?">
+Most saves update only the bars that changed, so your scroll position, job filter, and zoom survive. A full reload happens when the board can no longer trust its own copy: after a scheduling run, after clearing the schedule, and after you accept the prior-operations backfill, because that backfill changes earlier operations that were not part of your edit. A full reload refetches everything from the database.
+</Accordion>
+
+<Accordion title="Does a full reload lose my unsaved changes?">
+Yes, and this matters in exactly one workflow. A full reload rebuilds the board from stored data, so any pending drags still sitting on screen are cleared with it. The case to watch is accepting the prior-operations backfill prompt, which triggers a reload. Save that change on its own rather than combining it with other pending drags you have not committed yet.
+</Accordion>
+
+<Accordion title="Will the board update if somebody completes a job somewhere else?">
+Yes. Completing or reopening a job on the Drive Schedule screen repaints the completed shade on an open Gantt, so a bar you are looking at changes appearance without you doing anything. That is deliberate: completion is a fact about the job, and a board showing finished work as unfinished is worse than a board that repaints under you.
+</Accordion>

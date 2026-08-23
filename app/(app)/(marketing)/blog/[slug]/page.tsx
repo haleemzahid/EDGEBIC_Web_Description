@@ -64,15 +64,18 @@ export const revalidate = 86400;
 export const dynamicParams = true;
 
 // ---------------------------------------------------------------------------
-// Static params — pre-render only the 80 most-recently published posts.
-// All other slugs are generated on first request and cached via ISR.
+// Static params — pre-render every post at build time.
+//
+// The old cap of 80 was written when the corpus was roughly 450 posts. At this
+// size it left ~2,200 URLs rendering on first request, and the first visitor to
+// a new post is almost always a crawler rather than a person, so the slow path
+// was being served to exactly the audience the corpus exists for. Trading build
+// time for an instant first byte on every URL is the right way round here.
 // ---------------------------------------------------------------------------
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   // Glossary term posts are served from /blog/glossary/[slug] instead.
   return allPosts
     .filter((post) => !post.slugAsParams.startsWith('glossary-'))
-    .sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime())
-    .slice(0, 80)
     .map((post) => ({
       slug: post.slugAsParams
     }));

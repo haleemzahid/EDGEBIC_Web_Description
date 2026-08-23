@@ -1,0 +1,135 @@
+---
+title: "Reconciling ERP Work Order Quantities After Partial Completion"
+description: "How to import work order quantities from an ERP once a job is partly finished: original versus remaining quantity, avoiding double subtraction, and closing jobs that leave the export."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ERP work order quantity import
+  - remaining quantity scheduling
+  - partial completion ERP reconciliation
+  - open work order export scheduling
+  - EDGEBIC work order quantity
+  - net quantity double counting
+targetPhrase: "ERP work order quantity reconciliation"
+wordCount: 1610
+readingTime: 8
+faqQuestions:
+  - question: "Should I import the original work order quantity or the remaining quantity?"
+    answer: "Import whichever one your progress tracking does not already account for, and never both. If EDGEBIC is receiving actual hours from the floor or from an ERP labor export, import the original quantity and let the engine re-plan only the remainder from logged hours. If no actuals reach EDGEBIC at all, import the ERP's remaining quantity instead. Mixing the two subtracts completed work twice and makes every partly finished job look nearly done."
+  - question: "Does a re-import of a work order disturb work already in progress?"
+    answer: "No. Completed work is never moved by a reschedule, and a partly finished operation keeps its logged hours locked on the days they were worked and its original work center. The engine re-plans only the remaining hours onto the next free slot on that same machine, and downstream steps queue behind the new end. Re-importing changes the demand record; the plan changes only when a planner runs the scheduler."
+  - question: "What happens to a job when the ERP stops exporting it?"
+    answer: "Nothing, which is the point to plan for. An import only adds and updates rows; it does not delete records that fell out of the file. A work order closed in the ERP simply stops appearing, so its job stays in EDGEBIC and keeps consuming capacity until someone closes it there too. Add a completion step to your recurring routine so finished jobs leave the plan on the same cadence they leave the ERP."
+qaQuestions:
+  - question: "We receive against work orders as pieces come off the line, so our export always shows the quantity still open. We also import labor hours nightly. Our schedule now shows almost every running job as finished. Why?"
+    answer: "You are subtracting the completed work twice. The nightly labor import tells EDGEBIC that eight of the twelve planned hours on an operation are logged, so the engine already re-plans only the four remaining hours. Then the work order import replaces the order quantity with the number of pieces still open, which shrinks the run time the four hours were measured against. Pick one source of truth for progress. The usual answer is to export the original ordered quantity and let the actuals do the netting, because hours are a finer measure of progress than received pieces and they already sit on the right operation. If your ERP cannot export the original quantity, keep it in a column of its own and map that column instead of the open balance."
+  - question: "Our planner keeps finding jobs on the schedule that shipped two weeks ago. They are gone from the ERP. How do we stop them clogging capacity?"
+    answer: "They stopped appearing in your export, and an import never deletes what is absent from a file, so they stayed. Two habits fix it permanently. First, add a step to the weekly routine that reviews jobs in EDGEBIC that were not in this week's open work order export and closes them, which takes a couple of minutes once the list is short. Second, prefer an export filtered on status rather than on date, so a job leaves the file for a reason you can name. Until closed jobs are cleared, every capacity number is pessimistic, because phantom work still occupies machines that are actually free, and that quietly pushes new promise dates out."
+---
+
+**Once a work order is partly finished, the quantity you import from the ERP has to agree with whatever else is telling EDGEBIC how far along the job is: import the original ordered quantity when actual hours reach EDGEBIC, import the ERP's remaining quantity when they do not, and never do both.** Doing both subtracts the completed work twice, and the symptom is a schedule where every running job looks nearly done. This is the most common reconciliation problem in a mature ERP integration, and it does not appear until the second or third week.
+
+EDGEBIC by User Solutions has managed this handoff since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the rule that holds is simple: exactly one system nets progress, and everyone knows which one.
+
+## What a quantity actually drives
+
+The engine computes an operation's hours as setup plus run time multiplied by quantity. Setup is charged once per job; run time scales. So quantity is not a label on a job, it is a direct multiplier on machine time, and any error in it moves every downstream date on that job.
+
+Take a routing step at 0.02 hours per piece with a 0.5 hour setup:
+
+| Quantity on the job | Setup | Run | Operation hours |
+|---|---|---|---|
+| 500 | 0.5 | 10.0 | 10.5 |
+| 200 | 0.5 | 4.0 | 4.5 |
+| 50 | 0.5 | 1.0 | 1.5 |
+
+Now consider a 500-piece order with 300 pieces received. The remaining 200 pieces are worth 4.0 hours of run time. If the ERP exports 200 and the floor has separately logged the hours it took to make the first 300, the plan drops both, and the job appears to need a fraction of the time it really does.
+
+## The two clean patterns
+
+Pick one. Write it down. Tell whoever builds the export.
+
+**Pattern A: actuals net the progress.** Hours reach EDGEBIC from the kiosk or from an [ERP labor transaction import](/blog/importing-erp-labor-transactions-as-actuals). Export the **original ordered quantity** and leave it alone for the life of the job. The engine keeps logged hours locked on the days they were worked, holds the operation on its original machine, and re-plans only the remaining hours. The mechanism is covered in [how partial completions carry forward](/blog/how-partial-completions-carry-forward-in-edgebic).
+
+**Pattern B: the ERP nets the progress.** No actual hours reach EDGEBIC at all. Export the **remaining quantity** and let each import restate the job as the work still to do. Simpler, and noticeably coarser, because pieces received is a blunt measure of how far into an operation you are.
+
+| | Pattern A | Pattern B |
+|---|---|---|
+| Quantity column exported | Original ordered | Open balance |
+| Who measures progress | Logged hours in EDGEBIC | Receipts in the ERP |
+| Granularity | Per operation, per hour | Per job, per piece |
+| Requires a labor feed | Yes | No |
+| Risk when mixed with the other | Double subtraction | Double subtraction |
+
+Pattern A is the better plan when you have the data for it, because hours attach to the operation that actually consumed them, while a received piece count only tells you the job moved somewhere.
+
+## Why hours are the finer measure
+
+Consider a five-operation part with 500 pieces released. All 500 have finished operation 10, half have finished operation 20, and none have reached 30. Receipts against the work order are still zero, because nothing has hit stock.
+
+Pattern B sees a job with 500 pieces to make and no progress. Pattern A sees operation 10 complete, operation 20 half logged and re-planned for its remainder on the same machine, and operations 30 through 50 untouched. Only the second version can tell you which machine the job is sitting on tonight.
+
+## The trap in reverse: a blank quantity
+
+Blank-cell preservation is a helpful mask behavior with one edge worth knowing. On an update run, a blank cell keeps the existing value rather than wiping it, so a partial refresh file is safe. A **zero** is a value, not a blank.
+
+An ERP that emits zero in the open-quantity column for a job that is fully received will therefore set that job's quantity to zero rather than leave it alone. The job then schedules as setup only. Leave the column out of the export or filter the row out entirely rather than exporting zeros you do not mean.
+
+## Jobs that leave the export do not leave the plan
+
+An import adds and updates. It does not delete records that are absent from the file. That is a deliberate safety property, because a filter mistake in an export should never wipe your schedule. It also means a work order closed in the ERP simply stops appearing, and its job stays in EDGEBIC consuming capacity.
+
+Two habits keep this clean:
+
+- **Close finished jobs on the same cadence the ERP closes them.** Add a step to the recurring routine that lists jobs not present in this week's export and closes them; the pass itself is walked through in [closing ERP work orders that EDGEBIC still thinks are open](/blog/closing-erp-work-orders-that-edgebic-still-thinks-are-open).
+- **Filter the export on status rather than on a rolling date window.** A job that leaves the file for a status reason is easy to reconcile. A job that leaves because it aged out of a 90-day window is not.
+
+Phantom jobs are worse than untidy. They occupy machines that are genuinely free, so every capacity number reads pessimistic and new promise dates drift outward for no real reason.
+
+## Where quantity changes mid-flight
+
+Sometimes the quantity legitimately changes: a customer increases an order, or scrap forces a replacement run. Re-importing handles it, and the re-import is safe.
+
+- Completed work is never moved by a reschedule, so history is not at risk.
+- A partly finished operation keeps its machine and its logged hours, and only the remainder is re-planned.
+- Imported data sits until a planner runs the scheduler, so you can review the change before any date moves.
+
+What deserves a look afterwards is the operation currently in progress, because a quantity increase adds hours to a step that is already running. Reconcile that one job by hand: setup plus run time times the new quantity across its operations, compared against the schedule.
+
+## Fold the check into the routine
+
+The quantity reconciliation is a two-minute addition to the checks you already run after an import:
+
+| Check | What good looks like |
+|---|---|
+| Outcomes total the file rows | Created plus Updated plus Reused plus Failed equals data rows |
+| Quantity source is the agreed one | Original quantity under Pattern A, open balance under Pattern B, never both |
+| No zero quantities on live jobs | Zeros filtered out of the export rather than imported |
+| Jobs absent from the export are closed | The stale list is short, and shrinks each week |
+| One in-progress job reconciles by hand | Remaining hours match what the floor believes |
+
+The full post-import pass is in the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist), the cadence is in the [weekly ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine), and the wider governance question of which system owns which field is in [choosing the system of record for each scheduling field](/blog/choosing-the-system-of-record-for-each-scheduling-field).
+
+## Once it agrees, the plan holds up
+
+With one clear progress source, a running shop can be rescheduled daily without fear. Started work keeps its machine and its logged hours, only the honest remainder moves, and the finite capacity engine can apply the rest of the model: multiple shifts and machine instances, work center groups, sequence-dependent setups, lot streaming, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows where the order import sits.
+
+## Bring a week of open orders
+
+Export this week's open work orders for jobs that are genuinely part finished and [bring them to a demo](/contact-us). Ten minutes of reconciling real quantities against real logged hours usually settles the original-versus-remaining question for good.
+
+<Accordion title="Should I import the original work order quantity or the remaining quantity?">
+Import whichever one your progress tracking does not already account for, and never both. If EDGEBIC is receiving actual hours from the floor or from an ERP labor export, import the original quantity and let the engine re-plan only the remainder from logged hours. If no actuals reach EDGEBIC at all, import the ERP's remaining quantity instead. Mixing the two subtracts completed work twice and makes every partly finished job look nearly done.
+</Accordion>
+
+<Accordion title="Does a re-import of a work order disturb work already in progress?">
+No. Completed work is never moved by a reschedule, and a partly finished operation keeps its logged hours locked on the days they were worked and its original work center. The engine re-plans only the remaining hours onto the next free slot on that same machine, and downstream steps queue behind the new end. Re-importing changes the demand record; the plan changes only when a planner runs the scheduler.
+</Accordion>
+
+<Accordion title="What happens to a job when the ERP stops exporting it?">
+Nothing, which is the point to plan for. An import only adds and updates rows; it does not delete records that fell out of the file. A work order closed in the ERP simply stops appearing, so its job stays in EDGEBIC and keeps consuming capacity until someone closes it there too. Add a completion step to your recurring routine so finished jobs leave the plan on the same cadence they leave the ERP.
+</Accordion>

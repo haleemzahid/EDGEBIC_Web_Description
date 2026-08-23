@@ -1,0 +1,127 @@
+---
+title: "The Direction Decision Your ERP Export Cannot Make"
+description: "Forward or backward is stamped on a job at creation from a site-wide default, and no import mask carries it. Settle the policy before the first order file, because direction locks once actuals land."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - scheduling direction ERP import
+  - forward or backward imported jobs
+  - default scheduling direction setting
+  - just in time scheduling policy
+  - backward job due date required
+  - direction stamped at creation
+targetPhrase: "scheduling direction on imported ERP orders"
+wordCount: 1575
+readingTime: 9
+faqQuestions:
+  - question: "Can my ERP export tell EDGEBIC whether a job is forward or backward scheduled?"
+    answer: "No. The sales order import mask carries the product, quantity, job date, and optional order reference, job number, customer, due date, order date, priority, unit price, and notes. Scheduling direction is not among them, so a push or pull intent held in your ERP cannot travel in the file. In EDGEBIC by User Solutions every newly created job is stamped with the site-wide default from the schedule settings, which means the decision is a policy you set once rather than a column you map."
+  - question: "What happens if my site default is Backward and the import file has no due date?"
+    answer: "The rows will not save. A backward job has to know the date it finishes by, and saving fails with the message that a due date is required when the scheduling direction is backward. So flipping the site default to backward silently promotes the due date column from optional to mandatory on every order you import. If your export cannot reliably supply one, either keep the default forward or fix the export before you change the setting."
+  - question: "Can I change the direction later if we get it wrong?"
+    answer: "Per order, yes, and only until actuals arrive. Direction is stamped at creation and can be overridden on an individual order, but it locks once actuals are logged against the job, after which remaining work always reschedules forward. Changing the site default does not retrofit anything either: existing orders keep the direction they were created with, so a bulk of imported jobs stays on the old policy until each one is changed or recreated."
+qaQuestions:
+  - question: "We are a just-in-time shop and our ERP holds a need date for every order. We assumed importing that date would give us pull scheduling. What did we actually get?"
+    answer: "You got forward scheduling with a due date attached, which looks similar on a grid and behaves quite differently on the floor. Mapping a need date fills the due date field, which gives you a target to measure lateness against, but it does not change how the engine places the work. With the default forward direction the engine starts each job as early as capacity allows, so the slack accumulates after the work rather than in front of it, and you finish weeks early and hold inventory, which is the outcome just-in-time exists to prevent. Getting pull behavior means flipping the site default to backward before the orders are created, because direction is stamped at creation. Two things then follow immediately. Every imported order must carry a due date or it will not save. And you should decide whether you want to be told when a backward job cannot fit, because the default is to accept the forward fallback silently, which on a bulk import means a batch can quietly fall back to forward without anyone seeing it happen."
+  - question: "Is it worth mixing directions, or should the whole plant pick one?"
+    answer: "Mixing is supported and is often right, but it should be deliberate rather than accidental. The setting stamps a default and every order can still be overridden individually, so the practical pattern in most shops is to choose the default that fits the majority of your work and treat the minority as exceptions somebody sets by hand. A make-to-order shop where finishing early genuinely helps runs forward by default and switches specific customer-driven jobs to backward. A shop building to firm delivery slots runs backward by default and switches the handful of jobs with no promised date to forward, since a backward job with no due date cannot save at all. What you want to avoid is a mix that emerged because the site default changed halfway through a year, leaving two populations of jobs with no record of why they differ. If you do change the default, write down the date you changed it, because that date is the only thing that explains the split later."
+---
+
+**Forward or backward is stamped onto a job when it is created, taken from a site-wide default, and there is no column for it on any import mask.** In EDGEBIC by User Solutions that makes scheduling direction a policy decision you settle before the first order file rather than a field you map, and getting it wrong is expensive to unwind because direction locks once actuals arrive.
+
+## What the order file can and cannot carry
+
+The sales order mask is deliberately narrow. Mandatory: product, quantity, job date. Optional: an order reference, a job number, a customer name, a due date, an order date, a priority, a unit price, and notes.
+
+Read that list again looking for intent. Every column describes *what* is wanted and *when*. None of them describes *how the work should be placed against the calendar*. Your ERP may hold a firm sense that a particular order is pull rather than push, but the file has no way to say so, and there is nothing on the receiving side for it to land on.
+
+This is not an omission. Direction is a scheduling policy, and the import layer deliberately handles data rather than planning behavior, which is the same principle behind imports never scheduling. The fields the engine genuinely needs are covered in [which ERP fields EDGEBIC needs to build a finite capacity schedule](/blog/which-erp-fields-edgebic-needs-to-schedule).
+
+## Where direction actually comes from
+
+One setting, under the schedule settings, called **Default Scheduling Direction**.
+
+| Option | What new jobs and quotes do |
+|---|---|
+| Forward (default) | Start as early as possible; spare time accumulates after the work |
+| Backward | Placed just in time so the last step ends at the due date; spare time sits in front |
+
+It changes the direction stamped on every newly created job and quote. Existing orders keep their own direction, and any single order can still be overridden by hand. The conceptual difference is set out in [forward versus backward scheduling](/blog/forward-vs-backward-scheduling), and the setting itself in [how to configure scheduling policy in EDGEBIC](/blog/how-to-configure-scheduling-policy-in-edgebic).
+
+For an ERP integration the important word is **newly**. Every job your nightly import creates inherits whatever the default is at that moment. The import is not choosing; it is inheriting.
+
+## The coupling that catches people
+
+Flip the default to backward and one of your optional columns becomes mandatory.
+
+A backward job has to know the date it finishes by. Saving fails with a message that a due date is required when the scheduling direction is backward. Since the due date column on the order mask is optional, an export that omits it, or leaves it blank on some rows, works perfectly under a forward default and starts failing rows the moment you switch.
+
+So the order of operations matters:
+
+1. Confirm your export supplies a usable due date on **every** row.
+2. Then change the default.
+
+Doing it the other way round produces a morning of failed rows and a plausible but wrong theory about the mask being broken. Which of your ERP's several dates should become that due date is its own decision, and it is worked through in [importing customer due dates versus internal need dates](/blog/importing-customer-due-dates-vs-internal-need-dates).
+
+## The silent fallback, and why bulk imports make it matter
+
+Backward scheduling never fails outright. If a job cannot fit before its due date, the forward fallback always exists. A second setting decides whether you hear about it:
+
+| Option | Behavior |
+|---|---|
+| Accept the forward schedule (default) | The earliest-possible forward plan is kept quietly |
+| Show a popup so I can review it | The run pauses so you can accept, adjust dates and re-run, or cancel |
+
+On a single job the default is sensible. On a bulk import it deserves a second look, because a batch of newly imported orders with tight dates can fall back to forward as a group without anyone seeing it happen. You end up with a plant configured for pull, running push, and nothing on screen saying so.
+
+If missing a promise date must never slip through unnoticed, choose the popup. The trade-off is that a large import run will stop and ask, which is precisely the point but does need someone at the keyboard. The choice is covered in [how to set what happens when a backward job does not fit](/blog/how-to-set-what-happens-when-a-backward-job-does-not-fit-in-edgebic).
+
+## Direction locks once actuals land
+
+This is what turns a policy question into a sequencing question.
+
+Direction is locked once actuals are logged against a job. After that, remaining work always reschedules forward, which is the correct behavior: you cannot re-plan the past, and work already underway has a real start that everything downstream flows from.
+
+The practical consequence for an integration is that your window to change your mind is narrow. A job imported on Monday and started on Tuesday is settled by Tuesday afternoon. Multiply that across a nightly feed and a fortnight of "we will decide the direction policy later" produces several hundred jobs that cannot be changed.
+
+## Changing the default does not retrofit anything
+
+The other half of the same trap. Switch the site default from forward to backward and nothing that already exists moves. Orders created before the change keep the direction they were stamped with, and the documented fix is to change direction per order or recreate the order.
+
+So a shop that flips the default mid-year ends up with two populations:
+
+- Jobs imported before the change, scheduling forward
+- Jobs imported after it, scheduling backward
+
+Both are working correctly. Neither carries a note explaining the difference. Six months later somebody asks why two similar jobs behave differently and there is no answer in the data, only in whoever remembers the date of the change. Write that date down beside the mask documentation, in the same place you keep the export filter, so the split has a written cause.
+
+## The decision to make before your first import
+
+Four questions, answered once, ideally in the first week:
+
+1. **Does finishing early help us or cost us?** If early finishes build inventory you cannot ship, that is the argument for backward.
+2. **Can our export supply a due date on every row?** If not, backward is not available yet, regardless of preference.
+3. **Do we want to be interrupted when a backward job cannot fit?** If missing a promise is a serious event, take the popup.
+4. **Which jobs are the exception?** Whichever default you choose, name the minority that gets overridden by hand, so the exceptions are a rule rather than a habit.
+
+Answer those before the first bulk import and the direction question never comes back. Answer them in month three and you are unpicking several hundred stamped jobs, most of which have actuals and cannot be changed at all. The mechanics of the backward mode itself, including how lead time is treated, are in [EDGEBIC backward scheduling explained](/blog/edgebic-backward-scheduling-explained).
+
+## The takeaway
+
+Scheduling direction cannot travel in an ERP export, because the sales order mask has no column for it. It comes from a site-wide default that stamps every newly created job, so an import inherits policy rather than choosing it. Switching that default to backward makes the due date mandatory on every imported row, leaves existing orders untouched, and means a batch that cannot fit will quietly fall back to forward unless you ask to be shown. And direction locks the moment actuals arrive, so the decision has a short window. Settle it before the first order file. See the engine on the [EDGEBIC product overview](/edgebic), the shared import layer on the [ERP integration architecture](/edgebic-erp-integration), and bring one week of orders with their dates to [a working session](/contact-us) to test whether backward is actually available to you.
+
+<Accordion title="Can my ERP export tell EDGEBIC whether a job is forward or backward scheduled?">
+No. The sales order import mask carries the product, quantity, job date, and optional order reference, job number, customer, due date, order date, priority, unit price, and notes. Scheduling direction is not among them, so a push or pull intent held in your ERP cannot travel in the file. Every newly created job is stamped with the site-wide default from the schedule settings, which means the decision is a policy you set once rather than a column you map.
+</Accordion>
+
+<Accordion title="What happens if my site default is Backward and the import file has no due date?">
+The rows will not save. A backward job has to know the date it finishes by, and saving fails with the message that a due date is required when the scheduling direction is backward. So flipping the site default to backward silently promotes the due date column from optional to mandatory on every order you import. If your export cannot reliably supply one, either keep the default forward or fix the export before you change the setting.
+</Accordion>
+
+<Accordion title="Can I change the direction later if we get it wrong?">
+Per order, yes, and only until actuals arrive. Direction is stamped at creation and can be overridden on an individual order, but it locks once actuals are logged against the job, after which remaining work always reschedules forward. Changing the site default does not retrofit anything either: existing orders keep the direction they were created with, so a bulk of imported jobs stays on the old policy until each one is changed or recreated.
+</Accordion>

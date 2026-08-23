@@ -1,0 +1,111 @@
+---
+title: "Drag-and-Drop Rescheduling in EDGEBIC: Modes, Rules, and Ripples"
+description: "Drag and drop production rescheduling in EDGEBIC: three drag modes, staged saves, downstream flags, and a targeted re-plan that spares the rest of the plant."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Visual Scheduling
+author: user-solutions
+cluster: edgebic-visual-scheduling
+pillarSlug: edgebic-visual-scheduling-guide
+keywords:
+  - drag and drop production rescheduling
+  - gantt drag and drop scheduling
+  - manual schedule override
+  - drag update modes
+  - staged schedule changes
+  - targeted reschedule
+targetPhrase: "drag and drop production rescheduling"
+wordCount: 2000
+readingTime: 10
+faqQuestions:
+  - question: "What happens when you drag a bar on the EDGEBIC Gantt?"
+    answer: "The bar moves on screen and enters the Overridden state, but nothing is written to the database. Every drag stages in memory as a pending change, counted on the toolbar, until you press Save Changes to persist the whole set or Discard to snap every pending bar back. That staging is what makes it safe to experiment: you can move five operations, look at the result, and walk it all back."
+  - question: "What do the three drag modes in EDGEBIC record?"
+    answer: "The Drag writes selector decides what saving a drag records. Actual Start & End writes both real dates: this operation ran here. Actual Start writes only the start: it began here and is still running. Planned Start writes a durable planned pin with no actuals: I want this to run here in the future, and the next reschedule honors the pin on that date and work center. Rule of thumb: past work, running work, future work."
+  - question: "Does dragging an operation to another machine reserve capacity there?"
+    answer: "No. A saved drag records dates; it does not re-run capacity math or re-balance the plant. You may have knowingly overloaded a machine, and EDGEBIC permits that by design: it warns rather than blocks. When you want the engine to re-plan around your moves, press Re-Schedule, which runs the scheduler for just the jobs you touched and leaves everything else alone."
+  - question: "Can I undo just one of several pending drags?"
+    answer: "No. Discard reverts all pending changes at once; there is no per-bar undo inside the pending set. If you need to keep four moves and undo a fifth, save all five, then right-click the one you regret and use Clear Operation Actual Start and End Date/Times, which returns that operation to its engine-planned position. Plan your staging batches with that in mind."
+qaQuestions:
+  - question: "A machine was down Monday, so I dragged its milling operation to Tuesday and saved. Paint on that job now shows an amber flag. Did EDGEBIC change my paint dates?"
+    answer: "No. The amber Downstream Changed state is a visual review flag only: your mill now ends after paint's planned start, so paint may be out of sequence, but nothing about paint changed in the database. You have two honest exits: drag paint yourself, or press Re-Schedule and let the engine re-plan the job's remaining steps around the mill's new reality, for example shifting paint from Tuesday 13:00 to Wednesday 08:00. The flag clears on reload."
+  - question: "I dragged one bar and suddenly six bars show as pending. What happened?"
+    answer: "Auto re-sequencing is enabled. After a drag, EDGEBIC pushed the later operations on that same work center forward to close the overlap, in memory, and marked each pushed bar as pending so the whole set saves together. That is the feature working, but review the entire pending set before saving: one drag on a busy machine can stage many moves. If you do not want the behavior, turn off the auto re-sequencing option in the scheduler configuration."
+---
+
+**Drag-and-drop rescheduling in EDGEBIC by User Solutions runs on three rules: every drag stages in memory until you explicitly save, a mode selector decides whether the drag records history or plans the future, and the system warns you about questionable moves but never blocks them.** You are the planner; the software trusts your judgment and keeps you honest about the consequences.
+
+That combination (staged, mode-aware, override-and-warn) is what separates a production-grade drag-and-drop Gantt from a toy. The generic trade-offs of manual dragging are covered in [drag-and-drop scheduling pros and cons](/blog/drag-and-drop-scheduling-pros-cons); this post is the specific machinery EDGEBIC gives you to get the pros without the cons.
+
+## Rule 1: Nothing Is Saved Until You Say So
+
+Grab a bar on the Schedule View Gantt and drop it on a new time slot, or on a different work center's lane. The bar changes to the **Overridden** state, and the pending-changes count on the toolbar ticks up. At this moment the database knows nothing about your move. It exists only on your screen.
+
+Keep going: drag as many operations as the situation needs. All pending changes stage together. Then:
+
+- **Save Changes** writes the whole set to the database in one batch.
+- **Discard** snaps every pending bar back to where it was. No database write occurs.
+
+Two consequences of the staging model are worth burning in. First, pending changes exist only in memory: leave the screen or close the app without saving, and they are gone. Save or discard before you go. Second, there is **no per-bar undo inside the pending set**. Discard is all or nothing. If you need to undo one saved move while keeping others, save everything, then right-click the regretted bar and clear its actual dates, which returns it to the engine's planned position.
+
+For an exact placement instead of a freehand drag, right-click the bar and choose Move Operation to Date/Time, then type the timestamps.
+
+## Rule 2: The Mode Decides What a Drag Means
+
+The most important control on the screen is the **Drag writes:** selector on the toolbar. The same physical drag records three very different things depending on the mode:
+
+| Mode | What saving records | When to use it |
+|---|---|---|
+| **Actual Start & End** (default) | Both real dates: "this operation ran here" | Recording history; the work physically happened at this time |
+| **Actual Start** | Only the real start; the end stays open: "it began here and is still running" | The operation genuinely started but is not finished |
+| **Planned Start** | A durable planned pin, no actuals: "I want this to run here in the future" | Planning ahead for an operation that has not begun |
+
+The mode exists because a Gantt drag is ambiguous by nature: are you telling the system what happened, or what you want to happen? Systems that conflate the two corrupt their own history. With **Actual Start & End** selected, dragging a future operation tells EDGEBIC the work already happened there, which skews progress figures and reports. If you are planning, switch to **Planned Start** first.
+
+The planned pin is the quiet star of the three. It writes a durable planned start with no actuals, the bar shows the Planned Applied state, and on the next reschedule the engine pins the operation to that date and work center, exactly as an actual would. The pin then dissolves automatically the moment a real start is logged. You get forward planning without fake history: rule of thumb, **past = Actual Start & End, running = Actual Start, future = Planned Start**.
+
+## Rule 3: Override-and-Warn, Not Validate-and-Reject
+
+EDGEBIC's Gantt is deliberately built on an **override-and-warn** contract. You can drag a bar anywhere: earlier than its target start, onto a machine the engine did not choose, into a week that is already full. The system surfaces warnings (a status message when you move before the target start, a heads-up when multiple work center replacements are pending on one job, the [prior-operations safety prompt](/blog/edgebic-gantt-safety-prompts-prior-operations) when earlier steps have no actuals), but it does not stop you.
+
+Why? Because the planner knows things the model does not: the customer on the phone, the operator who came in early, the fixture that just cracked. A scheduler that blocks the human becomes a scheduler the human abandons. What EDGEBIC does instead is keep the consequences visible, which brings us to the ripples.
+
+One honest limit to internalize: **saving a drag does not re-check or re-balance capacity.** You may have knowingly overloaded a machine; that is your call under the contract. The capacity math runs when you ask for it, at reschedule time, which is the difference between a drawing tool and a [finite capacity scheduler](/blog/finite-vs-infinite-capacity-scheduling) that also respects your authority.
+
+## The Ripples: Downstream Flags and Auto Re-Sequencing
+
+Move one operation and the plan around it may no longer be internally consistent. EDGEBIC handles the ripple two ways, one passive and one active.
+
+**The downstream cascade (passive).** After you save a change, every later operation in the same job that starts after your saved bar's new end turns to the **Downstream Changed** state. It is a pure review flag: nothing about those operations changed in the database. Treat the amber bars as a to-do list. Either drag them too, or let the engine tidy up (next section). This mirrors standard APS practice: a manual override is followed by a targeted re-plan, never left dangling.
+
+**Auto re-sequencing (active, optional).** With Auto Job Re-Sequencing enabled in the scheduler configuration, a drag also pushes the later operations on the same work center forward, in memory, to resolve the overlap you just created (optionally packing out gaps too). Every pushed bar joins the pending set and saves together with your drag. Powerful, but review the whole pending set before saving: one drag on a busy resource can stage many moves.
+
+## Closing the Loop: the Targeted Re-Schedule
+
+Here is where the drag-and-drop story connects back to the scheduling engine. EDGEBIC remembers which jobs you have saved manual changes on. The **Re-Schedule** button runs the engine for **just those jobs**, leaving the rest of the plant untouched.
+
+The worked sequence from a real Monday:
+
+1. JOB-2026-0101's mill operation was planned Monday 08:00 to Tuesday 12:00, but the machine was down Monday. You drag the bar to start Tuesday 08:00 (mode: Actual Start & End) and press Save Changes.
+2. The mill bar turns Applied at its Tuesday position. The paint operation behind it (planned Tuesday 13:00) turns Downstream Changed, because it now collides with the mill's new end. Nothing else in the plant moved.
+3. You press Re-Schedule. The engine re-plans only this job's remaining steps around your move: paint shifts to Wednesday 08:00 to 12:00. The flag clears on reload.
+
+Manual judgment where it belongs, engine arithmetic where it belongs, and a blast radius of exactly one job. Completed operations are never moved by the re-plan; work that already happened is preserved as-is. For the full end-to-end version of this scenario, including logging the breakdown itself, see the [machine breakdown reschedule walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic).
+
+## The Fine Print That Saves You Later
+
+**Moving to another machine is a first-class drag.** Drop a bar on a different work center's lane and the save records the replacement; the bar shows the Resource Replaced state so the substitution stays visible. A planned-start pin even locks the work center choice through the next reschedule.
+
+**Some jobs lock their machine on purpose.** Capacity-request jobs can be configured so a cross-lane drag accepts the time shift but reverts the machine change, with a status message telling you so. If a bar moves in time but snaps back to its lane, that is the configuration, not a bug.
+
+**ERP-fed actuals outrank your drags.** A bar in the ERP Actuals state carries dates from an external feed, and the Gantt will not override them. Correct the feed, not the picture.
+
+**Every save is audited.** Each save writes a change-history event; right-click any bar and View Audit Trail shows every reschedule, drag, and completion event for the job. Manual overrides are visible, attributable, and reviewable.
+
+**Reading the states is half the skill.** Overridden, Applied, Resource Replaced, Downstream Changed, Planned Applied: if the vocabulary is fuzzy, the [planned-versus-actual reading guide](/blog/reading-the-edgebic-gantt-planned-vs-actual) and the [colors and labels post](/blog/gantt-colors-and-labels-in-edgebic) make it automatic.
+
+## Judgment, Instrumented
+
+The case for drag-and-drop rescheduling was never "humans beat algorithms." It is that plans meet reality daily, and the person closest to reality needs a fast, safe way to act on it. EDGEBIC instruments that judgment: staged changes you can walk back, modes that keep history honest, warnings that inform without obstructing, flags that show the ripple, and a targeted re-plan that cleans up after you. User Solutions has been building scheduling tools on that philosophy since 1991, for shops from ten people to the US Navy, GE, BAE Systems, and Cummins.
+
+[See the full EDGEBIC platform](/edgebic), start with the [visual scheduling pillar guide](/blog/edgebic-visual-scheduling-guide), or bring last week's worst schedule surprise to a demo and drag your way out of it with US.

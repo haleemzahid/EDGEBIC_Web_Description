@@ -1,0 +1,110 @@
+---
+title: "Keeping Your ERP and EDGEBIC in Sync: The Weekly Import Routine"
+description: "A weekly ERP scheduling import routine with EDGEBIC: the import order, what to refresh each cycle, why re-imports are safe, and the twenty-minute Monday rhythm."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - weekly ERP scheduling import routine
+  - keep ERP and scheduler in sync
+  - EDGEBIC import routine
+  - production schedule refresh
+  - reusable import mask
+  - idempotent import
+targetPhrase: "weekly ERP scheduling import routine"
+wordCount: 1735
+readingTime: 9
+faqQuestions:
+  - question: "How often should we re-import ERP data into EDGEBIC?"
+    answer: "Most shops run a weekly master-data and work-order refresh plus a daily labor import if they track actuals. Master data (products, work centers, routings) changes slowly, so a weekly refresh is usually enough; open work orders change constantly, so those are refreshed every planning cycle. The routine is export, run the saved masks, run the scheduler, publish the dispatch lists, and it takes about twenty minutes."
+  - question: "Is it safe to import the same ERP data every week?"
+    answer: "Yes, on every entity type. Master data that already matches comes back Reused and untouched rather than being rewritten. Routing imports wipe and recreate a product's steps rather than appending, so steps never accumulate. Labor always overwrites the days a file carries, so a re-run fixes numbers rather than doubling them. Re-importing is the normal weekly act, not a risk to manage."
+  - question: "Does a weekly re-import disturb jobs already in progress?"
+    answer: "No. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing refresh applies to future jobs and leaves work in progress alone. And recorded work is never moved by any run: an operation with an actual start and end is historical fact. A weekly refresh updates the plan ahead of the floor without rewriting what the floor already did."
+qaQuestions:
+  - question: "Our master data barely changes but our work orders churn daily. Do we really re-import everything every week, or can we refresh only what moved?"
+    answer: "You refresh at the cadence each entity actually changes, which is the whole point of separate masks. Products, work centers, and routings change slowly, so a weekly or even monthly refresh of those is plenty, and because matching records come back Reused, re-running them costs a couple of minutes and changes nothing. Open work orders are the volatile set, so those get a fresh export every planning cycle, daily if that is your rhythm. Labor, if you track it, is daily. The saved masks make each of these two clicks, so the routine is not re-importing everything, it is re-importing the volatile files often and the stable files occasionally. A sensible default is work orders daily, master data Monday, labor daily."
+  - question: "Someone changed a routing in the ERP mid-week. How do we get that into the schedule without breaking the jobs already running on the old routing?"
+    answer: "You export that product's routing, re-import it, and reschedule, and the jobs already running are protected automatically. A routing import wipes and recreates that one product's steps, so the new routing replaces the old cleanly, and the next schedule uses it for any not-yet-started job. The jobs already in progress keep going on the routing they were planned with, because each scheduled job carries a frozen snapshot of its routing at schedule time. So the mid-week change flows to future work without touching the floor's current work. The one discipline is to keep all of that product's steps in the one file you re-import, since the wipe is per product."
+---
+
+**Keeping an ERP and EDGEBIC in sync is a short, repeatable routine rather than a live connection: export the files, run the saved import masks in dependency order, run the scheduler, publish the dispatch lists, and repeat on the cadence each kind of data actually changes.** Master data is refreshed weekly, open work orders every planning cycle, and labor daily if you track it. The whole cycle takes about twenty minutes because the masks are built once and every later run is two clicks.
+
+EDGEBIC by User Solutions integrates through reusable import masks rather than an API, so "in sync" means a disciplined refresh you control, not a background process you hope is working. The [ERP integration architecture](/edgebic-erp-integration) is the same for every platform, and the engine the routine feeds is on the [EDGEBIC product overview](/edgebic). This post is the operating rhythm. The field-level detail is in [which ERP fields EDGEBIC needs to schedule](/blog/which-erp-fields-edgebic-needs-to-schedule), and the outbound half is in [exporting the EDGEBIC schedule back to your ERP](/blog/exporting-the-edgebic-schedule-back-to-your-erp).
+
+## The import order never changes
+
+Later files reference records that earlier files created, so the order is fixed. Load it wrong and the auto-create behavior invents thin placeholder records that you then have to reconcile.
+
+| # | File | Refresh cadence | Depends on |
+|---|---|---|---|
+| 1 | Products | Weekly or slower | Nothing |
+| 2 | Work centers | Weekly or slower | Nothing |
+| 3 | Routings | When they change | Products and work centers |
+| 4 | Open work orders | Every planning cycle | Products |
+| 5 | Labor (optional) | Daily | Scheduled jobs |
+
+The calendar of shifts and holidays sits outside this order because it does not come from the ERP; you write it once and adjust it only when the plant's hours change. It is the foundation every scheduled date is computed against.
+
+## Refresh at the cadence each thing changes
+
+The reason for separate masks is that different data changes at different speeds, and re-running a mask that matches costs almost nothing.
+
+- **Products, work centers, routings.** These change slowly. A weekly refresh is generous, and many shops go monthly on products. Because matching records come back Reused (matched and deliberately left untouched), re-running these files changes nothing and takes a couple of minutes.
+- **Open work orders.** This is the volatile set. New orders arrive, quantities change, dates move. Refresh these every planning cycle, which for most shops means daily or every few days.
+- **Labor.** If you track actuals, refresh daily, because the value of actuals is that they are current.
+
+A sensible default is work orders daily, master data on Monday, labor daily. The routine is not re-importing everything constantly; it is re-importing the volatile files often and the stable files occasionally.
+
+## Why re-importing is always safe
+
+The habit that makes a weekly routine trustworthy is that a re-import can never do damage, on any entity type. This is by design.
+
+- **Master data is idempotent.** A record that already matches comes back Reused rather than being rewritten, so a weekly product file of 3,000 rows reporting Created 9, Reused 2,991 is the desired result, not a problem.
+- **Routings wipe and recreate.** A routing import replaces one product's steps rather than appending to them, so steps never accumulate and a corrected routing cleanly replaces the old one.
+- **Labor overwrites the days it carries.** Re-running a corrected labor extract fixes the numbers rather than doubling them, and days a file does not mention are preserved.
+
+Because of this, the weekly refresh is a normal act, not a risk to manage. The per-run log records every row if you ever want to audit a cycle.
+
+## Running jobs are protected
+
+A refresh updates the plan ahead of the floor without rewriting what the floor already did, for two independent reasons that hold on every run.
+
+First, every scheduled job carries a frozen snapshot of the routing it was planned with. A mid-week routing change in the ERP flows to future jobs when you re-import and reschedule, and the jobs already in progress keep running on the routing they were planned with. Second, recorded work is never moved: an operation with an actual start and an actual end is historical fact, and no reschedule, mode, or setting will shift it. Between them, the weekly routine can be aggressive about the future and completely safe about the present. The run scope itself is controlled by the [scheduling modes](/blog/edgebic-scheduling-modes-explained).
+
+## The twenty-minute Monday
+
+Put together, a normal weekly cycle looks like this:
+
+1. **Export** the work order list, and the master-data files if it is their refresh day, into a known folder.
+2. **Import** in order: products, work centers, routings, work orders. Pick each saved mask, press Do It, read the counts. A cycle where nothing structural changed reports mostly Reused.
+3. **Schedule.** Run the scheduler, which states its scope in plain numbers before it plans: how many jobs are new, how many are being rescheduled.
+4. **Review.** Look at the work centers that are over capacity and decide what to do about them. This is the part that actually uses a planner's judgment, and it is the point of the whole routine.
+5. **Publish.** Export the dispatch lists for the floor and the narrow slice of changed promise dates for the ERP.
+
+The reading and deciding are the real work. The moving of data is deliberately boring, which is what lets it be reliable.
+
+## Automate the export, keep the import human
+
+The export side automates well: a scheduled extract that lands a file in a known folder with a stable name removes the only step that ever gets forgotten. The import side stays a deliberate act, because the result dialog exists to be read. A cycle that reports 40 unexpected Failed rows is information a person needs to see before the schedule is built on top of it. Most shops settle on automated exports plus a two-minute human import, which is the right split of effort and judgment.
+
+This discipline is identical whatever the ERP, which is the advantage of a universal file layer: the reasoning is in [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way), and platform-specific versions of the routine appear in guides like [Epicor](/blog/edgebic-epicor-integration-guide) and [JobBOSS](/blog/edgebic-jobboss-integration-guide).
+
+## Build the routine with your own files
+
+The fastest way to lock in a weekly rhythm is to build the masks once with your own exports. Bring a product list, a routing, and this week's open work orders to a [demo](/contact-us): you will build the masks live, run the first schedule, and leave with the saved recipes that make every future Monday a twenty-minute job. The [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the from-empty version.
+
+<Accordion title="How often should we re-import ERP data into EDGEBIC?">
+Most shops run a weekly master-data and work-order refresh plus a daily labor import if they track actuals. Master data (products, work centers, routings) changes slowly, so a weekly refresh is usually enough; open work orders change constantly, so those are refreshed every planning cycle. The routine is export, run the saved masks, run the scheduler, publish the dispatch lists, and it takes about twenty minutes.
+</Accordion>
+
+<Accordion title="Is it safe to import the same ERP data every week?">
+Yes, on every entity type. Master data that already matches comes back Reused and untouched rather than being rewritten. Routing imports wipe and recreate a product's steps rather than appending, so steps never accumulate. Labor always overwrites the days a file carries, so a re-run fixes numbers rather than doubling them. Re-importing is the normal weekly act, not a risk to manage.
+</Accordion>
+
+<Accordion title="Does a weekly re-import disturb jobs already in progress?">
+No. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing refresh applies to future jobs and leaves work in progress alone. And recorded work is never moved by any run: an operation with an actual start and end is historical fact. A weekly refresh updates the plan ahead of the floor without rewriting what the floor already did.
+</Accordion>

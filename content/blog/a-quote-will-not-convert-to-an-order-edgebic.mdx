@@ -1,0 +1,104 @@
+---
+title: "A Quote Will Not Convert to an Order: Causes and Fixes"
+description: "Conversion runs three guards before it creates a job: an already-converted status, an existing linked job, and a job number collision. How to tell which one stopped you."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - quote will not convert
+  - convert quote to manufacturing order fails
+  - duplicate conversion guard
+  - quote already converted
+  - job number collision
+  - quote to job blocked
+targetPhrase: "a quote will not convert to an order"
+wordCount: 1240
+readingTime: 6
+faqQuestions:
+  - question: "Why will a quote not convert into a manufacturing order?"
+    answer: "Conversion runs three guards before it creates anything: it rejects a quote whose status is already Converted, it rejects a quote that already has a job linked to it, and it rejects a job number that collides with an existing job. The second guard is the authoritative one, because it checks for a real linked job rather than trusting the status field. Any of the three stops the conversion cleanly without creating a partial job."
+  - question: "The status says Draft but conversion is still refused. How is that possible?"
+    answer: "Because status and reality are checked separately. Quote status has no enforced sequence, so a planner can move a quote between Draft, Submitted, Approved, and the rest freely, and someone can set it back to Draft after a conversion already happened. The guard that looks for an existing job linked to the quote is the one that cannot be talked out of it. If it fires, a job already exists and the answer is to open that job, not to convert again."
+  - question: "Does converting a quote preserve the direction it was simulated in?"
+    answer: "Yes. The new job carries the quote's scheduling direction along with its costs, markup, unit price, customer, and sales order link, so a quote simulated backward from a finish-by date converts to a backward job. That matters because it is what lets the real scheduling run reproduce the plan the customer was quoted, instead of quietly rebuilding it forward from today and producing a different date."
+qaQuestions:
+  - question: "We quoted the same part twice for two customers using our own reference number in the quote number. The second one refuses to convert. What is happening?"
+    answer: "The job number is derived from the quote number, so two quotes carrying the same reference produce the same job number and the second conversion hits the collision guard. Nothing is broken and nothing partial was created. Give the second quote its own unique quote number, or clear the collision on the existing job, and convert again. Unique quote numbers are worth enforcing for exactly this reason, because the collision only shows up at the last step."
+  - question: "A quote shows Converted but nobody can find the job. Do we force it through?"
+    answer: "Do not force it. Search for a job linked to that quote first, because the link is carried on the job along with the customer and sales order, and a job that exists under an unexpected number will still be found that way. If there genuinely is no linked job, the status was set by hand rather than by a conversion, and moving the status off Converted lets the real conversion run. Confirm the search before changing the status, since the point of the guard is to prevent a duplicate job."
+---
+
+**Conversion refuses a quote for one of three documented reasons: the quote is already marked as converted, a job is already linked to it, or the job number it would create collides with a job that exists.** [EDGEBIC by User Solutions](/edgebic) checks all three before it writes anything, so a refused conversion never leaves a half-built job behind. The useful part of the diagnosis is knowing which guard fired, because two of them mean the work already exists and one means a numbering conflict.
+
+This post is the detailed version of the blocked-conversion symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the normal path, [how to convert a quote into a manufacturing order](/blog/how-to-convert-a-quote-into-a-manufacturing-order-in-edgebic) walks the steps, and [the quote lifecycle from draft to converted](/blog/quote-lifecycle-draft-to-converted-in-edgebic) covers the statuses a quote moves through.
+
+## What You Are Seeing
+
+You open an approved quote, press the action that turns it into a job, and nothing appears in the job list. The conversion reports a rejection rather than an error, and the quote sits where it was.
+
+## Why It Happens
+
+### Cause 1: The Quote Status Is Already Converted
+
+The first guard rejects any quote whose status is already Converted. In the normal flow the status is set to Converted by a successful conversion, so this usually means the job was created earlier and someone is trying again.
+
+The complication is that quote status has no enforced sequence. A planner can move a quote between Draft, Submitted, Under Review, Approved, Rejected, Expired, and Converted freely, which means the status can be set by hand as easily as by an action. A quote can therefore read Converted without a job behind it.
+
+**How to tell:** the status field reads Converted, and the rejection appears immediately.
+
+### Cause 2: A Job Is Already Linked to the Quote
+
+The second guard is the authoritative one. Rather than trusting the status, it looks for a real job that carries a link back to this quote. If one exists, conversion is refused no matter what the status says.
+
+This is the guard that catches the case where someone set the status back to Draft after a conversion. It is also the one to believe, because it is checking for the thing that actually matters: a duplicate job.
+
+**How to tell:** the status looks convertible but the rejection still fires, and a search on the quote link finds a job.
+
+### Cause 3: The Job Number Collides With an Existing Job
+
+The new job's number is derived from the quote number. If a job with that number already exists, the third guard refuses rather than creating an ambiguous second job with the same identifier. Two quotes carrying the same customer reference in their quote numbers are the usual way this happens.
+
+**How to tell:** neither of the first two conditions applies, and a job with the number the conversion would have used already exists.
+
+## How to Fix It
+
+- **For an already-converted quote with a real job:** open the existing job instead of converting again. The duplicate guard exists to stop two jobs chasing one customer commitment, and re-converting is never the right answer.
+- **For a status set by hand with no job behind it:** search for a linked job first, using the quote link that every converted job carries. If nothing turns up, move the status off Converted and run the conversion normally.
+- **For a job number collision:** give the quote a unique quote number and convert again, or resolve the conflict on the existing job. Nothing partial was created, so a retry after renumbering is clean.
+- **For a repeat order rather than a re-conversion:** copy the quote and convert the copy, which is the intended path for quoting the same work twice. [How to copy a quote for a similar job](/blog/how-to-copy-a-quote-for-a-similar-job-in-edgebic) covers it.
+
+## What the Conversion Carries When It Does Run
+
+Once a conversion succeeds, the new job takes the quote's calculated and manually overridden costs, the markup percentage, the unit price, the customer, the sales order link, the quote link itself, and the scheduling direction. The direction matters most: a quote simulated backward from a finish-by date converts to a backward job, so the real scheduling run reproduces the plan behind the promise rather than rebuilding it forward from today.
+
+The quote link is also what makes quoted-versus-actual reporting work later, covered in [quote versus actual hours](/blog/quote-versus-actual-hours-in-edgebic).
+
+## How to Diagnose It, in Order
+
+1. **Read the status.** Converted explains the rejection immediately, though it does not tell you whether a job exists.
+2. **Search for a job linked to the quote.** This is the authoritative question and it settles cause one against cause two.
+3. **Check for a job carrying the number the conversion would have created,** which is derived from the quote number.
+4. **Decide between opening the existing job, clearing a hand-set status, or renumbering.** Only one of the three is ever right for a given case.
+5. **Convert again and confirm the job appears** with the customer, sales order, and costs carried across.
+
+## How to Prevent It
+
+- **Do not set Converted by hand.** The status is freely editable, so treat Converted as a value only the conversion action should write.
+- **Keep quote numbers unique,** because the job number is derived from them and the collision only surfaces at the last step.
+- **Re-simulate before converting** if the routing or capacity changed since the quote was priced, so the job starts from a plan that still matches reality. [Re-simulating a quote after a change](/blog/re-simulating-a-quote-after-a-change-in-edgebic) covers when that is worth doing, and [the quote promised date does not match the real schedule](/blog/the-quote-promised-date-does-not-match-the-real-schedule-edgebic) covers what happens when it is not.
+- **Convert once, from the quote that won.** Copy for repeats rather than converting the same quote twice, and the duplicate guard never has to save you.
+
+<Accordion title="Why will a quote not convert into a manufacturing order?">
+Conversion runs three guards before it creates anything: it rejects a quote whose status is already Converted, it rejects a quote that already has a job linked to it, and it rejects a job number that collides with an existing job. The second guard is the authoritative one, because it checks for a real linked job rather than trusting the status field. Any of the three stops the conversion cleanly without creating a partial job.
+</Accordion>
+
+<Accordion title="The status says Draft but conversion is still refused. How is that possible?">
+Because status and reality are checked separately. Quote status has no enforced sequence, so a planner can move a quote between Draft, Submitted, Approved, and the rest freely, and someone can set it back to Draft after a conversion already happened. The guard that looks for an existing job linked to the quote is the one that cannot be talked out of it. If it fires, a job already exists and the answer is to open that job, not to convert again.
+</Accordion>
+
+<Accordion title="Does converting a quote preserve the direction it was simulated in?">
+Yes. The new job carries the quote's scheduling direction along with its costs, markup, unit price, customer, and sales order link, so a quote simulated backward from a finish-by date converts to a backward job. That matters because it is what lets the real scheduling run reproduce the plan the customer was quoted, instead of quietly rebuilding it forward from today and producing a different date.
+</Accordion>

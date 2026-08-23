@@ -1,0 +1,148 @@
+---
+title: "EDGEBIC + SYSPRO: The Complete Scheduling Integration Guide"
+description: "SYSPRO production scheduling integration with EDGEBIC: export stock codes, work centers, BOMs and WIP jobs to a file, map columns once, schedule at finite capacity."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - SYSPRO production scheduling integration
+  - SYSPRO finite capacity scheduling
+  - SYSPRO scheduling add-on
+  - EDGEBIC SYSPRO integration
+  - SYSPRO WIP job scheduling
+  - discrete manufacturing scheduling integration
+targetPhrase: "SYSPRO production scheduling integration"
+wordCount: 2030
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC connect to SYSPRO through a native connector or e.net service?"
+    answer: "No. EDGEBIC integrates with SYSPRO through reusable import masks fed by the Excel, CSV, or database exports SYSPRO already produces. There is no e.net service to build against, no add-on installed inside SYSPRO, and no API sync to version-match. You map an export's columns onto EDGEBIC fields once, and every later run is two clicks with a per-run log recording each row."
+  - question: "What SYSPRO data does EDGEBIC need to build a schedule?"
+    answer: "Four exports carry a complete scheduling model: stock codes, work centers with capacity detail, bills of material with routing operations, and open WIP jobs with quantities and dates. A fifth optional export carries labor hours from the floor. Each file goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed."
+  - question: "Do imported SYSPRO jobs schedule themselves on import?"
+    answer: "No, and the separation is deliberate. An import changes data; the scheduler changes the plan. Imported jobs appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor."
+qaQuestions:
+  - question: "We run several SYSPRO sites with different calendars. Can EDGEBIC schedule per site without a separate install for each?"
+    answer: "Yes. Each site's work centers carry their own shift and holiday assignment, so a single scheduling database can hold work centers from more than one site, each computed against its own calendar. In practice you filter your SYSPRO exports to one site at a time, or add a site column you can filter within EDGEBIC, and you assign each site's work centers to the shift patterns that match its hours. Transport time between sites rides on the routing as transit days, so a step that ships from one plant to another carries the calendar delay explicitly. The result is one schedule that respects each site's real working hours rather than an average."
+  - question: "Our WIP jobs already have SYSPRO job numbers our floor recognizes. Do those survive into the schedule?"
+    answer: "Yes, and you should carry them across on day one. The job import has a field for your existing job number, so the SYSPRO number rides straight through onto the Gantt, the dispatch lists, and every exported report. When your export also carries a sales order reference, jobs that share it group under one order and auto-number as the reference plus a line number, which keeps a multi-line order together while still showing the original job number your operators already know. Nothing about your job numbering has to change to schedule against finite capacity."
+---
+
+**Integrating SYSPRO with EDGEBIC means exporting the stock codes, work centers, bills of material, and open WIP jobs SYSPRO already holds to Excel, CSV, or a database view, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no e.net service to build against, no add-on to install inside SYSPRO, and no API sync to maintain when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the SYSPRO case: what to export, how the masks work, what the engine does with the result, and what a realistic first week looks like.
+
+## Why a mid-market ERP still needs a finite capacity scheduler
+
+SYSPRO handles the business well: orders, inventory, purchasing, financials, and the WIP and BOM records that hang off them. What most SYSPRO manufacturers report is that the daily sequencing decision still lands in a spreadsheet, because the questions a planner asks each morning are finite capacity questions:
+
+- Which of these open WIP jobs actually fit on the two machining cells this week?
+- If this rush job jumps the queue, whose promise date moves and by how much?
+- Is the paint line loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open job at once. It is a different computation from recording transactions, which is why a dedicated finite capacity layer beside the ERP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling); the wider category view is on the [EDGEBIC ERP integration hub](/edgebic-erp-integration).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, SYSPRO included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| SYSPRO to EDGEBIC | Stock codes | Excel or CSV export to Product import mask |
+| SYSPRO to EDGEBIC | Work centers | Export to Workcenter import mask |
+| SYSPRO to EDGEBIC | BOM / routing operations | Export to BOR (bill of routing) import mask, two-pass |
+| SYSPRO to EDGEBIC | Open WIP jobs | Export to SalesOrder import mask |
+| SYSPRO to EDGEBIC | Labor hours (optional) | Export to Actuals import mask |
+| EDGEBIC to SYSPRO | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row is headings, whether text values are quoted, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks.
+
+Every row produces exactly one outcome: **Created**, **Updated**, **Reused** (matched and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row individually.
+
+## The file is the interface, and that is the advantage
+
+A native service integration is a dependency: it has a version, a credential, and a failure mode that follows the vendor's release schedule rather than yours. A file or a database view has a much smaller failure surface. The only thing that can break is a column heading, and the fix is re-mapping one row in a mask.
+
+Three practical consequences follow for a SYSPRO site:
+
+- **Nothing is installed in SYSPRO.** No add-on, no e.net service you have to support through an upgrade, no schema change.
+- **No integration credential exists.** The scheduler never authenticates against SYSPRO, so there is no permission surface to review or rotate.
+- **Scheduling keeps working offline.** The plan is computed locally, so a database or network problem stops the export, not the shop's dispatch list.
+
+## Step 1: the four exports
+
+Four exports carry a complete scheduling model. SYSPRO produces these as report writer or query output to Excel or CSV; the exact column headings depend on your version and configuration, which is fine, because you map headings to fields once.
+
+1. **Stock codes.** The stock code, description, unit of measure, and any cost or lead-time columns worth having visible. The code is the natural key, matched case-insensitively, so `BRK-200` in a file finds `brk-200` in the database.
+2. **Work centers.** Identifier, how many identical machines the center really holds, default setup hours, efficiency, and an hourly rate for cost rollups. Bottleneck and shift-assignment flags ride in the same file.
+3. **BOM and routing operations.** One row per operation: end product, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open WIP jobs.** Product, quantity, order reference, and dates.
+
+Any SYSPRO list or report that saves to Excel or CSV is a valid source. A database view against the SYSPRO tables works equally well, since a mask can read a database source directly.
+
+## Step 2: map the columns once
+
+Build one mask per file and name it after the routine rather than the file: `Weekly SYSPRO WIP Jobs` outlives `jobs-week31.xlsx`. Mandatory fields are flagged, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row.
+
+Two mask features carry most of the weight:
+
+**Unit conversion.** Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`, seconds to hours `0.000278`, and a standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in the same file can carry different factors.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value rather than wiping it, so a partial refresh file is safe. Watch the matching rule: a zero is a value, not a blank. Leave a column out of the export rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move between systems, because operations reference each other: step 10 feeds step 20 feeds step 30. A row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product, so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Conventions that pay off immediately:
+
+- **Number sequences in gaps of 10** so a later insert becomes 25 and nothing renumbers.
+- **Keep all of one product's steps in one file.** A routing import wipes and recreates that product's steps once per run, which is what makes re-imports idempotent; splitting one product across two runs means the second run's wipe deletes the first.
+- **Re-importing is safe for running jobs.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: WIP jobs in, then run the scheduler
+
+The order import maps product, quantity, reference, and dates. When your export carries a sales order reference, rows sharing that reference group under one order and their jobs auto-number as `{Ref}-{line}`, keeping a multi-line order together while still carrying your original SYSPRO job number.
+
+**Imports never schedule anything.** Imported jobs sit as unscheduled demand until you run the scheduler, which states its scope in plain numbers before it plans. Data movement and planning stay separate on purpose. The choices are covered in [EDGEBIC scheduling modes explained](/blog/edgebic-scheduling-modes-explained).
+
+Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, the work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved. Revised dates then go back into SYSPRO through the WIP job date-maintenance path your process already uses. There is no automated write-back, which keeps your ERP data under your team's control.
+
+## A realistic first week
+
+The method has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. A mid-size SYSPRO manufacturer usually follows the same shape.
+
+| Day | Work |
+|---|---|
+| 1 | Export stock codes and work centers; build and run those two masks; verify counts |
+| 2 | Export BOMs and operations; build the routing mask with unit conversions; review the routing designer |
+| 3 | Export open WIP jobs; import; run the first full finite capacity schedule |
+| 4 | Compare EDGEBIC dates to current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 5 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+The [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the from-empty sequence, and the [SYSPRO to EDGEBIC data mapping reference](/blog/syspro-to-edgebic-data-mapping-reference) is the field-level lookup to keep open while building masks.
+
+## Test it with your own export
+
+Export this week's open WIP jobs and a BOM/operations file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity. If you are evaluating more than one ERP, the [MIE Trak Pro](/blog/edgebic-mie-trak-pro-integration-guide) and [Acumatica](/blog/edgebic-acumatica-integration-guide) versions of this guide follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to SYSPRO through a native connector or e.net service?">
+No. EDGEBIC integrates with SYSPRO through reusable import masks fed by the Excel, CSV, or database exports SYSPRO already produces. There is no e.net service to build against, no add-on installed inside SYSPRO, and no API sync to version-match. You map an export's columns onto EDGEBIC fields once, and every later run is two clicks with a per-run log recording each row.
+</Accordion>
+
+<Accordion title="What SYSPRO data does EDGEBIC need to build a schedule?">
+Four exports carry a complete scheduling model: stock codes, work centers with capacity detail, bills of material with routing operations, and open WIP jobs with quantities and dates. A fifth optional export carries labor hours from the floor. Each file goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="Do imported SYSPRO jobs schedule themselves on import?">
+No, and the separation is deliberate. An import changes data; the scheduler changes the plan. Imported jobs appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor.
+</Accordion>

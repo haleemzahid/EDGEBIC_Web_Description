@@ -1,0 +1,101 @@
+---
+title: "My Imported Routing Came In Out of Order: Fixing the Step Links"
+description: "An imported routing whose steps are misordered or disconnected traces to the sequence fields. How the two-pass import wires steps, why it broke, and how to fix each case."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - imported routing out of order
+  - bor import sequence wrong
+  - routing steps not linked import
+  - next step wiring import mask
+  - two-pass routing import
+  - routing import troubleshooting
+targetPhrase: "imported routing out of order"
+wordCount: 1380
+readingTime: 7
+faqQuestions:
+  - question: "Why did my imported routing come in with the steps out of order?"
+    answer: "Because the import wires the step-to-step links from the sequence data in the file, and something in that data was incomplete. The two most common causes are a sequence-number column that was blank or not sorted with auto-linking turned off, and a next-step column that was mapped but pointed at the wrong step names. When the sequence numbers are filled in ascending order and auto-linking is on, the import links each step to the next automatically."
+  - question: "How does routing import decide the order of steps?"
+    answer: "Routing import runs in two passes because the link from one step to the next can only be set after every step has been saved and has an identity. In the first pass it buffers all the rows and creates the machines and products they reference. In the second pass it groups the steps by end product, sorts them by their sequence number, inserts them in that order, and then wires each step to its successor, either from an explicit next-step column or automatically from the sequence order."
+  - question: "Why is my imported routing disconnected from the end product in the designer?"
+    answer: "Because the last step never got a link pointing at the end product. When auto-linking is on and the final step has no explicit next-step value, the import emits a token that connects the terminal step to the end product so the designer draws the routing as a complete chain. If that token is missing, usually because auto-linking was off and the last next-step cell was blank, the routing renders detached from the end-product node even though the steps themselves are fine."
+qaQuestions:
+  - question: "We split one product's routing across two files and imported them in two runs. The second import wiped the first file's steps. Is that a bug?"
+    answer: "No, it is the re-import contract working as designed, and it is worth understanding so you avoid it. A re-import always wipes an end product's existing steps on first reference within a run and recreates them from the file, so steps never accumulate or duplicate across re-imports. The consequence is that a second run for the same end product deletes what the first run created before inserting its own. The fix is simple: put all steps for each end product in one file and import them in a single run."
+  - question: "Our next-step column is mapped but the links still come out wrong. What should we check?"
+    answer: "Check that the values in the next-step column exactly match the step names or identifiers the import expects, because the wiring maps those cell values onto the freshly inserted steps. A typo, a trailing space, or a reference to a step name that does not appear in the same end product's rows leaves that link unresolved. If the sequence-number column is reliable and ascending, the simplest fix is often to leave the next-step column blank and turn on auto-linking, which links each step to the next by sequence order without any name matching."
+---
+
+**An imported routing that comes in misordered or disconnected is a sequence-data problem, not a scheduling problem: the import wires step-to-step links from the file, and an incomplete sequence column or a mis-mapped next-step column leaves the chain wrong.** The fix is in the file and the mask, and the two-pass import behaves predictably enough that the cause is usually one of four things.
+
+[EDGEBIC by User Solutions](/edgebic) imports routings in two passes precisely because a step's link to its successor cannot be set until every step exists and has an identity. This post sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and is the companion to [how EDGEBIC imports routings in two passes](/blog/how-edgebic-imports-routings-in-two-passes) and [building an import mask](/blog/how-to-build-an-import-mask-in-edgebic).
+
+## How the Wiring Actually Happens
+
+The import reads routing rows and, in a second pass, groups them by end product, sorts each group by its sequence number, inserts the steps in that order, and then sets each step's link to its successor. That successor link comes from one of two places:
+
+- An explicit **next-step** column, whose cell value is matched onto the freshly inserted steps.
+- **Automatic linking**, when the next-step column is blank and auto-linking is on: each step is linked to the next one by sequence order.
+
+Understanding those two paths is the whole diagnosis, because a misordered or disconnected routing is always one of them not doing what you assumed.
+
+## Cause 1: Sequence Numbers Are Blank or Unsorted, With Auto-Linking On
+
+Auto-linking depends entirely on the sequence-number column to decide what "the next step" is. If that column is blank, or the numbers are not ascending in routing order, the automatic chain wires steps in whatever order the numbers imply, which is not the order you meant.
+
+**How to tell:** open the routing after import. If the steps run in a strange order that matches a strange numbering in the file, the sequence column is the cause.
+
+**Fix:** fill the sequence-number column in ascending order matching the real routing (10, 20, 30, and so on), map it in the mask, and leave the next-step column blank so auto-linking uses it. Re-import; because a re-import wipes and recreates the steps, the corrected file replaces the bad chain cleanly.
+
+## Cause 2: The Next-Step Column Is Mapped but Points at the Wrong Steps
+
+If you mapped an explicit next-step column, the import matches its cell values onto the inserted steps by name or identifier. A typo, a trailing space, or a value that names a step not present in the same end product's rows leaves that link unresolved, and the chain breaks at that point.
+
+**How to tell:** the routing is mostly right but breaks at a specific step, and that step's next-step cell in the file has a value that does not exactly match a sibling step.
+
+**Fix:** correct the cell values to match exactly, or, if the sequence-number column is reliable and ascending, drop the explicit next-step column entirely and let auto-linking do the wiring by sequence order. Auto-linking avoids name matching and is more robust when the file's step names are inconsistent.
+
+## Cause 3: The Routing Renders Disconnected From the End Product
+
+Sometimes the steps are in the right order but the routing appears detached from the end-product node in the designer. This is a specific case: the terminal step never got a link pointing at the end product.
+
+**How to tell:** the steps chain correctly among themselves, but the last one does not connect to the end product in the flow-chart view.
+
+**Fix:** when auto-linking is on and the final step has no explicit next-step value, the import emits a token that connects the terminal step to the end product, so the routing reads as a complete chain. If that connection is missing, it is almost always because auto-linking was off while the last next-step cell was blank. Turn auto-linking on and re-import. The [graphical routing designer tour](/blog/edgebic-graphical-bor-designer-tour) shows what a properly connected routing looks like.
+
+## Cause 4: A Split File Lost Steps
+
+A different flavor of "out of order" is missing steps, most often after splitting one product's routing across two files. A re-import always wipes an end product's existing steps on first reference within a run and recreates them from the file. So a second run for the same end product deletes what the first run created before inserting its own, leaving only the second file's steps.
+
+**How to tell:** the routing is short. Steps you know you imported are simply gone, and they were in a different file from the ones that remain.
+
+**Fix:** put all steps for each end product in one file and import them in a single run. The wipe happens per run on first reference, so a single complete file is idempotent and safe to re-run. That same wipe is what removes steps you added by hand and left out of the file, as [a routing re-import that wiped steps you added](/blog/a-routing-re-import-wiped-steps-i-added-edgebic) explains. This wipe-and-recreate is deliberate: it means re-importing never duplicates or accumulates steps, and it is safe even for products with scheduled jobs, because those jobs run off their preserved routing snapshot rather than the live steps. [Routing snapshots explained](/blog/edgebic-routing-snapshots-explained) covers why scheduled work is insulated from a routing re-import.
+
+## Verify After Every Routing Import
+
+- **Open the routing in the flow-chart view.** A correct import reads as one connected chain from the first step to the end product. A break is visible instantly.
+- **Run one scheduling pass and read the anomaly report.** A mis-wired link can make two steps look independent when they should be sequential, and the report's ordering and configuration checks surface that. [Steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic) covers the scheduling side of a bad link, once it reaches the engine.
+- **Check the import log.** It records every row's outcome, so a step that failed to import at all shows there rather than silently missing from the routing.
+
+## Prevention
+
+- **One end product, one file, one run.** This single habit eliminates the split-file step loss entirely.
+- **Prefer sequence numbers plus auto-linking over an explicit next-step column.** Ascending numbers with auto-linking on is the most robust wiring, because it never depends on matching step names.
+- **Convert units in the mask, not the file.** If setup or hours arrive in minutes, set the conversion factor on the field; a routing that imports with sixty-fold times is a conversion slip, not an ordering one.
+
+<Accordion title="Why did my imported routing come in with the steps out of order?">
+Because the import wires the step-to-step links from the sequence data in the file, and something in that data was incomplete. The two most common causes are a sequence-number column that was blank or not sorted with auto-linking turned off, and a next-step column that was mapped but pointed at the wrong step names. When the sequence numbers are filled in ascending order and auto-linking is on, the import links each step to the next automatically.
+</Accordion>
+
+<Accordion title="How does routing import decide the order of steps?">
+Routing import runs in two passes because the link from one step to the next can only be set after every step has been saved and has an identity. In the first pass it buffers all the rows and creates the machines and products they reference. In the second pass it groups the steps by end product, sorts them by their sequence number, inserts them in that order, and then wires each step to its successor, either from an explicit next-step column or automatically from the sequence order.
+</Accordion>
+
+<Accordion title="Why is my imported routing disconnected from the end product in the designer?">
+Because the last step never got a link pointing at the end product. When auto-linking is on and the final step has no explicit next-step value, the import emits a token that connects the terminal step to the end product so the designer draws the routing as a complete chain. If that token is missing, usually because auto-linking was off and the last next-step cell was blank, the routing renders detached from the end-product node even though the steps themselves are fine.
+</Accordion>

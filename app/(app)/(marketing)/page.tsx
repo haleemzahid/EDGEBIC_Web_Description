@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { ChallengesBenefitsSection } from '@/components/marketing/sections/challenges-benefits-section';
 // import { AwardsSection } from '@/components/marketing/sections/awards-section';
+// import { EdgebicAnnouncement } from '@/components/marketing/sections/edgebic-announcement';
 import { ManufacturingFeatureSection } from '@/components/marketing/sections/manufacturing-feature-section';
 import { NTClipboardHero } from '@/components/marketing/sections/ntclipboard-hero';
 import { NTClipboardSummary } from '@/components/marketing/sections/ntclipboard-summary';
@@ -10,12 +11,13 @@ import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'RMDB — Job Shop & Manufacturing Scheduling Software | User Solutions',
+  title:
+    'EDGEBIC Production Scheduling Software | RMDB Successor | User Solutions',
   description:
-    'Excel-native finite capacity scheduling trusted by GE, Cummins, BAE Systems & the US Navy for 35+ years. No ERP replacement needed. Works with SAP, QuickBooks, Epicor. Free trial.',
+    'Finite capacity scheduling with multi-shift planning, schedule optimization and drag-and-drop planning. 35 years behind it, trusted by GE, Cummins and the US Navy.',
   path: '/',
   keywords:
-    'production planning software, production scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, finite capacity planning, MRP software, production tracking, manufacturing software, EDGEBI, User Solutions',
+    'EDGEBIC, production planning software, production scheduling software, finite capacity scheduling, schedule optimization, multi-shift scheduling, drag and drop scheduling, visual production planning, multi-user scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, MRP software, production tracking, EDGEBI, User Solutions',
   absoluteTitle: true
 });
 
@@ -23,6 +25,7 @@ export default function IndexPage(): React.JSX.Element {
   return (
     <>
       <NTClipboardHero />
+      {/* <EdgebicAnnouncement /> */}
       <ChallengesBenefitsSection />
       {/* <NTClipboardSummary /> */}
       <ManufacturingFeatureSection />

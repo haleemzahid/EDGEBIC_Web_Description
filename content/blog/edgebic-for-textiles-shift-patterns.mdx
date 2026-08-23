@@ -1,0 +1,151 @@
+﻿---
+title: "Scheduling Textile Production Across Shift Patterns"
+description: "Textile shift scheduling: how a job spills from day to night, jumps a weekend, and lands on the right instance when a plant runs two or three shifts a day."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - textile shift scheduling
+  - multi shift production planning
+  - night shift capacity scheduling
+  - overnight shift manufacturing schedule
+  - shift spill scheduling
+  - knitting weaving shift patterns
+targetPhrase: "textile shift scheduling"
+wordCount: 1740
+readingTime: 9
+faqQuestions:
+  - question: "How does a scheduler handle a job that is longer than one shift?"
+    answer: "It splits the job across shifts rather than refusing it. EDGEBIC by User Solutions searches forward day by day for shifts with available capacity, scores them, and consumes hours shift by shift until the requirement is met. A 12-hour job on an 8-hour day shift takes 8 hours Monday and 4 hours Tuesday morning, and the schedule records the split rather than a single unbroken block."
+  - question: "How are overnight shifts handled?"
+    answer: "A shift whose end time is at or before its start time is treated as crossing midnight, so a 22:00 to 06:00 shift is recognized as eight hours on the following morning rather than a negative duration. Both the capacity calculation and the allocation logic apply the same rule, so an overnight shift contributes its real hours and a job can spill from an evening shift into the small hours without anything special being configured."
+  - question: "What happens to a job that reaches Friday afternoon and cannot finish?"
+    answer: "It pauses across the closed days and resumes on the next shift that exists. A 20-hour job starting Friday at noon takes the 4 remaining hours of Friday's day shift, skips Saturday and Sunday because no shift runs, then takes 8 hours Monday and 8 hours Tuesday and finishes Tuesday at 16:00. The weekend is real elapsed time and it costs zero machine-hours."
+  - question: "Can one machine follow a different shift pattern to the rest of the plant?"
+    answer: "Yes. A work center either uses the plant-wide shift catalog or its own local shift records, controlled by a single setting on the machine. A dye house running around the clock inside a plant that runs one day shift is modeled with local shifts on that work center. Local shifts can also mirror a global shift, which keeps the plant-wide holidays and staffing links intact while still allowing a machine-specific variation."
+qaQuestions:
+  - question: "Our knitting hall runs day and night, two machines each shift. A job needs 28 hours and cannot start before Monday 10:00. Where does it land?"
+    answer: "It finishes at midnight Monday, and the partial first shift is the part worth understanding.\n\nMonday's day shift runs 08:00 to 16:00 with 2 machines, normally 16 hours of capacity. Starting at 10:00 leaves 6 hours of clock time across 2 machines, so 12 hours are actually available. The scheduler allocates 12 there, 6 on each machine from 10:00 to 16:00.\n\nSixteen hours remain. Monday's night shift, 16:00 to midnight with 2 machines, offers 16 hours and absorbs the rest, 8 on each machine. The job runs Monday 10:00 to Monday midnight. It never claims the 4 hours before its earliest start, which is the whole reason the partial-shift calculation exists."
+  - question: "We keep seeing jobs land on the night shift when the day shift looked free. What decides which shift a job takes?"
+    answer: "A priority score, and the largest term in it is immediate availability. A shift that can start at or before the job's earliest start gets a very large bonus. After that, more available capacity scores higher, and earlier shifts on the same day are preferred over later ones.\n\nSo a job landing on nights usually means the day shift was not actually free at the moment the job needed it. Two common causes: another job already consumed the day shift's hours, or the job's earliest start fell late in the day shift and the remaining partial capacity was small. The capacity view for that machine and date will show which one it was."
+---
+
+**A textile plant that runs more than one shift needs a scheduler that treats shifts as real, separate buckets of capacity.** EDGEBIC by User Solutions searches shift by shift and day by day, scores the candidates, and consumes hours until a job's requirement is met, so a long run spills from day to night and across a weekend the way it actually does on the floor.
+
+## The Pain: Shifts Modelled as an Average
+
+Knitting, weaving, dyeing and finishing rarely run the same hours. The dye house runs around the clock because a batch does not care what time it is. The cutting room runs one shift. Sewing runs two, and three in season.
+
+Plenty of scheduling setups flatten all of that into a daily hours figure. Sixteen hours a day, or twenty, or twenty-four. It looks reasonable and it produces two specific errors.
+
+The first is that a job is assumed to start whenever its predecessor ends, including at 03:00 on a machine that runs days only. The second is that a job needing 28 hours is assumed to occupy 28 consecutive hours regardless of which shifts exist between the start and the end.
+
+Both errors point the same way, and by the time they are visible the goods are late. The industry-level view is in the [textile and garment scheduling overview](/blog/textile-garment-scheduling).
+
+## How a Job Consumes Shifts
+
+The engine holds a separate capacity bucket for every combination of work center, shift and date. Scheduling a step is a search over those buckets.
+
+1. **Find candidates.** Walk forward day by day from the job's earliest start. For each day, look at every shift the work center runs on that weekday, and check whether the bucket has capacity left.
+2. **Adjust for a mid-shift start.** If the job cannot start until 10:00 and the shift runs 08:00 to 16:00, the shift offers only what is left from 10:00, multiplied by the machine count.
+3. **Score and sort.** A shift that can start at or before the job's earliest start receives a large bonus. More remaining capacity scores higher. Earlier shifts on the same day are preferred over later ones.
+4. **Consume.** Take the highest-priority shift, allocate the smaller of the remaining requirement and the shift's available hours, subtract, and move to the next until nothing remains.
+
+That last step is what makes a long run behave correctly. Nothing refuses a 28-hour job on an 8-hour shift. It simply takes several buckets.
+
+The mechanism in full is in [multi-shift scheduling explained](/blog/edgebic-multi-shift-scheduling-explained).
+
+## Worked Example One: The Simple Split
+
+One machine, day shift only, 08:00 to 16:00, Monday to Friday. A job needing 12 hours, earliest start Monday 08:00.
+
+| Pass | Shift | Hours taken | Remaining |
+|---|---|---|---|
+| 1 | Monday day | min(12, 8) = 8 | 4 |
+| 2 | Tuesday day | min(4, 8) = 4 | 0 |
+
+Start Monday 08:00, finish Tuesday 12:00. The schedule records the split as 8 and 4 rather than pretending it was one continuous block, which matters when a supervisor is reading what happens on Tuesday morning.
+
+## Worked Example Two: A Late Start Into a Night Shift
+
+Two machines, day shift 08:00 to 16:00 and night shift 16:00 to midnight, so 16 hours of capacity per shift. A job needing 28 hours, earliest start Monday 10:00.
+
+Monday's day shift is checked first. The shift ends at 16:00, which is after 10:00, so it is usable. From 10:00 there are 6 hours of clock time across 2 machines, giving 12 available hours rather than the nominal 16.
+
+| Pass | Shift | Available | Hours taken | Split | Remaining |
+|---|---|---|---|---|---|
+| 1 | Monday day | 12 | 12 | 6 h on each machine, 10:00 to 16:00 | 16 |
+| 2 | Monday night | 16 | 16 | 8 h on each machine, 16:00 to midnight | 0 |
+
+The job runs Monday 10:00 to Monday midnight. It never claims the two hours before its earliest start, which is exactly the point of computing available capacity from the effective start rather than from the shift's nominal total.
+
+## Worked Example Three: Jumping the Weekend
+
+One machine, day shift Monday to Friday. A job needing 20 hours, earliest start Friday 12:00.
+
+| Day | Shift | Available | Taken | Remaining |
+|---|---|---|---|---|
+| Friday | Day | 4 (from 12:00) | 4 | 16 |
+| Saturday | none | skipped | 0 | 16 |
+| Sunday | none | skipped | 0 | 16 |
+| Monday | Day | 8 | 8 | 8 |
+| Tuesday | Day | 8 | 8 | 0 |
+
+The job starts Friday at noon and finishes Tuesday at 16:00. The weekend is real elapsed time on the promise date and costs nothing in machine hours, which is the correct treatment and the one a spreadsheet gets wrong.
+
+If the plant genuinely runs a Saturday, that is an approved capacity override on that date rather than a change to the shift pattern. See [planning capacity season by season](/blog/edgebic-for-furniture-capacity-planning) for how overrides work, or [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained) for the calendar layer.
+
+## Overnight Shifts
+
+A dye house running 22:00 to 06:00 is an ordinary case in textiles and a classic source of zero-capacity bugs in scheduling systems.
+
+The rule applied here is that a shift whose end time is at or before its start time crosses midnight, so its duration is measured to the following day. A 22:00 to 06:00 shift is eight hours, not negative eight. Both the capacity calculation and the allocation logic apply the same rule, so an overnight shift contributes its real hours and a job can spill from an evening into the small hours with no special configuration.
+
+If an overnight shift shows zero capacity, the shift's day-of-week entries are the first thing to check: an overnight shift is defined on the day it starts.
+
+## Plant Shifts and Machine Shifts
+
+Not every machine follows the plant.
+
+A work center either uses the plant-wide shift catalog or its own local shift records, controlled by one setting on the machine. Local shifts come in two useful forms.
+
+A local shift can **mirror a global shift**, which keeps the machine on the plant's pattern while allowing a local variation. Because it derives from the parent, plant-wide arrangements that key on the global shift continue to apply, including the operator rosters described in [operator and skill scheduling](/blog/edgebic-operator-and-skill-scheduling-explained).
+
+A local shift can also be **fully custom**, which is right for a machine on a genuinely different rhythm. One consequence is worth knowing before you create one: a custom shift with no parent has no roster of its own, so a step that also requires a certified operator will find no qualified hours there and will fail loudly rather than schedule silently. The fix is to derive the custom shift from a global parent, not to relax the check.
+
+Only shifts that are active and that have an entry for the relevant weekday are considered at all. A shift with no Saturday entry does not produce Saturday capacity, whatever its nominal hours say.
+
+## Instances: Which Machine Inside the Work Center
+
+A work center with several identical machines allocates across them in one of three ways.
+
+**Load balancing** spreads the hours evenly, which is what the 28-hour example above did with two machines. It minimizes elapsed time.
+
+**Sequential** fills one machine before moving to the next, which suits a hall where consolidating work on fewer machines has value.
+
+**One job per machine per day** dedicates an instance to a job for the day, which is the right model for a batch process such as a dye vessel or a beam, where a machine cannot practically switch jobs mid-day. Three vessels means three jobs that day, and the fourth waits.
+
+Fractional instance counts are supported for the case where a machine is shared with another department: a count of 2.5 produces capacity accordingly and distributes across three physical slots with the fractional part redistributed. The detail is in [machine instances explained](/blog/edgebic-machine-instances-explained).
+
+## Two Behaviors That Prevent Silly Splits
+
+Long jobs across many shifts can fragment badly if nothing stops them, so two guards exist.
+
+The first is a minimum allocation. A shift with a fraction of an hour left is skipped rather than receiving a booking of a few minutes, and a job whose remaining requirement rounds below that threshold is treated as complete. Without it a 20-hour job could accumulate a trail of five-minute bookings across a dozen shift buckets, which is technically correct and useless to a supervisor.
+
+The second is that the engine always allocates against capacity available **from the job's effective start**, not against the shift's nominal remaining total. Those two numbers differ whenever a job starts mid-shift, and using the wrong one over-allocates the first shift and then fails to place the overflow. The 28-hour example above depends on this: the day shift offered 12 hours rather than 16 because the job could not start until 10:00.
+
+There is also a limit on how far forward the search will walk before giving up. It is deliberately long, several years of days, so in practice a job never fails for want of searching. If a step genuinely reports no available capacity, the cause is almost always structural: the work center has no shift on any weekday, a required certification has nobody holding it, or every candidate shift is fully consumed.
+
+## Reading a Schedule That Spans Shifts
+
+Two habits make multi-shift schedules easier to trust.
+
+Read the per-shift split rather than the start and end dates alone. A job showing Monday 10:00 to Monday midnight tells you far less than 12 hours on days and 16 on nights, which tells the night supervisor what is arriving.
+
+And when a job lands on a shift you did not expect, check the capacity view for that machine and date before assuming the scheduler is wrong. The usual answer is that the shift you expected was already consumed, or that the job's earliest start fell late enough in it that only a small partial capacity remained.
+
+For the routing structure that feeds these shifts, see [routing fabric through dye, cut and sew](/blog/edgebic-for-textiles-multi-stage-routing). For the industry picture, see the [textile and garment scheduling overview](/blog/textile-garment-scheduling) and the [textile and garment manufacturing software page](/textile-garment-manufacturing-software). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product, [EDGEBIC](/edgebic).

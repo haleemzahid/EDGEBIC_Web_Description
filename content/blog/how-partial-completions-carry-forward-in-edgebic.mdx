@@ -1,0 +1,94 @@
+---
+title: "How Partial Completions Carry Forward in EDGEBIC"
+description: "When an operation is half done or marked complete short of plan, EDGEBIC keeps the logged hours and re-plans only the remainder. See how partial work carries forward."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - partial completion scheduling
+  - forward shift remaining hours
+  - short confirm handling
+  - in progress operation reschedule
+  - remaining hours re-plan
+  - partial confirm behavior
+targetPhrase: "partial completion scheduling"
+wordCount: 1780
+readingTime: 9
+faqQuestions:
+  - question: "What happens to a half-finished operation when I reschedule in EDGEBIC?"
+    answer: "The logged hours stay locked on their real days and the operation keeps its work center. The engine re-plans only the remaining hours, planned minus logged, onto the next free slot on that same machine, and downstream steps queue behind the new end. The operation stays open so the operator's eventual real finish is honored. On your screens it remains one operation whose window now stretches to cover both the history and the remainder."
+  - question: "What is a short-confirm and how does EDGEBIC handle it?"
+    answer: "A short-confirm is when an operator marks a step complete having logged fewer hours than planned. EDGEBIC detects the gap and handles it per your site's Partial-Confirm Behavior setting. The default forward-shifts the missing hours onto the next free slot; an alternative trusts the operator's stamp and writes off the unfinished hours; a third trusts the stamp except on steps the planner has flagged. Either way no hours are silently invented or discarded."
+  - question: "Does a partial operation turn into two operations on my screen?"
+    answer: "No. Internally the engine handles the logged portion and the remaining portion separately, but at save time they are merged back into one row per routing step per work center. You see a single operation with its real logged hours, its real start, and a schedule window that now extends to the re-planned remainder. The split is an implementation detail that never reaches your screens."
+qaQuestions:
+  - question: "An operator marked a 16-hour CNC step done Wednesday morning but only logged 10 hours. With the default policy, what exactly happens?"
+    answer: "The engine keeps the 10 logged hours on the two days they were worked and preserves that historical block on CNC-3. It sets the resume point to the operator's Wednesday stamp and re-plans the 6-hour gap onto CNC-3's next free slot, so you see a historical block and a forward block for the same step, merged into one row. Downstream steps queue behind the 6-hour remainder. The operator's premature close is respected, no hours are invented, and the missing 6 are simply owed and re-planned rather than lost."
+  - question: "If I reschedule the same in-progress job several days running, does the partial work pile up into duplicate rows?"
+    answer: "No, and this is deliberate. At the persist boundary EDGEBIC collapses the historical and forward pieces of a partial step back into a single row per routing step per work center, deduplicating the daily hours and resource allocations. So repeated reschedules do not accumulate a new pair each time. The in-progress row is also left without an actual end so the next run re-classifies it correctly, which makes the whole cycle idempotent: rescheduling twice produces the same clean result as rescheduling once."
+---
+
+**When an operation in EDGEBIC by User Solutions is only partly done, whether it is still running or was marked complete short of plan, the logged hours stay locked and only the remainder is re-planned forward. The step keeps its machine, stays one row on your screen, and never loses or invents an hour.** Partial completion scheduling is one of the quietest but most important behaviors in the platform, because half-finished work is the normal state of a busy shop, and how a scheduler handles it decides whether your plan stays honest. This article explains exactly how partial work carries forward.
+
+Real operations do not finish neatly at shift end. A step runs three hours into a twelve-hour plan and stops for the day. An operator marks a job done with fewer hours than the routing expected. A naive scheduler either freezes the whole thing (pretending it is complete) or re-plans it from scratch (throwing away the work already done). EDGEBIC does neither. It carries the partial work forward.
+
+## Two Kinds of Partial
+
+There are two situations EDGEBIC treats as partial, and it helps to name them.
+
+**In progress.** The step has an actual start but no actual end. Work is happening and is not finished. Example: a 12-hour grind with 4 hours logged so far.
+
+**Short-confirm.** The operator marked the step complete (an actual end is stamped) but the logged hours fall materially short of the planned hours. Example: a 16-hour run closed after 10 hours logged.
+
+Both are partial in the sense that hours are still owed against the plan. EDGEBIC detects the gap using a small tolerance so that ordinary rounding does not trigger a false partial, and then handles each according to a clear rule. For the underlying concept, see [what is a partial completion in scheduling](/blog/what-is-a-partial-completion-in-scheduling).
+
+## The Carry-Forward Mechanism
+
+When a reschedule runs, a partial step is handled in three moves.
+
+**Preserve the history.** The hours already logged stay on their real days, and the historical portion of the step is written back with its work center unchanged. This is the [immutability](/blog/why-actuals-are-immutable-in-edgebic) principle applied to the completed part of a partial step: what happened, happened.
+
+**Re-plan the remainder.** The engine computes the remaining hours (planned minus logged) and places them on the next available slot on the same work center. A started operation never moves to a different machine. Downstream steps queue behind this new forward end.
+
+**Merge back to one row.** Internally the historical piece and the forward piece are handled separately, because the engine's dedup logic needs them apart. But at the persist boundary they are merged into a single row per routing step per work center. On your screen you see one operation, with its real logged hours, its real start, and a window that now stretches to cover the re-planned remainder. This is why an in-progress operation sometimes shows a schedule window longer than its planned hours: the window spans both history and remainder.
+
+One subtlety keeps the cycle clean. The in-progress historical row is not backfilled with a projected end. If it were, the next reschedule would read it as complete and discard the operator's eventual real finish. Leaving the end null keeps the step genuinely in progress and makes the whole thing idempotent: rescheduling twice yields the same result as rescheduling once.
+
+## Short-Confirm: A Site Policy
+
+The short-confirm case (operator marks done early) is governed by a setting you choose once, under Options as Partial-Confirm Behavior:
+
+| Setting | What the next reschedule does |
+|---|---|
+| Trust the operator's Actual End | The stamp is final. Downstream queues behind the recorded end; unfinished hours are written off. |
+| Forward-shift the remaining hours (default) | The logged hours stay locked; the gap is re-planned onto the next free slot, and downstream queues behind that. This matches standard APS practice. |
+| Trust unless flagged | Trust the stamp by default; forward-shift only steps the planner has flagged as short on the routing. |
+
+The default forward-shifts, because in most shops a step closed early with hours still owed means those hours genuinely still need doing. But a shop where the operator's word is final can trust the stamp instead. You decide the policy as a site; you do not decide it job by job. To set it, see [how to set how partial completions are handled](/blog/how-to-set-how-partial-completions-are-handled-in-edgebic).
+
+## A Worked Example
+
+Job 303. Step 1 is a 16-hour CNC run planned Monday 08:00 to Tuesday 16:00 on CNC-3. The operator presses Mark Complete on Wednesday morning but logged only 10 hours over Monday and Tuesday. Site policy is the default, forward-shift.
+
+The engine detects the short-confirm: 16 planned, 10 logged, a 6-hour gap beyond tolerance. It:
+
+1. Preserves the historical block on CNC-3 from Monday 08:00 to the Wednesday stamp, with the daily hours truncated to the two days that actually had logged hours.
+2. Sets the resume point to the operator's Wednesday stamp.
+3. Re-plans the 6-hour remainder onto CNC-3's next free slot: Wednesday 09:00 to 15:00.
+
+The planner sees one CNC-3 row for step 1 whose window spans the historical block and the forward 6 hours. Step 2 queues after Wednesday 15:00. The operator's premature close is respected, no hours are invented or discarded, and the missing 6 hours are simply owed and re-planned.
+
+## Why the Merge Matters
+
+The merge-to-one-row behavior is not cosmetic. Without it, every reschedule of an in-progress job would leave behind another historical-plus-forward pair, and after a week of daily reschedules the database would carry a pile of duplicate rows for the same step. EDGEBIC collapses the pair at the persist boundary, deduplicating the daily hours by date and the resource allocations by their machine, day, and instance. The result is that repeated reschedules stay clean: one row per routing step per work center, run after run.
+
+This hygiene is part of why the platform stays trustworthy over long horizons. A partial step that survives fifty reschedules looks exactly as clean on day fifty as on day one. For the wider point about clean records, see [why one clean operation record matters](/blog/why-one-clean-operation-record-matters).
+
+## The Payoff
+
+Carrying partial work forward correctly is what lets you reschedule a running shop without fear. Started work keeps its machine and its logged hours; only the honest remainder moves; the screen shows one clean operation; and the cycle is idempotent so you can run it daily. It also keeps your [WIP management](/blog/wip-management) accurate, because a half-done job is shown as exactly that: real hours logged, real remainder still owed. Combined with the [three-zone model](/blog/planned-in-progress-and-completed-work-explained), this is what makes EDGEBIC's reschedule surgical rather than destructive, and it is why planners can run it on a daily [rhythm](/blog/the-daily-rhythm-of-a-kiosk-run-shop) without dreading what it will do to work in progress.
+
+For the full picture of how actuals drive the plan, see [how a reschedule uses last night's actuals](/blog/how-a-reschedule-uses-last-nights-actuals) and the [shop floor execution guide](/blog/edgebic-shop-floor-guide). Explore the platform at [EDGEBIC](/edgebic).

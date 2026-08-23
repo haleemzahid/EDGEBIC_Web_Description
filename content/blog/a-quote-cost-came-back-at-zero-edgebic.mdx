@@ -1,0 +1,102 @@
+---
+title: "A Quote Cost Came Back at Zero: Causes and Fixes"
+description: "A quote that prices at zero usually has missing work center rates, a material fallback with no unit cost behind it, or a simulation that produced no scheduled hours."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - quote cost zero
+  - quote labor cost missing
+  - work center rate not set
+  - quote material cost wrong
+  - quote simulation no hours
+  - quote pricing troubleshooting
+targetPhrase: "a quote cost came back at zero"
+wordCount: 1240
+readingTime: 6
+faqQuestions:
+  - question: "Why did a quote come back with zero labor cost?"
+    answer: "Labor cost is resolved per work center in two steps: the routing step's own labor rate is used when it is greater than zero, and the work center's rate is the fallback. When both are zero the cost for that work center is zero, and the quote is silently understated rather than failing. Populating a rate on every production work center is the durable fix, because it removes the case where the fallback has nothing to fall back to."
+  - question: "Where does material cost come from on a quote?"
+    answer: "If the simulated routing contains a work center flagged as material, the material cost comes from those steps. If it contains none, the calculation falls back to the product's unit cost multiplied by the quantity. The fallback is a reasonable estimate for a simple part and a poor one for a product with several purchased components, because a single unit cost cannot represent a multi-component bill. Modeling material steps explicitly is the accurate route."
+  - question: "Why did the unit price not change after I re-ran the simulation?"
+    answer: "The automatic markup only fills a unit price that is currently zero. Once a planner types a price, later simulations leave it alone on purpose, so a repriced job does not quietly overwrite a number a salesperson already sent to a customer. To force the markup to recalculate, clear the unit price back to zero and apply the simulation results again. Cost figures refresh on every run regardless of what the price says."
+qaQuestions:
+  - question: "Our quote shows real hours and a real end date but the labor cost is zero. How is that possible?"
+    answer: "Hours and cost come from different places. Hours are the sum of the assigned hours the simulation produced, so they are correct as soon as the run schedules anything. Cost multiplies those hours by a rate that resolves from the routing step first and the work center second, and if neither carries a rate the multiplication is by zero. Fill in rates for the work centers on that routing and apply the simulation results again. The hours will not change and the cost will."
+  - question: "The quote priced fine for a machined part and came in far too low for an assembly. What is different?"
+    answer: "The assembly almost certainly has purchased components that are not modeled as material steps in the routing. With no material work center in the simulated result, the calculation falls back to the product's own unit cost times the quantity, which represents one line rather than a bill of several. Model the material lines as steps on a material-type work center and give them a rate, and the material figure reflects what you actually buy instead of a single stand-in number."
+---
+
+**A quote that prices at zero almost always has one of three causes: no rate on the work centers the routing uses, a material fallback with nothing behind it, or a simulation that produced no scheduled hours to price.** [EDGEBIC by User Solutions](/edgebic) builds a quote's cost from the simulated schedule rather than from a standard, so the cost is only as complete as the rates attached to the work centers that schedule actually used. A missing rate does not fail the calculation. It multiplies by zero and moves on, which is why the symptom is a quiet understatement rather than an error.
+
+This post is the detailed version of the zero-cost symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the normal path, [how to see the cost breakdown of a quote](/blog/how-to-see-the-cost-breakdown-of-a-quote-in-edgebic) shows where the numbers land, and [quote simulation explained](/blog/edgebic-quote-simulation-explained) covers how the schedule behind them is built.
+
+## What You Are Seeing
+
+The quote shows a start date, an end date, and a believable hour total, but the cost is zero or obviously too low. Margin therefore reads as pure profit, which is the version of this problem that reaches a customer before anyone notices.
+
+## Why It Happens
+
+### Cause 1: The Work Centers Have No Rate
+
+Labor cost is resolved per work center in two steps. The routing step's own labor rate is used when it is greater than zero, and the work center's rate is the fallback. When neither carries a rate, that work center contributes zero to the quote.
+
+This is the most common cause and the least visible, because a routing with five operations and one unrated work center produces a cost that is wrong by one fifth rather than obviously broken.
+
+**How to tell:** the hour total is right, the cost is a round zero or a suspiciously small number, and one or more work centers on the routing have no rate.
+
+### Cause 2: Material Cost Fell Back to a Single Unit Cost
+
+If the simulated routing contains a work center flagged as material, material cost comes from those steps. If it contains none, the calculation falls back to the product's unit cost multiplied by the quantity.
+
+That fallback is fine for a simple part and poor for an assembly, because a single unit cost cannot represent a bill with several purchased components. If the product's unit cost is also zero, the material contribution disappears entirely.
+
+**How to tell:** the routing has no material step, and the material figure is either zero or exactly the unit cost times the quantity.
+
+### Cause 3: The Simulation Produced No Hours to Price
+
+Cost is calculated from the schedule the simulation produced, and the hour total comes from the sum of the assigned hours rather than from the span between the start and end dates. If the simulation did not run, or ran and scheduled nothing, there is nothing to multiply.
+
+**How to tell:** the hours read zero as well as the cost, and the quote has no simulated dates or has dates from an earlier run.
+
+### A Related Case: the Price Did Not Move, but the Cost Did
+
+The automatic markup only fills a unit price that is currently zero. Once a planner types a price, later simulations leave it alone deliberately, so a repriced job never quietly overwrites a number already sent to a customer. Cost figures still refresh on every run.
+
+## How to Fix It
+
+- **For missing rates:** put a rate on every production work center, and use the routing-step rate only where one operation genuinely costs differently than the machine's standard. Then re-run the simulation and apply the results.
+- **For material:** model the purchased lines as steps on a material-type work center and give them a rate, rather than relying on the product unit cost fallback. Confirm the product's unit cost is populated as well, since it is the last line of defense.
+- **For an empty simulation:** run the simulation again and confirm it produced operations before reading the cost. A quote with no schedule behind it has no cost by definition.
+- **For a stuck price:** clear the unit price to zero and apply the simulation results again, which lets the markup refill it from the refreshed cost.
+
+## How to Diagnose It, in Order
+
+1. **Read the hour total first.** Real hours with zero cost points at rates; zero hours points at the simulation.
+2. **Open the cost breakdown** and find which work centers contributed nothing. Those are the ones missing a rate.
+3. **Check whether the routing has a material step.** If it does not, the material figure is the unit cost fallback and should be read as an estimate.
+4. **Confirm the product's unit cost is populated,** because it is what the fallback uses.
+5. **Re-run the simulation and apply the results,** then compare the new breakdown line by line rather than only the total.
+
+## How to Prevent It
+
+- **Treat a work center rate as required master data.** A production work center without a rate is a hole in every quote that ever routes through it, and the hole is silent.
+- **Model material as steps, not as a single unit cost,** for anything with a real bill of purchased parts. [Pricing a quote from the schedule](/blog/pricing-a-quote-from-the-schedule-in-edgebic) covers how the pieces add up.
+- **Read the breakdown, not just the total.** A total can look plausible while one operation contributes nothing, and the breakdown is the only place that shows it.
+- **Re-simulate after routing or rate changes,** since the cost is a snapshot of the schedule at the time it was applied. [Re-simulating a quote after a change](/blog/re-simulating-a-quote-after-a-change-in-edgebic) covers when it is worth doing, and [a quote will not convert to an order](/blog/a-quote-will-not-convert-to-an-order-edgebic) covers the guards that run when the quote is finally won.
+
+<Accordion title="Why did a quote come back with zero labor cost?">
+Labor cost is resolved per work center in two steps: the routing step's own labor rate is used when it is greater than zero, and the work center's rate is the fallback. When both are zero the cost for that work center is zero, and the quote is silently understated rather than failing. Populating a rate on every production work center is the durable fix, because it removes the case where the fallback has nothing to fall back to.
+</Accordion>
+
+<Accordion title="Where does material cost come from on a quote?">
+If the simulated routing contains a work center flagged as material, the material cost comes from those steps. If it contains none, the calculation falls back to the product's unit cost multiplied by the quantity. The fallback is a reasonable estimate for a simple part and a poor one for a product with several purchased components, because a single unit cost cannot represent a multi-component bill. Modeling material steps explicitly is the accurate route.
+</Accordion>
+
+<Accordion title="Why did the unit price not change after I re-ran the simulation?">
+The automatic markup only fills a unit price that is currently zero. Once a planner types a price, later simulations leave it alone on purpose, so a repriced job does not quietly overwrite a number a salesperson already sent to a customer. To force the markup to recalculate, clear the unit price back to zero and apply the simulation results again. Cost figures refresh on every run regardless of what the price says.
+</Accordion>

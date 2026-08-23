@@ -1,0 +1,164 @@
+---
+title: "Eight Deployment and Database Mistakes in EDGEBIC (and the Fixes)"
+description: "The manufacturing software deployment mistakes that cost a weekend: an empty database after a provider switch, a password that will not decrypt, no backup."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - manufacturing software deployment mistakes
+  - scheduling software database problems
+  - SQL Server connection troubleshooting manufacturing
+  - production scheduling software backup
+  - scheduling software will not start
+targetPhrase: "manufacturing software deployment mistakes"
+wordCount: 1562
+readingTime: 8
+faqQuestions:
+  - question: "Why is my data missing after switching EDGEBIC to SQL Server?"
+    answer: "It is not missing. Switching providers points the application at a different database; it does not copy anything across, so the new database starts empty while the old one keeps everything untouched. Switch back to the previous provider from the same screen to confirm your data is safe, then plan the data step properly: export first, then either migrate the contents or re-run your standard import files against the new database."
+  - question: "Why does a copied EDGEBIC configuration fail to connect to SQL Server?"
+    answer: "Because the saved SQL-authentication password is encrypted and tied to the Windows account that entered it. Copying the configuration to another Windows user or another PC means the password cannot be decrypted there, so the connection is refused. Re-enter the password on the new machine under that person's own Windows account and apply again, or avoid the situation entirely by using Windows authentication, which stores no password at all."
+  - question: "EDGEBIC will not start and shows a database connection problem. What do I do?"
+    answer: "A recovery window opens instead of the main application, with the connection editor embedded and four actions. Retry relaunches against the same connection, which fixes the case where a server was simply stopped. Reset to default local database gets you back to a working local file. Repair database rebuilds internal version bookkeeping without changing data, and is the right choice when the error mentions migration history. Exit closes without changes."
+  - question: "Test connection says the database does not exist. Is that a failure?"
+    answer: "No, that message is the expected result on a first setup. It specifically means the server was reachable and the sign-in succeeded, and only the target database is absent. EDGEBIC creates the database and builds its schema on the first launch after Apply and restart. The messages that do need action are an unreachable server and a failed sign-in, which the status line reports as separate cases."
+qaQuestions:
+  - question: "We restored a backup database file and now the application connects fine but crashes the first time anyone saves. What is going on?"
+    answer: "Check the file's read-only attribute in Windows Explorer. Some backup and restore tools set it, and a read-only database file opens for reading perfectly well, which is why the connection test passes and the failure only appears at the first write. The connection test does flag a read-only file when it can, but a file made read-only after the test still catches you. Clear the attribute and the problem disappears. The wider lesson applies to any restore: after copying a database file back, open the application and deliberately save one small change before letting a planner start work, rather than discovering the problem in the middle of a schedule run."
+  - question: "Our IT team set up the shared database six months ago and we have never taken a backup. How exposed are we?"
+    answer: "Completely, and this is the most common gap after a move to a shared server. On the default single-file deployment the Export button makes backups almost accidental: one click, timestamped, safe while the application is running. On SQL Server that convenience disappears because the responsibility moves to your IT team's standard rotation, and a database nobody told them about does not join a rotation by itself. Two actions close it today. Confirm in writing that the scheduling database is in the nightly backup job, and test one restore to a scratch database so you know the backup is readable. Then keep the habit that survives either deployment: take an export before every data clear, every mass routing re-import, and every provider switch."
+---
+
+**Manufacturing software deployment mistakes** are rarely subtle in hindsight and almost always invisible at the time. A provider switch that appears to delete a year of data, a configuration file that works on one PC and not the next, a reset button that turns out to clear tables. In EDGEBIC by User Solutions each of these is documented behavior with a documented recovery, and knowing the eight below turns a bad afternoon into a five-minute fix.
+
+The deployment models themselves are covered in [EDGEBIC deployment options explained](/blog/edgebic-deployment-options-explained), and the growth path in [moving from single user to shared server](/blog/moving-from-single-user-to-shared-server-edgebic).
+
+## 1. Switching Providers and Expecting the Data to Follow
+
+**Symptom.** You move from the local file to SQL Server, the application restarts, and everything is gone.
+
+**Cause.** Switching providers points the application at a different database. It does not copy anything. The new database starts empty; the old one keeps everything, untouched.
+
+**Fix.** Switch back to the previous provider from the same screen to confirm your data is safe. Then plan the move properly: take an export first, and either migrate the contents or re-run your standard import files against the new database. The warning card on the switch offers **Export current first** precisely because this is the moment people skip a backup.
+
+**Prevention.** Treat the provider switch as two tasks: a connection change (ten minutes) and a data rebuild (however long your data deserves).
+
+## 2. Copying a Configuration Between PCs or Windows Accounts
+
+**Symptom.** The scheduling application connects on one machine and refuses on another, with the same settings.
+
+**Cause.** A SQL-authentication password is encrypted and tied to the Windows account that entered it. Another Windows user, or another PC, cannot decrypt it, so the connection opens without a usable password and the server rejects it.
+
+**Fix.** Re-enter the password on the new machine under that person's own Windows account, then apply and restart.
+
+**Prevention.** Use **Windows authentication** for SQL Server wherever possible. There is then no stored password on any machine, and this failure mode does not exist.
+
+## 3. Treating "Database Does Not Exist" as an Error
+
+**Symptom.** Test connection reports that the target database does not exist, and the setup stalls while someone asks IT to create it.
+
+**Cause.** Nothing. That message specifically means the server was reachable and the sign-in succeeded, and only the target database is absent.
+
+**Fix.** Continue. EDGEBIC creates the database and builds the schema on the first launch after **Apply & restart**.
+
+The connection test deliberately separates three cases: unreachable server, failed sign-in, and reachable server with a missing database. Read which one you got before escalating.
+
+## 4. A Restored Database File That Is Read-Only
+
+**Symptom.** The connection test passes, the application opens, and the first save crashes.
+
+**Cause.** The database file carries the Windows read-only attribute, often set by a backup or restore tool. A read-only file opens for reading perfectly well, which is why nothing fails until a write.
+
+**Fix.** Clear the read-only attribute in Windows Explorer.
+
+**Prevention.** After any restore, open the application and deliberately save one small change before handing it back to a planner.
+
+## 5. Not Reading the Recovery Window
+
+**Symptom.** The application will not start and a **Database Connection Problem** window appears. Someone reinstalls.
+
+**Cause.** The configured database is unreachable (a stopped server, a moved file) or its internal version bookkeeping is out of step.
+
+**Fix.** Use the buttons rather than the installer:
+
+| Button | When it is the right answer |
+|---|---|
+| Retry | The server was stopped and is now running |
+| Reset to default local database | You need a working system now and will fix the connection later |
+| Repair database | The error mentions migration history. It rebuilds version bookkeeping without changing data |
+| Exit | You want to change something outside the application first |
+
+The window embeds the connection editor, so you can also fix the server name or credentials on the spot. Startup failures write to a log file that support can read.
+
+## 6. Reset to Default, Which Is Not a Layout Reset
+
+**Symptom.** Someone wants to fix a grid whose columns look wrong, clicks **Reset to Default** on the toolbar, works through a dialog, and rows are gone.
+
+**Cause.** That button opens the **Clear Data Tables** dialog. It can reset saved screen layouts, and it can also permanently delete rows, depending on what is ticked. There is no recycle bin.
+
+**Fix and prevention.** Read the dialog and select only the intended scope. For a pure layout problem, the user-interface configuration scope is the one you want. Take an export first, every time. And withhold Settings permission from non-administrator roles, which removes this whole risk for most of your users. See [user and permission mistakes in EDGEBIC](/blog/user-and-permission-mistakes-edgebic).
+
+## 7. A Shared Database Nobody Put in the Backup Rotation
+
+**Symptom.** Six months into a shared deployment, somebody asks where the backups are.
+
+**Cause.** On the local single-file deployment, backups are almost accidental: one click on **Export** produces a timestamped copy next to the database, safe even while the application is running. On SQL Server that convenience disappears, because backup responsibility moves to IT's standard rotation, and a database nobody mentioned does not join a rotation by itself.
+
+**Fix.** Confirm in writing that the scheduling database is in the nightly job, and test one restore to a scratch database so you know the backup is readable.
+
+**Prevention.** Keep the habit that survives either deployment: take an export before every data clear, every mass routing re-import, and every provider switch. It costs one click.
+
+## 8. Two Planners, Two Database Files
+
+**Symptom.** Two people work in two separate local databases and plan to merge later. Nobody merges anything.
+
+**Cause.** The local file is single-workstation, and it is easy to install a second copy without noticing that the second copy is a second version of reality.
+
+**Fix.** Move to a shared database as soon as a second user appears. The documented standard is one database, one plant's truth.
+
+**Prevention.** When someone asks for "their own copy to try something", give them a scenario or a quote simulation inside the shared system rather than a second database.
+
+## Three Smaller Ones Worth Knowing
+
+**A long first launch is not a hang.** On a brand-new database the application is creating the schema from scratch, which takes a few seconds. You see it once per new database, and again the first time you point at a fresh shared one.
+
+**The wizard's Next button waits for a save.** If Next will not enable during the First Time Setup Wizard, the record on the current step has not been saved yet. Each step embeds the real editor and validates before allowing you forward.
+
+**Two providers in the dropdown are not available yet.** They are listed for completeness, and selecting one blocks the switch with a message rather than pretending to work. The two real choices are the single-file local database and SQL Server. An in-memory option also exists for demos, where nothing is saved and everything is lost on exit, which is exactly as dangerous as it sounds if anyone mistakes it for storage.
+
+## Recovery, in Order of Least Damage
+
+When something is wrong and nobody is sure what, work down this list rather than reaching for the most drastic option first:
+
+1. **Read the exact message.** The connection test and the recovery window both distinguish cases that look identical from a distance: unreachable server, failed sign-in, missing database, stale version bookkeeping.
+2. **Retry.** A stopped service that has since started needs nothing else.
+3. **Switch back to the previous provider.** The old database is untouched, so this confirms whether your data is safe before you spend an hour on anything else.
+4. **Repair, if the message mentions migration history.** It rebuilds internal version bookkeeping and does not change data.
+5. **Reset to the default local database.** This gets a working system in front of a planner today while you sort out the connection.
+6. **Restore from a backup.** Last, because it is the only step that loses work between the backup and now.
+
+Steps 1 to 5 are non-destructive. That is the point of doing them in order.
+
+## The Pre-Flight Checklist
+
+Run this before any provider switch, mass import, or data clear:
+
+| Check | Why |
+|---|---|
+| Export taken | The only undo that exists |
+| Display configuration exported | It does not travel inside the database |
+| Import mask mappings recorded | Mask definitions live in the database you are leaving |
+| Authentication decided | Windows authentication removes the copied-password failure entirely |
+| Backup rotation confirmed | For any shared database |
+| Rollback known | The old database is untouched, and you can switch back from the same screen |
+
+Six lines, five minutes, and it turns the most nerve-racking button in the application into a routine one.
+
+## Where to Go Next
+
+Read [how to install and connect EDGEBIC](/blog/how-to-install-and-connect-edgebic) for the first-run sequence, and [moving from single user to shared server](/blog/moving-from-single-user-to-shared-server-edgebic) for the migration in full. The full administrator's journey is in the [EDGEBIC admin guide](/blog/edgebic-admin-guide), and scheduling-side problems live in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+Bring your IT team to a demo of [EDGEBIC](/edgebic), and we will walk the connection screen with them rather than at them.

@@ -1,0 +1,147 @@
+---
+title: "Building a Master Production Schedule in EDGEBIC, Bucket by Bucket"
+description: "Read the MPS grid for a stocked product, catch a projected stockout, commit a build quantity, and firm it into a scheduled build-to-stock order in EDGEBIC, with every number shown."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - master production schedule walkthrough
+  - MPS build to stock
+  - projected available balance
+  - firm a build order
+  - demand time fence
+  - planning time fence
+targetPhrase: "master production schedule walkthrough"
+wordCount: 1850
+readingTime: 9
+faqQuestions:
+  - question: "What is the Master Production Schedule in EDGEBIC?"
+    answer: "The MPS is the time-phased, planner-editable bridge between demand and the scheduling engine. It shows a bucket-by-bucket grid of a stocked product's forecast demand, firm demand, projected available balance, and a suggested build quantity. The planner decides how many units to build and when, then firms that decision into a build-to-stock manufacturing order that the finite capacity engine schedules against real work center capacity. It sits between demand management and the scheduler."
+  - question: "Where does firm demand in the MPS come from?"
+    answer: "From open balances on Confirmed sales order lines, bucketed by each line's due date. A line's open balance is its quantity minus the quantity shipped. Lines on Draft, Shipped, Closed, or Cancelled orders do not count as firm demand, so confirming an order is the act that makes its lines drive the plan. Forecast demand comes separately from forecast entries and is consumed by firm orders inside the demand time fence."
+  - question: "What happens when a planner firms an MPS bucket?"
+    answer: "Firming creates a build-to-stock manufacturing order in one atomic step. EDGEBIC computes the release date as the due date minus the product's lead time, creates the order flagged build-to-inventory with the committed quantity, and marks the bucket Released with the new order's ID. The order then appears in the manufacturing order grid and is scheduled on the next run. Re-firming an already-released bucket whose order still exists returns the same order rather than creating a duplicate."
+qaQuestions:
+  - question: "My stocked widget is going to run out in two weeks but I have no customer order that late. How does the MPS help me see it coming?"
+    answer: "The MPS projects the balance forward instead of waiting for the stockout. It rolls projected available balance week by week: opening stock plus scheduled receipts minus gross requirements. In this walkthrough Widget A opens at 80 units and drops to minus 10 in week two and minus 80 by week four as forecast and firm orders draw it down, so the projected stockout date is flagged weeks early. The suggested build quantity for the negative bucket, 110 units, is right there for you to accept or override."
+  - question: "I committed a build quantity for a bucket three weeks out, but a planning rerun keeps changing it. How do I protect the near-term plan?"
+    answer: "Use the planning time fence. Inside the window from today to today plus the product's planning time fence days, the system suppresses auto-suggestions and does not overwrite committed build quantities. A bucket inside that fence is protected; a bucket beyond it is in the open horizon and can be revised by an automatic run. Set a longer planning fence on long-lead items and a short one on high-turnover consumables, since the fence days live on each product."
+---
+
+**Building a master production schedule in [EDGEBIC by User Solutions](/edgebic) means reading a stocked product's bucket-by-bucket demand grid, committing how many units to build and when, and firming that decision into a build-to-stock order the scheduling engine then places against real capacity.** This walkthrough follows one product through that loop with every quantity shown. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so you can judge the planning path by its arithmetic.
+
+The MPS sits one level up from the scheduling engine and one level down from raw demand. For the concept, [master production schedule explained](/blog/edgebic-master-production-schedule-explained) is the companion; for the demand that feeds it, [sales orders explained](/blog/edgebic-sales-orders-explained).
+
+## The Cast: Widget A, a Looming Stockout
+
+Fairview Products stocks Widget A, a make-to-stock finished good. On hand today: 80 units. The planner opens the Inventory view, selects the MPS tab, picks Widget A, and chooses week buckets over a four-week window. The grid loads.
+
+| Bucket | Firm Demand | Forecast | Gross Req | Scheduled Receipts | PAB | ATP |
+|---|---|---|---|---|---|---|
+| Wk1 (today) | 0 | 30 | 30 | 0 | 50 | 50 |
+| Wk2 | 60 | 30 | 60 | 0 | minus 10 | 0 |
+| Wk3 | 40 | 30 | 40 | 0 | minus 50 | 0 |
+| Wk4 | 0 | 30 | 30 | 0 | minus 80 | 0 |
+
+Read the columns left to right. Firm demand is the open balance on Confirmed sales order lines, bucketed by due date: two orders due Wk2 (60 units), one due Wk3 (40). Forecast is the statistical demand for each week. Gross requirements is the larger of firm and forecast after consumption, so Wk2 shows 60, not 90, because the firm orders have already consumed that week's forecast. Projected available balance (PAB) rolls forward: previous balance plus receipts minus gross requirements.
+
+The KPI strip summarizes it:
+
+- Current on hand: 80
+- Min projected: minus 80
+- Projected stockout date: Wk2 start
+
+The Wk2 row is flagged: PAB has gone negative. The system suggests a build quantity of 110 units for Wk2, enough to recover the balance above safety stock through Wk4 given the product's lot rules.
+
+## Step 1: Why the Grid Shows What It Shows
+
+Two ideas make the grid trustworthy.
+
+First, firm demand comes from real sales order lines, not from open make-to-order jobs. Counting an order and the job created to fulfill it would double the demand. So firm demand is sourced from the open balances of Confirmed sales order lines only. A Draft order's lines do not appear. This is why confirming an order matters: it is the moment its demand starts driving the plan.
+
+Second, the suggested and committed quantities are kept separate from the projected balance until a build is actually firmed. The MPS Quantity column is the planner's committed decision; it is not speculatively rolled into PAB. Only a firmed order, which becomes a real scheduled receipt, moves the balance. This sidesteps the trap of a committed-but-not-built quantity appearing as phantom supply.
+
+## Step 2: Commit a Build Quantity
+
+The planner accepts the suggestion. Click the Wk2 row, type 110 into the MPS Quantity field, and click Save Build Qty. The bucket's status badge changes to Firm. No manufacturing order exists yet; this is a commitment, not a build. The Committed MPS card in the KPI strip now reads 110.
+
+Saving is deliberate and reversible. The planner can adjust the number, save again, and nothing downstream changes until the bucket is firmed.
+
+## Step 3: Firm the Bucket Into an Order
+
+Widget A has a lead time of 3 days. The planner selects the Wk2 bucket, sets the due date to Wk2's Monday, and clicks Firm.
+
+EDGEBIC does this atomically, in one transaction:
+
+```
+releaseDate = Wk2 Monday minus 3 days = last Friday
+
+ManufacturingOrder
+  Quantity          = 110
+  DueDate           = Wk2 Monday
+  TargetStartDate   = last Friday
+  StartTime         = last Friday
+  BuildToInventory  = true
+  DemandSource      = MPS
+  Status            = Scheduled
+```
+
+The MPS Quantity is a decimal, but a manufacturing order quantity is a whole number, so a fractional commitment always rounds up: 99.5 committed becomes a 110-unit order here because the planner committed exactly 110. The bucket's status badge flips to Released and shows the new order's ID.
+
+Firming is idempotent. If the planner clicks Firm again on a bucket whose order still exists, EDGEBIC returns the same order rather than creating a duplicate. And if the order is later deleted out of band, the grid quietly demotes the bucket back to Firm so it can be re-firmed, while the anomaly report flags the stale link for cleanup.
+
+## Step 4: The Stockout Resolves, Then the Engine Schedules
+
+Reload the grid. The firmed order now appears as a real scheduled receipt in Wk2:
+
+| Bucket | Firm Demand | Gross Req | Scheduled Receipts | PAB | ATP |
+|---|---|---|---|---|---|
+| Wk1 | 0 | 30 | 0 | 50 | 50 |
+| Wk2 | 60 | 60 | 110 | 100 | 50 |
+| Wk3 | 40 | 40 | 0 | 60 | 60 |
+| Wk4 | 0 | 30 | 0 | 30 | 30 |
+
+The projected balance never goes negative now. The stockout is resolved on paper.
+
+The build-to-stock order is also sitting in the manufacturing order grid, marked build-to-inventory. On the next Drive Schedule run, the finite capacity engine reads it and places its routing across work centers, starting no earlier than last Friday, exactly like any other job. Its build hours compete for real machine time and appear on the same Gantt as customer orders. That is the whole point of routing a stock build through the same scheduler: inventory replenishment is not a separate paper exercise, it is a job on the floor.
+
+## Step 5: The Two Fences
+
+Two per-product fences shape the near-term plan:
+
+| Fence | Window | Behavior |
+|---|---|---|
+| Demand time fence | today to today plus demand fence days | Only firm orders drive requirements; forecast is ignored, since it is already consumed by known orders |
+| Planning time fence | today to today plus planning fence days | The system suppresses new suggestions and does not overwrite committed build quantities |
+
+Set them on the product. A high-turnover consumable might use a 7-day demand fence; a long-lead casting might use 60. Inside the planning fence, a committed quantity is protected from an automatic planning run; beyond it, in the open horizon, it can be revised. A planner who commits 50 units for a bucket inside the planning fence can trust it will not be zeroed by a rerun; a commitment in the open horizon should be double-checked after one.
+
+## What This Walkthrough Proves
+
+1. **The MPS projects forward.** It catches a stockout weeks early by rolling the balance instead of waiting for on hand to hit zero.
+2. **Firm demand is real orders.** Only Confirmed sales order lines count, so demand is never double-counted against the jobs that fulfill it.
+3. **Committed is not built.** The MPS Quantity column stays out of the balance until a firmed order becomes a real receipt.
+4. **Firming is one atomic step.** The build-to-stock order and the bucket stamp share one transaction, and re-firming a live bucket never duplicates.
+5. **Stock builds schedule like jobs.** The firmed order competes for machine time on the same Gantt as everything else.
+6. **Fences protect the near term.** The demand fence suppresses stale forecast; the planning fence protects committed quantities.
+
+## From a Plan to a Schedule
+
+The MPS turns demand into build decisions; the scheduler turns build decisions into dated operations. The natural neighbors of this walkthrough are the demand side, [from a sales order to a scheduled job](/blog/from-a-sales-order-to-a-scheduled-job-in-edgebic), and the single-product replenishment loop, [a make-to-stock replenishment cycle](/blog/make-to-stock-replenishment-walkthrough-edgebic). When a stock build feeds a make-to-order job in the same run, [consume from stock netting](/blog/consume-from-stock-netting-walkthrough-edgebic) shows how the engine avoids double-building.
+
+User Solutions has helped manufacturers plan production since 1991, including Cummins across 33 locations. [Contact us for a demo](/contact-us) and bring one stocked product: we will build its MPS with you.
+
+<Accordion title="What is the Master Production Schedule in EDGEBIC?">
+The MPS is the time-phased, planner-editable bridge between demand and the scheduling engine. It shows a bucket-by-bucket grid of a stocked product's forecast demand, firm demand, projected available balance, and a suggested build quantity. The planner decides how many units to build and when, then firms that decision into a build-to-stock manufacturing order that the finite capacity engine schedules against real work center capacity. It sits between demand management and the scheduler.
+</Accordion>
+
+<Accordion title="Where does firm demand in the MPS come from?">
+From open balances on Confirmed sales order lines, bucketed by each line's due date. A line's open balance is its quantity minus the quantity shipped. Lines on Draft, Shipped, Closed, or Cancelled orders do not count as firm demand, so confirming an order is the act that makes its lines drive the plan. Forecast demand comes separately from forecast entries and is consumed by firm orders inside the demand time fence.
+</Accordion>
+
+<Accordion title="What happens when a planner firms an MPS bucket?">
+Firming creates a build-to-stock manufacturing order in one atomic step. EDGEBIC computes the release date as the due date minus the product's lead time, creates the order flagged build-to-inventory with the committed quantity, and marks the bucket Released with the new order's ID. The order then appears in the manufacturing order grid and is scheduled on the next run. Re-firming an already-released bucket whose order still exists returns the same order rather than creating a duplicate.
+</Accordion>

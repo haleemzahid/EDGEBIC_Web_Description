@@ -1,0 +1,104 @@
+---
+title: "How a Scheduler Nets Demand Against Inventory"
+description: "How EDGEBIC checks on-hand stock before it schedules a build: the append-only ledger, consume-from-stock netting, and how it avoids double-allocating the same units."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - inventory netting
+  - consume from stock
+  - make to stock
+  - on-hand inventory
+  - finished goods scheduling
+  - inventory ledger
+targetPhrase: "netting demand against inventory"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "What does it mean to net demand against inventory?"
+    answer: "Netting means checking on-hand stock before scheduling a build and satisfying demand from that stock rather than making it again. When a demand exists for a product that already has finished-goods inventory, EDGEBIC's scheduling engine can consume the available stock, post an issue against the inventory ledger, and skip the work-center operations for the portion covered by stock. Only the shortfall, if any, is built."
+  - question: "What is the authoritative record of on-hand stock?"
+    answer: "The authoritative on-hand is the sum of an append-only inventory ledger, where each entry is a signed movement: positive for a receipt, negative for an issue. On-hand is never edited in place; a mistake is corrected with an inverse reversal entry, and both the original and the reversal remain forever. This design keeps a complete audit trail of every stock movement and makes the on-hand figure the engine nets against always reconstructable."
+  - question: "How does a scheduler avoid using the same stock twice?"
+    answer: "It decrements an in-run reservation map the moment the first demand is netted, before the second demand is even evaluated. Two orders for the same product in one scheduling run can never both claim the same units, because the available balance drops as soon as the first consumer takes its share. This within-run guard is what prevents a double-allocation that would otherwise over-issue stock that only exists once."
+  - question: "What is make-to-stock versus make-to-order?"
+    answer: "A make-to-stock product is built ahead of a specific customer order and placed into finished-goods inventory, so a completed build posts a receipt to stock. A make-to-order product is built only when a customer order exists and goes straight to the customer with no receipt. Netting consumes stock for make-to-order demand when inventory exists; make-to-stock producers build to replenish stock rather than consuming it."
+qaQuestions:
+  - question: "We keep finished goods on the shelf, but our scheduler always builds from scratch even when stock exists. Why does that matter and how would netting change it?"
+    answer: "Building what you already have on the shelf wastes capacity and inflates lead times for no reason. With netting, when a customer order arrives for a product that has on-hand stock, EDGEBIC checks the inventory ledger first: if there are 200 on hand and the order needs 80, it consumes 80 from stock, posts a negative issue to the ledger, marks the order as satisfied from stock, and schedules no work-center operations for it at all. The 80 units ship from the shelf and your machines stay free for the work that actually needs making. Only when the demand exceeds available stock does the engine build the shortfall."
+  - question: "If I reschedule an order that was satisfied from stock, does the ledger end up with phantom balances?"
+    answer: "No, because netting is idempotent by design. Before the engine reads on-hand for a reschedule, it first reverses the previous consume-issue for that order with an inverse ledger entry, restoring the balance. Then it re-nets against the restored on-hand and posts a fresh issue if stock still covers the demand. The ledger shows the original issue, its reversal, and the new issue, all preserved as an audit trail, and the on-hand nets to the correct figure. No matter how many times you reschedule the same order, there is at most one live consume-issue for it at any moment."
+---
+
+**Netting demand against inventory means checking on-hand stock before scheduling a build, so the engine satisfies demand from what is already on the shelf instead of making it again. When a demand exists for a product that has finished-goods inventory, EDGEBIC by User Solutions can consume the available stock, post an issue against an append-only inventory ledger, and skip the work-center operations for the portion covered by stock.** Only the shortfall, if any, is scheduled as real work. The result is that machine capacity goes to the jobs that genuinely need making, and lead times are not inflated by rebuilding parts that already exist.
+
+A scheduler that ignores inventory treats every order as something to manufacture from scratch. For a make-to-order shop with no finished-goods stock, that is fine. For any operation that keeps product on the shelf, it is wasteful: capacity is spent building units that are sitting in the warehouse, and the order that could have shipped today instead waits in a queue behind work that never needed to happen.
+
+## The ledger is the source of truth
+
+Everything starts with how on-hand is recorded. EDGEBIC keeps an append-only inventory ledger where every stock movement is a signed entry: a positive quantity for a receipt (stock in), a negative for an issue (stock out). The authoritative on-hand for a product is simply the sum of its ledger entries. The engine nets against that sum.
+
+The append-only rule is deliberate. On-hand is never edited in place, and an entry is never deleted. A mistake is corrected by appending an inverse reversal entry, and both the original (now marked as reversed) and the reversal survive forever. So the ledger is a complete history of every movement and every correction, and the on-hand figure is always reconstructable from it. A displayed on-hand cache exists for fast reporting, but it is only ever recomputed from the ledger sum, never written independently, so it cannot drift into a number the ledger does not support.
+
+## Two directions: receipts and issues
+
+Stock moves in two directions, and netting cares about both.
+
+- When a **make-to-stock** order (a build-ahead into inventory) completes, EDGEBIC posts a positive receipt to the ledger, marked with the canonical "Build to Inventory" comment. On-hand goes up.
+- When a demand is **satisfied from stock**, the engine posts a negative issue at the scheduling persist step, marked "Schedule Transaction." On-hand goes down.
+
+The distinction between make-to-stock and make-to-order controls which happens. A make-to-order product is built only when a customer order exists and ships straight to the customer, so its build does not post a receipt. A make-to-stock product is built ahead and placed into inventory, so its completion posts a receipt to replenish the shelf. Netting then consumes that stock for the next demand that can use it.
+
+## Consume-from-stock, step by step
+
+The netting itself runs inside the scheduling engine, not at order entry. For each order, the engine asks a short set of questions: is the product stocked, is this order a consumer rather than a producer, and does it have actuals already (an in-progress job is never retroactively satisfied from stock). If it clears those, the engine compares the available on-hand against the order's need:
+
+- If stock covers the need, the engine consumes it, decrements its reservation map immediately, marks the order as satisfied from stock, and emits a single material-shaped placeholder row instead of any work-center operations. At the persist step, one net issue is posted to the ledger.
+- If stock does not cover the need, the order builds normally (and, in a design that nets partial coverage, only the shortfall is scheduled).
+
+The material-shaped placeholder matters: an order satisfied entirely from stock still needs one row so the engine does not read an empty result as a scheduling error, but that row carries no machine and no hours, so it does not pollute utilization or trip capacity validators.
+
+## A worked example: 200 on hand, order for 80
+
+Widget A is make-to-stock, and a completed build has posted a receipt of 200, so on-hand is 200. A customer order MO-102 arrives for 80 units, make-to-order.
+
+- The engine seeds its available balance for Widget A at 200.
+- For MO-102 it finds available 200 is at least the need of 80. It consumes 80, drops the balance to 120, marks MO-102 satisfied from stock, and emits the placeholder row, scheduling no milling or assembly.
+- At the persist step it posts an issue of negative 80. The ledger now reads: receipt +200, issue -80, balance 120.
+
+MO-102 ships 80 units from the shelf, and not one machine hour was spent on it. The 120 remaining units are available for the next demand. That is the whole value of netting: the order cleared without consuming capacity that other jobs need.
+
+## Two units, never claimed twice
+
+A subtle failure mode in naive netting is two orders in one run both seeing the same on-hand and both claiming it, over-issuing stock that exists only once. EDGEBIC avoids this with a within-run reservation map. The moment the first consumer is netted, the available balance drops, so when the second consumer is evaluated it sees the reduced figure. Two orders for the same product can never both take the same units, because the decrement happens before the second order is even considered.
+
+The engine also sorts build-to-stock producers ahead of their consumers within a run, so a producer registers its projected output before any consumer inspects availability. That ordering is what lets a same-run producer feed a same-run consumer without a double-build, when the time-phased netting option is active.
+
+## Reschedule without phantom balances
+
+Netting is idempotent across reschedules, which is what keeps the ledger honest over time. Before the engine reads on-hand for a reschedule, it first reverses the previous consume-issue for that order, restoring the balance, then re-nets and posts a fresh issue if stock still covers the demand. So an order rescheduled twice leaves a clean trail: the original issue, its reversal, and the new issue, all preserved, netting to the correct on-hand. There is at most one live consume-issue for any order at any moment, no matter how often it is rescheduled. Deleting or reopening an order reverses its entries the same way, so removal paths never leave the ledger inconsistent.
+
+## Where this fits
+
+Netting sits at the boundary between inventory and scheduling: it is the reason the engine can decide "do not build this, ship it from stock" as part of a normal scheduling run. The [inventory ledger explainer](/blog/edgebic-inventory-ledger-explained) covers the ledger model and the receipt and issue flows in more depth, and the [consume-from-stock walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic) traces a full netting cycle end to end. Because netting can turn a customer order into a shelf pull, it also feeds directly into a [quote simulation](/blog/how-a-quote-simulation-produces-a-realistic-date): an order that can be satisfied from stock quotes a much shorter lead time than one that must be built, and the simulation sees that the same way the live run does.
+
+For the wider pipeline the netting decision lives inside, see the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide). To explore how EDGEBIC could net your own demand against your on-hand stock, [bring your data to a demo](/contact-us).
+
+<Accordion title="What does it mean to net demand against inventory?">
+Netting means checking on-hand stock before scheduling a build and satisfying demand from that stock rather than making it again. When a demand exists for a product that already has finished-goods inventory, EDGEBIC's scheduling engine can consume the available stock, post an issue against the inventory ledger, and skip the work-center operations for the portion covered by stock. Only the shortfall, if any, is built.
+</Accordion>
+
+<Accordion title="What is the authoritative record of on-hand stock?">
+The authoritative on-hand is the sum of an append-only inventory ledger, where each entry is a signed movement: positive for a receipt, negative for an issue. On-hand is never edited in place; a mistake is corrected with an inverse reversal entry, and both the original and the reversal remain forever. This design keeps a complete audit trail of every stock movement and makes the on-hand figure the engine nets against always reconstructable.
+</Accordion>
+
+<Accordion title="How does a scheduler avoid using the same stock twice?">
+It decrements an in-run reservation map the moment the first demand is netted, before the second demand is even evaluated. Two orders for the same product in one scheduling run can never both claim the same units, because the available balance drops as soon as the first consumer takes its share. This within-run guard is what prevents a double-allocation that would otherwise over-issue stock that only exists once.
+</Accordion>
+
+<Accordion title="What is make-to-stock versus make-to-order?">
+A make-to-stock product is built ahead of a specific customer order and placed into finished-goods inventory, so a completed build posts a receipt to stock. A make-to-order product is built only when a customer order exists and goes straight to the customer with no receipt. Netting consumes stock for make-to-order demand when inventory exists; make-to-stock producers build to replenish stock rather than consuming it.
+</Accordion>

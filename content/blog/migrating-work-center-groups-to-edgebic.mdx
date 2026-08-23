@@ -1,0 +1,99 @@
+---
+title: "Migrating Work Center Groups to EDGEBIC"
+description: "Machine pools are created by hand in EDGEBIC, not imported. Here is how to turn the alternate lists repeated across your old routings into groups, and why you import the routings first."
+published: 2026-08-11T12:00:00.000Z
+modified: 2026-08-13T12:00:00.000Z
+category: Upgrade & Comparison
+author: user-solutions
+cluster: edgebic-migration
+pillarSlug: edgebic-migration-guide
+keywords:
+  - migrating work center groups to EDGEBIC
+  - machine pool migration
+  - consolidating alternate work centers
+  - work center group members factor
+  - selection strategy migration
+  - group binding replaces alternates
+targetPhrase: "migrating work center groups to EDGEBIC"
+wordCount: 1490
+readingTime: 8
+faqQuestions:
+  - question: "Can work center groups be imported into EDGEBIC?"
+    answer: "No. Groups and their members are created in the interface, on the Workcenter tab's Workcenter Groups inner tab, because there is no group entity on the import masks. What you can import is the routing data underneath them: the Workcenter mask loads the machines, and the BOR mask loads routing steps including their alternate work center columns. The practical consequence is a two-stage migration. Import routings with their alternate lists so the plant schedules correctly on day one, then consolidate the lists that repeat into groups afterward, which is quick because a group is one dialog plus a member checklist."
+  - question: "What happens to my per-step alternate machines when I bind a step to a group?"
+    answer: "The group replaces them. Binding a routing step to a work center group supersedes any manually configured alternate list on that step, because the group is the alternate list from then on. That is the intended behavior and it is why consolidation is a deliberate swap rather than an addition: you move the knowledge from many step-level lists into one pool definition. If a particular step genuinely needs a hand-picked list different from the pool, leave that step unbound and keep its per-step alternates instead."
+  - question: "How do I set relative machine speeds inside a migrated group?"
+    answer: "Each member row in the group's members grid carries a Factor, a run-time multiplier applied to the step's base hours for that machine within that group. A factor of 1.0 is baseline, 0.5 means twice as fast, and 2.0 means twice as slow, and it is never applied to setup time. Use it for work-class differences, meaning this machine takes twenty-five percent longer for this kind of work. If a machine is simply slower at everything, that belongs in the machine's own configuration rather than in a group factor."
+qaQuestions:
+  - question: "Our old routings list the same three mills as alternates on about forty steps. What does migrating that into EDGEBIC actually look like?"
+    answer: "It looks like one group and forty bindings, replacing forty copies of the same knowledge. First import the routings as they are, alternates included, so the plant is schedulable immediately and nothing waits on a modeling decision. Then create a group on the Workcenter Groups inner tab: give it a name such as MILLING, an optional code, a selection strategy, and save it. Add the three mills through Add or Remove Members, and set each member's Factor and optional Setup Override in the members grid, clicking Apply per row. Now revisit the steps: on each step's work center field, open the selection popup and choose the Work Center Group radio rather than Workcenter, then pick MILLING. Each binding drops that step's own alternate list, which is the point. The payoff is maintenance: when a fourth mill arrives you add one member to one group instead of editing forty routing steps, and nothing drifts because there is only one list to keep right."
+  - question: "Does migrating to groups take control away from the planner on the floor?"
+    answer: "No, and this is worth telling the planners during training. A group decides which member runs a step by its selection strategy, but a planner's manual machine pin on a step always wins, and it survives rescheduling rather than being re-shopped away on the next run. So the group is the default behavior, not a lock. There are two more safeguards worth knowing after a migration. Unchecking Active on a member removes that machine from every group-bound step's candidate list on the next scheduling run, while operations already started on it stay where they are, which makes taking a machine out of a pool safe mid-week. And a group with no active members cannot be scheduled at all, so an empty or fully deactivated pool fails visibly rather than quietly picking something wrong."
+---
+
+**Migrating work center groups to EDGEBIC means creating each pool by hand and then binding routing steps to it, because groups are not one of the import entity types.** In EDGEBIC by User Solutions the efficient sequence is to import your routings with their existing alternate lists first, so the plant schedules correctly straight away, and then consolidate the lists that repeat across many steps into groups. Consolidation is a deliberate swap: binding a step to a group replaces that step's own alternate list.
+
+## What a group replaces
+
+In most systems being retired, machine flexibility is expressed one step at a time. If three mills can do a job, all three get listed on every step that needs milling. The information is correct and completely duplicated, which means it drifts the first time someone edits one copy and not the other thirty-nine.
+
+A work center group holds that knowledge once. The step points at the pool, and the scheduler picks a member at planning time. The migration question, then, is not really "how do I move my groups across" but "which of my repeated alternate lists deserve to become one pool".
+
+## Import the routings first
+
+Groups cannot be imported, but nothing about them blocks a go-live, so do not let modeling decisions gate the data load.
+
+| Data | How it arrives |
+| --- | --- |
+| The machines themselves | Workcenter import mask |
+| Routing steps and their alternate columns | BOR import mask, including alternate type and a resource multiplier column |
+| Group definitions and members | Created in the interface, no import |
+| Step-to-group bindings | Set per step in the work center selection popup |
+
+Bringing routings in with their alternate lists intact gets you a schedulable plant on the normal [import order](/blog/the-order-to-import-your-data-into-edgebic), the same way [migrating alternate work center routings](/blog/migrating-alternate-work-center-routings-to-edgebic) describes. Groups then become an improvement you make on a working system rather than a prerequisite.
+
+## Creating the pool
+
+Groups live on the Workcenter tab, which carries three inner tabs: Workcenters, Workcenter Groups, and Resource Calendar. Select Workcenter Groups and add a group.
+
+| Field | Notes for a migration |
+| --- | --- |
+| Group Name | The pool's unique name, shown on the routing steps bound to it |
+| Code | Optional short code, useful if your old system had a pool identifier worth keeping |
+| Selection Strategy | EarliestCompletion by default, or PrimaryFirst, or EarliestStart |
+| Active | Unchecked means future scheduling runs ignore the group and it leaves the routing picker |
+| Description | Free text, a good place to record which old routing convention this pool came from |
+
+Saved groups appear in the list with a member count, starting at zero. A group with no active members cannot be scheduled, so members are the next step rather than an optional extra.
+
+Pick the selection strategy from how your old system behaved. If it always tried a designated machine first and only spilled to others when that one was busy, PrimaryFirst reproduces that and you flag the designated machine as Primary. If it effectively chased whichever machine would finish soonest, EarliestCompletion is the match, and it is the default.
+
+## Adding members and their knobs
+
+Add or Remove Members opens a checklist of every work center. Check the machines in the pool. A machine may belong to several groups at once, and machines already used elsewhere are noted rather than hidden, which is useful when a single mill sits in both a roughing and a finishing pool.
+
+Each member row then carries the settings that make the pool realistic. Edit them in the grid and click Apply on the row.
+
+- **Factor** is a run-time multiplier for that machine within that group. Effective run hours are the step's base hours times the factor, so 1.0 is baseline, 0.5 is twice as fast and 2.0 is twice as slow. It is never applied to setup time.
+- **Setup Override** sets the setup hours used when that member runs the step. Blank means inherit the routing step's own setup time. It is independent of the factor, so a machine can run fast and still set up slowly.
+- **Primary** marks the machine PrimaryFirst tries first. Only one member per group can hold it; ticking a second unticks the first.
+- **Priority** breaks ties, lower first, and decides the fallback primary if no member is flagged.
+- **Active** unchecked drops the machine from every group-bound step's candidate list on the next scheduling run, while operations already started on it stay put.
+
+Take care with the factor during migration. It expresses relative speed *for this class of work inside this pool*. A machine that is slower at everything should carry that in its own work center configuration instead, or you will end up describing the same slowness twice. The [factor from base](/blog/what-is-factor-from-base-in-work-center-groups) rule is the one to keep in mind.
+
+## Binding the steps
+
+On the BOR tab, open the step's work center selection popup from the button next to the work center field. It offers three choices: Workcenter, Product, and Work Center Group. Choose Work Center Group and pick the pool. The list shows active groups that have at least one active member, and hovering a group previews its members and their factors.
+
+Each binding replaces that step's manually configured alternates. Work through the steps deliberately rather than in bulk, and leave any step unbound where a hand-picked list really does differ from the pool.
+
+## Verifying the consolidation
+
+After binding, schedule and check which machine each group-bound step actually landed on, then compare against what your old system would have chosen for the same work. Two migration errors show up immediately. If everything piles onto one machine, check whether a stray Primary flag plus PrimaryFirst is overriding the load balancing you expected. If a pool seems to have vanished from the picker, check that the group is Active and has at least one active member.
+
+Pair this with the load check from [migrating capacity and utilization settings](/blog/migrating-capacity-and-utilization-settings-to-edgebic), because a pool's behavior depends on its members' capacity being right first. Once the pool exists, [how to see a work center group's pooled load](/blog/how-to-see-a-work-center-groups-pooled-load-in-edgebic) reads the group row on the Resource Calendar as a live sum of its member machines.
+
+## The takeaway
+
+Migrating work center groups to EDGEBIC is a hand-build rather than an import: load the machines and routings through the Workcenter and BOR masks, then create each pool on the Workcenter Groups inner tab, add members with their Factor, Setup Override, Primary, Priority and Active settings, and bind the routing steps that should shop the pool. Remember that binding replaces a step's own alternate list, that a planner's manual pin still wins and survives reschedules, and that a group needs at least one active member to schedule at all. See the platform on the [EDGEBIC overview](/edgebic), the upgrade path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and pair this with [how a work center group shops a pool of machines](/blog/how-a-work-center-group-shops-a-pool-of-machines) and [an EDGEBIC migration checklist](/blog/an-edgebic-migration-checklist).

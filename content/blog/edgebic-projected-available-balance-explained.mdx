@@ -1,0 +1,154 @@
+---
+title: "Projected Available Balance in Manufacturing: How EDGEBIC Builds the Forward Picture"
+description: "Projected available balance in manufacturing turns a stock number into a dated forward plan. Here is the roll-forward arithmetic and what each figure means."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - projected available balance manufacturing
+  - inventory projection buckets
+  - gross requirements calculation
+  - scheduled receipts planning
+  - days of cover metric
+  - projected stockout date
+  - safety stock trigger
+targetPhrase: "projected available balance manufacturing"
+wordCount: 1807
+readingTime: 9
+faqQuestions:
+  - question: "What is projected available balance in manufacturing?"
+    answer: "Projected available balance is a dated forecast of stock, calculated one time bucket at a time. Each bucket takes the previous balance, adds scheduled receipts from open build-to-stock orders completing in that bucket, and subtracts gross requirements from forecast and firm demand. The result carries into the next bucket. It answers how much stock you will have on a given future date rather than how much you have today."
+  - question: "Is a negative projected available balance an error?"
+    answer: "No, it is the most useful number on the row. A negative balance says committed demand exceeds projected supply in that bucket, by exactly that amount, which is the signal that a replenishment is needed and how large it needs to be. Blocking or hiding the negative would remove the warning. The shortfall also carries forward, so a deficit in one bucket persists until a receipt larger than the accumulated gap arrives."
+  - question: "How does a projection handle time buckets that are already in the past?"
+    answer: "Past buckets use what actually happened rather than what was planned. A bucket whose end date falls entirely before today is treated as history, and its balance moves by realised ledger movement only, with planned supply and demand ignored. That keeps the historical part of the calendar truthful even when the plan has since changed, and gives the forward part a correctly anchored starting balance."
+  - question: "Why does a suggested order quantity not improve the projected balance?"
+    answer: "Because a suggestion is advice, not supply. The suggested quantity is displayed on the row but deliberately not rolled into the balance of later buckets, so the projection only ever reflects supply that actually exists. Once a planner firms the suggestion into a real build-to-stock order, that order appears as a scheduled receipt on the next projection and lifts the balance from its completion bucket onward."
+qaQuestions:
+  - question: "Why does the first bucket of my projection show a huge receipt that I cannot account for?"
+    answer: "Overdue open orders are rolled into the current bucket rather than left in the past. Any open build-to-stock order whose completion date has already passed is clamped into today's bucket so it stays visible and actionable, and the same applies to overdue demand. If six late build orders exist for one part, today's bucket shows their combined quantity as a single scheduled-receipt figure rather than six separate dated receipts. It is correct behavior and it is also a signal: a large first-bucket receipt is usually your overdue backlog telling you it needs attention, so drill into the order list and check which of those orders are genuinely going to land."
+  - question: "Our projection says we will be fine, but we ran out anyway. What did we misread?"
+    answer: "Check three things in order. First, whether safety stock is doing the job you assumed: by default it is a replenishment trigger rather than a consumption floor, so a plan that ends every week at exactly safety stock is a plan with no cushion at all. Second, whether the receipts you were counting on were real: only open build-to-stock orders count as scheduled receipts, so a suggestion you never firmed contributed nothing. Third, whether demand was fully represented: for a make-to-order product, forecast rows are ignored entirely and only committed demand counts, so an unforecast surge would not have appeared."
+---
+
+**Projected available balance in manufacturing is a dated forecast of stock, rolled forward one time bucket at a time.** It takes the previous bucket's balance, adds supply that is genuinely scheduled to arrive, subtracts the demand that bucket has to absorb, and carries the result forward. [EDGEBIC by User Solutions](/edgebic) builds that calendar for every stocked product, and it is the difference between knowing what you have and knowing what you will have.
+
+A single on-hand number answers one question badly. It cannot tell you that Thursday's order will empty the shelf, that the build order landing Friday will be two days late for it, or that you are one rush order away from a stockout. The projection answers all three. This post explains the arithmetic, the vocabulary, and the design choices that make the numbers trustworthy. For the pillar-level tour of how projection connects to forecasting, replenishment and the master schedule, see the [inventory and planning guide](/blog/edgebic-planning-guide).
+
+## The Roll-Forward, in One Line
+
+For each bucket:
+
+**Projected balance = previous balance + realised ledger movement + scheduled receipts − gross requirements**
+
+That is the whole calculation. Everything else is definitions of the terms, and each term has a specific and narrow meaning.
+
+**Previous balance.** The projected balance from the bucket before. The first bucket's opening figure is the sum of ledger entries dated before the window starts, which anchors the whole calendar to real history rather than to an assumption.
+
+**Realised ledger movement.** The signed net of actual stock movements inside that bucket: receipts minus issues, as recorded. This term only participates in buckets that are entirely in the past.
+
+**Scheduled receipts.** Open build-to-stock orders whose expected completion falls in that bucket. Real orders only. A suggestion is not a receipt.
+
+**Gross requirements.** The demand the bucket has to absorb, after the forecast consumption rule has reconciled forecast against firm demand. For a make-to-order product it is firm demand alone.
+
+## Buckets: Day, Week or Period
+
+The calendar divides the horizon into equal-width buckets, and you choose the width from a **Bucket** picker: Day, Week or Period (a calendar month). A **Bucket Count** spinner sets how many. The default is fourteen buckets, which reads as a fortnight in daily mode or a quarter and a bit in weekly mode.
+
+Bucket choice is a resolution decision, and the right answer depends on your demand pattern:
+
+| Bucket | Reads well when | Watch out for |
+|---|---|---|
+| Day | Short lead times, daily shipping, tight stock | Long horizons produce very wide grids |
+| Week | Most discrete manufacturing | Within-week timing detail is averaged away |
+| Period | Long-lead purchased items, annual planning | Too coarse to catch a mid-month stockout |
+
+Every bucket has an inclusive start and an exclusive end, so movements never land in two buckets or fall between them.
+
+## History Buckets Keep the Past Honest
+
+Set the horizon start to a past date and the first buckets become history buckets: their end date falls entirely before today. Those buckets behave differently on purpose.
+
+In a history bucket, planned supply and planned demand are ignored completely. Only realised ledger movement moves the balance. The reason is straightforward: a plan for last Tuesday is no longer a claim about the future, it is a claim that either came true or did not, and the ledger already knows which.
+
+The practical use is calibration. Run the calendar back thirty days and you can compare what the plan said against what the ledger recorded, which is how you find out whether your forecasts are systematically high, low, or badly timed. The documented example shows this cleanly: a window opening at 250 with a realised receipt of 100 and a realised issue of 130 across two history buckets ends at 220, and the forward buckets then subtract planned demand from that anchored figure.
+
+## Opening Balance Versus On-Hand Now
+
+Two figures that look similar do different jobs, and confusing them is the most common misreading of the calendar.
+
+**Opening balance** is the ledger sum for entries dated before the window starts. It is the roll-forward's starting point, and if the window starts in the past it will be lower than today's stock.
+
+**On-hand now** is the sum of the entire ledger. It is what you physically have, and it is the starting point for available-to-promise.
+
+When the window starts today the two are the same. When it starts in the past they diverge, and that divergence is correct: the projection needs a historical anchor, and promising needs current reality. The reasoning behind the second figure is covered in [available-to-promise in EDGEBIC](/blog/available-to-promise-in-edgebic).
+
+## A Worked Projection
+
+Take a stocked product with these planning settings: safety stock 50, reorder point 80, reorder quantity 200, fixed-lot sizing, perfect yield, and the default greater-of consumption rule. Opening balance is 180 and there are no open build orders. Weekly buckets.
+
+| Bucket | Forecast | Firm | Gross requirements | Receipts | Projected balance |
+|---|---|---|---|---|---|
+| Week 1 | 60 | 40 | 60 | 0 | 120 |
+| Week 2 | 60 | 70 | 70 | 0 | 50 |
+| Week 3 | 60 | 0 | 60 | 0 | −10 |
+
+Read it left to right. Week 1 takes the larger of forecast 60 and firm 40, so demand is 60, and 180 minus 60 leaves 120. Week 2 takes the larger of 60 and 70, so demand is 70, and 120 minus 70 leaves 50: exactly at safety stock, which is not below it, so no flag. Week 3 has no firm orders yet, so forecast wins at 60, and 50 minus 60 leaves minus 10.
+
+That negative is the point of the whole exercise. It appears three weeks before the shelf is empty, it is precisely quantified, and it is what fires the replenishment suggestion: with a projected balance of minus 10 against a trigger of 80, the target is the reorder point plus the reorder quantity (280), the raw need is 290, and fixed-lot rounding to whole 200s makes the suggestion 400.
+
+Notice what did **not** happen. That 400 does not appear in week 4's opening balance. Which brings us to the most important design choice on the screen.
+
+## Suggestions Are Displayed, Not Assumed
+
+The suggested order quantity sits on the row as advice. It is deliberately not rolled forward into later buckets' balances.
+
+The consequence catches people out: a product with a persistent shortfall shows suggestions on several consecutive rows, even though logically the first one would fix the rest. That is intended. Until a planner firms a suggestion into a real order, no supply exists, and a projection that assumed otherwise would show a healthy plan built on a button nobody pressed.
+
+Once the suggestion is firmed, a real build-to-stock order exists, and on the next projection it appears as a scheduled receipt in its completion bucket. The balance rises from there onward and the suggestion for that bucket disappears. The firming step and what the created order looks like are covered in [how to enter forecasts and firm suggestions](/blog/how-to-enter-forecasts-and-firm-suggestions-in-edgebic).
+
+## The KPI Strip
+
+Four headline figures sit above the rows so you can triage without reading the grid.
+
+| Metric | What it is | How to use it |
+|---|---|---|
+| Current on-hand | The authoritative ledger sum | The number to trust when the grid disagrees |
+| Days of cover | On-hand divided by average demand per day across the horizon | A quick sense of runway; blank when there is no demand |
+| Projected stockout | The first bucket where the balance falls below safety stock | The date to work back from |
+| Below safety and suggested | How many buckets are flagged, and the total suggested quantity | Whether this product needs attention today |
+
+Days of cover is deliberately crude: it uses the average demand rate over the horizon, so it smooths out lumpy demand. Use it to sort a product list, not to set a policy.
+
+## Safety Stock Is a Trigger, Not a Wall
+
+A bucket is flagged when its projected balance falls below safety stock. That flag fires a suggestion, and it colors the cell in the matrix view.
+
+What it does not do, by default, is prevent consumption. Stock can be consumed below safety stock and can go negative, because the alternative (refusing to plan) would hide a real commitment rather than resolve it. A per-product option exists to make safety stock a genuine consumption floor for the rare cases that need one.
+
+Safety stock and reorder point are separate knobs and can coexist. A product can carry a reorder point of 50 to start the build process and a safety stock of 20 as the level you consider a genuine floor. For how to set the level itself, [safety stock calculation](/blog/safety-stock-calculation) covers the statistics; EDGEBIC consumes the number you decide.
+
+## What Feeds Firm Demand
+
+Gross requirements combine forecast and firm demand, and firm demand has two possible sources depending on how the planning layer is configured.
+
+The straightforward source is open make-to-order manufacturing orders, bucketed by due date. The more rigorous source is confirmed sales order lines, bucketed by their due dates and using open balance (ordered quantity less quantity shipped), which is the standard material-planning approach. How sales orders become demand is covered in [how sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic) and [sales orders explained](/blog/edgebic-sales-orders-explained).
+
+Whichever source is active, the interaction between forecast and firm demand is governed by the consumption rule on the product, and that rule is worth understanding before you trust a gross requirements figure. It is covered in [how forecast consumption works](/blog/how-forecast-consumption-works-in-edgebic).
+
+## Reading It in Practice
+
+Three habits make the calendar useful rather than decorative.
+
+**Start with the strip, not the grid.** Projected stockout and below-safety count tell you in two seconds whether this product needs your time.
+
+**Check what is real before you relax.** Scheduled receipts are open orders. A comfortable-looking plan built on receipts from overdue orders is not comfortable.
+
+**Trace any surprise back to a bucket.** Every figure on the row comes from named inputs, so a wrong balance is always a wrong input: a forecast in the wrong bucket, a demand source you did not expect, or an order whose completion date moved.
+
+Column-by-column reading, the six matrix lenses, and the drill-down dialog are covered in [how to read the projection](/blog/how-to-read-the-projection-in-edgebic), and the misreadings that cost people money are in [projection and ATP mistakes](/blog/projection-and-atp-mistakes-edgebic).
+
+To see the calendar built against your own part numbers, demand pattern and lead times, bring an item export and a month of open orders to a demo and ask User Solutions to run it. For the platform as a whole, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

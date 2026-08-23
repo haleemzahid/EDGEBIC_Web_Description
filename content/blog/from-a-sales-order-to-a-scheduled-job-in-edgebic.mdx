@@ -1,0 +1,124 @@
+---
+title: "From a Sales Order to a Scheduled Job in EDGEBIC"
+description: "Enter a customer sales order, confirm it, link it to a manufacturing order, schedule the job, and track it under the customer in the grouped order view, with every field and status shown."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - sales order to scheduled job
+  - confirm sales order firm demand
+  - link manufacturing order to sales order
+  - open quantity tracking
+  - grouped sales order view
+  - make to order scheduling
+targetPhrase: "sales order to scheduled job"
+wordCount: 1700
+readingTime: 9
+faqQuestions:
+  - question: "How does a sales order become a scheduled job in EDGEBIC?"
+    answer: "You enter the sales order header and its product lines, confirm the order, then create or link a manufacturing order that references it and run the scheduler. The manufacturing order carries the sales order ID, so the job appears under that customer's order in the grouped view. The finite capacity engine schedules the job's routing across work centers exactly like any other, and its scheduled span and actual hours roll up to the order for per-customer visibility."
+  - question: "Why does confirming a sales order matter in EDGEBIC?"
+    answer: "Only lines on Confirmed orders count as firm demand. A Draft order's lines are entered but excluded from inventory projection and master production scheduling, so confirming is the deliberate act that lets an order drive planning. Shipped, Closed, and Cancelled orders are also excluded. The best practice is to confirm only when the order is commercially locked, since a confirmed line immediately enters the demand pipeline for stocked products."
+  - question: "What is the open quantity on a sales order line?"
+    answer: "Open quantity is the ordered quantity minus the quantity shipped, floored at zero: the amount still owed to the customer. It is a computed value, not a stored column, so it updates automatically as shipments post. For a 500-unit line, an open quantity of 150 after two partial shipments means 150 remain, and that open balance is exactly what firm-demand planning uses, bucketed by the line's due date."
+qaQuestions:
+  - question: "A customer sends a purchase order for 50 custom brackets. Walk me through getting that into EDGEBIC and onto the schedule."
+    answer: "Create a sales order header with the customer and their PO number, add a line for the bracket with quantity 50 and the due date, and save. For a make-to-order part you can create the manufacturing order right away, quantity 50, linked to that sales order, and run Drive Schedule. The engine places the routing (cut, drill, weld) across work centers, and the job shows under the customer's order in the grouped view. When the brackets ship, set the order to Shipped and open quantity falls to zero."
+  - question: "If I cancel a sales order, do I lose the schedule history for its jobs?"
+    answer: "No. Deleting a sales order soft-deletes it and its linked manufacturing orders, but the schedule rows and hour logs remain in the database for historical cost and time analysis. The jobs disappear from the active schedule list, yet nothing is physically erased. The order's reference number also frees up for reuse, because the uniqueness rule ignores deleted rows. If you only want to stop it counting as demand, setting the status to Cancelled leaves the jobs in place and simply drops its lines from the firm-demand query."
+---
+
+**Turning a sales order into a scheduled job in [EDGEBIC by User Solutions](/edgebic) is a short chain: enter the order and its lines, confirm it, link a manufacturing order to it, and schedule that job, which then tracks under the customer in the grouped order view.** This walkthrough follows one custom-bracket order from a customer's purchase order to a committed schedule, with every field and status shown. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so the demand-to-schedule path is visible in numbers.
+
+This is the direct sales-order path, distinct from the [quote to ship walkthrough](/blog/quote-to-ship-in-edgebic), which starts with a quote simulation and converts it. For the concept behind the demand side, [sales orders explained](/blog/edgebic-sales-orders-explained) is the companion.
+
+## The Cast: One Custom-Bracket Order
+
+Acme Corp sends a purchase order:
+
+| Field | Value |
+|---|---|
+| Customer | Acme Corp |
+| Reference number | AC-8812 (their PO number) |
+| Product | Custom Bracket (make-to-order) |
+| Quantity | 50 |
+| Due date | 2026-07-20 |
+| Unit price | 12.00 |
+
+## Step 1: Create the Sales Order Header
+
+Open Orders and click New Order. Pick the customer, Acme Corp. Enter the reference number, AC-8812, or click Generate to get an EDGEBIC-assigned number in the form SO-2026-NNNN. The reference number must be unique per customer, so Acme cannot have two orders both named AC-8812, though a different customer could reuse the string.
+
+Save. The order is created with status Draft. A Draft order is entered but not yet committed; its lines do not count as firm demand.
+
+## Step 2: Add the Product Line
+
+Open the order detail and click Add Line. Select the Custom Bracket, enter quantity 50, unit price 12.00, and the due date of 2026-07-20. The due date is the important field for planning: it is the bucket key that demand and master production scheduling use per line. Save.
+
+The line now shows an open quantity of 50, which is the ordered quantity minus the quantity shipped. Nothing has shipped, so all 50 are open.
+
+## Step 3: Confirm the Order
+
+Change the status to Confirmed and save. This is the deliberate act that makes the order real for planning: only Confirmed orders produce firm demand. A Draft order's lines are excluded from inventory projection and master production scheduling; Shipped, Closed, and Cancelled are excluded too. Confirm only when the order is commercially locked, because a confirmed line enters the demand pipeline immediately.
+
+For a stocked product, this confirmation is what would surface the line in the master production schedule grid, covered in [building a master production schedule](/blog/building-a-master-production-schedule-in-edgebic). For this make-to-order bracket, the next step is a direct manufacturing order.
+
+## Step 4: Create the Manufacturing Order and Link It
+
+Create a manufacturing order for the bracket:
+
+| Field | Value |
+|---|---|
+| Job number | MO-2026-0091 |
+| Product | Custom Bracket |
+| Quantity | 50 |
+| Due date | 2026-07-20 |
+| Sales order | AC-8812 |
+| Build method | Make to order |
+
+The sales order field is the link. Setting it stamps the manufacturing order with the sales order's ID, which is what makes the job appear under Acme's order in the grouped view. You can set it at creation, or link an existing job later from the manufacturing order editor. Jobs with no sales order link show up under an Unassigned grouping, so nothing gets lost.
+
+## Step 5: Schedule the Job
+
+Run Drive Schedule. The engine reads MO-2026-0091, walks its routing, and places each operation across work centers: Cut, then Drill, then Weld. Each step's hours land in real shift capacity, dependencies cascade so each step's finish becomes the next step's earliest start, and the job commits.
+
+The job now appears two ways. In the standard Job View it is a set of colored bars in the Cut, Drill, and Weld rows. In the grouped sales order view, toggled on the Orders view, it sits under Acme Corp's AC-8812 order, alongside any other jobs on that order. Expand the order row and you see each linked job with its scheduled span (earliest start to latest end) and its actual hours as they accumulate.
+
+## Step 6: Ship and Close
+
+When the brackets leave the dock, update the sales order line's shipped quantity to 50. The open quantity falls to zero automatically, because it is computed, not stored. Set the order status to Shipped. The manufacturing order is marked complete by the actuals path when the last operation finishes. None of this deletes a database row; the schedule and hour history remain for reporting.
+
+Partial shipments work the same way. A 500-unit line shipped 150, then another 350, shows open quantities of 350, then 150, then 0, and the firm demand it contributes shrinks with each shipment without any planner intervention.
+
+## Canceling Without Losing History
+
+If Acme withdraws the order, you have two clean options. Setting the status to Cancelled leaves the jobs in place and simply drops the order's lines from the firm-demand query. Deleting the order soft-deletes it and its linked jobs, removing them from the active schedule list while keeping their schedule rows and hour logs for historical analysis. Either way nothing is physically erased, and the reference number frees up for reuse because the uniqueness rule ignores deleted rows.
+
+## What This Walkthrough Proves
+
+1. **A sales order is a header plus lines.** The header names the customer and carries the status; each line names a product, quantity, price, and the due date that drives planning.
+2. **Confirming is the commitment.** Only Confirmed orders produce firm demand, so the status change is a deliberate act, not a formality.
+3. **The link makes the job trackable.** A manufacturing order's sales order ID groups the job under its customer, with scheduled span and actual hours rolled up.
+4. **Open quantity is live.** It is computed from ordered minus shipped, so it updates itself as shipments post.
+5. **Nothing is lost on cancel.** Soft delete keeps schedule and hour history; a status change to Cancelled drops the demand without touching the jobs.
+
+## From One Order to a Full Order Book
+
+The sales order is where customer demand enters EDGEBIC, and scheduling is where it becomes dated work. For the quote-first path to the same place, [quote to ship](/blog/quote-to-ship-in-edgebic) is the sibling, and to bulk-load a backlog of orders instead of typing them, the Sales Order import mask is covered in [importing master data with Excel masks](/blog/importing-master-data-with-excel-masks-then-scheduling-edgebic).
+
+User Solutions has connected customer demand to the shop floor since 1991, work that spans GE, BAE Systems, and Cummins across 33 locations. [Contact us for a demo](/contact-us) and bring one customer order: we will put it on the schedule with you.
+
+<Accordion title="How does a sales order become a scheduled job in EDGEBIC?">
+You enter the sales order header and its product lines, confirm the order, then create or link a manufacturing order that references it and run the scheduler. The manufacturing order carries the sales order ID, so the job appears under that customer's order in the grouped view. The finite capacity engine schedules the job's routing across work centers exactly like any other, and its scheduled span and actual hours roll up to the order for per-customer visibility.
+</Accordion>
+
+<Accordion title="Why does confirming a sales order matter in EDGEBIC?">
+Only lines on Confirmed orders count as firm demand. A Draft order's lines are entered but excluded from inventory projection and master production scheduling, so confirming is the deliberate act that lets an order drive planning. Shipped, Closed, and Cancelled orders are also excluded. The best practice is to confirm only when the order is commercially locked, since a confirmed line immediately enters the demand pipeline for stocked products.
+</Accordion>
+
+<Accordion title="What is the open quantity on a sales order line?">
+Open quantity is the ordered quantity minus the quantity shipped, floored at zero: the amount still owed to the customer. It is a computed value, not a stored column, so it updates automatically as shipments post. For a 500-unit line, an open quantity of 150 after two partial shipments means 150 remain, and that open balance is exactly what firm-demand planning uses, bucketed by the line's due date.
+</Accordion>

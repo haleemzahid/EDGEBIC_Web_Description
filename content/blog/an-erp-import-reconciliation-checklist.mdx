@@ -1,0 +1,136 @@
+---
+title: "An ERP Import Reconciliation Checklist for EDGEBIC"
+description: "The checks to run after every ERP import into EDGEBIC: row counts, Created versus Reused, orphan work centers, routing chain gaps, and hours that do not reconcile."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ERP import reconciliation checklist
+  - verify ERP import scheduling
+  - import mask row counts
+  - Created Updated Reused Failed
+  - EDGEBIC import validation
+  - ERP data quality scheduling
+targetPhrase: "ERP import reconciliation checklist"
+wordCount: 1610
+readingTime: 8
+faqQuestions:
+  - question: "How do I verify an ERP import into EDGEBIC actually worked?"
+    answer: "Read the result counts first, then reconcile them against the file. Every row produces exactly one outcome: Created, Updated, Reused, or Failed. Add the four numbers and they must equal the data rows in your export. If they do not, the file had blank rows, a heading row counted as data, or a delimiter split a quoted value into phantom columns. The per-run log names the offending row."
+  - question: "What does a high Created count mean on a routine import?"
+    answer: "On a repeat import of stable master data, a high Created count usually means the identifier changed rather than the record. Matching is on the identifier, case-insensitively, so a leading apostrophe, a trailing space, or a switched column will create duplicates instead of updating the records you meant to touch. On a first-time import a high Created count is normal and expected."
+  - question: "Should I schedule immediately after importing?"
+    answer: "No. Reconcile first, because an import changes data while the scheduler changes the plan, and the two stay separate on purpose. Imported work orders sit as unscheduled demand until you run the scheduler, which gives you a window to check counts, spot auto-created work centers, and inspect the routing chains before any dates are produced."
+qaQuestions:
+  - question: "Our routing import reported zero failures but the schedule shows several jobs finishing in one day that should take a week. What did we miss?"
+    answer: "Zero failures means every row parsed, not that every number was right. Check three things in order. First, the unit on the run time column: an operation quoted in minutes and imported without a 0.016667 conversion factor lands as hours divided by sixty, so a 90-minute operation becomes 1.5 minutes of work. Second, whether run time went into the setup field, which is charged once per job instead of multiplied by quantity, so a 1,000-piece job collapses to a single setup. Third, the total: pick one job, add setup plus run time times quantity across its operations, and compare that to the hours the schedule shows. A factor-of-sixty gap points at units, a quantity-independent gap points at the setup and run split."
+  - question: "We imported work centers and got 12 Created when we only have 9 machines. Where did the extra three come from?"
+    answer: "Almost certainly from the routing import, not the work center import. The routing pass auto-creates any work center or product the file names that does not exist yet, so a routing row spelling a center DEBURR-1 when the machine list says Deburr 1 creates a second, empty center with no shifts and no instance count. Those phantom centers are easy to spot: sort the work center list by shift assignment and the auto-created ones have none. Fix the spelling in the routing export, re-import the routing, then delete the orphans. Do this before the first schedule, because an empty center schedules against default capacity and quietly flatters your dates."
+---
+
+**After every ERP import into EDGEBIC, run a short reconciliation pass: check that the four row outcomes add up to your file's row count, confirm the Created and Reused split matches what you expected, look for auto-created work centers and products nobody asked for, and spot-check one job's hours against the routing.** The whole check takes about ten minutes on a first import and under two on a routine one. It catches the errors that otherwise surface a week later as dates nobody trusts.
+
+EDGEBIC by User Solutions has moved ERP data through import masks since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the pattern is consistent: imports rarely fail loudly. They succeed quietly with the wrong numbers. Reconciliation is what turns a clean-looking import into a trustworthy one.
+
+## Why the check exists at all
+
+An import can be technically perfect and still be wrong. The mask does exactly what you told it to do, which means a mismapped column, a missing conversion factor, or a stale export all produce a result dialog full of green counts. The [universal import method](/blog/why-edgebic-connects-to-every-erp-the-same-way) is deliberate about this separation: data movement and planning are different acts, and the gap between them is where you inspect.
+
+Nothing schedules itself on import. Work orders arrive as unscheduled demand and stay there until you run the scheduler, so the reconciliation window is built into the workflow rather than bolted on.
+
+## Check 1: the four outcomes must add up
+
+Every row produces exactly one outcome, and the result dialog shows the counts:
+
+| Outcome | Meaning |
+|---|---|
+| Created | No matching record existed, so a new one was written |
+| Updated | A match was found and fields changed |
+| Reused | A match was found and deliberately left alone |
+| Failed | The row was rejected, with the reason recorded |
+
+Add the four numbers. The total must equal the data rows in your export, excluding the heading row. When it does not, the usual causes are a trailing blank row, a heading row that was not flagged as headings in the mask, or a quoted value containing a comma that split into extra columns because the text-enclosed-in-quotes setting was off.
+
+The per-run log records every row individually, so a mismatch is a lookup, not a guess.
+
+## Check 2: does the Created and Reused split make sense
+
+This is the check that catches identifier drift, and it costs five seconds.
+
+On a **first** import, almost everything should be Created. That is expected.
+
+On a **routine** import of master data that has not changed much, most rows should come back Reused. A weekly product refresh that reports 34 Created and 240 Reused is healthy. The same refresh reporting 274 Created is a red flag, because it means the matching key did not match anything.
+
+Matching is on the identifier, case-insensitively, so `BRK-200` finds `brk-200`. What it will not survive is a leading apostrophe from a spreadsheet, a trailing space, a changed prefix, or a column that shifted one position to the right. All four produce duplicates rather than updates. The [product master sync post](/blog/keeping-product-masters-in-sync-erp-edgebic) covers the identifier discipline in full.
+
+## Check 3: look for records nobody asked for
+
+The routing import auto-creates any work center or product it names that does not already exist. That behavior is useful, because it means a routing file can stand up a skeleton model on day one. It is also the single most common source of surprise records.
+
+After a routing import, open the work center list and look for centers with no shift assignment and no instance count. Those are the auto-created ones. Each is usually a spelling variant of a real machine: `DEBURR-1` against `Deburr 1`, or `MILL2` against `Mill-2`.
+
+Fix them at the source. Correct the spelling in the ERP export or normalize it in the mask, re-import the routing, then remove the orphan. Doing this before the first schedule matters, because a center with no shifts and no instance count still schedules against defaults and produces optimistic dates.
+
+## Check 4: walk one routing end to end
+
+Routings are imported in two passes for a reason. Pass one reads and validates every row and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and wires the chain: step 10 to 20, 20 to 30, and the terminal step to the finished product.
+
+Pick one representative product and open it in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour). You are looking for three things:
+
+- **Every step is connected.** A step floating on its own usually means its sequence number duplicated another step's, so the sort could not order them.
+- **The step count matches the ERP.** A short chain means some rows landed in a different file or a different product.
+- **The last step ends at the finished product**, not at a component.
+
+Two conventions prevent most chain problems: number sequences in gaps of ten so a later insert becomes 25 without renumbering, and keep all of one product's steps in one file, because a routing import wipes and recreates that product's steps once per run.
+
+## Check 5: reconcile the hours on one job
+
+This is the check that catches unit errors, and it is worth doing every time you change a mask.
+
+Take one imported job. Add up, by hand, setup plus run time multiplied by quantity across its operations. Then compare that total to the hours the schedule assigns it.
+
+- A gap of roughly sixty times in either direction points at minutes imported as hours, or the reverse. Set a conversion factor of 0.016667 on the column and re-import.
+- A gap that disappears when quantity is 1 points at run time landing in the setup field, which is charged once per job instead of scaling. The [combined setup and run time guide](/blog/handling-combined-setup-and-run-time-from-your-erp) covers the split.
+- A gap of exactly one hundred times points at a per-hundred standard imported without the 0.01 factor.
+
+Unit errors are the most expensive import mistake because they never fail, they just quietly move every date.
+
+## Check 6: order references and job numbers
+
+If your work order export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as `{Ref}-{line}`. Confirm a multi-line order actually grouped rather than arriving as unrelated jobs. Keeping identifiers aligned across the two systems is a habit worth building early, and the [job number alignment post](/blog/keeping-job-numbers-aligned-between-erp-and-edgebic) covers the conventions that hold up over time.
+
+## The checklist in one pass
+
+| # | Check | Where to look | Typical cause when it fails |
+|---|---|---|---|
+| 1 | Outcomes total equals file rows | Result dialog | Blank rows, heading row, quoting off |
+| 2 | Created versus Reused split is sane | Result dialog | Identifier drift or shifted column |
+| 3 | No orphan work centers or products | Work center list | Spelling variants in the routing file |
+| 4 | One routing walks end to end | Routing designer | Duplicate sequence numbers, split files |
+| 5 | One job's hours reconcile | Job schedule | Missing conversion factor, setup and run swapped |
+| 6 | Multi-line orders grouped | Order list | Missing order reference column |
+
+## Then, and only then, schedule
+
+Once the six checks pass, run the scheduler. It states how many jobs are new and how many are being rescheduled before it plans anything, so you get one more chance to notice a scope that looks wrong. From there the full engine applies: finite capacity across shifts and machine instances, work center groups, sequence-dependent setups, lot streaming, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows where the import layer sits.
+
+Fold the checklist into your recurring rhythm rather than treating it as a project task. The [weekly sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine) has the cadence, and the [first week checklist](/blog/a-first-week-erp-integration-checklist) has the from-empty sequence.
+
+## Reconcile your own export
+
+Bring one week of real exports to [a demo](/contact-us) and run the reconciliation live. Ten minutes of checking on your own data tells you more about your ERP's export quality than any amount of planning, and you leave knowing exactly which columns need work.
+
+<Accordion title="How do I verify an ERP import into EDGEBIC actually worked?">
+Read the result counts first, then reconcile them against the file. Every row produces exactly one outcome: Created, Updated, Reused, or Failed. Add the four numbers and they must equal the data rows in your export. If they do not, the file had blank rows, a heading row counted as data, or a delimiter split a quoted value into phantom columns. The per-run log names the offending row.
+</Accordion>
+
+<Accordion title="What does a high Created count mean on a routine import?">
+On a repeat import of stable master data, a high Created count usually means the identifier changed rather than the record. Matching is on the identifier, case-insensitively, so a leading apostrophe, a trailing space, or a switched column will create duplicates instead of updating the records you meant to touch. On a first-time import a high Created count is normal and expected.
+</Accordion>
+
+<Accordion title="Should I schedule immediately after importing?">
+No. Reconcile first, because an import changes data while the scheduler changes the plan, and the two stay separate on purpose. Imported work orders sit as unscheduled demand until you run the scheduler, which gives you a window to check counts, spot auto-created work centers, and inspect the routing chains before any dates are produced.
+</Accordion>

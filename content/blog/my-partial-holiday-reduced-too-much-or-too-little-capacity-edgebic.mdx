@@ -1,0 +1,102 @@
+---
+title: "My Partial Holiday Reduced Too Much or Too Little Capacity"
+description: "A partial-day holiday scales by instances and utilization and only counts the overlap with the shift. How to read the math and fix an over- or under-cut."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - partial holiday capacity
+  - partial day holiday scheduling
+  - holiday reduced capacity wrong
+  - work center capacity holiday
+  - applies to whole day holiday
+  - partial holiday troubleshooting
+targetPhrase: "partial holiday reduced too much or too little capacity"
+wordCount: 1199
+readingTime: 6
+faqQuestions:
+  - question: "How does a partial-day holiday reduce work center capacity?"
+    answer: "A partial holiday removes only the overlap between the holiday window and each shift window, and it subtracts that time before the instance count and utilization are applied. So a two-hour partial holiday on a three-instance work center at full utilization removes roughly six machine-hours, not two, because the two hours are cut from each instance's day. This mirrors how scheduled downtime works. If the holiday window does not overlap the shift at all, it removes nothing."
+  - question: "Why did a two-hour holiday cut more than two hours of capacity?"
+    answer: "Because capacity is per instance. The partial-holiday hours are subtracted from a shift's net hours, and that net is then multiplied by the number of instances and the utilization percentage. A two-hour closure on a work center with three machines removes two hours from each, so the day loses about six machine-hours before utilization scaling. This is by design and matches downtime behavior. If you expected a flat two-hour reduction across the whole work center, the per-instance multiplication is the missing piece."
+  - question: "Why did my partial holiday not reduce capacity at all?"
+    answer: "The most common reason is that the holiday window does not overlap the shift window. Capacity is only cut where the closure and the working hours intersect, so a holiday set for early morning on a work center that runs a day shift starting later removes nothing. Check the holiday's start and end times against the shift's daily hours. A second reason is a per-day capacity override on that cell, which the engine uses as the effective hours as-is and does not re-cut for the holiday."
+qaQuestions:
+  - question: "We set a half-day closure and capacity dropped far more than half. Nothing else changed. Where did the extra reduction come from?"
+    answer: "From the instance count. A partial holiday subtracts its overlap hours from each shift's net hours, and the net is then multiplied by the number of instances and the utilization percentage. If the work center has several machines, a half-day removed per instance adds up to much more than half a single machine's day. Open the per-day capacity for that work center and date and check the remaining hours against net hours, minus overlap, times instances, times utilization. The number should reconcile once the per-instance step is included."
+  - question: "The partial holiday shows on the calendar but the schedule ran straight through it. Why was it ignored?"
+    answer: "Check two things. First, the holiday's time window against the shift's working hours: capacity is only reduced where they overlap, so a window outside the shift removes nothing and the day looks untouched. Second, whether a per-day capacity override exists for that cell. An override sets the effective hours directly and the engine uses it as entered, without re-applying the partial holiday on top, so an override can mask the closure. Remove or adjust the override, or align the holiday window to the shift, then re-run scheduling."
+---
+
+**A partial-day holiday reduces capacity by the overlap between its window and the shift, and it subtracts that time before multiplying by instances and utilization, so the machine-hours removed are usually larger than the clock hours of the closure.** A cut that looks too big is the per-instance multiplication; a cut that looks too small is usually no overlap.
+
+[EDGEBIC by User Solutions](/edgebic) treats a partial holiday the way it treats scheduled downtime: it trims the overlapping hours from a shift, then applies the instance count and utilization to what remains. This post covers a partial holiday that reduced too much or too little; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [how to add a plant holiday](/blog/how-to-add-a-plant-holiday-in-edgebic) and [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## First, Know the Order of the Math
+
+For one shift on one day, the engine takes the gross shift hours, subtracts the break, the downtime, and the partial-holiday overlap to get net hours, then multiplies net by the number of instances and by the utilization percentage. The partial-holiday hours are the overlap between the holiday window and the shift window: the later of the two start times to the earlier of the two end times, floored at zero. Two facts fall out of this. The cut is per instance, so it multiplies up. And the cut is only the overlap, so a window outside the shift removes nothing.
+
+## Cause 1: The Cut Multiplied by Instances (Looks Too Big)
+
+A two-hour partial holiday on a work center with three instances removes two hours from each instance's day. Before utilization scaling, that is about six machine-hours, not two. Planners who expect a flat reduction across the whole work center read this as too much.
+
+**How to tell:** the reduction is roughly the closure hours times the instance count (then scaled by utilization). Open the per-day capacity for the work center and date, and the remaining hours reconcile with net hours, minus the overlap, times instances, times utilization. If the number still looks off after that arithmetic, check for scheduled downtime on the same day, which is subtracted at the same point in the calculation and stacks with the partial-holiday overlap before the multipliers apply.
+
+**Fix:** none; this is correct and matches downtime. If the intent was to remove only one machine's time, model that as downtime on a single instance rather than a plant-wide partial holiday, which applies to every instance.
+
+## Cause 2: The Window Does Not Overlap the Shift (Looks Too Small)
+
+Capacity is cut only where the holiday and the shift intersect. A holiday set for early morning on a work center whose day shift starts later has zero overlap and removes nothing.
+
+**How to tell:** the holiday's start and end times sit partly or wholly outside the shift's daily hours, so the overlap is small or zero.
+
+**Fix:** set the holiday window to cover the shift hours you actually want closed. If you meant the whole day, use the whole-day setting instead of a partial window, which blocks the shift entirely rather than trimming an overlap.
+
+## Cause 3: The Whole-Day Flag Is Wrong
+
+The whole-day setting and the partial window are mutually exclusive. A closure marked whole-day blocks the entire day; one marked partial trims only the window. Setting the wrong one is a common over- or under-cut.
+
+**How to tell:** you intended a partial trim but the day is fully blocked, or you intended a full closure but only a slice was removed.
+
+**Fix:** set the whole-day flag to match intent. Whole-day for a full closure; partial with a start and end time for a trim.
+
+## Cause 4: A Per-Day Override Is Masking It
+
+If a per-day capacity override exists for that work center and date, the engine uses the override hours as the effective capacity as-is and does not re-apply the partial holiday on top. An override can therefore hide a closure.
+
+**How to tell:** the per-day capacity for the cell shows an override value, and the holiday appears to have no effect.
+
+**Fix:** remove the override so the calendar math applies, or fold the closure into the override value directly if you want to keep the override.
+
+## The Reconciliation, in Order
+
+1. **Compute the overlap** between the holiday window and the shift window.
+2. **Remember the overlap is subtracted per instance,** then scaled by utilization.
+3. **Check the whole-day flag** matches whether you meant a full closure or a trim.
+4. **Confirm the window actually intersects the shift;** no overlap means no reduction.
+5. **Look for a per-day override** on the cell that overrides the calendar math.
+
+## Prevention
+
+- **Set the partial window to overlap the shift you mean to close,** since only the intersection counts.
+- **Expect per-instance scaling.** A partial closure on a multi-machine work center removes far more than its clock hours.
+- **Use whole-day for full closures** rather than a window that spans the shift, which is clearer and less error prone.
+- **Watch for per-day overrides,** which set effective hours directly and bypass the holiday math.
+- **Reconcile against the per-day capacity view,** which shows the remaining hours for the exact work center and date, so you can check the arithmetic rather than guessing at the reduction.
+
+If the holiday removed no capacity at all, that broader case is covered in [a holiday did not reduce capacity](/blog/a-holiday-did-not-reduce-capacity-edgebic), and a job that landed on a closed day is covered in [job scheduled on a holiday](/blog/job-scheduled-on-a-holiday-edgebic).
+
+<Accordion title="How does a partial-day holiday reduce work center capacity?">
+A partial holiday removes only the overlap between the holiday window and each shift window, and it subtracts that time before the instance count and utilization are applied. So a two-hour partial holiday on a three-instance work center at full utilization removes roughly six machine-hours, not two, because the two hours are cut from each instance's day. This mirrors how scheduled downtime works. If the holiday window does not overlap the shift at all, it removes nothing.
+</Accordion>
+
+<Accordion title="Why did a two-hour holiday cut more than two hours of capacity?">
+Because capacity is per instance. The partial-holiday hours are subtracted from a shift's net hours, and that net is then multiplied by the number of instances and the utilization percentage. A two-hour closure on a work center with three machines removes two hours from each, so the day loses about six machine-hours before utilization scaling. This is by design and matches downtime behavior. If you expected a flat two-hour reduction across the whole work center, the per-instance multiplication is the missing piece.
+</Accordion>
+
+<Accordion title="Why did my partial holiday not reduce capacity at all?">
+The most common reason is that the holiday window does not overlap the shift window. Capacity is only cut where the closure and the working hours intersect, so a holiday set for early morning on a work center that runs a day shift starting later removes nothing. Check the holiday's start and end times against the shift's daily hours. A second reason is a per-day capacity override on that cell, which the engine uses as the effective hours as-is and does not re-cut for the holiday.
+</Accordion>

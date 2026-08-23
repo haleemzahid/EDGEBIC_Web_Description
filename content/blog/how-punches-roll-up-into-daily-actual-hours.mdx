@@ -1,0 +1,102 @@
+---
+title: "How Kiosk Punches Roll Up Into Daily Actual Hours in EDGEBIC"
+description: "Punches are the source, daily actual hours are the rollup. See how EDGEBIC groups closed run and rework punches by date and rebuilds the numbers the plan reads."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - daily actual hours
+  - punch rollup manufacturing
+  - shop floor actuals
+  - daily hour breakdown
+  - production hours by date
+  - actual hours reporting
+targetPhrase: "daily actual hours"
+wordCount: 1420
+readingTime: 7
+faqQuestions:
+  - question: "How does EDGEBIC turn kiosk punches into daily actual hours?"
+    answer: "EDGEBIC loads every closed punch on the operation, keeps only the run and rework punches, groups them by the calendar date they started on, and sums their hours and good pieces into one row per date. That row is the daily actual hours record the scheduler, the Gantt, and the reports all read. Punches are the source data, and the daily rows are derived from them."
+  - question: "Which punch types are excluded from daily actual hours?"
+    answer: "Setup, teardown, idle, and down punches are excluded. Their time is recorded faithfully on their own punches, and it feeds downtime analysis, setup variance, and the availability side of OEE, but it never enters the operation's daily production hours. That separation keeps a coolant failure or a long changeover from inflating the hours a planner uses to judge remaining work."
+  - question: "Can daily actual hours be rebuilt after a correction?"
+    answer: "Yes. After a supervisor edits a punch, the daily rows are rebuilt from the current punch set on demand. The rebuild recalculates every parent-step date bucket from scratch, so a corrected punch flows straight through to the numbers reports use. Rows for dates that no longer have any matching punches are zeroed rather than left stranded with stale hours."
+qaQuestions:
+  - question: "A run started at 22:00 and finished at 02:00 the next morning. Which day gets the hours?"
+    answer: "The whole punch lands on the day it started, so a 22:00 to 02:00 run books four hours on the start date and nothing on the following date. EDGEBIC groups by the punch open timestamp rather than splitting the span across midnight. On a night-shift work center that means your daily numbers line up with the shift, not the calendar, which is usually what a supervisor wants to see."
+  - question: "My daily row shows a different pieces-per-hour rate than the routing standard. Which one is right?"
+    answer: "Both are right, and they answer different questions. The routing standard is what the operation was quoted at. The rate on the daily row is observed: good pieces for that date divided by production hours for that date. If the row shows 5.58 pieces per hour against a 7.14 standard, you lost roughly a fifth of the day's output rate, and the down and setup punches for the same date usually explain exactly where it went."
+---
+
+**In EDGEBIC by User Solutions, daily actual hours are a rollup: closed run and rework punches are grouped by the date they started on, and each group becomes one row of actual hours and good pieces for that operation on that date.** The punches are the raw evidence of what happened at the machine. The daily rows are the derived summary that the scheduler, the Gantt bars, and every actuals-based report actually read. Knowing which is which is the difference between trusting a number and arguing about it.
+
+This is the quiet middle layer of [shop floor data collection](/blog/edgebic-shop-floor-guide). Operators never see it. Planners see it constantly, because it is what appears in the Log Actuals grid and what a reschedule consumes. Here is exactly how the rollup is built.
+
+## Two Levels: Punches and Daily Rows
+
+A punch is one uninterrupted stretch of a single work state, opened and closed by an operator tap. A single eight-hour shift on one operation might produce six punches: a setup, a run, a down with a reason, another run, an idle, and a final run. That granularity is what makes downtime analysis possible.
+
+A daily row is coarser on purpose. It carries one date, the planned hours the scheduler allocated to that date, the actual hours worked, the actual good pieces produced, and the remaining hours implied by the difference. One operation running across three days produces three daily rows, no matter how many punches sit underneath them.
+
+| Level | Granularity | Who reads it |
+|---|---|---|
+| Punch | One state segment, timestamped | Supervisors, downtime and setup analysis, OEE |
+| Daily row | One calendar date per operation | Scheduler, Gantt, reports, Log Actuals grid |
+
+## The Rollup, Step by Step
+
+When an operator taps Complete Operation, or when a supervisor asks for a rebuild after a correction, EDGEBIC runs the same procedure.
+
+**One: load every punch on the operation.** All of them, open and closed, of every type.
+
+**Two: keep only closed run and rework punches.** An open punch has no end time yet, so it has no hours to contribute. Setup, teardown, idle, and down punches are set aside here. This is the single most consequential rule in the whole process, and it is covered in the next section.
+
+**Three: group by start date.** Each surviving punch is filed under the calendar date its clock opened on. A punch that crosses midnight books entirely to its start date and is never split.
+
+**Four: sum hours and good pieces per date.** Hours add up straightforwardly. Pieces are good pieces only: scrap is recorded on the punch with its reason but never counted as output, and rework pieces are counted on their own field. See [good, scrap, and rework counts explained](/blog/good-scrap-and-rework-counts-explained) for where each count lands.
+
+**Five: compute the rate for the date.** If the date has both hours and pieces, the rate is the observed one: pieces divided by hours, rounded. If one of them is zero, EDGEBIC falls back to the rate snapshotted on the last closed punch, so the row still carries a sensible number instead of a blank.
+
+**Six: upsert.** Dates that already have a daily row get updated. Dates that do not get a new row inserted.
+
+**Seven: zero the orphans.** If a date used to have punches and no longer does, because a punch was removed or re-dated, its row is zeroed rather than left holding hours nothing supports.
+
+## Why Setup and Downtime Stay Out
+
+The exclusion of setup, teardown, idle, and down time from daily actual hours is deliberate, and it is worth defending because it surprises people the first time they see it.
+
+The daily rows feed capacity and progress math. When a planner looks at an operation that was quoted at 7 hours and sees 7.53 actual hours logged, the comparison is meaningful only if both numbers measure the same thing: productive work. If a 1.25 hour coolant failure were folded in, the operation would look 30 percent over standard when the work itself ran clean, and the next quote would be padded for a problem that was never a labor problem.
+
+The lost time is not discarded. It sits on its own punches with its reason code, ready for a Pareto review, for the availability factor in [OEE](/blog/how-kiosk-punches-feed-oee), and for [setup variance](/blog/how-setup-phases-become-setup-variance). Two different questions, two different numbers, one honest record underneath both.
+
+## A Worked Two-Day Example
+
+Paint Booth 3, one operation, logged hours-led.
+
+| Day | Punch | Hours | Enters daily rows? |
+|---|---|---|---|
+| Tue | Setup 07:50 to 08:45 | 0.92 | No |
+| Tue | Run 08:45 to 10:30 | 1.75 | Yes |
+| Tue | Down 10:30 to 11:45, coolant | 1.25 | No |
+| Tue | Run 11:45 to 16:00 | 4.25 | Yes |
+| Tue | Idle 16:00 overnight | 15.92 | No |
+| Wed | Run 07:55 to 11:00, then Complete | 3.08 | Yes |
+
+The rollup produces two rows: Tuesday at 6.00 actual hours (1.75 plus 4.25) and Wednesday at 3.08. Total logged production: 9.08 hours against 7.00 planned. The planner sees a 2.08 hour overrun and, one click into the punch history, sees the 1.25 hour coolant event that explains most of it. Neither number had to be reconstructed from memory at shift end.
+
+## Rebuilding After a Correction
+
+Because the daily rows are derived, a correction never has to be applied twice. A supervisor edits a punch in the history drawer with a mandatory reason, the original value is preserved beside the correction, and a rebuild recalculates the affected dates from the current punch set. See [how a supervisor corrects a kiosk punch](/blog/how-a-supervisor-corrects-a-kiosk-punch) for the audit trail that edit leaves behind.
+
+One category of daily row is protected during a rebuild: sub-assembly split rows, which the planner maintains through the Log Actuals dialog rather than the kiosk. A kiosk rebuild leaves those untouched, so a machine-side correction can never wipe component detail entered in the office.
+
+## Why the Plan Cares
+
+The daily rows are what the next reschedule reads. Logged hours on a date tell the engine how much of the operation is already behind you, remaining hours tell it how much to plan forward, and the actual end tells it where the successor step can begin. Completed work is never moved, so the rollup is not just reporting: it is the boundary between history and plan. That mechanism is walked end to end in [how a reschedule uses last night's actuals](/blog/how-a-reschedule-uses-last-nights-actuals).
+
+## The Bottom Line
+
+Punches record what happened, minute by minute and state by state. Daily actual hours summarize the productive part of it, one row per operation per date, with good pieces and an observed rate alongside. Only run and rework time crosses that boundary, which keeps productive hours honest while preserving every lost minute for the analysis that should own it. See the whole loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), or look at the platform at [EDGEBIC](/edgebic).

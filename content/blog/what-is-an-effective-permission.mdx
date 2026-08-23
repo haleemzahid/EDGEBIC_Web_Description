@@ -1,0 +1,76 @@
+---
+title: "What Is an Effective Permission?"
+description: "An effective permission is the final yes-or-no answer to what a user can do, after every role they hold is combined into one set. Learn how EDGEBIC computes it."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - effective permission
+  - effective permission definition
+  - role based access control
+  - multiple roles per user
+  - union of role permissions
+  - user permissions manufacturing
+targetPhrase: "effective permission"
+wordCount: 1060
+readingTime: 5
+faqQuestions:
+  - question: "What is an effective permission?"
+    answer: "An effective permission is the final set of rights a user actually has at the moment a check runs. It is computed by taking every permission granted by every role the user holds and combining them into one set. The result is the single yes-or-no answer the system uses before it lets an action proceed. Because rights come only from roles and roles only ever add, the effective set is the union of a user's roles and nothing else."
+  - question: "Can one user hold more than one role?"
+    answer: "Yes, and this is how exceptions are handled. Tick both roles on the user and their rights add up: a Planner who also holds an Import Operator role gets everything both roles grant. A second role never removes anything, so assigning one is always safe for the access the person already had. It changes that user only and leaves the role definitions, and everyone else holding them, untouched."
+  - question: "Can a permission be taken away from one user without changing their role?"
+    answer: "Not by assignment, because roles only add and nothing you assign can subtract. To give one person less than a role provides, build a narrower role that omits the capability and assign it in place of the broad one rather than alongside it. Swapping the role is the supported way to produce a reduced effective set, and it keeps the change legible to whoever reads the access model next."
+qaQuestions:
+  - question: "A planner in our Planner role suddenly cannot delete a manufacturing order, but everyone else in that role can. Where do I look?"
+    answer: "Look at which roles that person actually holds, not at the Planner role itself. Since rights come only from roles and roles only ever add, nothing can have subtracted the delete right from them individually, which rules out a whole category of theory straight away. The likeliest explanation is that they are no longer on the same role as everyone else: somebody swapped them onto a narrower variant, or the Planner role was unticked on their user record and a different one assigned. Open Settings, Security, Users, select them, and read the role selections in the edit dialog. Compare that list against a colleague who can still delete, and the difference will be the answer."
+  - question: "We want a maintenance tech to see schedules but never generate one. Do we need a whole new role?"
+    answer: "If no existing role already matches that shape, yes, and it is less work than it sounds. Build a role with the schedule view rights and without the generate right, then assign it. What you cannot do is take an existing role that grants generate and subtract that one capability for this person, because roles only add. The other route worth considering is composition: if a narrow view-only role already exists, assign it on its own rather than alongside anything broader. When several people need the same profile, one well-named role beats repeating the arrangement per person, and it stays readable a year later."
+---
+
+**An effective permission is the final yes-or-no answer to whether a user may perform an action, after every role they hold is combined into one set.** It is what the system checks the instant a planner clicks a button or runs a command. Roles supply the rights, a user can hold more than one, and what they can do is the union of all of them. The effective set is the single source of truth for access, not any one role in isolation.
+
+[EDGEBIC by User Solutions](/edgebic) computes an effective permission set for each user at sign-in. This article defines the term. To see where you configure the pieces, read [how EDGEBIC handles users and roles](/blog/edgebic-users-and-roles-explained).
+
+## How It Works
+
+Access in EDGEBIC is built from roles, and only from roles.
+
+A role is a named bucket of permissions such as Planner or Shop Floor Supervisor. Assign a user to one or more roles and they inherit the union of everything those roles grant. There is no separate per-user permission list in the current application: if a right is not in one of the roles a person holds, they do not have it.
+
+The rule that follows from this matters more than it first appears: **roles only ever add.** Assigning a second role can never remove something the first one granted. That makes adding a role a safe operation, and it makes subtracting a single capability impossible by assignment. To give somebody less than a role provides, you build a narrower role and assign that one instead.
+
+The built-in **Administrator** role is the exception worth knowing about. It always holds every permission, including new ones that arrive with product updates, and it cannot be deleted. Custom roles are deliberately left alone by updates, so a newly shipped capability reaches Administrator automatically and reaches a custom Planner role only when somebody ticks it.
+
+The formula is plain arithmetic on sets: take the union of every role the user holds. What remains is the effective permission set, and every access check is a fast lookup against it.
+
+## A Concrete Example
+
+Alice is a planner. She needs to edit a bill of routing, which the Planner role does not include, and she should not be deleting manufacturing orders, which the Planner role does include.
+
+Those are two different problems with two different fixes.
+
+For the extra capability, her administrator builds a small **Routing Editor** role containing just that permission and ticks it on Alice's user record alongside Planner. For the capability she should not have, adding anything is useless, because Planner keeps granting delete no matter what else is assigned. Instead the administrator builds a **Planner (no delete)** role and assigns that in place of Planner.
+
+Now walk the calculation:
+
+| Source | Permission | Effect |
+|---|---|---|
+| Planner (no delete) role | Generate schedule | granted |
+| Planner (no delete) role | Delete manufacturing order | never granted, the role omits it |
+| Routing Editor role | Edit bill of routing | added |
+
+Alice's effective set ends up as: generate a schedule, edit a bill of routing, and everything else the narrower Planner role gives, but not delete a manufacturing order. When she tries to delete a job the check fails and she sees an access-denied message. Every other planner, still on the original Planner role, is completely unaffected, because role definitions were never edited, only assignments.
+
+## How EDGEBIC Uses It
+
+EDGEBIC loads a user's effective permission set when they sign in and keeps it in memory for the session, so each check is instant. Every screen, menu, and command consults it: tabs and buttons appear only when the effective set allows the action, and the underlying command refuses to run if the check fails, so hiding a button is never the only guard.
+
+Because the set is captured at sign-in, a change made while somebody is working does not reach them until they sign out and sign back in. That catches people out constantly, and it is the first thing to rule out when a correct-looking change appears to have done nothing.
+
+The single-layer model also keeps day-to-day administration simple: build roles for job functions, name them for what they do, and compose them on the user when somebody is an exception. When you are diagnosing why someone can or cannot do something, the question is always *which roles do they hold*, and the answer is on their user record rather than in any one role's permission tree.
+
+For the wider access-control picture, see [how EDGEBIC handles users and roles](/blog/edgebic-users-and-roles-explained) and the sibling term [security audit trail](/blog/what-is-a-security-audit-log). You can browse related definitions in the [manufacturing glossary](/blog/manufacturing-glossary).

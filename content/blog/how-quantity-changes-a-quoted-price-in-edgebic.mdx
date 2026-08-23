@@ -1,0 +1,130 @@
+---
+title: "What Happens to a Quoted Price When the Quantity Changes in EDGEBIC"
+description: "Doubling the order rarely halves the unit cost. See the exact quantity arithmetic behind an EDGEBIC quote, where setup stops amortizing, and why the date scales differently."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Quoting & Promising
+author: user-solutions
+cluster: edgebic-quoting
+pillarSlug: edgebic-quoting-guide
+keywords:
+  - quantity price break manufacturing
+  - setup amortization quote
+  - unit cost by order quantity
+  - volume discount job shop
+  - quote quantity change
+  - EDGEBIC quote quantity
+targetPhrase: "setup amortization quote"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "Why does the unit cost fall when I quote a larger quantity?"
+    answer: "Because setup is charged once per operation regardless of how many pieces follow it. In EDGEBIC by User Solutions the simulated hours for a step are its setup time plus the per-unit hours times the quantity, so setup is a fixed block spread across more units as the order grows. Everything else in the cost, meaning the per-unit run hours and the material, scales in a straight line with quantity and never amortizes at all."
+  - question: "How much cheaper per unit should a bigger order actually be?"
+    answer: "It depends entirely on the ratio between setup hours and per-unit hours on that specific routing, and the answer is often much less than sales expects. On the documented Widget-A routing, 1.5 hours of setup sits against 0.75 hours per unit, so the unit cost falls from $49.75 at 20 pieces to $46.15 at 200 and only to $45.79 at 2,000. Roughly 7 percent between 20 and 200, then almost nothing. On a routing with four hours of changeover and minutes of run time per piece, the same comparison can show a five-fold drop. Simulate both quantities rather than assuming."
+  - question: "Does the promised date scale with quantity the way cost does?"
+    answer: "No, and this is where the two questions separate. Work hours scale in a straight line, but the calendar span does not, because the extra hours have to fit around load that is already committed on those machines. A quantity ten times larger may occupy far more than ten times the calendar, or occasionally less if it lands in a quieter window. The simulation is the only thing that can answer it, so re-simulate the quote at the new quantity rather than scaling the old date."
+qaQuestions:
+  - question: "A customer wants 2,000 instead of 200 and is asking for a real price break. What does the arithmetic actually support?"
+    answer: "On the documented Widget-A routing, very little, and it is worth knowing that before you negotiate. The cost is 1.5 hours of fixed setup, worth $80 in labor, plus $45.75 of run labor and material for every unit. At 200 pieces that is $9,230, or $46.15 a unit. At 2,000 it is $91,580, or $45.79 a unit. The entire quantity saving on a ten-fold increase is 36 cents a unit, well under 1 percent, because setup was never a meaningful share of this routing's cost. Any discount larger than that is coming out of markup, not out of cost. That may still be the right commercial decision, but it should be a deliberate one, and since the quoted cost basis is labor and material only, the markup you are discounting is what recovers your overhead. Simulate both quantities, put the two costs side by side, and negotiate from the difference rather than from a rule of thumb."
+  - question: "Then when is a genuine quantity discount justified by cost?"
+    answer: "When setup dominates the routing rather than trailing it. Compare two shapes. Widget-A carries 1.5 hours of setup against 0.75 hours per unit, so the fixed block is swamped almost immediately and the unit cost is nearly flat past about 100 pieces. Now picture an operation with four hours of changeover at $80 an hour and roughly a minute of run time per piece: the fixed block is $320 and the variable content is a few dollars, so going from 20 pieces to 200 can cut the unit cost by a factor of five. The test is not the size of the order. It is whether setup is a large or a small share of the total at the quantity you are quoting. Run the simulation at both quantities and read the share directly, which is also the moment to check whether a sequence-dependent setup matrix is charging that changeover honestly."
+---
+
+**Doubling an order does not halve the unit cost, and on many routings it barely moves it.** Sales intuition says otherwise, which is how a shop ends up giving away a volume discount that its own arithmetic never earned.
+
+EDGEBIC by User Solutions makes the answer specific rather than intuitive, because a quote's cost is built from a simulated schedule with the setup and per-unit hours separated. This post covers the exact arithmetic, where amortization stops paying, why the date behaves differently from the cost, and what to do when the customer asks for a price break. It sits under the [EDGEBIC quoting guide](/blog/edgebic-quoting-guide).
+
+## What quantity actually changes
+
+A quote simulation schedules the product's routing for the quoted quantity and prices the hours it allocated. Each step contributes hours as its setup time plus its per-unit hours multiplied by the quantity, and each hour is charged at the work center's rate. Material is added on top, either from material-type steps in the routing or, as a fallback, from the product's unit cost times the quantity.
+
+That splits the cost cleanly into two parts:
+
+- A **fixed block**, which is the setup on every step, charged once whatever the quantity.
+- A **variable block**, which is run labor plus material, charged in full for every single unit.
+
+Only the fixed block amortizes. Material never does. Run labor never does. So the size of the quantity effect is decided by one ratio: how big the setup is relative to everything that scales.
+
+## The documented routing, five quantities
+
+Take the Widget-A routing from the quoting worked example. Saw-1 has 0.5 hours of setup plus 0.10 hours per unit at $40 an hour. CNC-Mill-1 has 1.0 hours of setup plus 0.50 hours per unit at $60. Assembly-1 has no setup and 0.15 hours per unit at $35. Widget-A's unit cost is $6.50.
+
+Collect the two blocks. Setup is 1.5 hours in total, worth $20 on the saw plus $60 on the mill, so $80. Per unit the routing consumes 0.75 hours, worth $4.00 plus $30.00 plus $5.25, so $39.25 of labor, plus $6.50 of material. Every unit therefore costs $45.75 and the order carries $80 on top.
+
+| Quantity | Work hours | Total cost | Cost per unit | Price at 25% markup |
+|---|---|---|---|---|
+| 20 | 16.5 | $995 | $49.75 | $62.19 |
+| 50 | 39.0 | $2,367.50 | $47.35 | $59.19 |
+| 200 | 151.5 | $9,230 | $46.15 | $57.69 |
+| 1,000 | 751.5 | $45,830 | $45.83 | $57.29 |
+| 2,000 | 1,501.5 | $91,580 | $45.79 | $57.24 |
+
+The 200-piece row matches the documented simulation exactly: 151.50 hours, $9,230, and an auto-markup price of $57.69 if the unit price had been left at zero.
+
+Now read the shape of the column. Between 20 and 200 pieces the unit cost falls 7 percent. Between 200 and 2,000 it falls by 36 cents, which is under 1 percent on a ten-fold increase in order size.
+
+## Where amortization stops paying
+
+The reason is visible in the ratio. Setup is 1.5 hours against 0.75 hours per unit, so a single unit of quantity buys half a setup's worth of hours. Two pieces cover the setup. By 20 pieces the fixed block is 8 percent of the cost, by 200 it is under 1 percent, and by 1,000 there is nothing left to recover.
+
+That gives a usable rule for any routing: **the fixed block is effectively spent once the quantity is a few multiples of setup hours divided by per-unit hours.** For Widget-A that crossover is around two pieces, and everything after about 100 is flat. Push past the crossover and further discounts are not coming from efficiency, they are coming from margin.
+
+The opposite shape is equally real. Picture an operation with four hours of changeover at $80 an hour and roughly a minute of run time per piece, on a product with a couple of dollars of material. The fixed block is $320 and the variable content is a few dollars a unit, so 20 pieces carry an enormous share of setup and 200 carry very little. Here the unit cost can fall by a factor of five over the same range, and a volume discount is genuinely funded by the arithmetic.
+
+The lesson is not that quantity discounts are wrong. It is that the honest size of one is a property of the routing, and it is different for every product you sell.
+
+## The date does not follow the same curve
+
+Cost scales in a straight line with quantity. The promise date does not, and treating them the same is the more expensive mistake of the two.
+
+The hours are predictable: 16.5 at twenty pieces, 1,501.5 at two thousand. What those hours turn into on a calendar is not, because the simulation places them around load that is already committed on those work centers. A quantity ten times larger might occupy fifteen times the calendar because it has to weave through a booked mill, or occasionally less because it lands in a quieter stretch. The documented 200-piece run comes back as a 25 day window for 151.5 work hours, and that ratio is a property of that week's load rather than of the product.
+
+So the discipline is simple. Change the quantity, re-simulate, and read the new dates rather than scaling the old ones. The gap between work hours and calendar span is covered in [why quoted hours differ from the calendar span](/blog/why-quoted-hours-differ-from-the-calendar-span-in-edgebic), and what a deep backlog does to the answer is in [quoting when the shop is already full](/blog/quoting-when-the-shop-is-already-full-in-edgebic).
+
+One boundary to keep in view while you are doing this: a quote reserves nothing. Simulating 2,000 pieces does not hold the capacity it found, so a second large enquiry simulated the same afternoon will be told the same capacity is free.
+
+## Working a quantity change in practice
+
+Four steps, in order.
+
+1. **Edit the quantity on the quote and re-simulate.** The estimated hours, cost, dates, profit, and margin all recompute against current load.
+2. **Read the cost per unit, not just the total.** Divide the estimated cost by the quantity at both the old and new figures. That difference is the entire cost-side justification for a price break, and it is usually smaller than the conversation assumes.
+3. **Re-derive the price deliberately if you want to.** The automatic markup only fills a unit price that is currently zero, and it never overwrites a price you typed. To move a typed price after a quantity change, open the quote and use Apply Markup to Unit Price, or set the new price yourself. The mechanics are in [setting markup and unit price on a quote](/blog/setting-markup-and-unit-price-on-a-quote-in-edgebic).
+4. **Check the margin color before you send.** The grid paints margin green above 20 percent, amber above 10, and red when negative. A volume discount that quietly drops a quote from green to amber has moved real money, and the color is there so that move is a decision rather than an accident.
+
+## What the quantity arithmetic leaves out
+
+**Overhead is not in the cost.** A quoted cost is labor plus material and nothing else. There is no overhead line and no standard cost, which means the markup is doing that work. Discounting the markup on a large order is therefore not simply giving away profit, it is reducing overhead recovery, and it is worth saying that out loud when a big number is on the table.
+
+**Setup may not be a single number.** Where a work center has a sequence-dependent setup matrix, the changeover charged depends on what ran before the job on that machine. The fixed block in the arithmetic above is then a property of the sequence as well as the routing.
+
+**Nothing here models a real physical break.** If your supplier prices material differently at 2,000 than at 200, that belongs in the product's unit cost or in a manual cost override, not in the quantity math. The simulation prices what your data says a unit costs.
+
+**Yield is not inflated.** The quantity you enter is the quantity scheduled. If a routing historically loses pieces to scrap, that judgment stays with the estimator.
+
+For the wider generic treatment of how order size moves unit economics, see [cost per unit in manufacturing](/blog/cost-per-unit-manufacturing) and [minimum order quantity](/blog/minimum-order-quantity), and for the full cost build-up behind a quote see [pricing a quote from the schedule](/blog/pricing-a-quote-from-the-schedule-in-edgebic).
+
+## The takeaway
+
+Quantity moves cost only through setup, and setup is a small share of most machining routings past the first hundred pieces. Simulate the old and new quantities, compare cost per unit rather than total, and let the difference set the size of any discount you offer. The date is a separate question with a separate answer, and only a fresh simulation can give it. Bring a product where you have been guessing at price breaks to a [walkthrough of EDGEBIC](/edgebic) and we will run the curve on your own routing.
+
+<Accordion title="Why does the unit cost fall when I quote a larger quantity?">
+Because setup is charged once per operation regardless of how many pieces follow it. In EDGEBIC by User Solutions the simulated hours for a step are its setup time plus the per-unit hours times the quantity, so setup is a fixed block spread across more units as the order grows. Everything else in the cost, meaning the per-unit run hours and the material, scales in a straight line with quantity and never amortizes at all.
+</Accordion>
+
+<Accordion title="How much cheaper per unit should a bigger order actually be?">
+It depends entirely on the ratio between setup hours and per-unit hours on that specific routing, and the answer is often much less than sales expects. On the documented Widget-A routing, 1.5 hours of setup sits against 0.75 hours per unit, so the unit cost falls from $49.75 at 20 pieces to $46.15 at 200 and only to $45.79 at 2,000. Roughly 7 percent between 20 and 200, then almost nothing. On a routing with four hours of changeover and minutes of run time per piece, the same comparison can show a five-fold drop. Simulate both quantities rather than assuming.
+</Accordion>
+
+<Accordion title="Does the promised date scale with quantity the way cost does?">
+No, and this is where the two questions separate. Work hours scale in a straight line, but the calendar span does not, because the extra hours have to fit around load that is already committed on those machines. A quantity ten times larger may occupy far more than ten times the calendar, or occasionally less if it lands in a quieter window. The simulation is the only thing that can answer it, so re-simulate the quote at the new quantity rather than scaling the old date.
+</Accordion>
+
+<Accordion title="A customer wants 2,000 instead of 200 and is asking for a real price break. What does the arithmetic actually support?">
+On the documented Widget-A routing, very little, and it is worth knowing that before you negotiate. The cost is 1.5 hours of fixed setup, worth $80 in labor, plus $45.75 of run labor and material for every unit. At 200 pieces that is $9,230, or $46.15 a unit. At 2,000 it is $91,580, or $45.79 a unit. The entire quantity saving on a ten-fold increase is 36 cents a unit, well under 1 percent, because setup was never a meaningful share of this routing's cost. Any discount larger than that is coming out of markup, not out of cost. That may still be the right commercial decision, but it should be a deliberate one, and since the quoted cost basis is labor and material only, the markup you are discounting is what recovers your overhead. Simulate both quantities, put the two costs side by side, and negotiate from the difference rather than from a rule of thumb.
+</Accordion>
+
+<Accordion title="Then when is a genuine quantity discount justified by cost?">
+When setup dominates the routing rather than trailing it. Compare two shapes. Widget-A carries 1.5 hours of setup against 0.75 hours per unit, so the fixed block is swamped almost immediately and the unit cost is nearly flat past about 100 pieces. Now picture an operation with four hours of changeover at $80 an hour and roughly a minute of run time per piece: the fixed block is $320 and the variable content is a few dollars, so going from 20 pieces to 200 can cut the unit cost by a factor of five. The test is not the size of the order. It is whether setup is a large or a small share of the total at the quantity you are quoting. Run the simulation at both quantities and read the share directly, which is also the moment to check whether a sequence-dependent setup matrix is charging that changeover honestly.
+</Accordion>

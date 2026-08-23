@@ -1,0 +1,94 @@
+---
+title: "How a Multi-Day Operation Spreads Hours Across Days"
+description: "How EDGEBIC attributes the hours of an operation that spans several shifts to each calendar day, and why that daily breakdown drives load reports, capacity checks, and actuals comparison."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - daily hour breakdown
+  - multi-day operation
+  - capacity attribution
+  - load reporting
+  - shift allocation
+  - finite capacity scheduling
+targetPhrase: "daily hour breakdown"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "How are the hours of a multi-day operation assigned to each day?"
+    answer: "EDGEBIC records a per-day breakdown for every operation, attributing to each calendar date exactly the hours it consumes on that date. A 28-hour operation that runs 6 hours Monday afternoon, 8 hours Tuesday, 8 hours Wednesday, and 6 hours Thursday morning is stored as those four daily figures, not as one lump. The breakdown follows the shifts the operation actually fills, so the total across the days equals the operation's hours."
+  - question: "Why does the daily breakdown matter if the operation total is the same?"
+    answer: "Because capacity and load are measured per day, not per operation. A work center's capacity is a daily quantity, so to know whether a day is full the engine has to know how many hours each operation places on that specific day. The daily breakdown is what a load report reads to show Tuesday at ninety percent, and what actuals compare against to show a day ran long or short. Without it, a multi-day operation would be a shapeless block with no way to see its footprint on any single day."
+  - question: "Does the daily breakdown change when a job is rescheduled?"
+    answer: "The remaining, not-yet-worked portion is rebuilt against the new placement, so its per-day figures reflect the fresh schedule. Days that were already worked keep their recorded actuals, because completed work is never rewritten. So after a reschedule an operation may show real logged hours on past dates and freshly planned hours on future dates, and the two together still sum to the operation's content."
+qaQuestions:
+  - question: "My load report shows a work center at different utilization each day of one long job. I expected it to be even. Why is it not?"
+    answer: "Because the daily breakdown follows the shifts the operation actually fills, and those are rarely even. If the job started Monday at noon it only used the afternoon that day, so Monday shows a partial figure, while Tuesday and Wednesday are full shifts and show more, and the final day may be partial again as the work runs out. The report reads each day's attributed hours, so an operation that spans a partial first shift, full middle days, and a partial last shift naturally shows an uneven daily profile. That is the honest picture of where the hours land, which is exactly what a daily load report is for."
+  - question: "One day of a multi-day operation ran two hours longer than planned. Where does that show up and does it push the rest?"
+    answer: "It shows up as the actual hours recorded against that specific date, sitting next to the planned hours for the same date, so the overrun is visible on the day it happened rather than smeared across the whole operation. Whether it pushes the rest depends on the reschedule: because the resume point is driven by where the job actually stands, a day that ran long raises the finish of that operation's remaining work and moves the downstream steps accordingly. The daily breakdown is what makes the overrun legible in the first place, and the reschedule is what turns that reality into a corrected forward plan."
+---
+
+**When an operation in EDGEBIC by User Solutions spans several shifts, the engine does not store it as one undifferentiated block of hours. It records a per-day breakdown, attributing to each calendar date exactly the hours the operation consumes on that date. A 28-hour operation that runs a partial Monday, two full middle days, and a partial Thursday is kept as those four daily figures, and their sum equals the operation's hours.** That daily attribution is quietly load-bearing: it is what daily load reports read, what capacity checks measure against, and what actuals compare to day by day.
+
+An operation's total hours tell you how much work it is. They do not tell you where that work lands on the calendar, and for a job that runs several days, where it lands is what a planner actually needs to see.
+
+## Capacity is a daily quantity
+
+The reason the breakdown exists is that capacity is measured per day. A work center offers some number of hours on a given date, from its shift hours, its instances, and its utilization, as described in [how capacity is computed for a work center, shift, and day](/blog/how-capacity-is-computed-for-a-work-center-shift-and-day). To decide whether a particular day is full, the engine has to know how many hours every operation places on that specific day.
+
+A single-day operation is easy: all its hours land on one date. A multi-day operation is not. Its 28 hours are spread across four dates, and the only way to know that Tuesday is at ninety percent is to know that this operation put 8 hours on Tuesday specifically. So the engine records the split as the operation is placed, one figure per day, so that every day's total load is a real sum of real per-day contributions.
+
+## The breakdown follows the shifts
+
+The per-day figures are not an even division of the total. They follow the shifts the operation actually fills, which are usually uneven. This is a direct consequence of how the [multi-shift allocator fills capacity](/blog/how-multi-shift-allocation-fills-capacity): it walks the calendar and consumes real hours shift by shift.
+
+An operation that starts at noon only uses that first day's afternoon, so the first day's figure is partial. The full middle days each carry a full shift's worth. The last day carries whatever is left when the work runs out, which is usually partial again. The setup at the front of the operation sits inside that first partial day and is not repeated on the mornings that follow, which is why [a multi-day run sets up once rather than each day](/blog/does-a-multi-day-operation-set-up-again-each-day). The result is a daily profile that ramps in, holds, and ramps out, rather than a flat line. That shape is the truth of where the hours land, and a load report that reads the breakdown shows exactly that.
+
+Weekends, holidays, and downtime punch gaps in the profile. A day the work center is closed carries zero, and the operation resumes on the next open day, so a multi-day operation over a weekend simply has no figure for Saturday and Sunday and picks up Monday. The breakdown records only the days work actually happened.
+
+## What the breakdown feeds
+
+Three things read the daily figures, and each needs them.
+
+- **Load reports.** To show a work center's utilization by day, a report sums every operation's contribution to each date. A multi-day operation contributes to several dates, and its uneven profile is part of the picture. This is the raw material for [load leveling across a planning week](/blog/load-leveling-across-a-planning-week).
+- **Capacity checks.** When the engine places the next job, it checks how much of each day is already consumed. The daily breakdowns of everything placed so far are what tell it a day is nearly full and the search should move on.
+- **Actuals comparison.** When operators log time, the hours land against specific dates. Comparing planned against actual is only meaningful per day, so a day that ran long shows an overrun on that date, next to the planned figure for the same date, rather than a single blended number for the whole operation.
+
+## A worked example: 28 hours across four days
+
+Take an operation needing 28 hours on a single-instance work center with a Monday-to-Friday day shift, 08:00 to 16:00, 8 hours a day. It becomes ready at noon on Monday.
+
+The allocator fills forward:
+
+```
+Monday    12:00-16:00   4 h   (partial first shift)
+Tuesday   08:00-16:00   8 h
+Wednesday 08:00-16:00   8 h
+Thursday  08:00-16:00   8 h
+Friday    08:00-08:00... remainder = 0
+```
+
+That is 4 + 8 + 8 + 8 = 28. The operation finishes Thursday at 16:00, and the breakdown is stored as four daily figures: Monday 4, Tuesday 8, Wednesday 8, Thursday 8. A load report for that work center shows Monday only half-loaded by this job and the three following days full.
+
+Now suppose Wednesday actually ran 10 hours because of a problem. The recorded actual for Wednesday is 10, sitting next to the planned 8, so the overrun is visible on Wednesday specifically. On the next reschedule, because the job's remaining work is re-timed from where it actually stands, that overrun pushes the operation's finish and the downstream steps, exactly as [resuming from actuals](/blog/how-a-job-resumes-from-where-actuals-left-off) describes. Without the daily breakdown, the overrun would be invisible, buried inside a single operation total that only says "28 planned, 30 actual" with no idea which day went wrong.
+
+## Why not just store one number
+
+A single total is simpler to store, but it answers none of the questions a planner asks of a running plan. It cannot say whether Tuesday is full. It cannot show which day of a long job ran over. It cannot feed a daily load chart. The per-day breakdown is a little more data for a lot more visibility, and it is the difference between a schedule that is a black box of totals and one whose footprint on every single day can be read directly.
+
+The daily breakdown is one of the quiet mechanisms that make finite scheduling legible, and it plugs into the wider pipeline in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). It exists for the same reason the whole engine does, captured in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling): a plan is only useful when you can see where the work really lands. To watch your own multi-day operations spread across your real shifts, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="How are the hours of a multi-day operation assigned to each day?">
+EDGEBIC records a per-day breakdown for every operation, attributing to each calendar date exactly the hours it consumes on that date. A 28-hour operation that runs 6 hours Monday afternoon, 8 hours Tuesday, 8 hours Wednesday, and 6 hours Thursday morning is stored as those four daily figures, not as one lump. The breakdown follows the shifts the operation actually fills, so the total across the days equals the operation's hours.
+</Accordion>
+
+<Accordion title="Why does the daily breakdown matter if the operation total is the same?">
+Because capacity and load are measured per day, not per operation. A work center's capacity is a daily quantity, so to know whether a day is full the engine has to know how many hours each operation places on that specific day. The daily breakdown is what a load report reads to show Tuesday at ninety percent, and what actuals compare against to show a day ran long or short. Without it, a multi-day operation would be a shapeless block with no way to see its footprint on any single day.
+</Accordion>
+
+<Accordion title="Does the daily breakdown change when a job is rescheduled?">
+The remaining, not-yet-worked portion is rebuilt against the new placement, so its per-day figures reflect the fresh schedule. Days that were already worked keep their recorded actuals, because completed work is never rewritten. So after a reschedule an operation may show real logged hours on past dates and freshly planned hours on future dates, and the two together still sum to the operation's content.
+</Accordion>

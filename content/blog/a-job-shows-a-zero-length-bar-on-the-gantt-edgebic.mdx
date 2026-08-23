@@ -1,0 +1,92 @@
+---
+title: "A Job Shows a Zero-Length Bar on the Gantt"
+description: "A zero-width or backwards schedule bar means the operation has no duration: the usual cause is a routing step with zero hours and zero setup, and the fix is quick."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - zero length schedule bar
+  - zero duration operation gantt
+  - schedule end equals start
+  - routing step zero hours
+  - plan inversion anomaly
+  - material step instant operation
+targetPhrase: "zero length schedule bar"
+wordCount: 1350
+readingTime: 7
+faqQuestions:
+  - question: "Why does a job show a zero-length bar on the Gantt?"
+    answer: "A zero-width bar means the operation's end date equals or precedes its start date, so it has no duration to draw. The most common cause is a routing step with both its per-unit hours and its setup time set to zero, which produces a zero-duration operation. If the step is meant to be instant, it should be modeled as a material step instead of a work-center step with no hours."
+  - question: "What is a plan inversion in scheduling?"
+    answer: "A plan inversion is a schedule row where the end date is at or before the start date, which is physically impossible for a real operation. The anomaly report flags it as critical because it produces a zero-width or backwards bar and breaks downstream date math. It almost always traces to a routing step with no hours and no setup, or an allocation that computed zero effective hours."
+  - question: "How should an instant operation be modeled so it does not draw a broken bar?"
+    answer: "Model a genuinely instant step as a material step, which has no work center and no hours by design and is handled as an instant assignment rather than a timed operation. A work-center step is expected to consume time; giving it zero hours and zero setup produces a zero-duration operation that the plan-inversion check flags. Use a material step for instant events and a real work-center step with hours for anything that takes time on a machine."
+qaQuestions:
+  - question: "One inspection step in our routing keeps drawing a zero-width bar. It genuinely takes no machine time. How should we set it up?"
+    answer: "If the inspection consumes no machine capacity and no clock time, it is an instant event and belongs as a material step, not a work-center step. A material step has no work center and no hours and is placed as an instant assignment, so it does not try to draw a timed bar and does not trip the plan-inversion check. If the inspection does take real time, even a few minutes, give the work-center step a small non-zero per-unit hours value so it has a duration to schedule and draw."
+  - question: "After a reschedule, one operation shows its end before its start. We did not change the routing. What happened?"
+    answer: "A backwards operation usually means the allocation computed zero or negative effective hours, then stamped the end equal to the start. Re-run scheduling for the job first, since a clean pass rebuilds the allocation from the routing. If it persists, check the step: per-unit hours and setup both at zero produce a zero-duration operation, and a minimum-allocation threshold that was met by nothing leaves the end at the start. Correcting the hours on the step and re-running clears it."
+---
+
+**A job that shows a zero-length or backwards bar on the Gantt has an operation with no duration: its scheduled end equals or precedes its start.** The overwhelming cause is a routing step whose per-unit hours and setup time are both zero, which produces a zero-duration operation. If the step is genuinely meant to be instant, it belongs as a material step rather than a timed work-center step. The fix is quick once you see which case you have.
+
+[EDGEBIC by User Solutions](/edgebic) flags a schedule row whose end date is at or before its start date as a critical plan inversion, because such a row cannot draw a real bar and breaks the date math for every step that depends on it. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), walks the causes and the correct model for instant steps.
+
+## What a Zero-Length Bar Means
+
+A bar's width is the elapsed time from an operation's start to its end. When the end equals the start, there is nothing to draw, so the bar collapses to a sliver or vanishes. When the end precedes the start, the bar would run backwards. Either way the schedule row is invalid, and the plan-inversion checks flag it:
+
+- **Schedule end at or before start** flags an operation whose window has zero or negative length.
+- **Resource end at or before start** flags the underlying allocation with the same problem.
+
+This is a single-operation problem, distinct from [the whole Gantt showing nothing after a run](/blog/the-gantt-shows-nothing-after-a-run-edgebic), where no bars appear at all. Here the job is scheduled; one of its operations just has no length. The opposite symptom, a bar spanning far more calendar time than its hours account for, is covered in [a schedule bar wider than the hours suggest](/blog/a-schedule-bar-is-wider-than-the-hours-suggest-edgebic).
+
+## Cause 1: A Routing Step With No Hours and No Setup
+
+The most common cause is a work-center step whose per-unit hours and setup time are both zero. The engine multiplies per-unit hours by quantity and adds setup to get the operation's duration; if both are zero, the duration is zero, and the operation ends the instant it starts.
+
+**How to tell:** open the routing and read the flagged step. Per-unit hours zero and setup zero together produce this exactly.
+
+**Fix:** decide what the step really is. If it takes real machine time, even a few minutes, give it a non-zero per-unit hours value so it has a duration to schedule. If it takes no time at all, it should not be a work-center step; convert it to a material step (next section).
+
+## Cause 2: An Instant Step Modeled as a Work-Center Step
+
+Some routing events are genuinely instant: a stock issue, a paperwork gate, a logical marker. Modeled as a work-center step with zero hours, they trip the plan-inversion check every time. The correct shape for an instant event is a material step, which has no work center and no hours and is handled as an instant assignment rather than a timed operation.
+
+**How to tell:** the step represents something that consumes no machine capacity and no clock time, yet it is set up as a work-center step.
+
+**Fix:** model it as a material step. See [how to add a material step to a routing](/blog/how-to-add-a-material-step-to-a-routing-in-edgebic). A material step is placed instantly at the right point in the sequence without trying to draw a timed bar, so the plan-inversion check never fires on it.
+
+## Cause 3: An Allocation That Computed Zero Effective Hours
+
+Occasionally a fresh routing produces a zero-length operation after a reschedule even though the step looks fine, because the allocation computed zero or negative effective hours and stamped the end equal to the start. A minimum-allocation threshold that nothing met can leave the operation empty.
+
+**How to tell:** the routing hours look correct, but the flag appears after a reschedule.
+
+**Fix:** re-run scheduling for the job. A clean pass rebuilds the allocation from the routing. If the operation still shows zero length, fall back to cause 1 and confirm the step's hours are genuinely non-zero.
+
+## How to Confirm the Fix
+
+After correcting the step and re-running scheduling, re-open the anomaly report and confirm the plan-inversion chips return zero rows for the job. On the Gantt, the operation should now draw a visible bar with a real width (or, if you converted it to a material step, appear as an instant marker in sequence rather than a timed bar). The end date must sit after the start date on every operation.
+
+## Prevention
+
+- **Never leave a work-center step at zero hours.** A timed step is meant to consume time; give it real per-unit hours or setup, or it will collapse.
+- **Use material steps for instant events.** Stock issues, gates, and markers belong as material steps, which are built to be instant and never trip the plan-inversion check.
+- **Audit routings after import.** If routings [arrive from your ERP](/edgebic-erp-integration) with blank hour columns, a scheduling pass and an anomaly-report read surface any zero-duration steps before they reach a plan.
+- **Treat any plan inversion as critical.** These checks are critical for a reason: a zero or backwards operation corrupts the date chain for everything downstream of it, so clear them before trusting the plan.
+
+<Accordion title="Why does a job show a zero-length bar on the Gantt?">
+A zero-width bar means the operation's end date equals or precedes its start date, so it has no duration to draw. The most common cause is a routing step with both its per-unit hours and its setup time set to zero, which produces a zero-duration operation. If the step is meant to be instant, it should be modeled as a material step instead of a work-center step with no hours.
+</Accordion>
+
+<Accordion title="What is a plan inversion in scheduling?">
+A plan inversion is a schedule row where the end date is at or before the start date, which is physically impossible for a real operation. The anomaly report flags it as critical because it produces a zero-width or backwards bar and breaks downstream date math. It almost always traces to a routing step with no hours and no setup, or an allocation that computed zero effective hours.
+</Accordion>
+
+<Accordion title="How should an instant operation be modeled so it does not draw a broken bar?">
+Model a genuinely instant step as a material step, which has no work center and no hours by design and is handled as an instant assignment rather than a timed operation. A work-center step is expected to consume time; giving it zero hours and zero setup produces a zero-duration operation that the plan-inversion check flags. Use a material step for instant events and a real work-center step with hours for anything that takes time on a machine.
+</Accordion>

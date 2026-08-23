@@ -1,0 +1,132 @@
+---
+title: "8 Bottleneck Scheduling Mistakes in EDGEBIC"
+description: "The bottleneck scheduling mistakes that stop anchor scheduling working: the missing target date, the new-job trap, empty buffers, and five more."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - bottleneck scheduling mistakes
+  - anchor scheduling not working
+  - constraint scheduling errors
+  - TOC scheduling troubleshooting
+  - target start date not applied
+  - bottleneck flag no effect
+targetPhrase: "bottleneck scheduling mistakes"
+wordCount: 1530
+readingTime: 8
+faqQuestions:
+  - question: "Why does marking a work center as a bottleneck not change my schedule?"
+    answer: "Because the flag identifies the resource and a target start date activates the anchored plan. The flag drives display and the load analysis that sizes protective buffers. Anchor scheduling begins when a planner also sets a target start date on that operation's schedule row for a specific job. Set only the flag and the job continues to schedule forward exactly as before."
+  - question: "Why did anchor scheduling stop working after I edited the routing?"
+    answer: "Anchor detection matches the schedule row carrying the target date to a routing step by work center. If the routing was edited so that step was removed, or its work center changed, the match fails and the job falls through to forward scheduling with no error. Re-pin the target date on the current constraint operation and reschedule."
+  - question: "Why did only the constraint operation get scheduled and nothing else?"
+    answer: "The routing split had nothing to work with. EDGEBIC decides which operations come before and after the anchor using routing level first, then sequence number, then the successor links between steps. If every step shares the same level and the same sequence number and no successor links are set, both the upstream and downstream lists come back empty. Populate sequence numbers in genuine order and reschedule."
+  - question: "My anchored plan has no safety margin at all. Is that a bug?"
+    answer: "No, it is the default. TOC buffers are off until you enable them, so a first anchored plan is deliberately tight: upstream work finishes exactly when the constraint needs it. That is easy to read and offers no protection against variation. Enable the buffers when you want the cushion, understanding that they move upstream release earlier and add work in process."
+  - question: "The upstream steps finish after the constraint's pinned start. Why did the scheduler not fix it?"
+    answer: "Because fixing it silently would hide the problem. EDGEBIC schedules faithfully: the constraint starts on the date you pinned and the upstream shows as late against it. That conflict is a genuine capacity finding, and the three real responses are adding upstream capacity, releasing the job earlier, or pinning the constraint later. Comparing the last upstream end date with the pinned start is the check to run every time."
+qaQuestions:
+  - question: "We pinned a target date and set the order to backward scheduling as well, expecting both. What actually happened?"
+    answer: "The anchor ran and the whole-order backward pass did not. A pinned target date is a user-placed constraint that outranks the due date, and the anchored path already performs its own backward pass for the upstream operations and a forward pass for the downstream ones. Layering a whole-order backward pass on top would fight the pin. If right-aligning the entire order to the due date is what you want, clear the target date."
+  - question: "Our anchored jobs look fine but the oven still runs at 95 percent and everything is late. Is anchor scheduling failing?"
+    answer: "Anchor scheduling is doing its job, which is to sequence work around a constraint, not to create capacity. A resource running near full utilization with a growing queue is telling you it is time for the fourth focusing step: add capacity, offload work to an alternate resource, or reduce the demand routed through it. Scheduling well around a constraint that is genuinely undersized buys you predictability, not throughput."
+---
+
+**Nearly every "anchor scheduling is not working" report comes down to one of eight configuration mistakes, and the two most common are so specific that they are worth checking before anything else: the missing target date and the brand new job.** Each mistake below is paired with the symptom it produces and the fix, for [EDGEBIC by User Solutions](/edgebic).
+
+If you have not set anchoring up yet, start with [how to flag and schedule around a bottleneck](/blog/how-to-flag-and-schedule-around-a-bottleneck-in-edgebic). For the mechanism behind the behavior, read [TOC buffers and direction precedence](/blog/toc-buffers-and-direction-precedence-in-edgebic).
+
+## 1. Flagging the Bottleneck and Expecting a Plan
+
+**Symptom:** You marked the oven as the bottleneck, ran a schedule, and nothing changed. Upstream operations still start at the release date and push forward.
+
+**Cause:** The bottleneck flag and the target start date do two different jobs. The flag identifies which resource is your constraint, drives display, and decides how generously protective buffers are sized. The target start date on a schedule row is what activates anchor scheduling for a job.
+
+**Fix:** Set both. Flag the work center once, then pin a target start date on the constraint operation for each job that needs a deliberate slot. This is the most common false start on the feature, and it is silent: nothing warns you, the schedule is valid, and it is simply an ordinary forward plan.
+
+## 2. Pinning a Job That Has Never Been Scheduled
+
+**Symptom:** You set a target start date on a new order and the anchored plan never appears.
+
+**Cause:** Anchor detection looks for an existing schedule row carrying a target date. A job that has never been scheduled has no rows yet, so there is nothing to find.
+
+**Fix:** Schedule the job once normally, then set the target start date on the constraint operation's row, then reschedule. From that point on the anchor fires on every run for that job. Building this into the routine (schedule, pin, reschedule) removes the surprise permanently.
+
+## 3. Editing the Routing After the Schedule Row Was Created
+
+**Symptom:** Anchoring worked last week and quietly stopped this week. No error appeared.
+
+**Cause:** Detection matches the schedule row carrying the target date to a routing step by work center. If the routing changed so that step was removed, or its work center was swapped, the match fails and the job falls through to forward scheduling.
+
+**Fix:** Re-pin the target date on the current constraint operation and reschedule. When you edit a live job's routing, treat re-pinning as part of the edit. [Editing a live job's routing](/blog/editing-a-live-jobs-routing-in-edgebic) covers what else moves when you do.
+
+## 4. Pinning a Work Center That Is Not the Constraint
+
+**Symptom:** An anchored plan appears but the buffers look far too small for a big job.
+
+**Cause:** The target date alone activates anchoring, so pinning any operation produces an anchored plan. The engine then computes a load factor per work center and checks whether the pinned one is the tightest for that job. If it is not, conservative fixed buffers apply instead of the demand-proportional ones.
+
+**Fix:** Decide whether that is what you wanted. If it is, the small buffers are correct, because protecting a resource with slack is not worth days of earlier release. If it is not, either clear the target date to return to forward scheduling or pin the genuine constraint. To confirm which resource that is, work through [how to identify production bottlenecks](/blog/production-bottleneck-identification).
+
+Watch out for the near miss: the load factor comparison is exact, so an anchor sitting at 1.80 when another work center sits at 1.81 is not confirmed as the constraint and gets the fixed buffers. If your two tightest resources are close, check the load numbers rather than assuming the buffers are broken.
+
+## 5. Assuming Buffers Are On
+
+**Symptom:** The anchored plan has no margin anywhere. Upstream operations finish exactly when the constraint starts, and one bad shift starves the oven.
+
+**Cause:** TOC buffers are off by default.
+
+**Fix:** Enable them once the plan is legible and you want the protection. Understand the trade before you do: buffers move upstream release earlier and add work in process, in exchange for a constraint that does not starve and a completion date that variation cannot easily reach. The sizing arithmetic is in [TOC buffers and direction precedence](/blog/toc-buffers-and-direction-precedence-in-edgebic).
+
+## 6. Routings With No Ordering Information
+
+**Symptom:** Only the constraint operation appears in the plan. Nothing upstream or downstream is scheduled at all.
+
+**Cause:** The routing split had nothing to work with. EDGEBIC decides which operations come before and after the anchor using routing level first, then sequence number, then the successor links between steps. When every step shares the same level and the same sequence number and no successor links exist, both lists come back empty.
+
+**Fix:** Populate sequence numbers in genuine order when you build a routing. This is cheap insurance that also protects step ordering in normal forward scheduling. If you build routings visually, the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour) sets the links for you as you draw them.
+
+## 7. Flagging Several Work Centers as the Bottleneck
+
+**Symptom:** Which resource gets anchored seems arbitrary and changes between routings.
+
+**Cause:** A routing resolves to a single anchor per job. Marking three resources as bottlenecks does not produce three anchors, it produces one winner chosen from the routing order.
+
+**Fix:** Flag one resource, the one that is tightest for the mix you are running now, and move the flag when the load pattern shifts. If two resources genuinely contend every week, that is a capacity finding rather than a settings problem: [multi-constraint scheduling](/blog/multi-constraint-scheduling) covers the real options. And when relieving your bottleneck creates a new one somewhere else, that is success, not failure. See [bottleneck migration](/blog/bottleneck-migration-constraint-shifting).
+
+## 8. Expecting the Pin to Move Itself
+
+**Symptom:** Upstream operations finish after the constraint's pinned start and the plan still shows the constraint starting on time.
+
+**Cause:** This is not a defect. EDGEBIC schedules faithfully rather than quietly sliding the pin to make the plan look feasible.
+
+**Fix:** Treat it as the signal it is. Compare the last upstream operation's end date with the pinned start on every anchored job. When the end is later, the constraint would start with material that is not ready, and you have exactly three real responses: add upstream capacity, release the job earlier, or pin the constraint later. Choosing one of the three is a planning decision, and having it made explicitly is better than having the software make it silently.
+
+## The Fast Diagnostic Path
+
+When an anchored job misbehaves, these four questions in this order resolve almost everything, and each takes seconds.
+
+**Does a target start date exist on a schedule row for this job?** If not, mistake 1. If the job has never been scheduled, mistake 2.
+
+**Does that row's work center still appear in the routing?** If the routing was edited, mistake 3.
+
+**Is the pinned work center the highest-load resource for this job?** If not, the plan is anchored but conservatively buffered, which is mistake 4 and may be fine.
+
+**Does the last upstream operation end before the pinned start?** If not, mistake 8, and the plan is telling you something real about upstream capacity.
+
+Work down the list rather than across it. The first three questions determine whether anchoring fired at all, and there is no point studying buffer widths on a job that took the plain forward path. The fourth question is the only one that is not a configuration issue: it is a genuine finding about your plant, and it is the reason to run this check on every anchored job rather than only on the ones that look wrong.
+
+## Three Behaviors That Are Not Mistakes
+
+**A second job drifts off its target.** Two jobs pinned to the same window on a single-instance constraint cannot both have it. The first in the run order claims the slot and the second lands in the next open window. The drift is visible on the Gantt, which is the cue to reprioritize or add capacity.
+
+**The anchor stops applying once work starts.** When the constraint operation carries actual dates, anchoring no longer applies to that job, and the remaining downstream operations chain forward from where the actuals ended. Backward planning to an operation that already happened would be meaningless. The completed row keeps its dates and its machine, because completed work is never moved by a reschedule.
+
+**A backward-direction order takes the anchored path instead.** A pinned target date outranks a due-date-driven backward pass, and the anchored path already performs its own backward and forward split around the pin. If right-aligning the whole order to the due date is what you want, clear the target date first.
+
+## Where to Go Next
+
+For the whole capability in one place, read [TOC anchor scheduling explained](/blog/edgebic-toc-anchor-scheduling-explained). For a job traced with real dates through all three phases, the [anchor scheduling walkthrough](/blog/toc-bottleneck-anchor-scheduling-example-edgebic) shows the plan a shop actually receives. And if scheduling well around your constraint reveals that the constraint is simply undersized, that is the fourth focusing step, and no scheduler will do it for you. The [complete guide to EDGEBIC](/blog/edgebic-complete-guide) maps the rest of the platform.

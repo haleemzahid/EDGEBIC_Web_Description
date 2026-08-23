@@ -1,0 +1,166 @@
+---
+title: "Scheduling Around the Bottleneck: A TOC Anchor Example in EDGEBIC"
+description: "A theory of constraints scheduling example: EDGEBIC pins a bottleneck CNC to a target date, schedules feeders backward and finishers forward."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - theory of constraints scheduling example
+  - TOC scheduling software
+  - bottleneck scheduling
+  - anchor scheduling
+  - drum buffer rope scheduling
+  - constraint-based production scheduling
+  - finite capacity scheduling
+targetPhrase: "theory of constraints scheduling example"
+wordCount: 2300
+readingTime: 12
+faqQuestions:
+  - question: "What is anchor scheduling in EDGEBIC?"
+    answer: "Anchor scheduling is EDGEBIC's implementation of Theory of Constraints sequencing. You pin the operation that runs on your bottleneck work center to a target start date, and the engine schedules everything upstream backward to feed that date and everything downstream forward from the constraint's finish. The bottleneck never waits for material, and the rest of the shop is subordinated to its rhythm."
+  - question: "How does EDGEBIC know which operation is the constraint?"
+    answer: "The planner tells it, by pinning a target start date on the constraint operation from the Gantt chart. The bottleneck flag on a work center drives display and load analysis: in this example the 5-axis CNC carries a load factor of 1.81, meaning demand is 181 percent of its daily capacity, the highest in the routing. The pinned target date is what activates the backward-forward split."
+  - question: "Does anchor scheduling change my promised due date?"
+    answer: "No. The customer due date on a manufacturing order is never modified by the scheduling engine. EDGEBIC computes a projected end date from the anchored plan and shows it next to the due date, so you can see slack or lateness at a glance. In this walkthrough the job finishes Friday at 10:00 against a due date the following Friday, leaving almost seven days of slack."
+  - question: "What are TOC buffers and does EDGEBIC calculate them?"
+    answer: "TOC buffers are time cushions that protect the constraint and the due date from variation: a constraint buffer before the bottleneck starts, a feeding buffer on the operation that feeds it, and a shipping buffer after it finishes. EDGEBIC can calculate all three from the routing itself; buffers are off by default so your first anchored schedule is easy to read, and you enable them when you want the protection."
+qaQuestions:
+  - question: "My 5-axis mill is booked solid and every job routes through it. If I pin one job to Wednesday, what happens to a second job that wants the same slot?"
+    answer: "The first job in the run order takes the slot at maximum priority. The second job's constraint step searches forward from Wednesday and lands in the next open window, typically Thursday morning, even though its target said Wednesday. EDGEBIC schedules faithfully and shows you the drift; if the slip is more than you can accept, you either reprioritize the two jobs or add a second machine instance and reschedule. The engine never silently double-books a single-instance bottleneck."
+  - question: "We started the constraint operation last week and logged actuals. If I reschedule the job now, will the engine move that machining?"
+    answer: "No. Completed work is never moved by a reschedule. The constraint row keeps its actual start, actual end, and its original work center; the engine removes that step from the reschedule set and plans only the remaining downstream operations forward from where the actuals ended. In this walkthrough, once the 5-axis step carries actuals through Thursday 13:48, deburr and inspection are scheduled from that timestamp and the machining history stays untouched."
+---
+
+**A Theory of Constraints schedule is built from the middle out: you pin the bottleneck operation to a target date, schedule every upstream feeder backward so material arrives just before that date, and schedule every downstream operation forward from the moment the constraint finishes.** EDGEBIC by User Solutions does exactly this with a mechanism called anchor scheduling. This walkthrough follows one real job, a precision-machined turbine-blade bracket, through all three phases with actual dates and hours, so you can see what the engine decides and why.
+
+If you want the plain-language background first, read our guide on [identifying your production bottleneck](/blog/production-bottleneck-identification). This post assumes you already know which machine is the constraint and shows you what to do about it.
+
+## The Shop: Four Work Centers, One Constraint
+
+The bracket routes through four work centers. Everything runs one shift, Monday through Friday, 08:00 to 16:00.
+
+| Work center | Instances | Utilization | Role |
+|---|---|---|---|
+| Cut-Saw | 2 | 100% | Feeder |
+| 5-Axis CNC | 1 | 90% | **Bottleneck** |
+| Deburr | 3 | 100% | Finisher |
+| QC-Inspect | 2 | 100% | Finisher |
+
+The 5-axis CNC is the plant constraint for the usual reasons: it is slower, it is expensive, and there is only one of it. You mark it as the bottleneck in the work center editor and cap its scheduling utilization at 90 percent, so the engine plans 7.2 productive hours per 8-hour shift on that machine.
+
+The routing for product P-7714 has four steps:
+
+| Step | Work center | Setup | Run time per unit |
+|---|---|---|---|
+| Cut to profile | Cut-Saw | 0.5 h | 1.0 h |
+| 5-axis machine | 5-Axis CNC | 1.0 h | 3.0 h |
+| Deburr and clean | Deburr | 0.25 h | 0.5 h |
+| Final inspect | QC-Inspect | 0 h | 0.5 h |
+
+The order is job JOB-BLK-001: 4 units, released Monday June 15, due Friday June 26.
+
+Total demand on the CNC is 13 hours (1 hour of setup plus 4 units at 3 hours each). Against 7.2 effective hours per day, that is a load factor of 1.81. Demand is 181 percent of a day's capacity. No other work center in the routing comes close, which confirms what you already knew from walking the floor: this machine sets the pace of the plant.
+
+## Step One: Pin the Constraint
+
+Goldratt's five focusing steps say identify the constraint, exploit it, and subordinate everything else to it. In EDGEBIC the "exploit" decision is a single planner action. You open the job Gantt, right-click the 5-axis bar for this job, and set a target date of Wednesday June 17 at 08:00. That is the moment you want the constraint cutting metal.
+
+This pinned target date is what activates anchor mode. The bottleneck flag on the work center drives the load analysis and the Gantt display; the target date you set is the trigger. When you run Generate Schedule, the engine finds the pinned date, identifies the 5-axis step as the anchor, and splits the routing around it: the cut operation goes in the pre-anchor group, deburr and inspection go in the post-anchor group. From there the schedule is built in three phases.
+
+## Phase A: Schedule the Constraint First, at Top Priority
+
+The anchor step is scheduled before anything else in the job, at the engine's maximum priority level, so no other work can crowd it out of its window. Thirteen hours of work at 7.2 effective hours per day spreads across two days:
+
+| Day | Booked | Running total |
+|---|---|---|
+| Wed June 17, 08:00 to 15:12 | 7.2 h | 7.2 h |
+| Thu June 18, 08:00 to 13:48 | 5.8 h | 13.0 h |
+
+The constraint starts at exactly the pinned time, Wednesday 08:00, and finishes Thursday at 13:48. That finish time becomes the fixed reference point for everything downstream.
+
+## Phase B: Schedule the Feeders Backward
+
+Now the engine works upstream. The cut operation needs 4.5 hours (0.5 setup plus 4 units at 1 hour). Its deadline is the anchor's start: the material must be ready by Wednesday 08:00. Counting 4.5 working hours backward from that deadline lands the cut at Tuesday June 16, 11:30 to 16:00.
+
+Notice what backward scheduling buys you here. A plain forward schedule would have cut the material Monday morning, then let it sit in front of the CNC for a day and a half. The backward pass starts the feeder as late as possible while still guaranteeing the constraint never starves. Material arrives Tuesday at end of shift; the CNC picks it up Wednesday morning. Minimal work in process, zero risk of an idle bottleneck. Feeders are scheduled at slightly reduced priority, because on a constraint-driven schedule the subordinated resources serve the bottleneck's rhythm rather than their own throughput. Our comparison of [forward and backward scheduling](/blog/forward-vs-backward-scheduling) covers the general trade-off; anchor scheduling uses both directions in one plan.
+
+## Phase C: Schedule the Finishers Forward
+
+Downstream steps run forward from the anchor's finish, Thursday 13:48:
+
+- **Deburr** needs 2.25 hours and starts the moment the CNC releases parts: Thursday 13:48 to 16:03.
+- **Final inspect** needs 2 hours. Its earliest start is 16:03, which is past the end of the shift, so the engine's shift search moves it to the next open slot: Friday June 20, 08:00 to 10:00.
+
+The forward pass also enforces a clamp: no post-anchor step may reach back into the constraint's window, even if a work center happens to have idle capacity earlier in the week.
+
+## The Finished Schedule
+
+| Operation | Work center | Start | End | Hours |
+|---|---|---|---|---|
+| Cut to profile | Cut-Saw | Tue Jun 16, 11:30 | Tue Jun 16, 16:00 | 4.5 |
+| 5-axis machine | 5-Axis CNC | **Wed Jun 17, 08:00** | Thu Jun 18, 13:48 | 13.0 |
+| Deburr and clean | Deburr | Thu Jun 18, 13:48 | Thu Jun 18, 16:03 | 2.25 |
+| Final inspect | QC-Inspect | Fri Jun 20, 08:00 | Fri Jun 20, 10:00 | 2.0 |
+
+The constraint starts precisely on its pinned date. The job completes Friday at 10:00 against a due date of June 26, leaving almost seven days of slack. One rule holds through all of this: the scheduling engine never touches the due date. The customer promise stays exactly as you entered it, and the projected end date sits beside it so lateness or slack is always visible.
+
+## Adding the TOC Buffers
+
+Real plants have variation, and pure just-in-time feeding leaves the constraint exposed to it. EDGEBIC can compute the three classic TOC buffers from the routing itself. Buffers are off by default, so your first anchored schedule reads clean. Turn them on and the engine sizes them from the work content:
+
+| Buffer | How it is sized in this example | Result |
+|---|---|---|
+| Constraint buffer | 50% of the longest upstream path (4.5 h) | 2.25 h |
+| Shipping buffer | 25% of the downstream path, minimum 2 h | 2.0 h |
+| Feeding buffer | 10% of the feeding path | 0.45 h |
+
+With buffers on, the cut operation's deadline moves from Wednesday 08:00 to Tuesday 05:45, which in a one-shift shop pushes the cut to finish by Monday end of shift. The feeder now completes a full working day before the constraint needs it: that cushion is what protects the bottleneck if the saw has a bad morning. Downstream, deburr waits two hours after the anchor finishes, absorbing any overrun on the CNC before it can ripple toward the customer date.
+
+That is the trade buffers make explicit: a little earlier release and a little more work in process, bought deliberately, in exchange for a constraint that never starves and a due date that variation cannot easily reach.
+
+## What Happens Without the Anchor
+
+Remove the pinned target date and rerun the schedule. The engine falls back to plain forward scheduling: cut starts Monday 08:00, the CNC follows Monday afternoon, and the whole job finishes Wednesday afternoon, almost two days earlier than the anchored plan.
+
+So why anchor at all? Because a lone job on an empty Gantt is not the problem you actually have. You anchor when the constraint's calendar is contested: when this job must hit a specific CNC window because other jobs, maintenance, or a customer milestone claim the slots around it. The anchor lets you place the constraint work deliberately and have the entire routing rearrange itself around that decision. It is the difference between hoping the bottleneck slot is free and reserving it.
+
+Two more scenarios worth knowing:
+
+**Two jobs, one slot.** If a second job pins the same Wednesday 08:00 target on the same single-instance CNC, the first job in the run order wins the slot. The second is scheduled at the same top priority but finds Wednesday occupied and lands in the next open window, typically Thursday. The drift is visible on the Gantt, which is your cue to reprioritize or add capacity.
+
+**The anchor already ran.** If the CNC step carries actual start and end dates from the shop floor, a reschedule preserves that row untouched, on its original machine, and plans only the remaining downstream steps forward from where the actuals ended. Completed work is never moved. The same preservation logic drives the [machine breakdown reschedule walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic), where it matters even more.
+
+## Reading the Result Like a Planner
+
+Three checks tell you the anchored schedule is behaving:
+
+1. **The constraint row starts at the pinned time.** Target date and scheduled start should match to the minute.
+2. **The feeder finishes just before the constraint starts** (or a full buffer earlier, if buffers are on). A feeder finishing days early without a buffer configured means the anchor did not activate.
+3. **The due date is unchanged** and the projected end date sits comfortably inside it.
+
+Every one of these is visible in the schedule grid and the Gantt without touching a query tool. The engine also writes a decision log for each run, recording the anchor it detected, the split it made, and the deadline it computed for each backward-scheduled feeder, so when someone asks why the saw is cutting on Tuesday and not Monday, the answer is on record.
+
+User Solutions has been building constraint-aware schedulers since 1991, and the lineage shows in results like GE Railcar taking on-time delivery from 30 percent to 90 percent with this style of finite, bottleneck-first planning. Anchor scheduling in [EDGEBIC](/edgebic) is that same discipline with the arithmetic done for you: you make one decision, where the constraint runs, and the engine subordinates the other three work centers to it in seconds.
+
+## Try It on Your Own Constraint
+
+This example is one of a series of [worked scheduling examples in EDGEBIC](/blog/edgebic-worked-examples) that trace real numbers end to end; the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) explains the machinery underneath. To reproduce this run you need four work centers, a four-step routing, one order, and one right-click to pin the target date. Bring your own bottleneck data to a demo and we will build the anchored schedule with you. [Contact US for a demo](/contact-us).
+
+<Accordion title="What is anchor scheduling in EDGEBIC?">
+Anchor scheduling is EDGEBIC's implementation of Theory of Constraints sequencing. You pin the operation that runs on your bottleneck work center to a target start date, and the engine schedules everything upstream backward to feed that date and everything downstream forward from the constraint's finish. The bottleneck never waits for material, and the rest of the shop is subordinated to its rhythm.
+</Accordion>
+
+<Accordion title="How does EDGEBIC know which operation is the constraint?">
+The planner tells it, by pinning a target start date on the constraint operation from the Gantt chart. The bottleneck flag on a work center drives display and load analysis: in this example the 5-axis CNC carries a load factor of 1.81, meaning demand is 181 percent of its daily capacity, the highest in the routing. The pinned target date is what activates the backward-forward split.
+</Accordion>
+
+<Accordion title="Does anchor scheduling change my promised due date?">
+No. The customer due date on a manufacturing order is never modified by the scheduling engine. EDGEBIC computes a projected end date from the anchored plan and shows it next to the due date, so you can see slack or lateness at a glance. In this walkthrough the job finishes Friday at 10:00 against a due date the following Friday, leaving almost seven days of slack.
+</Accordion>
+
+<Accordion title="What are TOC buffers and does EDGEBIC calculate them?">
+TOC buffers are time cushions that protect the constraint and the due date from variation: a constraint buffer before the bottleneck starts, a feeding buffer on the operation that feeds it, and a shipping buffer after it finishes. EDGEBIC can calculate all three from the routing itself; buffers are off by default so your first anchored schedule is easy to read, and you enable them when you want the protection.
+</Accordion>

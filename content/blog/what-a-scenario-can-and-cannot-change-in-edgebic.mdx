@@ -1,0 +1,186 @@
+---
+title: "What a Scenario Can and Cannot Change in EDGEBIC"
+description: "The documented scenario planning limits in manufacturing what-if analysis: which levers a scenario controls, which it never touches, and why."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - scenario planning limits manufacturing
+  - what if analysis boundaries
+  - step override skip dependency
+  - scenario forward only
+  - capacity reservation manufacturing
+  - apply scenario to quote
+targetPhrase: "scenario planning limits manufacturing"
+wordCount: 1836
+readingTime: 9
+faqQuestions:
+  - question: "What can a scenario actually change in a production simulation?"
+    answer: "Four groups of things. Production settings: weekend production, priority level, parallel processing and its cap, and a custom start date. Work center capacity, as a percentage multiplier applied to named machines inside that scenario only. Routing steps, through overrides that skip a step, replace its work center, change its setup, process, or queue times, or move it in the sequence. Everything else, including the real routing, real capacity, and the production schedule, stays exactly as it is."
+  - question: "Do scenarios simulate backward like a backward quote does?"
+    answer: "No. Scenario simulations always run forward: they start at the scenario's start date and report when the work finishes. A backward quote's finish-by framing does not carry into its scenarios, which is a documented limit rather than a setting. When the parent quote is backward, compare each scenario's estimated end date against the customer's date yourself rather than expecting the engine to make that comparison."
+  - question: "Does skipping a routing step in a scenario break the sequence?"
+    answer: "It can. Skip removes the step from that scenario's cloned routing without rewiring whatever depended on it. A later step that was waiting on the skipped one may then be treated as having no predecessor and simulate earlier than is physically possible. Verify the resulting dates before quoting from a skip scenario, and prefer replacing the work center or modifying the times when real dependencies exist."
+  - question: "Does a scenario ignore my maintenance windows and holidays?"
+    answer: "No, and this is deliberate. A scenario run loads the same per-work-center, per-shift, per-date capacity override records that the production scheduler uses, so maintenance downtime, holiday capacity cuts, and daily adjustments are all respected. The scenario's own overrides are then applied on top. A scenario is today's real shop plus your one experiment rather than an unconstrained calendar."
+  - question: "Can a scenario reserve capacity while the customer decides?"
+    answer: "No. Scenario runs are in-memory only and their results are discarded once the numbers are read, so no capacity is held against a scenario or its parent quote. There is no capacity reservation or hold mechanism. Capacity is committed only when a real manufacturing order exists and a scheduling run places it, which is why prompt conversion matters after a customer accepts."
+qaQuestions:
+  - question: "Our routing has alternates at three steps. Can we see all the combinations at once?"
+    answer: "Not automatically. Each scenario is created, configured, and run individually, so three steps with two alternatives each means eight scenarios if you want the full grid, built one at a time. In practice that is a reason to be selective rather than exhaustive: enumerate only the combinations you would actually execute, which is usually two or three. The documented working range is the baseline plus one scenario per realistic lever, and a routing that genuinely needs all eight is telling you something about how many real choices exist on the shop floor."
+  - question: "A scenario said we could hit the date using an outside vendor. We applied it, converted, and the shop ran the old routing. What went wrong?"
+    answer: "Applying a scenario copies its results onto the quote and nothing else. The estimated dates, hours, and costs move across; the product's routing does not. The vendor step existed only inside that scenario's cloned copy of the routing, which is discarded with the rest of the run. To make the promise reproducible, edit the real routing to use the vendor work center before converting the quote, so the production scheduling run schedules the same path the scenario simulated. The sequence is apply, change for real, then convert."
+---
+
+**Scenario planning limits in manufacturing** are worth learning before you rely on a what-if result, because a scenario that quietly did less than you thought produces a confident number and a missed date. This post documents exactly what a scenario in EDGEBIC by User Solutions controls, what it deliberately leaves alone, and where each boundary shows up in practice.
+
+For the overview, read [what-if scenarios explained](/blog/edgebic-what-if-scenarios-explained). For the hands-on build, read [how to build and compare scenarios](/blog/how-to-build-and-compare-scenarios-in-edgebic). Everything here describes documented behavior of [EDGEBIC](/edgebic).
+
+## What a Scenario Controls
+
+Four groups of levers, and that is the complete list.
+
+### Production settings
+
+| Setting | Effect | Default |
+|---|---|---|
+| Weekend production | The engine may use weekend shift hours in this run | Off |
+| Priority level (1 to 10) | Biases how aggressively the simulated job competes for capacity against existing load | 5 |
+| Parallel processing | Parallel routing paths may be used | Off |
+| Max parallel centers | Caps concurrent machines | 2 |
+| Custom start date | The scenario starts on its own date rather than the quote's | Off |
+
+Priority level is the subtlest. It changes how the simulated job competes inside this run. It does not change any real job's priority, and no real job is reordered as a result.
+
+### Work center capacity
+
+A percentage multiplier applied to named work centers for this scenario only. A machine at 8 hours a day set to 150 reads 12 in the adjusted column. The multiplier inflates the effective hours the engine sees on that machine.
+
+### Routing steps
+
+Four override types, applied to a **cloned copy** of the routing built for that scenario run:
+
+| Type | What it does |
+|---|---|
+| Skip | Removes the step from the cloned routing |
+| Replace | Swaps the step's work center for an alternative |
+| ModifyTime | Replaces the step's setup, process, or queue times |
+| Reorder | Changes the step's sequence number, then re-sorts the list |
+
+The clone matters. Overrides are applied to a deep copy, so the real routing is never touched and one scenario's overrides cannot leak into another's run.
+
+### Nothing else
+
+There is no fifth group. If a lever is not in the three tables above, a scenario cannot express it.
+
+## What a Scenario Never Touches
+
+### The production schedule
+
+Scenario simulations are in-memory runs. Nothing is written to the schedule, resource, or production schedule records. The only things persisted are the scenario's own estimated dates, hours, costs, and its simulated flag.
+
+Real jobs never move. That is what makes it safe to run the same scenario eight times while tuning a percentage, and it is why a planner can explore during a customer call without asking permission.
+
+### Capacity, in the sense of holding it
+
+No capacity is reserved or held against a scenario or its parent quote. There is no reservation or hold mechanism. Two scenarios, or two quotes, or two salespeople looking at the same week all see the same free hours, because none of them consumed any.
+
+Capacity is committed when a real manufacturing order exists and a scheduling run places it. Everything before that point is a what-if promise date, which is the honest description of what quote simulation produces. See [how a quote becomes a promise date](/blog/how-edgebic-turns-a-quote-into-a-promise-date).
+
+### The real routing and the real work centers
+
+A step override lives in the scenario's cloned routing. A capacity override lives in the scenario's parameters. Neither writes back.
+
+This is the boundary that costs shops real deliveries, so it is worth stating in the strongest terms: **a scenario that solves the date is a proposal, not a change**. When a scenario wins, somebody has to make the corresponding real change (arrange the shift, add a real per-day capacity override, edit the routing to use the vendor) before the quote converts. Otherwise a production scheduling run reproduces the standard case, and the promise fails on the day it was promised for.
+
+### The quote's price
+
+Applying a scenario writes its estimated dates, hours, and costs onto the parent quote and marks the quote simulated. It does not update the unit price. When cost moves, re-derive the price with the apply markup action or set it deliberately. [How to create a quote](/blog/how-to-build-and-price-a-quote-in-edgebic) covers the pricing controls.
+
+### Your real calendar constraints
+
+This one is a limit in your favour. A scenario cannot pretend a maintenance window does not exist. Scenario runs load the same per-work-center, per-shift, per-date capacity override records that the production scheduler uses, so downtime, holiday cuts, and daily adjustments are all in the picture before your override is applied on top.
+
+A scenario is today's real shop plus one experiment. It is not an unconstrained calendar, and that is precisely why its answers are worth acting on.
+
+## The Direction Limit
+
+Scenario simulations always run forward. They start at the scenario's start date and report when the work finishes.
+
+A backward quote's just-in-time framing does not carry into its scenarios. That is a documented limitation rather than a setting you have missed, and it has one practical consequence: when the parent quote is backward, compare each scenario's estimated end date against the customer's wanted date by hand. Do not compare it against the quote's target date and assume the engine did the work, because on a backward quote that target date means something different from what a forward scenario is reporting.
+
+It also explains an occasional surprise: a scenario with no overrides at all can return a slightly different answer from the quote's own simulation, because the scenario ran forward and may have used a different start date. Set the scenario's custom start date deliberately when you want the two to line up. [Backward scheduling in EDGEBIC](/blog/edgebic-backward-scheduling-explained) covers the direction rules.
+
+## The Skip Hazard, in Detail
+
+Skip is the one override that can produce a physically impossible answer, and understanding why takes thirty seconds.
+
+Routing steps carry links to what comes next, and the engine uses those links to sequence the work. Skip removes a step from the cloned list. It does not rewire the links that pointed at it.
+
+So a downstream step that was waiting on the skipped step is now waiting on something that is not in the list. Depending on how that dangling link resolves, the step may be treated as having no predecessor at all, and it schedules earlier than the physical process allows. The scenario then reports a lead time nobody can hit.
+
+Three guards:
+
+1. Verify the dates on any skip scenario before quoting from it. A suspiciously good result is the symptom.
+2. Prefer Replace when the work still happens somewhere else, and ModifyTime when it happens faster.
+3. Reserve Skip for steps that genuinely have no downstream dependents, such as an optional finishing operation at the end of a routing.
+
+## The Comparison Limits
+
+Two boundaries on how scenarios are compared.
+
+**Siblings only.** A scenario belongs to one parent quote, and the comparison covers scenarios within that quote. Comparing across two different quotes means reading two screens or noting the numbers.
+
+**Three charts, one dimension each.** The comparison presents lead time, cost, and utilization as separate charts, each with one bar per scenario, rather than a single table with a column per scenario. Read all three rather than the first one: a scenario that wins on lead time by running a machine at full stretch for three weeks has no absorption left for a breakdown, and only the utilization chart shows that.
+
+Only simulated scenarios can join a comparison, and applying an unsimulated scenario to the quote is refused with a message telling you to run it first. Both guards exist to stop an unrun variant appearing as a zero and winning by default.
+
+## The Enumeration Limit
+
+Scenarios are created and run one at a time. There is no automatic generation of every routing combination.
+
+For a routing with alternates at three steps, two options each, the full grid is eight scenarios, and each is built individually. In practice that is a useful forcing function: enumerate the combinations you would actually execute, not the ones that are mathematically available. The documented working range is a baseline plus one scenario per realistic lever, which is two to four.
+
+## Worked Case: Where Each Limit Shows Up
+
+A bracket, 500 units, customer wants seven days. The base simulation finishes five days late.
+
+**Scenario A, Standard.** No overrides. Lead time 13 days, cost $3,500. The baseline.
+
+**Scenario B, Second Shift.** Capacity overrides of 150% on the first two work centers, parallel processing enabled. Lead time 9 days, cost $3,850. Still two days over.
+
+**Scenario C, Outside Vendor.** A step override of type Replace on the cutting step, pointing at a vendor work center that runs faster and longer. Lead time 6 days, cost $4,200. It meets the seven day target with a day to spare.
+
+| Scenario | Lead time | Cost | Meets 7 days |
+|---|---|---|---|
+| Standard | 13 days | $3,500 | No |
+| Second Shift | 9 days | $3,850 | No |
+| Outside Vendor | 6 days | $4,200 | Yes |
+
+The planner picks Scenario C and quotes $8.40 per unit with a commitment date one day inside the customer's window.
+
+Now the limits bite, in order. The vendor step existed only in that scenario's cloned routing, so somebody must edit the real routing before conversion. The capacity multipliers in Scenario B never reached the real work centers, so if that scenario had won, the second shift would need arranging for real. And nothing about running these three scenarios held a single hour of vendor or in-house capacity, so if the customer takes a week to decide, re-run before committing.
+
+## The Boundary Summary
+
+| Lever | Scenario controls it | Persists to the real world |
+|---|---|---|
+| Weekend production | Yes | No |
+| Priority level | Yes, within the run | No |
+| Parallel processing and cap | Yes | No |
+| Custom start date | Yes | No |
+| Work center capacity multiplier | Yes | No |
+| Skip, replace, modify, reorder a step | Yes, on a clone | No |
+| Real routing | No | |
+| Real work center capacity | No | |
+| Production schedule | No | |
+| Quote unit price | No, even on apply | |
+| Capacity reservation | No mechanism exists | |
+| Scheduling direction | Forward only | |
+
+Print that table, or at least the last five rows. Every one of them is a place where a scenario is quietly narrower than it looks.
+
+For the errors these boundaries produce in practice, read [scenario planning mistakes](/blog/scenario-planning-mistakes-edgebic). For the quote a scenario belongs to, see the [quoting pillar](/blog/edgebic-quoting-guide), and the [EDGEBIC complete guide](/blog/edgebic-complete-guide) maps the rest of the platform.

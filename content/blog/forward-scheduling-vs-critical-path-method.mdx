@@ -1,0 +1,93 @@
+---
+title: "Forward Scheduling vs the Critical Path Method"
+description: "Forward scheduling vs the critical path method: CPM finds the longest dependency chain assuming infinite resources, forward scheduling places that chain against finite capacity."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - forward scheduling vs critical path
+  - critical path method manufacturing
+  - forward scheduling
+  - CPM vs finite capacity
+  - longest dependency chain
+  - production routing scheduling
+targetPhrase: "forward scheduling vs the critical path method"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between forward scheduling and the critical path method?"
+    answer: "The critical path method finds the longest chain of dependent operations in a routing and reports its length as the shortest possible completion time, assuming every resource is available the instant it is needed. Forward scheduling takes those same operations and places them against finite machine capacity from a start date forward, so it accounts for queues and contention the critical path ignores. CPM tells you the theoretical floor; forward scheduling tells you the achievable date."
+  - question: "Does a scheduler use the critical path?"
+    answer: "A finite capacity scheduler uses critical path thinking to order dependent operations, because a step cannot start until the steps feeding it finish. But it does not treat the critical path length as the answer. Two jobs whose critical paths never touch still compete for the same machine, and forward scheduling resolves that contention by queuing one behind the other. The critical path is a lower bound on lead time, not the schedule itself."
+  - question: "Why is my job later than its critical path length?"
+    answer: "A job finishes later than its critical path length whenever one of its operations has to wait for a machine that another job is using. The critical path method assumes infinite resources, so every step starts the moment its predecessor ends. On a real floor with finite capacity, an operation can be ready and still queue behind higher-priority work. The extra time is queue time, and it is exactly what forward scheduling exposes and the critical path hides."
+qaQuestions:
+  - question: "My planning software quoted a 5-day lead time but the shop takes 9. Which number is right?"
+    answer: "Both are right, they answer different questions. The 5 days is almost certainly the critical path length: the longest chain of dependent operations with zero waiting, which is the fastest the job could ever finish alone in an empty shop. The 9 days is the forward-scheduled date against your real load, where the job's operations queue behind other jobs on shared machines. Quote the 9. The 5-day figure is a useful floor for spotting whether a routing itself is too long, but it is not a promise you can keep on a busy floor."
+  - question: "If two jobs have short critical paths, can they still both be late?"
+    answer: "Yes, and this is the classic trap. Critical path length is computed per job in isolation, so two jobs with 4-hour critical paths look fine on paper. If both need the same 3-hour machine and that machine has one instance, one job runs first and the other waits 3 hours before its own critical path can even begin. Forward scheduling catches this because it places both jobs against the same finite capacity; the critical path method never sees it because it assumes the machine is always free."
+---
+
+**Forward scheduling and the critical path method answer two different questions about the same routing: the critical path method finds the shortest possible completion time by tracing the longest chain of dependent operations, while forward scheduling finds the achievable completion time by placing those operations against finite machine capacity.** The critical path assumes every resource is free the instant an operation needs it. Forward scheduling assumes nothing of the sort, because on a real floor machines are shared. EDGEBIC by User Solutions uses critical path logic to order dependent steps but schedules them forward against finite capacity, so the dates it produces already include the queue time the critical path ignores.
+
+For the plain definition of the critical path, see [glossary: critical path](/blog/glossary/critical-path). The comparison that matters for a planner is what each method does when real machines get busy.
+
+## What the critical path method computes
+
+The critical path method (CPM) looks at a single job's routing as a network of dependent operations. Each operation has a duration, and each depends on the ones feeding it. CPM traces every path from start to finish and returns the longest one. That longest chain is the critical path, and its total duration is the shortest time in which the whole job can finish, because any shorter and you would have skipped a required step.
+
+The key assumption baked into CPM is infinite resources. Every operation is allowed to start the exact moment its predecessor ends, as if the machine it needs is always standing idle waiting for it. In a project with dedicated crews that assumption can hold. On a shared shop floor it almost never does.
+
+## What forward scheduling does with the same routing
+
+Forward scheduling starts from a release date and walks the routing in dependency order, placing each operation on the first open capacity of the work center it needs. It respects the same precedence CPM uses (a step cannot start before its predecessors finish) but it adds the constraint CPM drops: the machine has to be free. When two jobs want the same instance, one queues behind the other, and that wait becomes part of the schedule.
+
+So forward scheduling gives you the critical path plus every queue the critical path never accounted for. The difference between the two is queue time, and queue time is usually the largest single component of real lead time on a busy floor.
+
+## A worked example: same job, two answers
+
+A job has a simple routing:
+
+| Op | Work center | Duration |
+|---|---|---|
+| 10 | Saw | 2 h |
+| 20 | Mill | 4 h |
+| 30 | Inspect | 1 h |
+
+The operations are strictly sequential, so the critical path is 2 + 4 + 1 = 7 hours. CPM reports a 7-hour lead time: released at 08:00, done by 15:00 the same day.
+
+Now put a second job on the floor. It reached the Mill first and is running an 8-hour operation that started at 07:00. Our job's Saw op finishes at 10:00 as planned, but the Mill is busy until 15:00. Forward scheduling queues op 20, so it runs 15:00 to 19:00, then inspect runs 19:00 to 20:00. The forward-scheduled finish is 20:00, not 15:00.
+
+| Method | Reported finish | What it assumed |
+|---|---|---|
+| Critical path | 15:00 same day | Mill free the instant the Saw op ends |
+| Forward schedule | 20:00 same day | Mill busy until 15:00 with another job |
+
+The 5-hour gap is pure queue time on the Mill. CPM cannot show it because CPM never looks at the other job. Forward scheduling shows it because it places both jobs against the same finite Mill.
+
+## Why the critical path is still worth knowing
+
+None of this makes CPM useless. The critical path length is the best possible case, and comparing it to your actual lead times tells you something specific: how much of your lead time is the routing itself versus how much is queue and contention. If a job's critical path is 7 hours but it consistently takes 3 days, the routing is not the problem; capacity and sequencing are. That diagnostic separation is exactly the kind of insight you use when you [identify a production bottleneck](/blog/production-bottleneck-identification): a long critical path points at engineering, a long queue points at capacity.
+
+The critical path also tells the scheduler which operations to order first within a job. A step on the critical path has no slack, so delaying it delays the whole job, while a step off the critical path has room to wait. This is the same slack logic that separates [forward from backward scheduling](/blog/forward-vs-backward-scheduling): forward finds the earliest achievable date, backward works from a due date to find the latest safe start, and both lean on knowing where the slack is.
+
+## Where this fits in the engine
+
+EDGEBIC builds a dependency order from the routing, respects precedence exactly as CPM would, then schedules each step forward against finite capacity. When a due date is fixed, it can instead anchor around a constraint and schedule outward, which is the subject of [anchor scheduling versus plain backward scheduling](/blog/anchor-scheduling-vs-plain-backward-scheduling). Either way, the number it reports is the achievable date, with queue time included, not the infinite-resource floor.
+
+This is the same discipline behind 35-plus years of User Solutions schedules, from the Nimitz carrier program with its 26,000-plus tasks to metal fabrication shops quoting realistic dates. A critical path tells you what is possible; a finite forward schedule tells you what you can promise. The full placement pipeline lives in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and you can watch forward scheduling queue your own routing against your own load in [EDGEBIC](/edgebic).
+
+<Accordion title="What is the difference between forward scheduling and the critical path method?">
+The critical path method finds the longest chain of dependent operations in a routing and reports its length as the shortest possible completion time, assuming every resource is available the instant it is needed. Forward scheduling takes those same operations and places them against finite machine capacity from a start date forward, so it accounts for queues and contention the critical path ignores. CPM tells you the theoretical floor; forward scheduling tells you the achievable date.
+</Accordion>
+
+<Accordion title="Does a scheduler use the critical path?">
+A finite capacity scheduler uses critical path thinking to order dependent operations, because a step cannot start until the steps feeding it finish. But it does not treat the critical path length as the answer. Two jobs whose critical paths never touch still compete for the same machine, and forward scheduling resolves that contention by queuing one behind the other. The critical path is a lower bound on lead time, not the schedule itself.
+</Accordion>
+
+<Accordion title="Why is my job later than its critical path length?">
+A job finishes later than its critical path length whenever one of its operations has to wait for a machine that another job is using. The critical path method assumes infinite resources, so every step starts the moment its predecessor ends. On a real floor with finite capacity, an operation can be ready and still queue behind higher-priority work. The extra time is queue time, and it is exactly what forward scheduling exposes and the critical path hides.
+</Accordion>

@@ -1,0 +1,123 @@
+---
+title: "Onboarding a Second Plant Into the Same EDGEBIC Database"
+description: "A rollout sequence for adding a second plant to a live EDGEBIC model: retrofitting site prefixes, ordering the imports, running parallel for a week, and what breaks if you skip a step."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - adding a second plant to scheduling
+  - multi-site scheduling rollout
+  - onboarding a second site
+  - work center naming convention sites
+  - second plant ERP import
+  - EDGEBIC multi-plant onboarding
+targetPhrase: "onboarding a second plant"
+wordCount: 1660
+readingTime: 8
+faqQuestions:
+  - question: "Can two plants share one EDGEBIC database?"
+    answer: "Yes, and they should when work moves between them, because a routing step that crosses sites needs both sites present to point at. Each plant keeps its own work centers, shift calendars, and holidays, so a shutdown at one site does not consume capacity at the other. Sites that never exchange work gain nothing from sharing and are simpler kept apart."
+  - question: "What is the first thing to change when adding a second plant?"
+    answer: "The work center identifiers at the site that is already live. Matching on import is by name, so two sites that both call a machine MILL-2 will merge into one record with double the capacity and no error. Retrofitting a site prefix onto plant one before plant two arrives is a half-day job. Doing it afterward means untangling a merged work center."
+  - question: "Do you rebuild the import masks for the second plant?"
+    answer: "No. The masks map columns to fields, not sites, so the same saved mask reads plant two's export as long as the column headings match. If your ERP exports both sites in one report, you run one mask once. If it exports per site, you run the same mask twice with two files. Either way the mask count does not grow."
+qaQuestions:
+  - question: "Plant one has been scheduling in EDGEBIC for a year and its work centers have no site prefix. Is renaming them going to break the live schedule?"
+    answer: "Rename them in the application rather than trying to do it through an import, because an import matches by name, so a file carrying the new identifier would create a second work center rather than rename the existing one. In the application the rename carries the record forward with its capacity, calendar, and history intact. What has to change with it is every export that names those centers, principally the routing export, because the next routing import will otherwise auto-create work centers under the old names and you will end up with both. So the order is: rename in the application, update the routing and work center exports to match, run a routing import, then check that no unexpected work centers appeared. Budget half a day and do it in a week where the schedule is calm, not the week plant two goes live."
+  - question: "Our second plant runs six days and a different holiday calendar. Does putting it in the same model distort plant one's capacity?"
+    answer: "No, because calendars attach to work centers rather than to the model. Each plant's centers carry their own shift assignment, so a Monday to Saturday site and a Monday to Friday site coexist without either one inflating the other. A holiday at one site removes capacity only from the centers assigned to that site's calendar, and utilization reads per work center, so it reads per site by construction. The thing that does distort capacity is the naming collision, not the calendar: if a center at each site shares an identifier, the merged record ends up with one calendar and twice the machines. Get the identifiers right and the calendar question takes care of itself."
+---
+
+**Adding a second plant to a live EDGEBIC model is a naming exercise first and an import exercise second: retrofit site prefixes onto the plant that is already running, then import the new site's work centers, routings, and orders using the masks you already have.** The sequence matters, because the one step that is cheap before plant two arrives is expensive afterward.
+
+EDGEBIC by User Solutions holds every site's work centers, calendars, and orders in one model when the sites share work, and each site keeps its own shifts and holidays. This post is the rollout order. The modeling decisions behind it, including whether to share a model at all, are worked out in [handling multi-plant ERP exports](/blog/handling-multi-plant-erp-exports-in-edgebic).
+
+## Confirm the shared model is the right call
+
+One question decides it: does a part ever start at one site and finish at another? If yes, both sites belong in one model, because the crossing routing step needs a work center to point at. If no, two models are simpler and each planner sees only their own site.
+
+Most groups adding a second plant are in the first case, often without saying so. Offloading to a sister site when the primary is full counts, and so does a single finishing operation that only one site can perform. If either happens even occasionally, plan for the shared model.
+
+## Step 1: retrofit site prefixes at plant one
+
+Do this before plant two's data arrives, in a calm week.
+
+Import matches work centers by name, case-insensitively, and it does not warn on a collision. Two sites that each call a machine `MILL-2` produce one record with the capacity of both, sitting on one site's calendar, in a place where neither machine actually is. Nothing errors, and the schedule confidently plans work at a machine that does not exist.
+
+The convention is a site prefix in the identifier: `HOU-MILL-2` and `CLE-MILL-2`. Retrofitting it at plant one takes about half a day and runs in this order.
+
+1. **Rename in the application, not through an import.** An import carrying a new identifier creates a second work center rather than renaming the first, because the name is the matching key. Renaming in the application carries the record forward with its capacity, calendar, and history.
+2. **Update the exports that name those centers.** Principally the work center export and the routing export.
+3. **Run a routing import.** The routing rows must resolve to the renamed centers.
+4. **Check that nothing unexpected appeared.** Auto-create for missing work centers is on by default, so a routing row still carrying an old identifier creates an empty center with one machine and no shifts. That check is the orphan work center check in [the import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+Products usually need no prefix. A part number that means the same part at both sites should stay one product, because products do not hold capacity and cannot collide the way centers do. Prefix a product only when the same number genuinely means different things at each site.
+
+## Step 2: scope plant two's exports
+
+Two workable shapes, and your ERP's report writer usually decides which.
+
+**One file per site.** Pass a plant parameter and get a separate export per site. Same saved mask, run twice. Files stay small and obviously scoped, and a mistake is visible from the file name.
+
+**One file for both sites.** Import once, and rely on the identifiers carrying the site. This is the better fit when work crosses sites anyway, because you want the whole picture in one pass.
+
+Either way the mask count does not grow, because a mask maps columns to fields and knows nothing about sites. What must not happen is an unfiltered all-sites file imported into a model that is meant to hold one site.
+
+## Step 3: import plant two in the standard order
+
+The order never changes, because routings reference products and work centers, and orders reference products.
+
+| Order | Import | What to verify |
+|---|---|---|
+| 1 | Products | Mostly Reused if the two sites share part numbers |
+| 2 | Work centers | Record count matches row count, no merged names |
+| 3 | Routings | Every product's chain is connected end to end |
+| 4 | Work orders | Job references resolve, dates look sane |
+| 5 | Actuals | Only if plant two already reports labor |
+
+Two checks are specific to a second site. Compare the work center row count in the file with the number of new records created, since a shortfall means two rows shared a name. And walk one routing end to end in the routing designer, because a step naming an unprefixed center is the single most common second-site error.
+
+Keep all of one product's routing steps in one file. A routing import wipes and recreates each end product's steps once per run, which is what makes re-imports consistent, so splitting one product across two runs means the second run's wipe deletes the first run's steps.
+
+## Step 4: set plant two's calendars
+
+Calendars attach to work centers, not to the model, so a Monday to Saturday site and a Monday to Friday site coexist without either inflating the other. Set the standard pattern for the site first and override the exceptions, rather than specifying every calendar up front.
+
+Holidays follow the same logic. A shutdown at one site removes capacity only from the centers assigned to that site's calendar. Importing them is covered in [importing shift calendars and plant holidays](/blog/importing-shift-calendars-and-plant-holidays-from-your-erp).
+
+## Step 5: wire the crossings
+
+If work moves between the sites, the routing steps that cross carry transit days, applied after the operation finishes and before the next step may start. Transit can count calendar days or working days, which matters when a four day move spans a weekend.
+
+Where the same operation could genuinely run at either site, a work center group models the pool with a per-member speed factor, so a slower or more distant site stays a valid choice the schedule can select when the primary is full. Use it only where offloading is real, because a pool that crosses a plant boundary implies a shipment. The concept is in [what a work center group is](/blog/what-is-a-work-center-group-machine-pool).
+
+## Step 6: run parallel for a week
+
+Do not switch plant two's dispatch on day one. Run the new site's schedule alongside whatever it uses now for a week, and compare three things daily: the sequence, the promised completion dates, and the work centers that show as overloaded.
+
+Where they disagree, the cause is almost always data rather than logic, and it is almost always one of four things: an instance count that says one machine where there are two, a shift pattern that does not match the actual hours, a setup time that is missing, or a work center that was auto-created empty during the routing import. Fix those, and the second week usually agrees.
+
+The cutover sequence in more detail is in [an ERP and EDGEBIC go-live cutover plan](/blog/an-erp-and-edgebic-go-live-cutover-plan), and the from-empty version is [a first week ERP integration checklist](/blog/a-first-week-erp-integration-checklist).
+
+## What changes for the routine afterward
+
+Less than expected. The weekly cycle is the same masks in the same order, with one or two more files. The import order does not change, the count checks do not change, and the scheduler run covers the whole model at once.
+
+What does change is that a naming mistake is now a capacity mistake, so the record-count check earns a permanent place in the routine. Write the site prefix convention into the note beside your masks, because the next person to add a third plant will need it and will not be able to infer it. [Documenting your plant's conventions](/blog/documenting-your-plants-edgebic-conventions) covers what else belongs there.
+
+Bring exports from both sites, including one routing that crosses between them, to [a working session](/contact-us). Watching transit days push a receiving step out is the fastest way to confirm the shared model is the right shape for your group. The import layer is described on the [EDGEBIC ERP integration page](/edgebic-erp-integration), and the engine that plans across both sites is on the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="Can two plants share one EDGEBIC database?">
+Yes, and they should when work moves between them, because a routing step that crosses sites needs both sites present to point at. Each plant keeps its own work centers, shift calendars, and holidays, so a shutdown at one site does not consume capacity at the other. Sites that never exchange work gain nothing from sharing and are simpler kept apart.
+</Accordion>
+
+<Accordion title="What is the first thing to change when adding a second plant?">
+The work center identifiers at the site that is already live. Matching on import is by name, so two sites that both call a machine MILL-2 will merge into one record with double the capacity and no error. Retrofitting a site prefix onto plant one before plant two arrives is a half-day job. Doing it afterward means untangling a merged work center.
+</Accordion>
+
+<Accordion title="Do you rebuild the import masks for the second plant?">
+No. The masks map columns to fields, not sites, so the same saved mask reads plant two's export as long as the column headings match. If your ERP exports both sites in one report, you run one mask once. If it exports per site, you run the same mask twice with two files. Either way the mask count does not grow.
+</Accordion>

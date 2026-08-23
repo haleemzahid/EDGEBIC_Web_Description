@@ -1,0 +1,93 @@
+---
+title: "From Sales Order to MPS to Schedule in EDGEBIC"
+description: "Follow one customer order through EDGEBIC end to end: confirmed sales line to firm demand, MPS commit and firm, build-to-stock order, and finite-capacity schedule."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - sales order to schedule
+  - demand to production chain
+  - mps firm to manufacturing order
+  - build to stock scheduling
+  - finite capacity handoff
+  - lead time offset release
+targetPhrase: "sales order to schedule chain"
+wordCount: 1780
+readingTime: 9
+faqQuestions:
+  - question: "How does a customer order become a scheduled job in EDGEBIC?"
+    answer: "It travels a four-link chain. A confirmed sales order line becomes firm demand, the MPS grid shows the resulting requirement and lets a planner commit and firm a build quantity, firming creates a build-to-stock manufacturing order with a release date offset by the product's lead time, and the finite-capacity engine schedules that order against real work-center capacity on the next run. Each link is visible and each hands off a concrete record to the next."
+  - question: "What date does a firmed MPS build order start on?"
+    answer: "The release date is the bucket due date minus the product's lead time. If a build is due at the start of a week and the product's lead time is three days, the order's planned start is set to the prior Friday. This backward offset ensures material and capacity are lined up ahead of the due date. The scheduler treats that start as an earliest-can-start hint and then applies real finite capacity to find the actual dates."
+  - question: "What is the difference between committing an MPS quantity and firming it?"
+    answer: "Committing records the planner's decision to build a quantity in a bucket without creating any order, setting the row to Firm status. Firming converts that committed quantity into a real build-to-stock manufacturing order and sets the row to Released. Committing is reversible and creates no shop-floor work; firming creates a job the scheduler will pick up. The two-step design lets planners lock in intent before releasing work."
+qaQuestions:
+  - question: "Widget A has 80 on hand, a stockout in week 2, and a three-day lead time. Walk the order through to a scheduled job."
+    answer: "In the documented example, two confirmed sales orders drive week 2 firm demand to 60, pulling the projected balance to negative 10. The system suggests 110. The planner commits 110, setting the row to Firm, then firms it. Firming creates a build-to-stock order for 110 due Monday of week 2, with a start of the prior Friday because the lead time is three days. On the next scheduling run the engine places that order across the assembly work center, and on the following projection refresh the 110 appears as a scheduled receipt, lifting week 2 to 100."
+  - question: "Does the customer order and the build order double-count in the plan?"
+    answer: "No, they sit on opposite sides of the equation. The confirmed sales order line is firm demand, pulling the projected balance down. The build-to-stock order created by firming is supply, a scheduled receipt pushing the balance back up in the bucket where it completes. The same order never appears in both roles, which is exactly why EDGEBIC sources firm demand from sales lines rather than from open jobs: counting the job as demand as well would plan the same need twice."
+---
+
+**The path from a customer order to a scheduled job** in EDGEBIC is a four-link chain: a confirmed sales order line becomes firm demand, the master production schedule turns that demand into a committed and firmed build quantity, firming creates a build-to-stock manufacturing order, and the finite-capacity engine schedules that order against real work-center capacity. EDGEBIC by User Solutions keeps every link visible and every handoff concrete, so a planner can trace one order from the moment a customer commits to the moment a machine is booked. This post follows the whole chain, link by link, with the documented worked numbers.
+
+Understanding the chain matters because each link answers a different question and each has its own controls. The sales order asks what a customer wants. The MPS asks what and when to build. The schedule asks which machine and shift. Seeing them as one connected flow is what turns a stack of separate screens into a plan. For the platform overview, start at [EDGEBIC](/edgebic); for the planning layer as a whole, see the [inventory and planning pillar](/blog/edgebic-planning-guide).
+
+## Link 1: Confirmed Sales Order Line Becomes Firm Demand
+
+The chain starts with a customer commitment. A sales order carries a header and one or more lines, each naming a product, a quantity, a unit price, a shipped-to-date figure, and a due date. A line contributes demand only when its parent order's status is Confirmed, and only its open quantity, which is ordered minus shipped, counts.
+
+Each line is bucketed by its own due date. When the order is confirmed, its open lines surface as firm demand in inventory projection and the MPS grid, landing in the bucket where each is due. The full rules of this link, including why draft orders are excluded and why the job created later is not counted again, are covered in [why only confirmed sales orders count as firm demand](/blog/why-only-confirmed-sales-orders-count-as-firm-demand-in-edgebic).
+
+## Link 2: The MPS Turns Demand Into a Build Decision
+
+Firm demand now appears in the master production schedule for the product. The grid shows, bucket by bucket, the firm demand, any forecast, the netted gross requirements, the projected available balance, and the system's suggested build quantity. Where the projected balance goes negative, the grid flags a projected stockout and recommends a quantity to recover it.
+
+The planner acts in two steps. First they commit a build quantity by typing or accepting a number into the MPS quantity field and saving, which sets the bucket's status to Firm. Committing records the decision but creates no order and can be revised freely. Second, when ready, they firm the bucket, which is the handoff to the next link. The distinction between committing and firming, and why the committed quantity does not yet move the projected balance, is explained in [why a committed MPS quantity is not yet supply](/blog/why-a-committed-mps-quantity-is-not-yet-supply-in-edgebic). For reading the grid itself, see [the MPS grid as a planning cockpit](/blog/reading-the-mps-grid-a-planning-cockpit-in-edgebic).
+
+## Link 3: Firming Creates a Build-to-Stock Order
+
+Firming a bucket creates a real manufacturing order in one atomic action. The order is a build-to-stock order, tagged so its completion will post a receipt into the inventory ledger rather than shipping straight to a customer. Its quantity is the committed build quantity, rounded up to a whole unit. Its due date is the bucket's start date. Its planned release date is the due date minus the product's lead time.
+
+That lead-time offset is the key arithmetic of this link. If a build is due Monday of week 2 and the product's lead time is three days, the order's planned start is set to the prior Friday. The offset lines up material and capacity ahead of the due date instead of assuming production is instantaneous. The bucket's status changes to Released and it now points to the created order, so the grid records exactly which job satisfied which planned build.
+
+Because the order is build-to-stock, it also becomes a scheduled receipt. On the next projection refresh it appears as incoming supply in the bucket where it is expected to complete, pushing the projected balance back up. The demand line pulled the balance down; the supply order pushes it up; the two never double-count because they sit on opposite sides of the equation.
+
+## Link 4: The Finite-Capacity Engine Schedules the Order
+
+The firmed order carries a planned release date but not yet a real schedule. That is the job of the finite-capacity engine, which runs on the next scheduling pass. This is the point where infinite-capacity planning meets finite-capacity reality: the MPS said build 110 by this date, and the engine now decides which work center, which instance, and which shifts actually produce it, respecting capacity, setup, and the rest of the shop's constraints.
+
+The engine treats the planned release date as an earliest-can-start hint, then places the work across available capacity and returns real start and finish dates, shift by shift. If capacity is tight, the finish may slip past the due date, and the engine surfaces that miss before the order is committed to the floor rather than after. This is the value of the handoff: the MPS plans at infinite capacity for clarity, and the scheduler enforces finite capacity for realism. For the deeper treatment of that boundary, see [what EDGEBIC does today versus the MRP roadmap](/blog/what-edgebic-does-today-vs-the-mrp-roadmap).
+
+## The Whole Chain on One Product
+
+Put all four links on Widget A. It is make-to-stock, opens at 80 units, has a three-day lead time, and runs weekly buckets. Two confirmed sales orders are due next week and one the week after.
+
+| Link | What happens |
+|---|---|
+| 1. Sales line | Two confirmed lines drive week 2 firm demand to 60 |
+| 2. MPS | Week 2 balance projects to negative 10; system suggests 110; planner commits 110 (status Firm) |
+| 3. Firm | A build-to-stock order for 110 is created, due Monday week 2, start prior Friday (due minus 3-day lead) |
+| 4. Schedule | The engine places 110 across the assembly work center; next refresh shows a 110 receipt lifting week 2 to 100 |
+
+The starting demand was two customer orders. The ending result is a scheduled job on a real work center and a recovered projected balance. Every link handed a concrete record to the next: the confirmed line, the committed quantity, the released order, the scheduled operations.
+
+## Where the Chain Handles Change
+
+A real order book is not static, and the chain is built to absorb change at each link without breaking downstream. When a customer ships part of an order, the confirmed line's open quantity falls, firm demand drops on the next projection, and the MPS grid reflects the lower requirement automatically, with no re-entry. When a customer cancels, the order status moves off Confirmed and its lines stop contributing firm demand at once. The demand link keeps itself current with reality.
+
+The supply link is just as responsive. A firmed build-to-stock order that has not yet completed remains a scheduled receipt, so the projected balance keeps counting it. If that order is delayed on the floor, rescheduling it moves its expected completion, and the next projection shows the receipt in its new bucket. If it is cancelled outright, the receipt disappears and any shortfall it was covering reappears as a suggestion. Nothing has to be manually reconciled between the links, because each link recomputes from the current records every time the calendar refreshes.
+
+This is why the chain scales past a handful of orders. Each link owns one fact and recomputes it fresh, so a change in one place, a partial shipment, a delayed build, a new confirmed order, flows to the right downstream link without a planner stitching the pieces together by hand.
+
+## Why the Chain Design Works
+
+Keeping these as four visible links, rather than one opaque calculation, gives planners control at each stage. You can hold demand in Draft until an order is commercially locked. You can commit an MPS quantity and revise it before releasing anything. You can firm on your own schedule, knowing the lead-time offset sets a sensible release date. And you can let the finite-capacity engine tell you the real dates before you promise them.
+
+The design also enforces a single source of truth for each fact. Demand comes from the confirmed sales line. Supply comes from the firmed build order. The schedule comes from the engine. Nothing is counted twice, because each link owns one side of the equation and hands off exactly one record. That discipline is what lets the chain scale from one order to a full order book without the plan drifting.
+
+Seeing the chain whole also changes how you troubleshoot. When a job appears that no one expected, walk the links backward: which released MPS bucket created it, which committed quantity backed that bucket, and which confirmed demand justified the commitment. When a demand seems to have produced no job, walk forward: was the order confirmed, did its requirement reach the grid, was a quantity committed and firmed. Because each link hands off exactly one record, the trace is short and every step has a definite answer.
+
+To see how demand and supply net across the horizon this chain feeds, read [reading projected available balance across the horizon](/blog/reading-projected-available-balance-across-the-horizon-in-edgebic). To understand how the various origins of a job are tagged, read [the six demand sources behind every job](/blog/the-six-demand-sources-behind-every-job-in-edgebic).

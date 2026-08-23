@@ -1,0 +1,132 @@
+---
+title: "Importing Customer Due Dates vs Internal Need Dates"
+description: "Your ERP holds several dates per work order. Learn which one to map as the EDGEBIC due date, which to map as the job start, and why importing an MRP need date double-buffers the plan."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - customer due date versus need date
+  - ERP work order dates import
+  - MRP need date scheduling
+  - backward scheduling due date import
+  - EDGEBIC work order date mapping
+  - promise date finite capacity
+targetPhrase: "customer due date versus internal need date"
+wordCount: 1640
+readingTime: 8
+faqQuestions:
+  - question: "Which ERP date should I map as the EDGEBIC due date?"
+    answer: "Map the date you actually promised the customer, not a date your ERP derived from it. A derived need date already has a lead time allowance subtracted using infinite capacity assumptions, so importing it as the due date subtracts a buffer twice: once in the ERP and again when finite capacity scheduling computes the real work content. Keep the derived date if it is useful as a start-no-earlier-than constraint, but the due date should be the commitment."
+  - question: "What happens if a work order has no due date at all?"
+    answer: "It still schedules. Without a due date the job schedules forward from its job date, which is the standard behavior, and it simply carries no deadline for ranking or backward scheduling. Due date and priority are accuracy fields rather than mandatory ones, so a first import with dates missing on some orders is fine. Add them where the ranking actually matters, starting with the orders customers are chasing."
+  - question: "Does EDGEBIC treat a due date as a hard constraint?"
+    answer: "No, and that is deliberate. A due date is a strong target that the plan works toward rather than a wall that makes a job unschedulable. If the capacity genuinely is not there, you get a schedule that shows the job finishing late instead of a refusal to plan, which is the answer a planner can act on. Seeing the size of the miss is what tells you whether to add a shift, split the order, or renegotiate."
+qaQuestions:
+  - question: "Our ERP calculates a start date for every work order by subtracting a fixed lead time from the due date. Should we import that as the job date?"
+    answer: "Import it only if it means what you want it to mean. A fixed lead-time offset is an infinite capacity guess: it assumes the shop can absorb the work whenever it arrives, which is precisely the assumption finite capacity scheduling exists to replace. If you map that date as the job date, you are telling the engine the job may not start before then, which can push a job later than it needs to be when a machine is free earlier. The useful cases are real constraints: material arriving, a customer authorization, a drawing release. Where the derived start date stands in for one of those, map it. Where it is only arithmetic, leave it out and let the engine compute the start from real capacity working back from the commitment."
+  - question: "Sales quotes a ship date but our production due date is two days earlier to allow for packing and transit. Which one goes into the schedule?"
+    answer: "The production due date, because that is when the last routing step has to be finished. The schedule plans manufacturing operations, so the deadline it works toward should be the point manufacturing has to hand the job over, not the moment the truck reaches the customer. Keep the two days as a documented, consistent offset applied in the export rather than as something the planner remembers, so every order gets the same treatment. Then when you export executable dates back, the finished date you compare against the sales commitment already has the packing and transit allowance in it, and nobody has to do mental arithmetic on a dispatch list."
+---
+
+**An ERP work order usually carries several dates, and only one of them belongs in the EDGEBIC due date field: the date you actually committed to, expressed as the point manufacturing must be finished.** Dates the ERP derived by subtracting a lead time allowance are a different kind of value, and importing one as a due date subtracts a buffer twice: once in the ERP's arithmetic and again when finite capacity scheduling computes the real work content against real machines.
+
+EDGEBIC by User Solutions has mapped ERP order dates this way since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the date column is where a first import most often looks fine and reads wrong.
+
+## The dates a work order export usually carries
+
+Names vary by ERP, so identify these by what they mean rather than by their heading:
+
+| Kind of date | How it was produced | What it really is |
+|---|---|---|
+| Customer request date | The customer asked for it | A wish, not a commitment |
+| Order promise or ship date | Sales committed to it | The commitment |
+| Production due date | Promise minus packing and transit | When manufacturing must finish |
+| Derived start or need date | Due date minus a lead time allowance | An infinite capacity guess |
+| Release date | When the order was authorized | A genuine earliest start |
+
+The first four often sit within a few days of each other, which is exactly why mapping the wrong one is easy and hard to notice.
+
+## What EDGEBIC does with each date it receives
+
+Two fields matter on the order import.
+
+**The job date** is the demand's own timing anchor. Without a due date, a job schedules forward from here.
+
+**The due date** is the deadline the plan works toward. It drives ranking against other jobs and it is the anchor for [backward scheduling from a due date](/blog/backward-scheduling-a-job-from-its-due-date-edgebic). The general trade-off between the two directions is in [forward versus backward scheduling](/blog/forward-vs-backward-scheduling), and no import mask carries the direction itself, which is why [the direction decision your ERP export cannot make](/blog/the-direction-decision-your-erp-export-cannot-make) is a policy to settle before the first order file.
+
+Both are accuracy fields rather than blockers. A work order with a product, a quantity, and a job date will schedule, as the field tiering in [which ERP fields EDGEBIC needs](/blog/which-erp-fields-edgebic-needs-to-schedule) sets out. Adding a due date changes how the job is ranked and lets you plan back from it.
+
+## The double-buffer trap, in numbers
+
+This is the specific failure worth naming.
+
+Say a customer commitment is the 30th. Your ERP subtracts a standing 10 working day lead time and produces a need date of the 16th. That 10 days was never a measurement: it is an allowance covering queueing, changeovers, and a machine being busy, assumed rather than computed.
+
+Now import the 16th as the due date. Finite capacity scheduling takes that deadline and works backward through the real work content, which includes queue time, setups, and the fact that the mill is booked. It might land a start on the 4th.
+
+| What you mapped | Deadline the plan targets | Effective buffer |
+|---|---|---|
+| The commitment (the 30th) | The 30th | The real one, computed once |
+| The derived need date (the 16th) | The 16th | The ERP's 10 days plus the real one |
+
+The second row looks safe and is expensive. Jobs start earlier than they need to, work in process rises, machines fill with work that did not have to be there yet, and the jobs that genuinely are urgent compete with jobs that are not. Worse, the schedule reports jobs as late against a deadline nobody promised, so the late list stops meaning anything.
+
+The general version of this argument is in [the cost of an unrealistic due date](/blog/the-cost-of-an-unrealistic-due-date).
+
+## The mapping that works for most shops
+
+**Due date: the production due date.** The commitment, adjusted by a consistent, documented offset for packing and transit. Apply the offset in the export, not in somebody's head, so every order gets the same treatment.
+
+**Job date: a real earliest start, or the order date.** Map a derived need date here only when it stands in for a genuine constraint, such as material arriving, a customer authorization, or a drawing release. Where it is only arithmetic, leaving it out lets the engine find an earlier start when a machine is free.
+
+**Priority: separately, if you have one worth trusting.** Ranking is not the due date's only job, and squeezing urgency into a fake early date is the habit that erodes date discipline everywhere. Use the field made for it, as covered in [mapping ERP order priority into your schedule](/blog/mapping-erp-order-priority-into-your-schedule).
+
+## Why the due date is a target rather than a wall
+
+A finite capacity engine that refuses to schedule a job it cannot fit before its due date is giving you a shrug. EDGEBIC works toward a due date and shows you the miss when the capacity is genuinely not there, which is the answer you can act on: add a shift, split the order, move it to another machine, or renegotiate with the customer.
+
+That is also why the optimizer treats deadlines as strong targets carrying heavy penalties rather than as hard constraints, explained in [why the optimizer treats due dates as soft targets](/blog/why-the-optimizer-treats-due-dates-as-soft-targets). A plan that shows a two-day miss is more useful than no plan at all.
+
+## Getting the date format right on import
+
+Two mask behaviors handle nearly all date friction, so you do not pre-edit files:
+
+- **Format parsing.** Dates are parsed against the invariant format first and your machine's regional format second, so a locale-specific export lands correctly without a conversion step.
+- **Row-level failure.** A row with a genuinely unreadable date is marked Failed with the reason recorded, and the run continues through the remaining rows. One bad date never blocks 500 good ones.
+
+Time of day is worth a decision rather than a default. A due date that arrives with no time component lands at the start of the day, which is stricter than most shops mean when they say "due the 30th". If your commitment really means end of day on the 30th, carry that in the export consistently.
+
+## Check the mapping on your own dates
+
+Three quick tests after the first import:
+
+1. **Pick a job with a comfortable deadline.** Its due date in EDGEBIC should equal the date on the customer acknowledgment, plus or minus your documented offset. If it is a week or two earlier, you mapped a derived date.
+2. **Look at the late list.** If nearly everything is late on a shop that ships on time, the deadlines are derived rather than promised.
+3. **Look at the start dates.** If jobs are starting far earlier than the floor would ever release them, a derived need date is sitting in the job date field and holding, or a double buffer is pulling everything forward.
+
+Fold those into the wider pass in the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+## Sending the honest date back
+
+The return trip closes the loop. The job schedule exports to Excel from the Job View grid with the dates finite capacity actually produced, and those go back into the ERP through whatever date maintenance path your order process already uses. There is no automated write-back, which keeps the ERP's data under your team's control. The mechanics are in [exporting the EDGEBIC schedule back to your ERP](/blog/exporting-the-edgebic-schedule-back-to-your-erp).
+
+That exported date is the one worth arguing about with a customer, because it came from real machines, real shifts, and real changeovers rather than from a standing allowance. The engine behind it is mapped on the [EDGEBIC product overview](/edgebic), and the import layer every ERP shares sits under the [ERP integration architecture](/edgebic-erp-integration).
+
+## Bring one week of orders
+
+Export a week of open work orders with every date column your ERP carries and [bring them to a demo](/contact-us). Naming what each column actually means takes fifteen minutes, and it usually settles a disagreement between sales and production that predates the software.
+
+<Accordion title="Which ERP date should I map as the EDGEBIC due date?">
+Map the date you actually promised the customer, not a date your ERP derived from it. A derived need date already has a lead time allowance subtracted using infinite capacity assumptions, so importing it as the due date subtracts a buffer twice: once in the ERP and again when finite capacity scheduling computes the real work content. Keep the derived date if it is useful as a start-no-earlier-than constraint, but the due date should be the commitment.
+</Accordion>
+
+<Accordion title="What happens if a work order has no due date at all?">
+It still schedules. Without a due date the job schedules forward from its job date, which is the standard behavior, and it simply carries no deadline for ranking or backward scheduling. Due date and priority are accuracy fields rather than mandatory ones, so a first import with dates missing on some orders is fine. Add them where the ranking actually matters, starting with the orders customers are chasing.
+</Accordion>
+
+<Accordion title="Does EDGEBIC treat a due date as a hard constraint?">
+No, and that is deliberate. A due date is a strong target that the plan works toward rather than a wall that makes a job unschedulable. If the capacity genuinely is not there, you get a schedule that shows the job finishing late instead of a refusal to plan, which is the answer a planner can act on. Seeing the size of the miss is what tells you whether to add a shift, split the order, or renegotiate.
+</Accordion>

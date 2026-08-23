@@ -1,0 +1,90 @@
+---
+title: "How to Mark a Work Center as Continuous Process in EDGEBIC"
+description: "How to set the Continuous-Process flag on a work center in EDGEBIC so paint, chemical, and food lines use time-based lot streaming instead of piece-count transfer batches."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - continuous process work center
+  - continuous process flag
+  - flowstep lot streaming
+  - paint line scheduling
+  - chemical process work center
+  - work center lot streaming model
+targetPhrase: "continuous process work center"
+wordCount: 1300
+readingTime: 7
+faqQuestions:
+  - question: "What does the Continuous-Process flag do to a work center in EDGEBIC?"
+    answer: "It selects the lot-streaming model the scheduler uses for routing steps on that work center. With the flag off, discrete machines overlap steps using piece-count transfer batches. With it on, the work center uses the time-based FlowStep model, where a downstream step may start a set number of hours after the upstream step starts. Paint lines, chemical reactors, and food or pharma processes belong in this mode because their output is not discrete pieces."
+  - question: "Which work centers should be marked continuous process?"
+    answer: "Only machines whose output is a continuous flow rather than countable pieces: chemical reactors, paint and coating lines, food and pharmaceutical processes. A CNC mill, a press, or an assembly cell produces discrete pieces and should stay in the default discrete mode. The flag describes the physical nature of the equipment, so it is set once per work center regardless of what product runs on it."
+  - question: "Does marking a work center continuous process change existing schedules?"
+    answer: "Not on its own. The flag changes how overlap between routing steps is computed at the next scheduling run, but existing bars stay where they were until you rerun. After setting the flag, run Drive Schedule so the affected routings pick up the FlowStep lot-streaming model, then check the overlap between consecutive steps on that work center."
+qaQuestions:
+  - question: "We run a coating line and want the next operation to start before the whole batch finishes. Is Continuous-Process the setting for that?"
+    answer: "It is the enabling half. Marking the coating line Continuous-Process tells EDGEBIC to use the time-based FlowStep model for overlap on that line. You then set the FlowStep value on the routing step to say how many hours after the upstream step starts the downstream step may begin. With Continuous-Process on and a FlowStep of one hour, a coating step running from 08:00 to 10:00 lets the next operation start at 09:00. Without the flag, the scheduler would look for a piece-count transfer batch instead, which a continuous coating flow does not have."
+  - question: "We accidentally set a transfer batch size on a reactor that is marked Continuous-Process. What happens?"
+    answer: "The scheduler ignores the transfer batch size on a continuous-process work center and falls back to the FlowStep model. Nothing breaks, but the piece-count setting has no effect, which can confuse the next planner who sees it. EDGEBIC's data checks flag this combination so you can clean it up. On a continuous-process work center, drive overlap with FlowStep and leave transfer batch size at zero; use transfer batch size only on discrete work centers where the flag is off."
+---
+
+**To mark a work center as continuous process in EDGEBIC by User Solutions, open its configuration and check the Continuous-Process box.** That one flag switches the work center's lot-streaming model from piece-count transfer batches to the time-based FlowStep model, which is how paint lines, chemical reactors, and food or pharma processes overlap their routing steps.
+
+This is a physical description of the equipment, not a per-job choice. A reactor is continuous whatever runs through it. This page is the how-to for setting the flag; for what the mode means and why it exists, read [continuous process work centers explained](/blog/continuous-process-work-centers-edgebic).
+
+## Before You Start
+
+- **The work center already exists** ([how to add a work center](/blog/how-to-add-a-work-center-in-edgebic)).
+- **The work center is genuinely continuous:** its output is a flow, not countable pieces. Chemical, paint, coating, food, and pharma processes qualify; a mill, press, or assembly cell does not.
+- **You understand the tradeoff:** a continuous-process work center uses FlowStep for overlap and ignores any piece-count transfer batch set on its steps.
+
+## Step 1: Open the Work Center for Editing
+
+Open the **Workcenter** tab. On the **Work Center Management** grid, click ✏️ **Edit** on the target work center's row. The **Work Center Configuration** dialog opens on the **Basic Information** tab.
+
+## Step 2: Check Continuous-Process
+
+On the **Basic Information** tab, tick the **Continuous-Process** checkbox. It defaults off, meaning discrete piece-count behavior. Ticking it selects the time-based FlowStep model for routing steps that run on this work center.
+
+## Step 3: Save
+
+Click **Save**. The **Continuous-Process** column on the grid now reflects the flag for this work center.
+
+## Step 4: Set FlowStep on the Routing Steps
+
+The flag enables the FlowStep model, but the amount of overlap is set on each routing step. On a step that runs on this work center, set its **FlowStep** value in hours. A FlowStep of one hour lets the downstream step start one hour after the upstream step starts. See [how to configure lot streaming](/blog/piece-count-vs-time-lag-overlap-in-edgebic) for the FlowStep and transfer-batch choice in detail.
+
+## What Changes When You Save
+
+| Surface | Effect |
+|---|---|
+| **Continuous-Process** grid column | Reflects the flag immediately |
+| Lot-streaming model on this work center | Switches to FlowStep; transfer batch size is ignored here |
+| Existing schedules | Unchanged until you rerun |
+| Next **Drive Schedule** run | Overlaps consecutive steps on this work center using FlowStep hours |
+
+A worked case: a coating line marked continuous process, with a one-hour FlowStep on the coat step, lets the following operation begin one hour after coating starts instead of waiting for the full batch to finish. The two steps run partly in parallel, compressing the routing.
+
+## How to Check It Worked
+
+1. Confirm the **Continuous-Process** value on the work center's grid row.
+2. Set a FlowStep on a routing step for this work center and run **Drive Schedule**.
+3. On the Gantt, check that the downstream step now starts partway into the upstream step, by the FlowStep hours, rather than after it ends.
+4. Confirm the scheduler is not using a transfer batch on this work center. On a continuous-process line, any transfer batch size is ignored.
+
+## Common Mistakes
+
+**Flagging a discrete machine.** A mill or press produces countable pieces and should stay off. Marking it continuous process disables its piece-count transfer batches and forces a FlowStep model that does not fit discrete output.
+
+**Setting a transfer batch size on a continuous-process work center.** The scheduler ignores it and falls back to FlowStep. It has no effect and confuses the next planner. EDGEBIC's data checks flag the combination. Drive overlap with FlowStep here and leave transfer batch size at zero.
+
+**Expecting the flag alone to create overlap.** Continuous-Process selects the model; FlowStep on the routing step sets the amount. With FlowStep at zero, consecutive steps still run back to back even with the flag on.
+
+**Forgetting to rerun.** The flag changes how overlap is computed at the next scheduling run. Existing bars do not move until you run **Drive Schedule**.
+
+## Next
+
+The Continuous-Process flag tells EDGEBIC that a machine's output flows rather than counts, so the scheduler overlaps its steps by time instead of pieces. Set FlowStep on the routing steps to control the overlap, and keep transfer batches on discrete work centers only. More single-task recipes are in the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and the platform overview is at [/edgebic](/edgebic).

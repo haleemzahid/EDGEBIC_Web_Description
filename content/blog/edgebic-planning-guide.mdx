@@ -1,0 +1,202 @@
+---
+title: "Inventory, Forecasting, and MPS in EDGEBIC"
+description: "Inventory planning software for manufacturers: how EDGEBIC's ledger, projected balances, forecasts, replenishment, and MPS connect planning to capacity."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - inventory planning software manufacturers
+  - projected available balance
+  - master production schedule software
+  - forecast consumption
+  - replenishment planning
+  - make to stock scheduling
+  - available to promise
+targetPhrase: "inventory planning software manufacturers"
+wordCount: 3050
+readingTime: 15
+faqQuestions:
+  - question: "What is projected available balance (PAB) in inventory planning?"
+    answer: "Projected available balance is a rolling forecast of on-hand stock, bucket by bucket: each period's PAB equals the previous PAB plus scheduled receipts minus gross requirements, with realized ledger movements used for past periods. A negative PAB is meaningful rather than an error: it tells you committed demand exceeds projected supply in that bucket, which is exactly the signal that triggers a replenishment suggestion."
+  - question: "How does EDGEBIC decide whether to consume stock or build a new order?"
+    answer: "The scheduling engine nets demand against the inventory ledger at schedule time. If on-hand stock covers part of a demand, only the shortfall is built; if stock covers all of it, the order is marked satisfied from stock and no work-center operations are created at all. The stock issue is recorded as a signed ledger entry, so on-hand always reflects what the schedule consumed."
+  - question: "What is the difference between make-to-stock and make-to-order in EDGEBIC?"
+    answer: "A make-to-stock product is built ahead of specific customer orders; when its manufacturing order completes, the quantity posts into the inventory ledger as a receipt, and future demand consumes that stock. A make-to-order product is built only when a customer order exists, goes straight to the customer, and never nets against inventory. The policy is set per product, and any single order can override it in either direction."
+  - question: "How does forecast consumption work when firm orders arrive?"
+    answer: "EDGEBIC supports two consumption rules per product. The default, greater-of, takes the larger of forecast and firm demand in each bucket, which fits when firm orders replace the forecast that predicted them. The minus-consumed rule lets firm orders eat into the forecast and adds them on top of the remainder, which fits when firm orders arrive in addition to the forecast. Forecast rows themselves are never modified by consumption; the netting happens in the calculation."
+  - question: "Is safety stock a hard floor in EDGEBIC?"
+    answer: "By default, no: safety stock is a replenishment trigger, not a consumption floor. When the projected balance falls below safety stock, the row is flagged and a suggestion fires, but consumption below the level is not prevented. A per-product option can make safety stock a hard floor for the rare cases that need it. A separate reorder point can coexist, for example reorder at 50 with safety stock at 20."
+qaQuestions:
+  - question: "We stock a bracket with a reorder point of 100 and reorder quantity of 200. When does EDGEBIC tell us to build, and how much?"
+    answer: "The documented example runs exactly this product with 250 on hand and weekly forecasts of 120, 120, 80, 80 against firm orders of 60 and 30 in the first two weeks. Under the greater-of rule, week 1 demand is 120, leaving a projected 130: above the 100 trigger, no suggestion. Week 2 demand is another 120, leaving 10: below the trigger, so the suggestion fires with target = reorder point plus reorder quantity = 300, minus projected 10, suggesting 290 units. One click firms that into a replenishment order due that week, flagged build-to-stock, and the next projection shows the receipt lifting every following week back above 100."
+  - question: "Planners keep double-building an item that another order this week already produces. Can the schedule see its own incoming supply?"
+    answer: "Yes, with forward netting enabled: the engine's netting looks not only at static on-hand but at projected receipts from build-to-stock orders in the same scheduling run. A consumer order due after a producer order's completion nets against that incoming supply instead of triggering a second build. Combined with the ledger (which posts the producer's receipt on completion and the consumer's issue at schedule time), the same demand is never satisfied twice and the same stock is never promised twice within a run."
+---
+
+**Inventory planning software for manufacturers** answers three questions that pure scheduling cannot: how much stock will I have on each future date, when should I build ahead of demand, and how much can I still promise without breaking existing commitments? EDGEBIC by User Solutions answers them with a connected planning layer: an append-only inventory ledger as the single source of truth, a projected available balance calendar with available-to-promise, forecast and replenishment planning, a master production schedule (MPS) grid, and sales orders as firm demand. What makes the layer different from standalone planning tools is where it ends: every planning decision lands in the same finite capacity scheduling engine that runs your shop floor.
+
+This pillar explains each piece and the arithmetic behind it, in planner language, using the documented worked numbers. It describes capabilities of the [EDGEBIC](/edgebic) platform; for how these connect to your existing ERP's item and order data, see the [import-export integration approach](/edgebic-erp-integration).
+
+## The Ledger: One Source of Truth for On-Hand
+
+Everything in EDGEBIC's planning layer stands on a deliberately old-fashioned foundation: an **inventory ledger**. Every stock movement is one immutable, signed record: positive quantities are receipts (stock in), negative are issues (stock out). On-hand for any product is the sum of its ledger entries, full stop.
+
+The ledger is append-only. Mistakes are corrected with an inverse reversal entry, never by deleting or editing the original; both rows remain and net to zero. Every entry carries its effective date, the unit cost captured at post time (maintained as a moving average across receipts), and links back to what caused it: which manufacturing order, which schedule row, which routing step. That linkage is what auditors call pegging, and it means "why did our on-hand drop 40 units on Tuesday?" has a one-query answer.
+
+Two ledger events matter most for planning:
+
+- **Build to inventory.** When a make-to-stock order completes, its quantity posts as a receipt, in the same transaction as the completion itself.
+- **Consume from stock.** When the scheduler satisfies demand from existing stock, an issue posts at scheduling time, so the balance reflects committed consumption, not just physical movement.
+
+Deleting or reopening an order reverses its ledger entries cleanly, and rescheduling the same order twice does not double-post: the design goal is that the ledger can be replayed and always reconciles.
+
+## MTS, MTO, and the Netting Decision
+
+Every product carries a build method: **make-to-order** (build only when a customer order exists; output goes to the customer; inventory is never involved) or **make-to-stock** (build ahead; output goes into the ledger; demand consumes stock). Any individual order can override the product policy in either direction, so a normally stocked item can run one direct-ship order, and a normally custom item can run one build-ahead batch.
+
+The interesting moment is scheduling a demand for a product that has stock. EDGEBIC nets at schedule time:
+
+- **Partial cover:** on-hand covers part of the demand; the engine builds only the shortfall and posts an issue for the consumed portion.
+- **Full cover:** on-hand covers everything; the order is marked **satisfied from stock**, no work-center operations are created at all, and the only trace is the ledger issue. Your capacity is spent on things that actually need building.
+- **No cover (or MTO):** the full quantity is built.
+
+Netting also respects yield: a product with a first-pass yield below 100% inflates its build quantity so that the net good output matches the need, and suggested quantities are rounded up accordingly.
+
+With forward netting enabled, the engine goes one step further: within a single scheduling run, a consumer order can net against the projected receipt of a build-to-stock producer order in the same run, preventing the classic double-build where the plan ignores supply it is itself creating.
+
+## The Inventory Calendar: PAB, Buckets, and ATP
+
+The planning cockpit is the inventory calendar: a time-phased grid per product, in buckets of a day, a week, or a 28-day period. The central number is the **projected available balance**:
+
+```
+PAB[this bucket] = PAB[previous bucket]
+                 + actual net movement      (past buckets: what the ledger really recorded)
+                 + scheduled receipts       (open build-to-stock orders completing here)
+                 - gross requirements       (forecast and firm demand, after consumption)
+```
+
+Past buckets use only realized ledger movement, which keeps history immutable: the projection never rewrites what happened. Future buckets use the planned model. A negative PAB is allowed and meaningful: committed demand exceeds projected supply in that bucket, and that is your earliest warning of a stockout, weeks before it happens.
+
+Around the PAB, the calendar computes:
+
+**Gross requirements with forecast consumption.** For MTO products, firm demand only; forecast is irrelevant for custom jobs. For MTS products, a per-product rule decides how forecast and firm orders interact:
+
+| Rule | Formula | When it fits |
+|---|---|---|
+| Greater-of (default) | max(forecast, firm) | Firm orders replace the forecast that predicted them |
+| Minus-consumed | max(0, forecast − firm) + firm | Firm orders arrive in addition to forecast |
+
+Greater-of is the safer default. Forecast rows themselves are never mutated by consumption; the netting lives in the calculation, so your demand plan stays intact and auditable.
+
+**Available-to-promise.** ATP answers "how much can I still sell without breaking existing commitments?" It is computed forward from physical on-hand now, in two flavors per row: a discrete value at each supply event (supply minus all firm demand up to the next supply event, and it can go negative), and a cumulative running position carried between supply events. When sales asks whether a new 50-unit order is safe to accept for week 3, ATP is the column that answers.
+
+**Days of cover.** A headline metric: current on-hand divided by the average daily demand rate across the horizon. "At today's demand rate, stock lasts N days."
+
+**Safety stock, honestly defined.** In EDGEBIC, safety stock is a replenishment trigger, not a consumption floor, by default. PAB below safety stock flags the row and fires a suggestion; it does not block consumption. A per-product opt-in turns it into a hard floor for the rare item that needs one. A separate reorder point can coexist, so a product can start its build process at 50 while treating 20 as the alarm level.
+
+## Replenishment: From Suggestion to Firm Order
+
+When a bucket's projected balance falls below its trigger, the calendar computes a **suggested order quantity**. The logic is worth knowing exactly, because it is the difference between trusting and second-guessing the number:
+
+1. Only MTS products with a reorder method participate; MTO products never receive suggestions.
+2. The trigger is the reorder point (reorder-point method) or the minimum level (min/max method).
+3. If projected balance is below the trigger, the target is either reorder point plus reorder quantity, or the maximum level; the raw suggestion is target minus projected.
+4. Lot sizing rounds it: lot-for-lot takes the raw number; fixed order quantity rounds up to whole lots (a raw 290 with a 50-unit lot becomes 300).
+5. Yield inflates it: a 95% yield divides the quantity and rounds up, so scrap is pre-paid.
+
+A design decision the documentation is explicit about: **suggestions are display-only until you act.** A suggested quantity does not roll into later buckets' PAB, so the calendar always shows the unvarnished consequence of doing nothing. Only when a planner clicks Firm does a real order exist, and only then does it appear as a scheduled receipt on the next projection.
+
+Firming is one click: it creates a manufacturing order with the suggested quantity and due date, flagged build-to-stock, stamped with a replenishment demand source so it stays distinguishable from customer work forever. From there it is a normal order: the finite capacity engine schedules it around everything else, the shop builds it, and completion posts the receipt.
+
+### The worked replenishment loop
+
+The documented example, end to end. A stocked bracket: reorder point 100, reorder quantity 200, lot-for-lot, 250 on hand. Weekly forecasts of 120, 120, 80, 80; firm orders of 60 (week 1) and 30 (week 2); greater-of consumption.
+
+| Week | Forecast | Firm | Gross req (max) | Projected | Below 100? | Suggested |
+|---|---|---|---|---|---|---|
+| 1 | 120 | 60 | 120 | 250 − 120 = 130 | No | 0 |
+| 2 | 120 | 30 | 120 | 130 − 120 = 10 | Yes | 300 − 10 = **290** |
+| 3 | 80 | 0 | 80 | 10 − 80 = −70 | | |
+| 4 | 80 | 0 | 80 | −70 − 80 = −150 | | |
+
+Weeks 3 and 4 go negative: the stockout is visible a month out. The planner firms week 2's suggestion of 290. After the replenishment order schedules and completes in week 2, the next projection reads 300, 220, 140 across weeks 2 through 4: every bucket back above the reorder point, and the suggestion disappears because the trigger is satisfied.
+
+That is the whole loop: forecast in, projection out, one human decision, one real order, capacity-checked by the same engine that runs the floor.
+
+Lot sizing and yield change only step 4 of the arithmetic. The same 290-unit raw suggestion under a fixed order quantity of 50 becomes 300 (six whole lots), and with a 95% first-pass yield it inflates further to 316, so the net good output still covers the need after expected scrap. The trigger logic and the display-only rule are identical in every case: the calendar computes, the planner commits.
+
+One more behavior worth knowing: overdue supply stays visible. A build-to-stock order whose expected completion has slipped into the past is clamped into today's bucket rather than disappearing behind the window start, so a late replenishment shows up as supply you can chase instead of a silent hole in the projection.
+
+## MPS: The Planner's Committed Build Plan
+
+Replenishment reacts to triggers. A **master production schedule** goes further: it is the planner's deliberate, time-phased statement of what to build, how many, and when, for make-to-stock finished goods. EDGEBIC's MPS grid holds one row per product and bucket, and each entry moves through three states:
+
+| Status | Meaning |
+|---|---|
+| Suggested | The system's auto-suggestion; the planner has not committed |
+| Firm | The planner has committed a build quantity, but no order exists yet |
+| Released | The commitment has become a real build-to-stock manufacturing order, linked back to the MPS entry |
+
+The separation matters: the MPS quantity is the planner's decision, distinct from the system suggestion, and nothing becomes shop-floor demand until a Firm entry is Released. Released orders carry an MPS demand source, so a released MPS order, a replenishment order, and a customer order are always distinguishable in any report.
+
+Two **time fences** protect the near-term plan, both set per product in days from today:
+
+- **Demand time fence:** inside it, only firm orders count; forecast is ignored. A stale forecast cannot over-build the next two weeks.
+- **Planning time fence:** inside it, auto-suggestions are suppressed and committed rows are not overwritten. The system stops second-guessing a plan the floor is already executing.
+
+In MPS mode, firm demand comes from where it belongs: **sales orders**. A sales order in EDGEBIC is a customer commitment with a header (who, when, status) and lines (product, quantity, unit price, quantity shipped, due date). A line's open balance (quantity minus shipped, floored at zero) becomes firm demand in the bucket of its due date, once the order is confirmed. Draft orders do not drive planning; confirming an order is the act that makes its lines count. Released MPS entries and other build-to-stock orders appear on the supply side as scheduled receipts, and the same PAB and ATP math runs over the result.
+
+The output of the whole MPS layer is deliberately mundane: build-to-stock manufacturing orders. That is the point. MPS sits between demand management and the finite capacity scheduler, and its decisions become schedulable work, not a separate planning universe that drifts from the floor. This is the gap most manufacturers feel between their ERP's MRP run and their actual shop schedule: MRP explodes requirements against infinite capacity and lead-time offsets; EDGEBIC's planning layer hands its orders to a scheduler that knows [where the bottleneck is](/blog/production-bottleneck-identification) and what every machine is doing this week. For the conceptual background, see [what production scheduling is](/blog/what-is-production-scheduling) and [capacity planning vs production scheduling](/blog/capacity-planning-vs-production-scheduling).
+
+## How the Pieces Fit: One Product, One Quarter
+
+Pulling the layer together with a composite picture of a stocked product across a quarter:
+
+1. **Demand enters.** Sales enters and confirms customer orders; their open line quantities become firm demand by due date. The demand planner maintains a weekly forecast; the greater-of rule prevents double counting where they overlap.
+2. **The calendar projects.** PAB rolls forward bucket by bucket. Week 7 dips below the reorder point; week 9 goes negative. ATP shows sales exactly how much of weeks 1 through 6 is still promisable.
+3. **The planner decides.** Inside the planning fence, nothing is auto-touched. At week 7 the suggestion fires; the planner either firms it as-is (replenishment) or sets a deliberate MPS quantity (maybe consolidating weeks 7 and 9 into one economical build) and releases it.
+4. **The engine schedules it.** The released order is planned through finite capacity around customer work, respecting shifts, setup times, and machine load. If capacity is tight, the schedule says so now, not at the stockout.
+5. **The floor executes and the ledger records.** Completion posts the receipt; subsequent customer orders consume from stock, posting issues; a fully covered order is satisfied from stock and consumes zero machine hours. Actual movements become the realized history the next projection stands on. The execution side of that loop is the subject of the [shop floor execution guide](/blog/edgebic-shop-floor-guide).
+
+Each step is checkable: the ledger explains every balance, the projection shows its arithmetic per bucket, every order carries its demand source, and the [audit surfaces](/blog/edgebic-troubleshooting-guide) exist for the days something looks off.
+
+## Practical Guidance for Getting Started
+
+**Start with honest on-hand.** Post opening balances through the ledger and correct with adjustments, never by editing a cached quantity. Everything downstream trusts this number.
+
+**Classify products deliberately.** MTS with a reorder method for the runners; MTO for the custom work. A handful of correctly classified A-items beats a full catalog of guesses; the same logic as [ABC analysis](/blog/abc-analysis-inventory).
+
+**Pick the consumption rule per product, not globally.** Greater-of where firm orders replace forecast; minus-consumed where they stack. The wrong rule quietly doubles or halves demand.
+
+**Set fences to match your frozen zone.** A demand fence of your quoting lead time and a planning fence of your scheduling horizon is a sane starting point.
+
+**Let suggestions be suggestions.** The display-only design is a feature: the calendar shows consequences, the planner makes commitments. Firm what you mean; release what you will build.
+
+**Close the loop weekly.** Compare projected against realized, tune reorder points and forecasts, and watch days-of-cover trend. The layer improves as its inputs do.
+
+A note on scope, plainly stated: this pillar describes the planning capabilities as documented for the EDGEBIC platform. If a specific capability matters to your deployment decision, ask User Solutions to show it against your data rather than relying on any assumption about editions or timing.
+
+User Solutions has been connecting planning to scheduling since 1991, for manufacturers from job shops to Cummins (33 locations) and the US Navy. The consistent lesson: inventory planning fails not in the math but in the disconnect between the plan and the floor's real capacity. EDGEBIC's answer is to make them one system. To see the calendar, the MPS grid, and the scheduler working on your own part numbers, [contact US for a demo](/contact-us), and start with the [complete EDGEBIC guide](/blog/edgebic-complete-guide) for the whole platform map.
+
+<Accordion title="What is projected available balance (PAB) in inventory planning?">
+Projected available balance is a rolling forecast of on-hand stock, bucket by bucket: each period's PAB equals the previous PAB plus scheduled receipts minus gross requirements, with realized ledger movements used for past periods. A negative PAB is meaningful rather than an error: it tells you committed demand exceeds projected supply in that bucket, which is exactly the signal that triggers a replenishment suggestion.
+</Accordion>
+
+<Accordion title="How does EDGEBIC decide whether to consume stock or build a new order?">
+The scheduling engine nets demand against the inventory ledger at schedule time. If on-hand stock covers part of a demand, only the shortfall is built; if stock covers all of it, the order is marked satisfied from stock and no work-center operations are created at all. The stock issue is recorded as a signed ledger entry, so on-hand always reflects what the schedule consumed.
+</Accordion>
+
+<Accordion title="What is the difference between make-to-stock and make-to-order in EDGEBIC?">
+A make-to-stock product is built ahead of specific customer orders; when its manufacturing order completes, the quantity posts into the inventory ledger as a receipt, and future demand consumes that stock. A make-to-order product is built only when a customer order exists, goes straight to the customer, and never nets against inventory. The policy is set per product, and any single order can override it in either direction.
+</Accordion>
+
+<Accordion title="How does forecast consumption work when firm orders arrive?">
+EDGEBIC supports two consumption rules per product. The default, greater-of, takes the larger of forecast and firm demand in each bucket, which fits when firm orders replace the forecast that predicted them. The minus-consumed rule lets firm orders eat into the forecast and adds them on top of the remainder, which fits when firm orders arrive in addition to the forecast. Forecast rows themselves are never modified by consumption; the netting happens in the calculation.
+</Accordion>
+
+<Accordion title="Is safety stock a hard floor in EDGEBIC?">
+By default, no: safety stock is a replenishment trigger, not a consumption floor. When the projected balance falls below safety stock, the row is flagged and a suggestion fires, but consumption below the level is not prevented. A per-product option can make safety stock a hard floor for the rare cases that need it. A separate reorder point can coexist, for example reorder at 50 with safety stock at 20.
+</Accordion>

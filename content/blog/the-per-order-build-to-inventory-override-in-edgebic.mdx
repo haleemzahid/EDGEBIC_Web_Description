@@ -1,0 +1,87 @@
+---
+title: "The Per-Order Build-to-Inventory Override in EDGEBIC"
+description: "How a single manufacturing order can override a product's make-to-stock or make-to-order policy in EDGEBIC, and how the hybrid build method lets exceptions ride on top of a default."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - build to inventory
+  - make to stock
+  - make to order
+  - per-order override
+  - manufacturing order
+  - build method
+targetPhrase: "build-to-inventory override"
+wordCount: 1320
+readingTime: 7
+faqQuestions:
+  - question: "What is the build-to-inventory override on a manufacturing order?"
+    answer: "It is a per-order flag that decides whether a single manufacturing order builds into finished-goods stock or ships to a specific customer, overriding the product's default policy. Left blank, the order inherits the product's build method. Set to yes, the order builds to stock and posts a receipt on completion regardless of the product default. Set to no, the order is treated as make-to-order and posts no stock receipt, even if the product is normally make-to-stock."
+  - question: "How does the override interact with the product's build method?"
+    answer: "The override wins when it is set, and the product policy applies when it is blank. EDGEBIC resolves the effective policy by checking the order's flag first: if it carries an explicit yes or no, that decides the order. Only when the flag is blank does the product's build method, make-to-order or make-to-stock, take over. This lets you set a sensible default once on the product and handle exceptions one order at a time."
+  - question: "What is the make-to-stock-with-override build method for?"
+    answer: "It is the hybrid default: the product builds to stock unless a specific order says otherwise. A product set to make-to-stock-with-override defaults every order to build-to-inventory, but any single order can carry an explicit no to ship direct to a customer instead. Use it for products you normally stock but occasionally build to a one-off order, so the common case needs no per-order action and only the exceptions get flagged."
+qaQuestions:
+  - question: "We stock most of our valve bodies but one customer wants a special run shipped direct, not into stock. How do we handle just that order?"
+    answer: "Leave the product on its make-to-stock policy and override the single order. Open that one manufacturing order, set its build-to-inventory flag to no, and save. When it schedules and completes, it ships to the customer and posts no finished-goods receipt, even though every other order for that valve body still builds to stock as normal. You changed one order, not the product, so your standard stocking behavior is untouched. If this becomes a recurring pattern rather than a one-off, consider the make-to-stock-with-override method so the default already anticipates exceptions."
+  - question: "An order we expected to build to stock did not post a receipt on completion. Why?"
+    answer: "Check the order's build-to-inventory flag and the product's stocked setting. If the order's flag is explicitly set to no, it was treated as make-to-order and correctly posted no receipt, regardless of the product default. If the flag is blank, the product's build method decides, so a product set to make-to-order would also post nothing. And even a make-to-stock order posts no receipt if the product is not marked as stocked, since that setting suppresses all inventory posting. Read the flag first, then the product policy, then the stocked setting, and the missing receipt usually explains itself."
+---
+
+**In [EDGEBIC by User Solutions](/edgebic) a manufacturing order carries a build-to-inventory flag that overrides the product's make-to-stock or make-to-order policy for that one order: blank means inherit the product default, yes means build into stock, and no means ship to a customer, so you set the common case once on the product and handle exceptions order by order.** The override is what lets a product you normally stock go direct to a customer on a single special run, without changing anything about how the rest of that product is built.
+
+This post explains the per-order flag, how it resolves against the product's build method, and how the hybrid method turns the whole thing into a default-plus-exceptions pattern. For switching a product's own policy, see [how to switch a product between make-to-stock and make-to-order](/blog/how-to-switch-a-product-between-make-to-stock-and-make-to-order-in-edgebic), and for the wider loop start from the [EDGEBIC planning guide](/blog/edgebic-planning-guide).
+
+## Two Levels of Decision
+
+Whether an order builds into stock or ships to a customer is decided at two levels. The product sets a default; the individual order can override it.
+
+At the product level, the build method is one of three settings. Make-to-order means the product is built only against a real order and never stocked. Make-to-stock means the product is normally built ahead into finished-goods stock. The hybrid, make-to-stock-with-override, means the product defaults to stock but expects some orders to go direct. At the order level, the build-to-inventory flag can be left blank to inherit, or set explicitly to yes or no.
+
+The order flag is the finer control. It exists so a single job can behave differently from the product's default without you touching the product at all.
+
+## How the Override Resolves
+
+The resolution rule is simple and always the same: the order flag wins when it is set, and the product policy applies when it is blank.
+
+EDGEBIC checks the order's build-to-inventory flag first. If it carries an explicit yes, the order builds to stock. If it carries an explicit no, the order is make-to-order and ships direct. Only if the flag is blank does the product's build method decide, treating make-to-stock (and the hybrid method) as build-to-stock and make-to-order as ship-direct.
+
+| Order flag | Product method | Effective behavior |
+|---|---|---|
+| Yes | any | Build to stock, post receipt on completion |
+| No | any | Make-to-order, no stock receipt |
+| Blank | Make-to-stock or hybrid | Build to stock |
+| Blank | Make-to-order | Make-to-order, no receipt |
+
+The pattern to remember: an explicit flag always overrides the product; a blank flag defers to it.
+
+## What Building to Stock Actually Does
+
+When an order resolves to build-to-stock, two things follow. During planning, the inventory calendar treats the open order as future supply, so it shows up as a scheduled receipt that lifts the projected balance in its completion bucket. On the floor, when the order is marked complete, it posts a finished-goods receipt into the ledger and raises on-hand, ready for the next demand to consume.
+
+An order that resolves to make-to-order does neither. Its output goes to the customer, no receipt posts, and the plan does not treat it as inventory supply. The order still schedules through finite capacity the same way; the only difference is where its output lands.
+
+One caveat sits above all of this. A build-to-stock order still posts no receipt if the product is not marked as stocked, because that setting suppresses inventory posting entirely. So the full read for a missing receipt is: check the order flag, then the product method, then whether the product is stocked at all.
+
+## A Worked Example: One Special Run Ships Direct
+
+Take a valve body you normally stock. The product is set to make-to-stock, so every order for it defaults to build-to-inventory and refills finished-goods stock on completion.
+
+Now a customer wants a special run of 40 shipped straight to them, not into your stock. You do not change the product. You open that single order, set its build-to-inventory flag to no, and save. When it schedules and completes, those 40 units ship to the customer and post no receipt. Every other valve-body order still builds to stock exactly as before. You handled the exception at the order level and left your standard stocking behavior untouched.
+
+If special runs became the norm rather than the exception, you might instead put the product on the make-to-stock-with-override method, which anticipates exactly this: default to stock, flag the odd order as direct. Same resolution rule, different starting assumption.
+
+## When to Reach for the Hybrid Method
+
+The plain make-to-stock method and the hybrid make-to-stock-with-override method behave identically for a blank order flag: both build to stock. The difference is intent and expectation. Use plain make-to-stock when direct shipments are genuinely rare and you are happy overriding the odd order by hand. Use the hybrid method when you know a meaningful slice of orders will go direct, so the product's policy documents that exceptions are expected and normal.
+
+Either way, the mechanism underneath is the same per-order flag. The hybrid method does not add new behavior; it signals a design where overriding is part of the plan.
+
+## Keeping the Override Deliberate
+
+The override is powerful because it is precise: one order, one decision, no ripple to the product or its other jobs. Keep it deliberate. Set the product default to the common case, leave most order flags blank, and reach for an explicit yes or no only when a specific job needs to break from the norm. Read the flag, then the product method, then the stocked setting whenever an order's inventory behavior surprises you.
+
+For how a stock build refills inventory, read [how a build-to-stock job replenishes inventory](/blog/how-a-build-to-stock-job-replenishes-inventory), and to weigh the two policies against each other, read [make-to-stock vs make-to-order in EDGEBIC](/blog/make-to-stock-vs-make-to-order-in-edgebic). For the general trade-off, see [make-to-stock and make-to-order](/blog/make-to-stock-make-to-order).

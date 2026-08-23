@@ -1,0 +1,158 @@
+---
+title: "Scheduling Only Certified Operators on Regulated Work"
+description: "Medical device operator certification scheduling: a schedule that knows who is certified, rostered and present stops promising work nobody can do."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - medical device operator certification scheduling
+  - certified operator constraint scheduling
+  - skill based production scheduling
+  - operator qualification manufacturing schedule
+  - labor constrained scheduling medical device
+  - certification expiry scheduling
+targetPhrase: "medical device operator certification scheduling"
+wordCount: 1830
+readingTime: 9
+faqQuestions:
+  - question: "How does a schedule account for operator certifications?"
+    answer: "EDGEBIC by User Solutions treats the certified person as a second finite resource alongside the machine. A routing step names the skill it requires. Only operators holding an active, unexpired certification in that skill, rostered on that shift and weekday, and not on recorded time off, count as available hours. If nobody qualified has hours left in a window, the schedule slides the step to the next window where somebody does."
+  - question: "What happens when a certification expires mid-plan?"
+    answer: "An expired certification stops counting as capacity on the next scheduling run. Certifications carry an optional expiry date, and expired ones are filtered out before the engine sees them. The practical effect is that a schedule built after the expiry date will not place regulated work on that person. It is a planning constraint, not an access control: the software records qualification for scheduling purposes only."
+  - question: "Can a routing step be assigned to one named operator rather than a pool?"
+    answer: "Yes. A step can carry a hard pin to a single named operator, on top of the required skill. With a pin set, the rest of the qualified pool is never used as a fallback. If that person is on time off or not rostered, the step slides until they are back rather than quietly moving to somebody else. The absence shows up as visible schedule movement instead of a silent substitution."
+  - question: "Do we have to model every operator to use this?"
+    answer: "No. The constraint is opt-in and inert until you configure it. Steps with no required skill schedule exactly as they always did, and a plant with no operator records at all schedules identically to one without the feature. Most shops start with the two or three genuinely scarce certifications, since those are the ones that quietly break schedules, and add more only if they earn their keep."
+qaQuestions:
+  - question: "We have one operator certified for a bonding process used on three lines. The schedule keeps showing all three running that process at once. What does the constraint actually change?"
+    answer: "It stops that from being possible. Consider the simplest version: two work centers, one certified operator, one 8-hour day shift, two jobs needing 8 hours each on that process.\n\nWithout the constraint both jobs schedule Monday 08:00 to 16:00 in parallel, which is fiction. With it, the first job books all 8 of that operator's Monday hours. When the second job looks at Monday, the qualified pool reads zero, so Monday is never offered and the job lands Tuesday. Certify and roster a second person and both jobs run Monday again, one on each line, exactly as you would staff it by hand."
+  - question: "Our machining cells run lights-out after setup. If we mark those steps as needing a certified setter, will the schedule refuse to run them overnight?"
+    answer: "No, as long as you set the attention level correctly. Each step carries an attend fraction that says how much operator attention the run phase consumes per machine-hour. Setup always books one operator-hour per hour; the run books the fraction.\n\nWith the fraction at zero, which is the default, a step with 1 hour of setup and 9 hours of run books exactly 1 hour of a person. Seven such cells all start on a Monday with one setter and consume 7 of that setter's 8 hours. The eighth still fits. The ninth slides to Tuesday, because there is no ninth setup hour. The run hours themselves are unconstrained, so machines keep going into unstaffed evening hours if machine capacity allows."
+---
+
+**A schedule that does not know who is certified will happily promise work that nobody qualified can perform.** EDGEBIC by User Solutions closes that gap by treating the certified operator as a second finite resource beside the machine: a routing step names the skill it requires, and only operators who hold an active certification, are rostered on that shift, and are not on recorded time off count as available hours.
+
+The scope note first, because this is regulated work. What follows describes what the scheduling software records and how the schedule behaves. It is not a certification, a validation, or a claim of conformance with any regulation or standard. EDGEBIC records who is qualified for scheduling purposes and plans accordingly. Your quality system owns training records, qualification approval, and everything that follows from them.
+
+## The Pain: The Machine Was Free, the Person Was Not
+
+Ask a device plant supervisor what actually breaks the weekly plan and the answer is rarely a machine. It is a person.
+
+One operator is qualified on a bonding process used across three lines. One inspector is signed off on a specific gauge method. One technician holds the cleanroom qualification that a subset of operations requires. Everyone in the building knows this. The scheduling system does not, because it models machines and calls that capacity.
+
+So the schedule shows three lines running the bonding process on Tuesday. The supervisor discovers on Tuesday morning that this was never possible, reshuffles by hand, and the printed plan becomes fiction by 9 a.m. Do that for two weeks and supervisors stop reading the live system and run from yesterday's paper. That loss of trust is more expensive than the missed hours.
+
+The failure is quiet, which is what makes it dangerous. Nothing errors. The plan simply promises something the building cannot deliver, and the discovery happens on the floor.
+
+## The Mechanism: An Hours Ledger, Not a Presence Check
+
+The obvious fix is to ask "is a qualified operator rostered on this shift?" and that fix does not work. Five jobs would all pass the check and share one welder. It is the same silent slip in a new coat.
+
+EDGEBIC keeps a per-operator hours ledger instead. For each operator, date, and shift, the engine tracks hours already booked. An operator holds a fixed number of hours on a given shift regardless of how many skills they carry. A person certified in three processes does not become three people.
+
+For a given skill on a given date and shift, the qualified pool is the set of operators who are:
+
+- certified in that skill, with an active and unexpired certification
+- rostered for that shift on that weekday
+- not inside a recorded time-off range
+
+Each contributes their remaining unbooked hours. The sum is what the scheduler can spend.
+
+Availability stacks on top of machine capacity rather than replacing it. A window first has to survive the work center's own calendar: holidays, shift pattern, downtime, capacity overrides. Only then does the operator question get asked. Full mechanism detail lives in [operator and skill scheduling explained](/blog/edgebic-operator-and-skill-scheduling-explained).
+
+## Worked Example: One Bonder, Two Lines
+
+The smallest case shows the whole idea.
+
+| Item | Value |
+|---|---|
+| Work centers | Bond-A and Bond-B, one machine each |
+| Shift | Day shift, Monday to Friday, 08:00 to 16:00, 8 hours |
+| Skill | Structural bonding |
+| Operators | One certified bonder, rostered Monday to Friday, no time off |
+| Jobs | J-100, 8 hours on Bond-A; J-200, 8 hours on Bond-B; both require the skill, both fully attended |
+
+Without the constraint, both jobs schedule Monday 08:00 to 16:00. Two machines, one bonder, one shift.
+
+With it:
+
+1. J-100 schedules first. Monday's qualified pool is 8 hours minus 0 booked, so 8 hours. The machine needs 8 and the pool affords 8. Bond-A runs Monday 08:00 to 16:00, and the bonder's Monday ledger reads 8.
+2. J-200 looks at Monday. The pool reads 8 minus 8, so zero. Monday is never offered, and the diagnostics log records why: no qualified operator hours for that skill in that window. The day walk continues and Bond-B lands Tuesday 08:00 to 16:00.
+
+Certify a second bonder and roster them Mondays, and both jobs run Monday again, one on each line. The schedule changes because the staffing changed, which is the correct causality.
+
+## Certification Expiry Is a Scheduling Input
+
+Device qualifications expire. A certification record carries an optional expiry date, and expired certifications are filtered out before the scheduling engine ever sees them. The operator stops counting as qualified capacity on the next run.
+
+That has two practical consequences worth planning around.
+
+First, an expiry that lands mid-horizon is treated as expired for the whole run rather than partway through it. The schedule is conservative rather than optimistic, which is the right direction for regulated work.
+
+Second, if a schedule suddenly "loses" an operator and the plan slides, check expiry dates before anything else. A recertification that lapsed last Friday looks exactly like a scheduling bug until you look at the date.
+
+Inactive operators and inactive certifications behave the same way: they leave the engine feed entirely but stay in the record for history.
+
+## Naming a Person on a Step
+
+A required skill says "somebody qualified". Sometimes the correct instruction is "this person".
+
+A step can carry a hard pin to one named operator on top of its required skill. The semantics are deliberately strict: with a pin set, the qualified pool narrows to exactly that person, and the rest of the pool is never a fallback.
+
+Take the earlier bonding world plus a second certified bonder. A step on Bond-A is pinned to the first bonder, who has time off Monday through Wednesday.
+
+- Unpinned, Monday's pool is the second bonder's 8 hours and the step runs Monday.
+- Pinned, Monday through Wednesday read zero and the step slides to Thursday, the first day back.
+
+That slide is the feature, not a shortcoming. A named person's absence should surface as visible schedule movement rather than an unapproved hand-off. If the pinned person is inactive or not certified for the step's skill, the run fails fast with a message naming the problem rather than scanning forward for weeks and reporting a generic capacity error.
+
+A pin can also be set by dragging a bar between operator lanes on the schedule view, and the pin picker lists only operators qualified for the step's skill.
+
+## Attention Levels: Not Every Machine Needs a Person All Day
+
+Modeling every certified step as fully attended would over-constrain most plants. Each step carries an attend fraction describing how much operator attention the run phase consumes per machine-hour. Setup always books one operator-hour per hour, because one person sets up a machine.
+
+| Fraction | Meaning | Effect |
+|---|---|---|
+| 0.0 (default) | Setup only | The run books nobody; machines can continue into unstaffed hours |
+| 0.5 | One person tends two machines | 8 pool hours buy 16 run machine-hours |
+| 1.0 | Fully attended | One operator-hour per machine-hour |
+| 2.0 | Two-person crew | Each machine-hour books two operator-hours |
+
+The default of zero is deliberate. A forgotten fraction under-books visibly instead of silently overselling people, and a step with no setup and zero attention skips the constraint entirely rather than blocking on it.
+
+## What Happens on a Reschedule
+
+Device jobs get rescheduled constantly, and the operator constraint has to behave correctly when they do.
+
+The rule is straightforward. Operations already logged as complete never book operator hours, because the work is done and the person who did it is free for future planning. Operations that were scheduled but have not started still consume the pool, because they represent a real commitment the plan is holding open. The ledger is cleared and rebuilt from scratch on every run, so nothing accumulates across reschedules.
+
+That combination gives the behavior a planner expects. Reschedule a job whose first two operations are finished, and the certified operator's remaining hours reflect only the work still ahead. Reschedule a job that has not started at all, and the hours it was holding are reconsidered along with everything else.
+
+One structural detail is worth knowing before you configure shifts. Rosters key to the plant-wide shift, and a work center shift derived from a plant shift inherits its roster automatically: roster somebody once on the day shift and they cover every machine mirroring it. A fully custom work center shift with no parent has no roster, so a step requiring a certified operator routed there finds a pool of zero and fails loudly with a message naming the skill. That is deliberate. A silent pass there would be the presence-check bug returning under a different name, and the fix is to derive the custom shift from a plant shift rather than to relax the check.
+
+## What This Records, and What It Does Not
+
+The scheduling record holds who is certified in what, with certification and expiry dates, who is rostered on which shift and weekday, recorded time-off ranges, and which operators the current plan books against which operations and dates.
+
+Those plan bookings are plan data. They are regenerated wholesale on every reschedule, they answer "who is planned to work this", and they carry no rows for completed steps. They are not an actuals record, a training file, or a payroll source. What actually happened comes from the actuals and punch surfaces described in [actuals tracking](/blog/edgebic-actuals-tracking-explained).
+
+Access to the software itself is governed separately, through named users, roles, and a permission catalog, with an append-only record of security events. That is covered in [users and roles](/blog/edgebic-users-and-roles-explained) and [how EDGEBIC protects your schedule data](/blog/how-edgebic-protects-your-schedule-data). Certification for scheduling and permission to use the system are two different things and are modeled as two different things.
+
+## Getting Started Without Boiling the Ocean
+
+Nobody needs to model 200 operators to get value here. The scarce certifications are the ones that break schedules, and there are usually two or three. Once the qualification check passes, the next question is how many hours those people actually have, which is the subject of [planning on operator hours, not just head count](/blog/edgebic-for-medical-devices-operator-hours).
+
+1. Create the skill, named the way the floor names it.
+2. Certify the operators who hold it, with expiry dates where they exist.
+3. Roster those operators against the shifts and weekdays they actually work.
+4. Set the required skill on the routing steps that need it.
+5. Choose the attention level: zero for setup-only cells, 1.0 for fully attended work.
+6. Reschedule and read the staffing decisions in the diagnostics log.
+
+Everything else keeps working unchanged. Steps with no skill set are untouched, which means you can pilot on one process and expand only if it earns it.
+
+For scheduling practice across device manufacturing generally, see the [medical device scheduling overview](/blog/medical-device-scheduling) and the [medical device manufacturing software page](/medical-device-manufacturing-software). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product itself, [EDGEBIC](/edgebic).

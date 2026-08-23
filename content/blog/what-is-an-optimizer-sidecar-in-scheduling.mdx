@@ -1,0 +1,74 @@
+---
+title: "What Is an Optimizer Sidecar in Scheduling?"
+description: "An optimizer sidecar runs beside the standard scheduling engine, never inside it, so optimization improves plans without altering the battle-tested engine that produces them."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - optimizer sidecar scheduling
+  - scheduling optimizer architecture
+  - greedy scheduler baseline
+  - optimization beside engine
+  - order sequence provider
+  - sidecar optimization
+targetPhrase: "optimizer sidecar scheduling"
+wordCount: 1150
+readingTime: 6
+faqQuestions:
+  - question: "What is an optimizer sidecar in scheduling?"
+    answer: "An optimizer sidecar is an optimization component that runs beside the standard scheduling engine rather than being wired into it. The everyday engine still produces every schedule, and the optimizer sits alongside it: it uses the engine's plan as a starting point, proposes a better arrangement, and hands it back for review. Because the engine is never modified, optimization adds capability without adding risk to the code that runs production every day."
+  - question: "Why run the optimizer beside the engine instead of inside it?"
+    answer: "The standard engine is thousands of lines of hard-won logic covering shifts, instances, parallel machines, lot streaming, and constraints that took years to get right. Rewriting it to be an optimizer would put all of that at risk. A sidecar keeps the engine untouched as the default scheduler, the warm-start seed, and the fallback, so the optimizer can be added, tuned, or swapped without any chance of breaking the plans the shop relies on."
+  - question: "What is the single seam the sidecar uses to talk to the engine?"
+    answer: "The sidecar reaches into the engine through exactly one injectable hook: the ability to supply the global order in which jobs are scheduled for a run. The multi-run layer feeds different candidate orderings through this seam and scores each resulting plan. Everything else, from shift allocation to instance selection, runs exactly as it always has, which is what keeps the engine's behavior identical whether or not the optimizer is used."
+qaQuestions:
+  - question: "We are wary of a scheduling tool that reinvents its own engine every release. How does the sidecar design protect the plans we already trust?"
+    answer: "The sidecar design means the engine that produces your daily schedule is never rewritten to accommodate optimization. In EDGEBIC the standard engine remains the default scheduler and the warm-start seed, and the optimizer is a separate component that proposes improvements against the engine's own plan. If you never open the optimizer, your schedules are byte-for-byte what they always were. Turn it on, and the worst case is still the engine's plan, because that plan is the floor the result is measured against."
+  - question: "Does a sidecar mean the optimizer is bolted on and shallow, or can it still do serious math?"
+    answer: "Serious math sits comfortably in a sidecar. EDGEBIC's sidecar hosts both a multi-run search and a mathematical solver that models the problem formally and proves how close its answer is to the theoretical best. The sidecar boundary is about where the code lives and how it is contained, not about how deep the optimization goes. It gets the full benefit of a rigorous solver while keeping the production engine isolated and safe."
+---
+
+**An optimizer sidecar is an optimization component that runs beside the standard scheduling engine rather than being built into it: the everyday engine still produces every plan, and the optimizer sits alongside, using that plan as a starting point, proposing a better one, and handing it back for the planner to accept or discard.** It is a navigator suggesting a faster route while the driver keeps driving: the car's controls are never touched.
+
+This entry is part of the [EDGEBIC by User Solutions](/edgebic) glossary; the broader dictionary lives in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## Why a Sidecar and Not an Overhaul
+
+A production scheduling engine is not a small thing. It handles shifts and calendars, multiple machine instances, parallel and synchronized operations, lot streaming, transit time, sequence-dependent setup, and dozens of edge cases that only surfaced after years of real shop use. That accumulated logic is the reason the plans it produces are trustworthy.
+
+Turning that engine into an optimizer by rewriting its core would put every one of those hard-won behaviors at risk. The sidecar pattern refuses the trade. Instead of changing the engine, the optimizer is placed next to it. The engine remains three things at once: the default scheduler that produces plans, the [warm-start seed](/blog/what-is-a-warm-start-in-production-scheduling) the optimizer improves from, and the fallback the result is measured against.
+
+## How It Works
+
+The engine and the optimizer stay separate, and they communicate through one deliberately narrow seam: the optimizer can supply the global order in which jobs are scheduled for a given run. That is the only hook.
+
+The multi-run search layer uses this seam directly. It feeds the engine different candidate job orderings (earliest due date, shortest processing time, longest processing time, critical ratio, exhaustive orderings for small job counts, and seeded shuffles), lets the untouched engine schedule each one, and scores every resulting plan. The mathematical solver layer models the problem formally on a compressed time axis, warm-starts from the engine's plan, and returns a plan plus a proof of how close it sits to the theoretical best.
+
+Whichever layer runs, the engine's own scheduling behavior is unchanged. Optimization is layered on top through that single seam, not stitched through the engine's internals.
+
+## A Concrete Example
+
+Imagine a shop that has run the standard engine for a year with no complaints. The plans are solid; the floor trusts them. Now the shop wants to squeeze out late deliveries.
+
+With a sidecar, nothing about the trusted engine changes. The planner opens the optimizer, which asks the engine to produce its normal plan, then explores alternate job orderings against that plan and returns the best improvement it found. If the planner never opens the optimizer, every schedule is exactly what it was before. If they do, the engine still did all the actual scheduling; the optimizer only chose a better order to feed it and proved the result was an improvement before proposing it.
+
+## How EDGEBIC Uses It
+
+In EDGEBIC, the sidecar rule is architectural: all optimization runs beside the standard scheduling engine, and the engine is never modified to serve it. The one sanctioned seam is the injectable job-ordering hook; with no optimizer attached, the engine sorts jobs exactly as it always has.
+
+That containment enables the rest of the optimizer's safety contracts. Nothing is written automatically: a run is held as a proposal until you press Accept. The result can only help, because a [never-worse clamp](/blog/what-is-the-never-worse-clamp-in-scheduling-optimization) compares it against the engine's plan and keeps the engine's plan if the candidate does not strictly beat it. And jobs using features the mathematical model does not yet handle natively are reproduced exactly as the engine scheduled them. You can even choose which optimizer implementation runs, and if the mathematical solver is not available in your build, the selector quietly falls back to the multi-run search, so choosing it can never break scheduling. The mathematical solver measures the plant week in [working-hour ticks](/blog/what-is-a-working-hour-tick-in-optimization), hundredths of an hour on a calendar with closed time cut out, so it reasons in whole numbers rather than floating point. For the full pipeline, see the [optimizer guide](/blog/edgebic-optimizer-guide) and where it fits in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="What is an optimizer sidecar in scheduling?">
+An optimizer sidecar is an optimization component that runs beside the standard scheduling engine rather than being wired into it. The everyday engine still produces every schedule, and the optimizer sits alongside it: it uses the engine's plan as a starting point, proposes a better arrangement, and hands it back for review. Because the engine is never modified, optimization adds capability without adding risk to the code that runs production every day.
+</Accordion>
+
+<Accordion title="Why run the optimizer beside the engine instead of inside it?">
+The standard engine is thousands of lines of hard-won logic covering shifts, instances, parallel machines, lot streaming, and constraints that took years to get right. Rewriting it to be an optimizer would put all of that at risk. A sidecar keeps the engine untouched as the default scheduler, the warm-start seed, and the fallback, so the optimizer can be added, tuned, or swapped without any chance of breaking the plans the shop relies on.
+</Accordion>
+
+<Accordion title="What is the single seam the sidecar uses to talk to the engine?">
+The sidecar reaches into the engine through exactly one injectable hook: the ability to supply the global order in which jobs are scheduled for a run. The multi-run layer feeds different candidate orderings through this seam and scores each resulting plan. Everything else, from shift allocation to instance selection, runs exactly as it always has, which is what keeps the engine's behavior identical whether or not the optimizer is used.
+</Accordion>

@@ -1,0 +1,76 @@
+---
+title: "What Happens When You Discard an Optimized Schedule"
+description: "Discarding an optimizer proposal leaves your committed schedule byte-for-byte unchanged. Here is exactly what happens when you decline a plan in EDGEBIC."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - discard optimized schedule
+  - optimizer deferred apply
+  - schedule optimization safety
+  - production schedule optimizer
+  - reject optimization proposal
+  - finite capacity scheduling
+targetPhrase: "discard an optimized schedule"
+wordCount: 1440
+readingTime: 7
+faqQuestions:
+  - question: "What happens to my schedule when I discard an optimizer proposal?"
+    answer: "Nothing changes. The optimizer holds its proposed plan in memory and writes nothing to your database until you Accept. When you Discard, that in-memory proposal is thrown away and your committed schedule stays exactly as it was, byte for byte. No operation moves, no history is touched, no log entry is written. Discarding is a genuine no-op on your data, which is what makes running the optimizer risk-free."
+  - question: "Is discarding an optimized plan reversible?"
+    answer: "There is nothing to reverse, because discarding never changed anything. Unlike Accept, which commits the new plan and records the change, Discard simply drops the proposal and leaves your schedule untouched. You are already in the state you would want to return to. If you discard and later wish you had kept the plan, you rerun the optimizer with the same settings and, thanks to determinism, it produces the same proposal again."
+  - question: "Do I lose the optimizer's work if I discard it?"
+    answer: "You lose only the specific proposal, and you can regenerate it. Because the optimizer is deterministic, running it again with the same schedule, the same preset, and the same time budget yields the same plan. So a discard is not a permanent loss of insight; it is a decision not to apply this proposal right now. If circumstances change and you want it back, the same run reproduces it."
+qaQuestions:
+  - question: "I ran the optimizer, did not like the trade-offs, and clicked Discard. Did I just corrupt my schedule?"
+    answer: "No. Discard is the safe exit. The optimizer never touched your committed schedule while you were reviewing the proposal, so declining it leaves you exactly where you started. Your dates, your assignments, and your completed work are all unchanged. The only thing that happened is that the proposal in memory was released. You can go back to your normal workflow as if you had never opened the optimizer."
+  - question: "The optimizer suggested a plan but the situation changed while I was reviewing it. Should I Accept or Discard?"
+    answer: "Discard and rerun. If the underlying schedule changed after the proposal was built, applying a stale plan could reintroduce work that has since moved. EDGEBIC guards against this with staleness protection, which blocks an Accept built on an out-of-date snapshot. The clean move is to Discard the old proposal, which changes nothing, then run the optimizer fresh against the current schedule so the plan reflects reality."
+---
+
+**Discarding an optimized schedule leaves your committed plan byte-for-byte unchanged: the optimizer writes nothing until you Accept, so declining a proposal simply releases it from memory.** No operation moves, no history is touched, no log entry is written. Discard is a genuine no-op on your data.
+
+EDGEBIC by User Solutions builds the optimizer around a deferred-apply model precisely so that trying it costs you nothing. The proposal you review is held in memory and never committed on its own. Understanding what Discard does, and does not do, is what makes the optimizer safe to run whenever you are curious. For the wider optimizer picture, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## The optimizer proposes; you dispose
+
+Every optimizer run ends the same way: with a proposal, not a change. The optimizer searches or solves, produces its best plan, checks it against your baseline and the safety gate, and then stops. It hands you a comparison and waits. At that moment your committed schedule is still your committed schedule. Nothing has been written.
+
+You then make one of two decisions. Accept commits the proposed plan and records the change so there is an audit trail of what moved and why. Discard walks away and leaves everything as it was. The optimizer never makes that decision for you. This is the deferred-apply contract, and it is the reason the optimizer can never surprise you with a change you did not sanction. The Accept side of this is covered in [what happens when you accept an optimized schedule](/blog/what-happens-when-you-accept-an-optimized-schedule).
+
+## What Discard touches: nothing
+
+When you Discard, the only thing that happens is that the in-memory proposal is released. Your schedule data is not read, not rewritten, not diffed, not logged. Because the proposal lived entirely in memory and never made it to your database, there is nothing to roll back. You are simply left in the exact state you were in before you ran the optimizer.
+
+This is a stronger promise than "we undo the change." There is no change to undo. A system that applied the plan and then reverted it on Discard would leave fingerprints: a log entry, a timestamp, a momentary window where the wrong plan was live. EDGEBIC leaves none of that, because it never applied anything in the first place. Your committed plan after a Discard is identical, down to the byte, to your committed plan before you ran the optimizer.
+
+## Why byte-for-byte matters
+
+"Byte-for-byte unchanged" is not a figure of speech. It is a property the optimizer is built and tested to guarantee. A Discard must leave your database exactly as it found it, with no stray writes, no reordered rows, no touched timestamps.
+
+That guarantee matters because a schedule is a shared source of truth. Supervisors, material staging, and any downstream report all read from it. If a Discard left even a subtle mark, you could not treat the optimizer as a truly optional tool; you would have to wonder, after every experiment, whether something shifted. Because Discard is a true no-op, you never have to wonder. You can run the optimizer, study the proposal, decline it, and know with certainty that your floor is exactly where you left it.
+
+## Discard plus determinism means no lost work
+
+A fair worry about declining a proposal is that you are throwing away the optimizer's effort. In EDGEBIC you are not, because the optimizer is deterministic. Run it again with the same schedule, the same preset, and the same time budget, and it produces the same plan. Determinism is covered in [determinism and reproducibility in schedule optimization](/blog/determinism-and-reproducibility-in-schedule-optimization).
+
+So a Discard is a decision about timing, not a permanent loss. If you decline a plan and later decide you want it after all, and nothing has changed in the meantime, you rerun the optimizer and the same proposal returns. That turns Discard into a low-stakes choice. You are never gambling that clicking away destroys an insight you cannot recover.
+
+## When Discard is the right move
+
+Discard is the correct choice in several everyday situations. The obvious one is when you read the comparison and decide the trade-offs are not worth it: the plan shaves a few hours of setup but disturbs more of the floor than you want this week, so you decline and keep your current schedule.
+
+A subtler case is a stale proposal. If the underlying schedule changed while you were reviewing, applying the old plan could reintroduce moves that no longer make sense. EDGEBIC blocks that automatically with staleness protection, which refuses an Accept built on an out-of-date snapshot, described in [staleness protection in the optimizer](/blog/staleness-protection-in-the-optimizer). The right response is to Discard the stale proposal, which safely changes nothing, and rerun the optimizer against the current schedule. Discard is also simply the way you back out of an exploratory run you started just to see what the optimizer would suggest.
+
+## The pairing that makes the optimizer safe
+
+Discard works hand in hand with two other protections. The never-worse guarantee means any plan the optimizer offers is at least as good as your baseline, so Accept is never a downgrade. The deferred apply means nothing lands until you Accept, so Discard is always available as a clean exit. Together they let you treat the optimizer as a consultation rather than a commitment.
+
+You run it, you read the deltas, and you choose. Accept and the improvement is yours, recorded and auditable. Discard and you are exactly where you started, with the option to regenerate the same plan later. There is no path where running the optimizer leaves you worse off, and Discard is the reason.
+
+## The bottom line
+
+Discarding an optimized schedule is a true no-op: the optimizer writes nothing until you Accept, so declining a proposal releases it from memory and leaves your committed plan byte-for-byte unchanged. There is nothing to roll back because nothing was applied, and thanks to determinism you can regenerate the same proposal later if you change your mind. Discard is the clean exit that makes the optimizer safe to run on a whim, whether you are declining a trade-off or backing out of a stale proposal. Explore the platform at [EDGEBIC](/edgebic).

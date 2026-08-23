@@ -1,0 +1,181 @@
+---
+title: "E2 Shoptech to EDGEBIC: The Data Mapping Reference"
+description: "E2 Shoptech data export scheduling field by field: map parts, work centers, routings, jobs and hours into EDGEBIC masks, with conversions and upsert rules."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - E2 Shoptech data export scheduling
+  - E2 field mapping scheduling
+  - E2 routing export
+  - import mask field reference
+  - E2 work center export
+  - ERP data mapping scheduling
+targetPhrase: "E2 Shoptech data export scheduling"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "Which columns must an E2 export contain before EDGEBIC will import it?"
+    answer: "Each entity type has a short mandatory list and everything else is optional. Parts need a part name. Work centers need a name. Routings need end product, step name, an operation flag, and hours required. Jobs need product, quantity, a reference, and a job date. Actuals need job number, work center name, and the actual date. If a mandatory field is unmapped in the mask, the run aborts before reading a single row."
+  - question: "How do I map E2 standard times that are quoted per lot rather than per piece?"
+    answer: "Use a conversion factor on that mask column. A routing time quoted per 100 pieces becomes per piece with a factor of 0.01, and a setup time in minutes becomes hours with 0.016667. The multiplication happens before the value is stored, so the file needs no pre-processing. Factors are saved with the mask, which makes the conversion permanent, repeatable, and auditable through the per-run log."
+  - question: "In what order should E2 files be imported?"
+    answer: "Dependency order: parts first, then work centers, then routings, then open jobs, then actuals. Routings reference both parts and work centers, and jobs reference parts, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but a record created that way carries only the name it was given."
+  - question: "How does EDGEBIC handle a shop with more than one location in E2?"
+    answer: "By scheduling scope rather than by ERP structure. If the locations share machines or transfer work between them, import them into one database and use departments to group each location's work centers, because the engine can only balance load across resources it can see. If each location plans independently, a database per location keeps files small and each planner's view focused."
+qaQuestions:
+  - question: "Our part numbers come out of E2 with leading zeros in one export and without them in another. Will that create duplicate parts?"
+    answer: "Yes, and this is the one mismatch that case-insensitive matching cannot rescue you from. Natural-key lookups ignore case, so BRKT-A and brkt-a resolve to the same record, but 0000123 and 123 are genuinely different strings and will create two parts. The fix is on the export side and takes one pass: make every export render the identifier the same way, usually by formatting the column as text with the padding kept. Run a quick distinct-values check across your part file and your routing file before the first import, because a mismatch caught then costs minutes, while the same mismatch caught after routings are loaded means a routing chain pointing at a part with no demand."
+  - question: "Our E2 routings quote setup in minutes and run time per piece, but a few operations quote run time per lot of 50. Can one file carry both?"
+    answer: "Yes. A conversion factor is set per mask column, not per file, so you point one factor at the setup column and another at the run-time column, and they apply independently on every row. Setup minutes to hours is 0.016667. A run time quoted per lot of 50 becomes per piece with 0.02, and one quoted per piece needs no factor at all. The catch is that a single column has to be consistent, so if some rows quote run time per piece and others per lot in the same column, split them into two columns or two files. The per-run log records the imported value on every row, so the conversion is auditable after the fact."
+---
+
+**Mapping E2 Shoptech data into EDGEBIC is a column-mapping exercise rather than a development project: you export parts, work centers, routings, open jobs, and optionally logged hours to Excel or CSV, then drag each source column heading onto the matching EDGEBIC field once and save it as a reusable import mask.** This reference lists what maps to what, which columns are mandatory, how unit conversion and blank cells behave, and what every row outcome means when a run finishes.
+
+EDGEBIC by User Solutions integrates with E2 through those masks rather than a certified connector, so nothing is installed inside the ERP and nothing enters its upgrade path. If you have not read the end-to-end version, start with the [complete E2 Shoptech integration guide](/blog/edgebic-e2-shoptech-integration-guide). This post is the lookup table you keep open while building masks.
+
+## The load order
+
+Import in dependency order. Later files reference records that earlier files created.
+
+| # | E2 export | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Parts | Product | Nothing |
+| 2 | Work centers | Workcenter | Nothing |
+| 3 | Routings / operations | BOR (bill of routing) | Parts and work centers |
+| 4 | Open jobs | SalesOrder | Parts |
+| 5 | Logged hours (optional) | Actuals | Scheduled jobs |
+
+Two entity types have no E2 origin and are built from a spreadsheet you write yourself: **Shift** (one row per shift with a start and end pair per weekday, a blank pair meaning the day is off) and **PlantHoliday** (closures by name and date). These two define the calendar every date is computed against, so they deserve ten careful minutes rather than five.
+
+Auto-create is on by default, so a routing file naming a work center that has not been imported yet creates it on the fly. That is a useful safety net and a poor strategy: an auto-created work center has a name and nothing else, meaning one machine, no shift assignment, and no efficiency. Load the work center file properly first.
+
+## Parts to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Name` | Yes | The part number. Natural key, matched case-insensitively |
+| `Description` | | Descriptive text |
+| `UOM` | | Unit of measure |
+| `Unit_Cost`, `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Type` | | Raw Material, Work In Process, or Finished Good |
+| `Quantity_On_Hand`, `Supplier`, `Is_Active` | | Optional descriptive columns |
+
+Only the part name is required. Everything else can arrive later through a second, narrower refresh file, because blank cells preserve existing values on an update run. Watch identifier formatting across exports: matching ignores case but not leading zeros, so make every export render the part number the same way.
+
+## Work centers to Workcenter
+
+This is the file where scheduling accuracy is won or lost, because it carries capacity.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Name` | Yes | Natural key. Routing steps match on it |
+| `Number_Of_Instances` | | How many identical machines the center holds. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per routing step where present |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint so the engine can anchor around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts` | | Calendar assignment |
+| `Pieces_Per_Hour`, `Min_Batch_Size`, `Max_Batch_Size` | | Rate-based capacity and batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+`Number_Of_Instances` is the highest-value column on the page and the one most E2 exports do not carry, because a shop-floor ERP generally describes a work center as a capacity figure rather than a count of machines. A cell of two identical machines imported with one instance produces a plan roughly twice too long, and it fails quietly: nothing errors, the dates are simply wrong. Fill it deliberately for every multi-machine center. The arithmetic is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+If your export expresses capacity as an available-hours figure that already embeds a machine count, do not carry that number into `Capacity` unchanged while also setting instances, or you will count the same capacity twice. Pick one representation: instances plus the shift calendar is the one the engine reasons about best.
+
+## Machine pools have no export column
+
+Planners think in pools of interchangeable machines, and EDGEBIC models that as a **work center group**. The membership is not a static assignment: a routing step bound to a group re-evaluates every member on each reschedule, picks by strategy (earliest completion, primary first, or earliest start), and applies a per-member efficiency factor so a slower machine is chosen only when it still finishes first. Operations already started keep the machine they started on, because recorded work is never moved.
+
+None of that fits in an export column. Import the members as ordinary work centers, then create the group inside EDGEBIC and add them: a one-time configuration per pool, and one of the settings that most changes what the schedule looks like. See [how to create work center groups](/blog/how-to-create-work-center-groups-in-edgebic).
+
+## Routings to BOR
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Part number this routing builds |
+| `Sub_Prod` | Yes | Work center name (operation row) or component part (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; chaining happens automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and outside-processing transit time |
+| `Parallel_Op` | | Parent step's work center name for parallel or alternate steps |
+| `Res_Mult` | | Applicable machine instances for this step |
+
+`Op_Flag` is the field people get wrong first. True means "this row is an operation running on a work center." False means "this row is a component consumed at this point in the routing." Mixing them produces a routing full of work centers that are actually parts, and it is visible immediately in the graphical designer.
+
+### Why the import takes two passes
+
+A routing cannot be written row by row, because op 10 must point at op 20 and op 20 does not exist yet. So the import runs in two passes. Pass one validates each row, resolves or creates the parts and work centers it names, and buffers the row. Pass two groups the buffer by end product, sorts by sequence number, writes the steps, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished part so the routing renders connected. Check that visually after the first import: a routing missing its final link draws as a chain floating free of the part it builds.
+
+Two rules follow from the same mechanism. All of one part's steps must travel in one file, because a run wipes and recreates that part's steps on first reference, and splitting across two runs means the second wipe deletes the first run's work. And re-importing is safe for running jobs, because every scheduled job carries a frozen snapshot of the routing it was planned with.
+
+Outside processing maps cleanly as an operation row on a work center that represents the vendor, with the turnaround expressed as transit days. That keeps the outside time visible on the Gantt rather than buried inside one long step.
+
+## Jobs to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source |
+|---|---|---|
+| `Product_Name` | Yes | Part being built |
+| `Qty` | Yes | Job quantity |
+| `Ref_No` | Yes | Job number or order reference: shared references group into one order, jobs auto-number `{Ref}-{line}` |
+| `Job_Date` | Yes | Release or start date |
+| `Due_Date`, `Order_Date`, `Priority` | | Promise, entry, and ranking |
+| `Customer_Name` | | Auto-created when missing |
+| `Unit_Price`, `User_Notes` | | Optional |
+
+Two mask options control the date logic when the export carries only one date: one treats the job date as the due date, the other derives the job date backward from the due date. Choose the one matching how your export is built, once, on the mask.
+
+## Actuals
+
+Job number, work center name, and actual date are mandatory (`Job_Number`, `WorkCenter_Name`, `Actual_Date`). Hours and pieces (`Actual_Hours`, `Actual_Pieces`) are both optional, and either can be derived from the other using the operation's rate.
+
+The import always overwrites the days a file carries, so re-running a corrected extract fixes the numbers rather than doubling them. Days a file does not mention are preserved unless you explicitly ask for them to be cleared. Actuals import last, because each row has to find an operation on a job that is already scheduled.
+
+## Conversions, blanks, and zeros
+
+| Situation | Behavior |
+|---|---|
+| Minutes in the export | Conversion factor `0.016667` on that mask column |
+| Seconds in the export | Conversion factor `0.000278` |
+| Hours quoted per 100 pieces | Conversion factor `0.01` |
+| Blank cell on an update | Existing value preserved |
+| Zero in a cell on an update | Zero is written: it is a value, not a blank |
+| Unmapped column | Ignored entirely |
+| Mandatory field unmapped | Run aborts before reading any row |
+| One bad row | Fails alone and the run continues, unless you choose to abort on first error |
+
+Different columns in the same file can carry different factors, so a routing export mixing per-lot run times with per-changeover setup minutes lands correctly in a single run.
+
+## Reading the outcomes
+
+Every row resolves to **Created**, **Updated**, **Reused**, or **Failed**. Reused is the default for a record that already exists, so a weekly part file of 3,000 rows reporting Created 12, Reused 2,988 is the desired result rather than a failure. When counts look wrong, the per-run log file carries one line per row with the exact reason for every failure.
+
+## What import cannot bring, and why it matters
+
+The settings that most differentiate a schedule have no column in any ERP export: the sequence-dependent setup matrix, operator skills and certifications, work center group strategies, bottleneck anchoring, and lot streaming transfer batches. Those are configured once in EDGEBIC and then apply to every imported job afterward. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) explains why one mask design serves every ERP.
+
+The [ProShop](/blog/proshop-to-edgebic-data-mapping-reference) and [IQMS / DELMIAworks](/blog/iqms-delmiaworks-to-edgebic-data-mapping-reference) references show how little the method changes from one platform to the next, and the [ERP scheduling add-on page](/erp-scheduling-add-on) frames the category.
+
+<Accordion title="Which columns must an E2 export contain before EDGEBIC will import it?">
+Each entity type has a short mandatory list and everything else is optional. Parts need a part name. Work centers need a name. Routings need end product, step name, an operation flag, and hours required. Jobs need product, quantity, a reference, and a job date. Actuals need job number, work center name, and the actual date. If a mandatory field is unmapped in the mask, the run aborts before reading a single row.
+</Accordion>
+
+<Accordion title="How do I map E2 standard times that are quoted per lot rather than per piece?">
+Use a conversion factor on that mask column. A routing time quoted per 100 pieces becomes per piece with a factor of 0.01, and a setup time in minutes becomes hours with 0.016667. The multiplication happens before the value is stored, so the file needs no pre-processing. Factors are saved with the mask, which makes the conversion permanent, repeatable, and auditable through the per-run log.
+</Accordion>
+
+<Accordion title="In what order should E2 files be imported?">
+Dependency order: parts first, then work centers, then routings, then open jobs, then actuals. Routings reference both parts and work centers, and jobs reference parts, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but a record created that way carries only the name it was given.
+</Accordion>
+
+<Accordion title="How does EDGEBIC handle a shop with more than one location in E2?">
+By scheduling scope rather than by ERP structure. If the locations share machines or transfer work between them, import them into one database and use departments to group each location's work centers, because the engine can only balance load across resources it can see. If each location plans independently, a database per location keeps files small and each planner's view focused.
+</Accordion>

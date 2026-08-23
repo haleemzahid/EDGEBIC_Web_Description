@@ -1,0 +1,146 @@
+---
+title: "Backward Scheduling a Job From Its Due Date in EDGEBIC"
+description: "Schedule a 40-piece order backward so it finishes just in time, reserve the delivery lead time, and see what happens when the plan does not fit, with full date arithmetic."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - backward scheduling walkthrough
+  - just in time scheduling
+  - schedule from due date
+  - end item lead time
+  - backward infeasible fallback
+  - right-aligned scheduling
+targetPhrase: "backward scheduling walkthrough"
+wordCount: 1850
+readingTime: 9
+faqQuestions:
+  - question: "What does backward scheduling do in EDGEBIC?"
+    answer: "Backward scheduling places an entire order as late as possible so its last operation ends by the due date, the Just-In-Time discipline. Instead of starting early and letting slack pile up at the end, the engine right-aligns the work to the due date and leaves the slack in front. It reduces inventory holding and work-in-process age at the cost of downstream slack, so EDGEBIC treats it as opt-in per order with automatic fallback to forward scheduling whenever the just-in-time plan cannot fit."
+  - question: "How does backward scheduling reserve delivery lead time?"
+    answer: "Each product carries an end-item lead time in calendar days: the cure, inspection, or freight tail after the last machine stops. A backward job targets the due date minus that lead time, so manufacturing finishes early enough for the delivery tail to land exactly on the due date. Without this reservation the job would finish its last operation on the due date and then be born late by the length of the tail, defeating the purpose. The tail shows on the Gantt as a display-only bar that consumes no machine capacity."
+  - question: "What happens when a backward job does not fit before its due date?"
+    answer: "The whole order rolls back and forward-schedules from the earliest start, so backward never fails where forward would have succeeded. The job is recorded as backward-infeasible with the forward window it actually produced. Depending on a site setting, EDGEBIC either accepts that forward plan silently or holds the run and shows a popup listing each job with its reason and forward dates, where the planner can accept, adjust the due date or start and re-run, or cancel with nothing persisted."
+qaQuestions:
+  - question: "My customer needs 40 valve bodies by Friday the 17th and I do not want them finished and sitting in stock for a week. How do I schedule this so it finishes just in time?"
+    answer: "Set the order's direction to Backward and give it a real due date. In this walkthrough a 40-piece order with a Friday due date and a two-day delivery tail right-aligns so machining runs Thursday the 9th through Monday the 13th, deburr Tuesday, inspection Wednesday afternoon, and the delivery-ready date lands on Friday the 17th. Three days of slack sit in front of the job instead of after it, and Days Late reads zero on every screen."
+  - question: "If I turn a running job to backward, will it re-right-align to the due date?"
+    answer: "No. Backward applies only to jobs with no existing schedule rows. Once a job has been placed on a prior run, or once any step has actuals, a reschedule goes forward from its resume point rather than re-aligning to the due date. The precedence is fixed: an anchor pin wins first, then actuals, then planned-start pins, then backward for new jobs, then forward for everything else. Backward decides where a job is born; every later reschedule treats it like any other."
+---
+
+**Backward scheduling in [EDGEBIC by User Solutions](/edgebic) places an entire order as late as possible so its last operation ends by the due date, leaving the slack in front instead of behind.** This walkthrough schedules a 40-piece order backward with full date arithmetic, reserves its delivery lead time, and then shows what happens when the plan does not fit. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so the mechanics are visible in numbers.
+
+For the concept and the trade-off, [backward scheduling explained](/blog/edgebic-backward-scheduling-explained) and the generic [forward versus backward scheduling](/blog/forward-vs-backward-scheduling) are the companions.
+
+## The Cast: 40 Valve Bodies, Finish Just in Time
+
+Meridian Valve has a rush-but-not-early order:
+
+| Item | Value |
+|---|---|
+| Order | MO-7001, 40 pieces, direction Backward |
+| Earliest start (floor) | Monday July 6, 00:00 |
+| Due date | Friday July 17 |
+| End-item lead time | 2 calendar days (outgoing inspection plus freight) |
+| Shifts | Mon to Fri 08:00 to 16:00, 8 h/day, one instance per work center |
+
+The routing:
+
+| Step | Work center | Run/pc | Setup | Queue after |
+|---|---|---|---|---|
+| S10 Machine | Mill-1 | 0.5 h | 2 h | 0 |
+| S20 Deburr | Finish-1 | 0.2 h | 0 | 4 h |
+| S30 Inspect | QC-1 | 0.1 h | 0 | 0 |
+
+Durations: S10 is 0.5 x 40 + 2 = 22 h; S20 is 0.2 x 40 = 8 h; S30 is 0.1 x 40 = 4 h.
+
+## Step 1: Turn the Order Backward
+
+Set the direction. You can make Backward the site default in Options, then Schedule, then Default Scheduling Direction, so every new order inherits it. Or set it per order with the direction combo on the Drive Schedule grid. For this one order, set MO-7001 to Backward and make sure it has a real due date; a backward job without a genuine due date quietly schedules forward, and the session log says so.
+
+## Step 2: Compute the Due Anchor With the Lead-Time Reservation
+
+A date-only due date means finish by the end of that day, so the raw anchor is the next midnight, Saturday July 18 00:00. Then the engine subtracts the end-item lead time:
+
+```
+raw anchor = Sat Jul 18 00:00        (end of Friday the 17th)
+due anchor = Jul 18 00:00 minus 2 days = Thu Jul 16 00:00
+```
+
+All machining must finish by Wednesday's shift close so the two-day delivery tail lands the delivery-ready date on Friday the 17th. Without this reservation the job would finish its last operation on the due date and then be born two days late; the reservation is what makes backward scheduling honest about delivery.
+
+## Step 3: Place the Steps in Reverse
+
+The engine sorts the routing into reverse dependency order, placing successors first: S30, then S20, then S10. Each step is right-aligned to a deadline derived from its successors' actual placed starts.
+
+**S30 Inspect** is the terminal step, so its deadline is the due anchor, Thursday July 16 00:00. Right-align 4 hours in the last shift before it: **Wednesday July 15, 12:00 to 16:00**.
+
+**S20 Deburr** deadlines to S30's placed start (Wed 12:00) minus its own 4-hour queue handoff, so effectively Wednesday 08:00. Right-align 8 hours ending by then: **Tuesday July 14, 08:00 to 16:00**. Verify: end Tuesday 16:00 plus 4-hour queue equals Wednesday 08:00, which is at or before Wednesday 12:00. Good.
+
+**S10 Machine** deadlines to S20's placed start, Tuesday July 14 08:00. Right-align 22 hours ending by then, in 8-hour shifts working backward: Monday July 13 (8 h), Friday July 10 (8 h), and the last 6 h on Thursday July 9 (10:00 to 16:00). So **Thursday July 9 10:00 through Monday July 13 16:00**. Verify: end Monday 16:00 is at or before Tuesday 08:00, and the start Thursday 10:00 is at or after the floor of Monday July 6. Good.
+
+## Step 4: Read the Right-Aligned Result
+
+```
+Jul  6  7  8  9 10 11 12 13 14 15 16 17
+Mill-1        ## ## .  . ##              (Thu 9 -> Mon 13)
+Finish-1                    ##           (Tue 14)
+QC-1                           #         (Wed 15 pm)
+lead tail                       ....     Item Start Wed 16:00 -> Job End Fri 17
+                                    ^ Due Date, delivery-ready ON the day
+```
+
+Three days of slack (July 6 to 8) sit in front of the job instead of after it. The last machine stops Wednesday afternoon, which is the Item Start date; the delivery-ready Job End date is that plus the two-day tail, landing on Friday the 17th. Days Late reads zero on every surface, because every screen classifies lateness against the delivery-ready end, not the raw machine finish. The lead-time tail renders on the Gantt as a muted, display-only bar that consumes no work center capacity.
+
+## Step 5: When It Does Not Fit
+
+Change the due date to Thursday July 9 and rerun. The anchor becomes Friday July 10 00:00 minus 2 days, or Wednesday July 8 00:00. The total work of 34 hours plus a 4-hour queue needs more working hours than exist between the floor (Monday July 6) and Wednesday 00:00, which is two shifts, or 16 hours. The backward attempt fails on S10.
+
+Here EDGEBIC does the safe thing: the whole order rolls back cleanly, leaving zero residue, and forward-schedules from the floor instead, Monday July 6 08:00 onward. The job is recorded as backward-infeasible, with the forward window it actually produced and how many days late that window runs.
+
+What you see next depends on one site setting, in Options under When a Backward Job Doesn't Fit. On the default, the forward fallback is accepted silently and the infeasible job is simply listed for anyone who asks. Set it to Show popup and the run holds without persisting; a dialog lists each job with its reason and its forward start and end dates, plus editable due date, start date, and priority columns. The planner can accept the forward plan, adjust the dates and re-run, or cancel with nothing written to the database.
+
+## Direction Precedence, in One Table
+
+Backward is one rule among five, and it only wins when the higher ones do not apply:
+
+| Priority | Wins when | Why |
+|---|---|---|
+| 1. Anchor | a step is pinned to a target start (a bottleneck anchor) | a user pin is harder than a due date |
+| 2. Actuals | any step has actual dates | once work started, as-late-as-possible is meaningless |
+| 3. Planned pins | a step carries a planned start date | the planner expressed forward intent |
+| 4. Backward | the job is new and has a real due date | only now is right-alignment safe |
+| 5. Forward | everything else | the historical default |
+
+This is also why backward is new-jobs-only: a job already scheduled reschedules forward from its resume point rather than re-aligning to the due date. Backward decides where a job is born; every later reschedule treats it like any other.
+
+## What This Walkthrough Proves
+
+1. **Backward right-aligns the whole order.** Slack sits in front, not behind, so the item finishes just in time.
+2. **Lead time is reserved, not forgotten.** The job targets the due date minus the delivery tail, so the delivery-ready date lands on the due date.
+3. **Deadlines come from placed starts.** Each step's deadline is its successors' actual scheduled start, so capacity-forced moves ripple correctly upstream.
+4. **Fallback is automatic and clean.** A job that cannot fit forward-schedules instead, with zero residue, and never throws.
+5. **Precedence is fixed.** Anchor, then actuals, then pins, then backward, then forward, and backward is new-jobs-only.
+
+For the mistakes that trip up new backward users, [backward scheduling mistakes](/blog/backward-scheduling-mistakes-edgebic) is worth a read, and when backward meets a bottleneck anchor, [combining anchor and backward scheduling](/blog/combining-toc-anchor-and-backward-scheduling-edgebic) shows how precedence plays out.
+
+## From One Order to a JIT Plant
+
+Backward scheduling is how a make-to-order shop keeps finished goods off the shelf until the customer needs them. The make-to-order fit is covered in [EDGEBIC for make-to-order shops](/blog/edgebic-for-make-to-order-shops-backward-scheduling), and the forward default it inverts is in [quote to ship](/blog/quote-to-ship-in-edgebic).
+
+User Solutions has scheduled to hard customer dates since 1991, work that took GE Railcar from 30 percent to 90 percent on-time. [Contact us for a demo](/contact-us) and bring one due-date-driven order: we will schedule it backward with you.
+
+<Accordion title="What does backward scheduling do in EDGEBIC?">
+Backward scheduling places an entire order as late as possible so its last operation ends by the due date, the Just-In-Time discipline. Instead of starting early and letting slack pile up at the end, the engine right-aligns the work to the due date and leaves the slack in front. It reduces inventory holding and work-in-process age at the cost of downstream slack, so EDGEBIC treats it as opt-in per order with automatic fallback to forward scheduling whenever the just-in-time plan cannot fit.
+</Accordion>
+
+<Accordion title="How does backward scheduling reserve delivery lead time?">
+Each product carries an end-item lead time in calendar days: the cure, inspection, or freight tail after the last machine stops. A backward job targets the due date minus that lead time, so manufacturing finishes early enough for the delivery tail to land exactly on the due date. Without this reservation the job would finish its last operation on the due date and then be born late by the length of the tail, defeating the purpose. The tail shows on the Gantt as a display-only bar that consumes no machine capacity.
+</Accordion>
+
+<Accordion title="What happens when a backward job does not fit before its due date?">
+The whole order rolls back and forward-schedules from the earliest start, so backward never fails where forward would have succeeded. The job is recorded as backward-infeasible with the forward window it actually produced. Depending on a site setting, EDGEBIC either accepts that forward plan silently or holds the run and shows a popup listing each job with its reason and forward dates, where the planner can accept, adjust the due date or start and re-run, or cancel with nothing persisted.
+</Accordion>

@@ -1,0 +1,99 @@
+---
+title: "A Job Was Booked During a Machine Downtime Window"
+description: "When a job schedules inside a maintenance window, the closure was almost always entered after the last run. How to model machine downtime today, and how to clear the booking."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job booked during downtime
+  - scheduled inside maintenance window
+  - downtime event not respected
+  - recurring downtime scheduling
+  - re-run schedule after downtime
+  - downtime work center mismatch
+targetPhrase: "job booked during downtime"
+wordCount: 1330
+readingTime: 7
+faqQuestions:
+  - question: "Why did a job schedule inside a machine's downtime window?"
+    answer: "Almost always because the closure was entered after the last scheduling run, so the plan predates the block. The engine subtracts unavailable hours from capacity before it allocates, so a job scheduled before the block existed still sits inside it. Re-run scheduling for the affected job and the engine routes the work around the window. The other common cause is that the closure was entered against a different work center, shift, or date than the one the job actually runs on."
+  - question: "How do I block a machine for maintenance in the current release?"
+    answer: "With a per-day capacity override on that work center, that shift, and that date. Type the reduced hours, or zero for a full day out, and add a reason such as preventive maintenance. The override replaces the shift formula for that day and the scheduler honors it on the next run. The engine also understands standalone downtime records, but the current release has no screen for creating them, so the override is the route that actually exists."
+  - question: "Does blocking a machine automatically move the jobs already scheduled through it?"
+    answer: "No. Entering an override or a holiday blocks that time for future scheduling, but it does not reschedule jobs already placed there. You have to re-run scheduling for the affected jobs so the engine regenerates their plans with the block in place. Enter the closure first, then schedule; doing it the other way round leaves the existing plan sitting in the window until you re-run."
+qaQuestions:
+  - question: "We booked preventive maintenance for next Wednesday, but a job still shows running on that machine all Wednesday. Did the block not take?"
+    answer: "If you entered it as a per-day capacity override then it almost certainly took, and the plan simply predates it. The job was scheduled before Wednesday was reduced, and entering the block does not retroactively move work already placed there. Re-run scheduling for that job and the engine will route it around Wednesday. If it still lands in the window after a clean run, check that the override is on the same work center, the same shift, and the same date the job actually runs on, because a mismatch on any of the three is the other cause. And check that you entered it somewhere that exists: there is no separate downtime screen in this release, so a maintenance day is an override, not a downtime record."
+  - question: "We want an hour of maintenance every Friday afternoon on one machine. What is the right way to model a weekly block?"
+    answer: "There is no weekly recurrence to lean on, so pick between two honest options. If the hour is genuinely lost every week, define that machine's shift hours net of it: give the work center its own calendar with a shorter Friday, and the hour stops being schedulable permanently with nothing to maintain. If Friday afternoons vary, enter a per-day capacity override on each affected Friday with the reduced hours and a reason. What you cannot do is create a recurring downtime record, and the plant holiday recurrence will not help either, because it matches the same month and day each year rather than a weekday. Netting it into the shift is the low-maintenance answer for a standing block."
+---
+
+**A job scheduled inside a maintenance window was almost always planned before the closure was entered: the plan predates the block.** The engine subtracts unavailable hours from a machine's capacity before it allocates, so a fresh scheduling run routes the work around the window. The less common cause is a closure entered against a different work center, shift, or date than the one the job runs on.
+
+[EDGEBIC by User Solutions](/edgebic) reduces a work center's capacity before scheduling allocates against it, and when a booking lands inside a blocked window anyway, the anomaly report flags it. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), covers how to model machine downtime in the current release, why the booking happens, and how to clear it.
+
+## First, How Downtime Actually Gets Entered
+
+This trips people up, so it is worth stating plainly before the diagnosis.
+
+The scheduling engine understands downtime as a first-class idea: a block of unavailable time inside a shift, either one-off or recurring on a weekday, subtracted from capacity before any job is placed. That behavior is real and the capacity arithmetic honors it.
+
+What the current release does not have is a screen for creating downtime records. There is no downtime event editor, no recurrence picker, and no scheduled-versus-unscheduled type field. So when you need to take a machine out for maintenance, you have two routes that actually exist:
+
+- **A per-day capacity override** on that work center, shift, and date. Type the reduced hours, or zero to take the day out entirely, and add a reason. This is the right answer for a specific maintenance day and it is what the rest of this post assumes.
+- **Shorter shift hours** on that work center's own calendar, if the loss is standing and weekly. A machine that gives up an hour every Friday can simply have a shorter Friday, which never needs maintaining.
+
+For anything plant-wide and dated, a partial plant holiday blocks the window across every work center at once. The full layering is in [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained), and [how to block a machine for a maintenance day](/blog/how-to-block-a-machine-for-a-maintenance-day-in-edgebic) walks the override screen.
+
+## Blocked Hours Are Subtracted Before Allocation
+
+For every machine and day, capacity starts from the shift hours and then has closures and overrides applied before any job is placed. A per-day override replaces the formula outright for that cell; a partial holiday subtracts its overlap. Either way, under normal conditions no job is placed inside the blocked window.
+
+The off-calendar check flags a booking that falls inside a blocked window as a warning. It is a warning rather than a critical error because the schedule is otherwise valid; it just crosses a block that was not in effect when the plan was made.
+
+This is separate from a whole-day plant closure, which is covered under [a job scheduled on a holiday](/blog/job-scheduled-on-a-holiday-edgebic). A job can dodge every plant holiday and still sit inside a machine-level block that was entered afterward.
+
+## Cause 1: The Block Was Entered After Scheduling
+
+This is the common case by a wide margin. The job was scheduled, then the maintenance window was entered, so the plan predates the block. Reducing a day's capacity blocks it for future scheduling but does not reach back and move work already placed there.
+
+**How to tell:** the override or holiday is newer than the job's last scheduling run, and the job sits squarely in the window.
+
+**Fix:** re-run scheduling for the affected job. The engine reads the reduced capacity and routes the operation around the window. See [how a schedule accounts for holidays and downtime](/blog/how-a-schedule-accounts-for-holidays-and-downtime) for how the subtraction works.
+
+## Cause 2: The Block Is on the Wrong Target
+
+If the booking still lands in the window after a clean re-run, the block and the booking do not line up. A per-day override is keyed to a work center, a shift, and a date, and all three have to match the operation you are trying to move.
+
+**How to tell:** the machine still shows its full default hours for that day, or the override sits on a shift the job does not run on. The overridden flag in the capacity grid is the fastest confirmation: if the day is not marked as overridden, the block is somewhere else.
+
+**Fix:** confirm the override names the same work center the job runs on, the shift it was allocated to, and the exact date. Correct whichever is wrong, then re-run scheduling for the jobs on that machine.
+
+There is a variant worth naming because it is the most common version of this cause: someone tried to enter the maintenance as a recurring block and there was nowhere to put it, so it never got entered at all. Recurrence does not exist for machine-level blocks in this release. A standing weekly window belongs in the shift definition; a specific date belongs in an override.
+
+## Confirming the Fix
+
+After entering or correcting the block and re-running scheduling, re-open the anomaly report and confirm the off-calendar finding returns zero rows for the job. On the Gantt, the operation should now sit before or after the window rather than across it. In the capacity grid, the day should show the reduced number with the overridden flag and your reason attached.
+
+## Prevention
+
+- **Enter the block before you schedule.** The order matters: reduce the day first, then run scheduling, and no job is ever placed inside it. Doing it afterward leaves the existing plan in the window until you re-run.
+- **Re-run after adding any block.** Any time you reduce capacity that overlaps existing work, run one scheduling pass over the affected jobs so their plans move out of the window.
+- **Put standing losses in the shift, not in repeated overrides.** If you find yourself typing the same override every week, the shift pattern is wrong. Give that machine its own calendar with honest hours and the maintenance stops being a weekly chore.
+- **Check the work center, shift, and date together.** All three key a per-day override, and a mismatch on any one of them means the block reduces capacity somewhere you were not looking.
+- **Audit after imports.** If calendars [arrive from your ERP](/edgebic-erp-integration), a scheduling pass and an anomaly-report read catch any window that was added out of order or against the wrong machine.
+
+<Accordion title="Why did a job schedule inside a machine's downtime window?">
+Almost always because the closure was entered after the last scheduling run, so the plan predates the block. The engine subtracts unavailable hours from capacity before it allocates, so a job scheduled before the block existed still sits inside it. Re-run scheduling for the affected job and the engine routes the work around the window. The other common cause is that the closure was entered against a different work center, shift, or date than the one the job actually runs on.
+</Accordion>
+
+<Accordion title="How do I block a machine for maintenance in the current release?">
+With a per-day capacity override on that work center, that shift, and that date. Type the reduced hours, or zero for a full day out, and add a reason such as preventive maintenance. The override replaces the shift formula for that day and the scheduler honors it on the next run. The engine also understands standalone downtime records, but the current release has no screen for creating them, so the override is the route that actually exists.
+</Accordion>
+
+<Accordion title="Does blocking a machine automatically move the jobs already scheduled through it?">
+No. Entering an override or a holiday blocks that time for future scheduling, but it does not reschedule jobs already placed there. You have to re-run scheduling for the affected jobs so the engine regenerates their plans with the block in place. Enter the closure first, then schedule; doing it the other way round leaves the existing plan sitting in the window until you re-run.
+</Accordion>

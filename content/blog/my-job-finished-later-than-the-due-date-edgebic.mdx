@@ -1,0 +1,92 @@
+---
+title: "My Job Finished After Its Due Date: Why, and What to Do"
+description: "A job scheduled past its due date has a handful of documented causes: capacity, direction, the lead-time tail, or a promise that never fit. How to tell which, and the fix for each."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job finished after due date
+  - job scheduled late
+  - late job production scheduling
+  - backward scheduling due date
+  - days late manufacturing schedule
+  - lead time tail scheduling
+targetPhrase: "job finished after due date"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "Why does the schedule show a job as late before its due date has even passed?"
+    answer: "Because the schedule is projecting, not reporting. If the plan already runs the last operation past the deliverable date, the job cannot make it, and every surface marks it late immediately rather than waiting for the calendar to catch up. A projected-late flag is an early warning that the promise is already broken on paper, which is exactly when you can still do something about it."
+  - question: "What is the lead-time tail and why does it push my finish date out?"
+    answer: "The lead-time tail is the delivery-ready time after the last machine stops: curing, outgoing inspection, freight. It is modeled as calendar days on the end item and consumes no machine capacity, but it does shift the true job-end date later than the last operation. A job whose last operation ends on the due date is actually late by the length of its tail, which is why late is measured against the delivery-ready date, not the last machine."
+  - question: "Does forward scheduling try to hit the due date?"
+    answer: "No. Forward scheduling starts every job as early as capacity allows and lets the finish date fall where it falls; the due date is a target it reports against, not a constraint it works toward. To make the engine work back from the due date and place the job as late as it can while still finishing on time, schedule that job backward instead."
+qaQuestions:
+  - question: "We set a job to schedule backward from its due date and it still came out late. How can a backward job miss?"
+    answer: "Backward scheduling right-aligns a job to its due date, but it cannot invent capacity that is not there. When there is no feasible window that finishes on time, the engine falls back to a forward schedule and reports the job as infeasible, with the forward start and end it could actually produce and how many days late that is. If your policy is set to show the popup, you see that list before anything is saved, and you can edit the due date, start date, or priority and re-run. A backward job that misses is telling you the promise never fit, not that the direction failed."
+  - question: "The last operation lands right on the due date, so why does the grid say two days late?"
+    answer: "The product carries a lead time, and late is measured against the delivery-ready date, which is the last operation plus that lead time. If the lead time is two calendar days, a last operation on the due date delivers two days after it. This is working as designed. If you want the job to actually deliver on the due date, schedule it backward: the backward pass targets the due date minus the lead time, so the tail lands on the due date rather than past it."
+---
+
+**A job that finishes after its due date is usually telling the truth about a constraint you did not fully account for: capacity that was already spoken for, a scheduling direction that was never aiming at the date, or a delivery-ready tail that pushed the real finish past the last machine.** The fix depends on which, and the schedule gives you enough to tell them apart in a couple of minutes.
+
+[EDGEBIC by User Solutions](/edgebic) reports lateness against the delivery-ready date and marks a job late the moment the plan cannot make it, before the calendar passes the due date. That early warning is the point: a projected-late job is one you can still rescue. This post extends the "starts later than expected" symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) to the finish date and the due date specifically.
+
+## First, Read What "Late" Is Measured Against
+
+Late is not measured at the last machine. It is measured at the delivery-ready date: the last work-center operation plus the product's lead time, the calendar-day tail for curing, inspection, or freight. That tail consumes no machine capacity, but it is real time, and every surface (the Drive Schedule grid's days-late column, the dashboard, the Gantt) agrees on it deliberately, so the number never disagrees screen to screen.
+
+Knowing that changes the first question from "why did the machine finish late" to "which of the causes below moved the delivery-ready date past the due date." Work them in order.
+
+## Cause 1: The Capacity Was Already Claimed
+
+Forward-scheduled jobs are placed in priority order: lower priority number first, then start date, then due date. A job that finishes late is often standing behind higher-priority work that took the capacity first, or waiting on a slow predecessor branch that a downstream join cannot start without.
+
+**How to tell:** walk the routing backward on the Gantt and find the long pole. If the finish is late because one upstream step ran days after you expected, that step is your cause, not the finish itself.
+
+**Fix:** re-rank priorities if this job genuinely outranks what is ahead of it, or attack the upstream delay (an alternate machine for the slow step, a second shift on the bottleneck). The [work center overload post](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers freeing a machine that is standing in the way.
+
+## Cause 2: You Are Scheduling Forward at a Job That Needs a Deadline
+
+Forward scheduling starts every job as early as capacity allows and lets the finish fall where it falls. The due date is a target it reports against, never a constraint it works toward. A job with a firm customer date and slack in front of it will happily start early, finish early, and still be reported against a date it was never steered toward, and if capacity is tight it can finish late without the engine ever having tried to hit the date.
+
+**How to tell:** the job's direction is forward, and it has a real due date it needs to respect.
+
+**Fix:** schedule that job backward from its due date. Backward placement right-aligns the work so it finishes on time with the slack deliberately in front. [Scheduling a job backward from its due date](/blog/how-to-schedule-a-job-backward-from-its-due-date-in-edgebic) is the step-by-step; the direction precedence rules (an actuals-started job always goes forward from its resume point, and a pinned bottleneck anchor outranks the due date) are covered in [TOC buffers and direction precedence](/blog/toc-buffers-and-direction-precedence-in-edgebic).
+
+## Cause 3: The Lead-Time Tail Ate the Margin
+
+A job whose last operation lands on the due date is late by the length of its lead-time tail, because the tail delivers after the last machine stops. Forward scheduling does not reserve the tail for you.
+
+**How to tell:** the last work-center operation finishes on or near the due date, yet the days-late column shows a positive number roughly equal to the product's lead time.
+
+**Fix:** schedule the job backward. The backward pass targets the due date minus the lead time, so the tail lands on the due date rather than past it. If you must keep the job forward, shorten the front of the schedule (priority, alternates) enough that the last operation finishes a full lead time early. Understanding the two dates every job carries, item start and job end, is covered in [EDGEBIC backward scheduling explained](/blog/edgebic-backward-scheduling-explained).
+
+## Cause 4: The Promise Never Fit
+
+Sometimes the honest answer is that no feasible schedule finishes on time. A backward job in this situation falls back to a forward schedule and is reported as infeasible, with the forward start and end it could actually produce and the number of days late.
+
+**How to tell:** the job was set to schedule backward, and it appears on the infeasible list rather than right-aligned to its date.
+
+**Fix:** this is a planning decision, not a bug. If your scheduling policy is set to show the fit popup, the run holds its result without saving and shows you each infeasible job with its reason and forward window, plus editable due date, start date, and priority columns. Adjust the promise you can move, re-run, and only then commit. If the policy accepts the forward schedule automatically, the same jobs are still listed for anyone who asks; the difference is whether you review before or after the save. Editing the start date there sets the earliest start only, never a pinned anchor, so the job stays backward.
+
+## Prevention
+
+- **Choose direction per job, not per plant.** Firm-date customer work belongs backward; make-to-stock and early-as-possible work belongs forward. [Configuring scheduling policy](/blog/how-to-configure-scheduling-policy-in-edgebic) sets the defaults and the infeasible-job behavior.
+- **Set lead times honestly.** A product whose curing and freight take three days should say so, or its due-date math will always be optimistic by three days.
+- **Watch the projected-late flag, not the calendar.** A job flagged late a week before its due date is a week of runway to re-rank, add capacity, or renegotiate. The [late jobs report](/blog/how-to-run-the-late-jobs-report-in-edgebic) collects them so none slips unseen.
+
+<Accordion title="Why does the schedule show a job as late before its due date has even passed?">
+Because the schedule is projecting, not reporting. If the plan already runs the last operation past the deliverable date, the job cannot make it, and every surface marks it late immediately rather than waiting for the calendar to catch up. A projected-late flag is an early warning that the promise is already broken on paper, which is exactly when you can still do something about it.
+</Accordion>
+
+<Accordion title="What is the lead-time tail and why does it push my finish date out?">
+The lead-time tail is the delivery-ready time after the last machine stops: curing, outgoing inspection, freight. It is modeled as calendar days on the end item and consumes no machine capacity, but it does shift the true job-end date later than the last operation. A job whose last operation ends on the due date is actually late by the length of its tail, which is why late is measured against the delivery-ready date, not the last machine.
+</Accordion>
+
+<Accordion title="Does forward scheduling try to hit the due date?">
+No. Forward scheduling starts every job as early as capacity allows and lets the finish date fall where it falls; the due date is a target it reports against, not a constraint it works toward. To make the engine work back from the due date and place the job as late as it can while still finishing on time, schedule that job backward instead.
+</Accordion>

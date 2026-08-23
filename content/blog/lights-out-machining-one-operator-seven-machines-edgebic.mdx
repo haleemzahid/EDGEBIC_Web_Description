@@ -1,0 +1,125 @@
+---
+title: "Lights-Out Machining: One Operator Starting Seven Machines in EDGEBIC"
+description: "Model setup-only staffing so one certified operator can start seven CNC mills in a day and let them run unattended, using the operator attend fraction, with the hour math shown."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - lights-out machining scheduling
+  - setup-only operator staffing
+  - operator attend fraction
+  - unattended machine scheduling
+  - one operator many machines
+  - cnc setup constraint
+targetPhrase: "lights-out machining scheduling"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "How does EDGEBIC model a machine that runs unattended after setup?"
+    answer: "With the operator attend fraction set to 0.0, which is the default. A skill step then books an operator only for its setup phase, not its run phase. One certified operator who sets up a machine in an hour spends one operator-hour per job, and the run hours book nobody, so the machine can continue into unstaffed evening or overnight hours. Setup always needs a person, so an unstaffable skill still fails visibly, but a machine that only needs a person to start it schedules lights-out."
+  - question: "Can one operator start more machines than there are hours in a shift in EDGEBIC?"
+    answer: "Yes, when the machines only need attention for setup. With setup-only staffing, each job costs one operator-hour of setup, so an eight-hour operator can start eight machines in a day. The run hours after each setup are unconstrained and proceed unattended. The ninth setup, having no operator hour left in the day, slides to the next day. The gate is on setup capacity, not on how many machine-hours run afterward."
+  - question: "What is the difference between attend fractions of 0.0, 0.5, and 2.0 in EDGEBIC?"
+    answer: "The attend fraction scales the run phase's operator cost per machine-hour. At 0.0 the run books nobody, so machines run lights-out after setup. At 0.5 one person tends two machines, so eight operator-hours cover about fifteen machine-hours a day counting setup. At 2.0 a two-person crew is needed, so each machine-hour books two operator-hours and one qualified operator caps a machine's run at about half the shift. Setup always books one operator regardless of the fraction."
+qaQuestions:
+  - question: "We run a lights-out CNC cell overnight with one setter loading jobs during the day. How do I schedule that so the setter is the constraint, not the machines?"
+    answer: "Give the setup step a required skill, certify the setter, and set the operator attention to 0.0 so only setup books labor. In this walkthrough seven mills each need one hour of setup and nine hours of unattended run, and the one certified setter has eight hours a day. All seven start Monday, the setter is booked seven of his eight hours doing setups, and the machines run into the evening on their own. An eighth job fits Monday; a ninth setup slides to Tuesday. The setter's setup hours are the real constraint, exactly as on the floor."
+  - question: "If the run hours book nobody, does that mean a machine can start on a completely unstaffed day?"
+    answer: "The run hours can spill into unstaffed hours, but a step with setup can never start unstaffed, because setup always needs a person. So a machine begins only on a day its setter is available, then runs itself past the shift, overnight, or into a weekend if machine capacity allows. That is the honest split: the person is required to start the work, the machine is not required to have a person to keep running. A skill with no qualified, rostered operator still fails loudly at setup rather than pretending it started itself."
+---
+
+**Lights-out machining in [EDGEBIC by User Solutions](/edgebic) is modeled with the operator attend fraction set to 0.0, so a skill step books a certified operator only for its setup and lets the machine run unattended afterward.** This walkthrough has one setter start seven CNC mills in a single shift and leave them running overnight, with the exact hour math shown. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so the labor math is visible in numbers.
+
+This is the setup-only end of the attend-fraction dial introduced in [scheduling a skill-gated job with a certified operator](/blog/scheduling-a-skill-gated-job-with-a-certified-operator-edgebic). Where that walkthrough gated fully attended welds, this one gates only the setup of otherwise self-running machines. For the concept, [operator and skill scheduling explained](/blog/edgebic-operator-and-skill-scheduling-explained) is the companion.
+
+## The Cast: Seven Mills, One Setter
+
+Nightshade CNC runs a lights-out cell:
+
+| Item | Value |
+|---|---|
+| Work centers | Seven CNC mills, one instance each, Day Shift Mon to Fri 08:00 to 16:00 (8 h) |
+| Skill | CNC-Setup |
+| Operator | Joe, certified CNC-Setup, rostered Day Shift Mon to Fri, 8 h/day |
+| Jobs | Seven jobs, each a step of 1 h setup plus 9 h run, required skill CNC-Setup |
+
+The key configuration: each step's Operator attention (the attend fraction) is 0.0, meaning setup-only. A person loads and sets up the machine, then it runs the program on its own.
+
+## Step 1: The Operator Cost Is Setup Only
+
+The attend fraction scales the run phase's operator cost per machine-hour. At 0.0, the run books nobody. So per job, the operator cost is:
+
+```
+operator cost = setup hours x 1.0  +  run hours x fraction
+             = 1 x 1.0  +  9 x 0.0
+             = 1 hour of Joe per job
+```
+
+One hour of Joe, regardless of the nine hours the machine then runs by itself. Setup always books one operator, even at fraction 0.0, because a machine still needs a person to set up. That is what keeps a skill with no qualified operator failing visibly instead of silently pretending it started itself.
+
+## Step 2: Seven Machines Start Monday
+
+Run Drive Schedule. The engine holds a per-run operator-hours ledger keyed by operator, date, and shift, and it books Joe's setup hours as each job commits.
+
+- Jobs one through seven each need one hour of Joe's setup. Joe has eight hours Monday. The engine books him one hour per job, seven hours total, and starts all seven machines Monday. The nine run-hours per machine are unconstrained, because once setup is covered the pool affords unlimited machine-hours at fraction 0.0, so the machines run themselves into the unstaffed evening.
+- Joe ends Monday with seven of his eight hours booked to setups. Seven mills are running, most of them still cutting long after the day shift ends.
+
+This is the lights-out cell, scheduled honestly: one setter, seven machines, and the run hours flowing past the shift into the night.
+
+## Step 3: The Eighth and Ninth Jobs
+
+Add an eighth identical job. Its one-hour setup fits Monday: Joe's last free hour. Eight machines start Monday, Joe fully booked at eight hours.
+
+Add a ninth. Now Monday has no operator hour left for a setup, so the ninth setup slides to Tuesday, and that machine starts Tuesday morning. The gate is on setup capacity, not on machine run-hours. Joe can only start as many machines a day as he has setup hours, and the machines take it from there.
+
+That single behavior, the ninth setup sliding while the first eight machines run overnight, is the whole model in one picture: the person is the constraint on starting work, the machine is not the constraint on continuing it.
+
+## Step 4: The Spill-Day Contract
+
+The run hours are allowed to spill into unstaffed hours, but a step with setup can never start on an unstaffed day. So a machine begins only on a day Joe is available, then runs itself past the shift, overnight, or across a weekend if machine capacity allows. If Joe is on time off Monday, none of the machines start Monday; they all wait for his first day back, because there is no one to set them up. The person gates the start; the machine does not need a person to keep running.
+
+## The Attend Fraction, Across the Dial
+
+The same seven-mill cell behaves very differently at other fractions, and it is worth seeing the contrast:
+
+| Fraction | Meaning | Machine-hours one 8-hour operator affords per machine per day |
+|---|---|---|
+| 0.0 | Setup-only (this walkthrough) | unlimited run after the 1 h setup |
+| 0.5 | One person tends two machines | 1 setup hour plus 7 / 0.5 = 15 machine-hours |
+| 1.0 | Fully attended | the classic ledger, one operator-hour per machine-hour |
+| 2.0 | Two-person crew | a machine's run caps at (8 minus setup) / 2 run hours, then splits or slides |
+
+At 0.5, Joe's eight hours stretch across roughly fifteen tended machine-hours; at 2.0, a machine needs two people per hour, so one qualified operator caps a machine's day at about half the shift. Pick the fraction that matches how the work is actually staffed, and the schedule tells the truth about labor.
+
+One boundary to know: a step with zero setup and a fraction of 0.0 has no operator involvement at all, so the constraint is skipped entirely and it schedules as if it had no skill. Setup-only staffing depends on there being some setup to gate on.
+
+## What This Walkthrough Proves
+
+1. **The attend fraction models unattended running.** At 0.0 the run books nobody, so machines run lights-out after setup.
+2. **The setter is the constraint on starting.** One eight-hour operator can start eight machines a day, one setup hour each; the ninth slides.
+3. **Run hours are unconstrained after setup.** The machines flow past the shift into the evening and overnight.
+4. **Setup always needs a person.** An unstaffable skill fails visibly, and a step with setup never starts on an unstaffed day.
+5. **The dial spans real staffing models.** Setup-only, shared tending, fully attended, and crews are all one field.
+
+If a lights-out step ever books full attention when you set it to run unattended, verify the step actually stores a 0.0 attend fraction; the cause is almost always a fraction left at the wrong value, covered alongside other cases in [an operator with the right skill was not used](/blog/an-operator-with-the-right-skill-was-not-used-edgebic).
+
+## From One Cell to a Staffed Plant
+
+Setup-only staffing is how a small crew runs a big automated cell without the schedule pretending a person stands at each machine all night. It composes with the machine side and the fully attended side: the same plant can gate welds at 1.0 and mills at 0.0. For the CNC-specific fit, [EDGEBIC for CNC shops: operator skills](/blog/edgebic-for-cnc-shops-operator-skills) is the direct read, and for the round-the-clock capacity that lights-out running implies, [a multi-day job spanning day and night shifts](/blog/a-multi-day-job-spanning-day-and-night-shifts-edgebic) shows the shift side.
+
+User Solutions has scheduled automated and manual cells side by side since 1991, for customers from Cummins to the US Navy. [Contact us for a demo](/contact-us) and bring one lights-out cell: we will make your setter the constraint, not the machines.
+
+<Accordion title="How does EDGEBIC model a machine that runs unattended after setup?">
+With the operator attend fraction set to 0.0, which is the default. A skill step then books an operator only for its setup phase, not its run phase. One certified operator who sets up a machine in an hour spends one operator-hour per job, and the run hours book nobody, so the machine can continue into unstaffed evening or overnight hours. Setup always needs a person, so an unstaffable skill still fails visibly, but a machine that only needs a person to start it schedules lights-out.
+</Accordion>
+
+<Accordion title="Can one operator start more machines than there are hours in a shift in EDGEBIC?">
+Yes, when the machines only need attention for setup. With setup-only staffing, each job costs one operator-hour of setup, so an eight-hour operator can start eight machines in a day. The run hours after each setup are unconstrained and proceed unattended. The ninth setup, having no operator hour left in the day, slides to the next day. The gate is on setup capacity, not on how many machine-hours run afterward.
+</Accordion>
+
+<Accordion title="What is the difference between attend fractions of 0.0, 0.5, and 2.0 in EDGEBIC?">
+The attend fraction scales the run phase's operator cost per machine-hour. At 0.0 the run books nobody, so machines run lights-out after setup. At 0.5 one person tends two machines, so eight operator-hours cover about fifteen machine-hours a day counting setup. At 2.0 a two-person crew is needed, so each machine-hour books two operator-hours and one qualified operator caps a machine's run at about half the shift. Setup always books one operator regardless of the fraction.
+</Accordion>

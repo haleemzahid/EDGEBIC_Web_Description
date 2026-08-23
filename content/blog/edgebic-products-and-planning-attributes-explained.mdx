@@ -1,0 +1,169 @@
+---
+title: "Product Master Data in EDGEBIC: Planning Attributes Explained"
+description: "Product master data scheduling software explained: how EDGEBIC's product record drives routings, costing, lead time tails, and make-to-stock attributes."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - product master data scheduling software
+  - product planning attributes
+  - make to stock product setup
+  - end item lead time
+  - bill of routing status
+  - manufacturing item master
+  - product costing for quotes
+targetPhrase: "product master data scheduling software"
+wordCount: 2100
+readingTime: 11
+faqQuestions:
+  - question: "What does a product record control in production scheduling software?"
+    answer: "A product record is the master file every routing, manufacturing order, quote, and inventory movement points back at. In EDGEBIC it carries the identifier planners read on the Gantt, the unit of measure, the cost and sale price that feed quote margin, the lead time that defines the delivery-ready tail after the last operation, and the planning attributes that decide whether the item is built to stock or only against a customer order."
+  - question: "What is the difference between Product Id and Product Name in EDGEBIC?"
+    answer: "Product Id is the short identifier shown on routings, orders, quotes, and the schedule, and it is the only required field on the product form. Product Name is a secondary unique name, auto-generated unless you override it with your formal part number. The practical convention is to keep Product Id human and short, such as Widget-A, and keep numbering schemes in Product Name."
+  - question: "Does product lead time consume machine capacity?"
+    answer: "No. Lead time on a finished good is a delivery-ready tail measured in calendar days, not work booked on a machine. It runs from the end of the last work center operation (Item Start) to the moment the item is ready to ship (Job End). No work center allocation changes because of it, but backward scheduling reserves the window and the dashboard judges lateness against the delivery-ready end."
+  - question: "What does the BOR column on the product list tell you?"
+    answer: "The BOR column answers whether a product can be scheduled without opening the routing module. It shows one of exactly three values: Active BOR (one routing exists, the healthy state), No BOR (no routing yet, so the product cannot be scheduled), or a red multiple-BORs legacy warning meaning old data left more than one routing on the item and which one gets used is ambiguous."
+qaQuestions:
+  - question: "We have 400 part numbers and no idea which ones are actually schedulable. Where do we start?"
+    answer: "Start on the product list and group by the BOR column. It buckets your whole catalog into three values in one click: Has BOR, No BOR, and Multiple BORs (Legacy). Everything in the No BOR bucket cannot be ordered or scheduled until a routing exists, so that bucket is your build queue. Everything in the red legacy bucket resolves to more than one routing, which makes scheduling and quoting ambiguous, so that bucket is your cleanup queue. Most shops find the two buckets together are a fraction of the catalog and the rest is already fine."
+  - question: "Our quoted margins look wrong even though the schedule is accurate. What are we missing?"
+    answer: "Check Rollup Cost and Sale Price on the quoted products. Quote cost estimates and margin come from those two numbers, and they are the fields most often left at their import defaults. The documented behavior is that a new simulation uses the current values while existing quotes keep the figures they were created with, so a stale cost silently understates cost on every new quote until someone updates it. EDGEBIC warns when sale price is below rollup cost, but the warning does not block the save."
+---
+
+**Product master data in scheduling software is the file that tells the engine what you make, how you count it, what it costs, and how it should be planned.** In EDGEBIC by User Solutions, every routing step, every manufacturing order, every quote line, and every inventory movement points back at a product record. Get the product record right and the schedule, the quote, and the replenishment suggestion all inherit that accuracy. Get it wrong and the errors surface three screens away, where nobody thinks to look.
+
+This post is the capability overview: what the product record holds, why each group of fields exists, and when you actually need them. For the field-by-field setup sequence see [how to set up products in EDGEBIC](/blog/how-to-set-up-products-in-edgebic), and for the build-policy mechanics see [make-to-stock vs make-to-order](/blog/make-to-stock-vs-make-to-order-in-edgebic).
+
+## What a product record actually is
+
+A product is the master record for anything the system knows how to make, buy, or consume. That covers three roles at once:
+
+- **Finished goods** you sell, such as Widget-A.
+- **Sub-assemblies** consumed by other routings, such as Frame-S.
+- **Raw materials** that appear inside routings but never get a routing of their own, such as Steel-Plate-4mm.
+
+Nothing on the form switches between those roles. A product's role follows from how you use it. A product with a Bill of Routing is something you make. A product referenced as a material inside another routing is a component. A product flagged Procured is bought rather than made. Category and the Procured flag are how you keep the catalog organized along raw-material, work-in-process, and finished-good lines.
+
+That design choice matters when you migrate from an ERP that forces an item type. You do not need to reclassify anything. You import the catalog, build routings for the things you make, and the roles resolve themselves.
+
+## The identity fields, and which one people read
+
+Two names live on the record and they do different jobs.
+
+| Field | Required | What it does |
+|---|---|---|
+| **Product Id** | Yes | The identifier shown on routings, orders, quotes, the Gantt, and every grid |
+| **Product Name** | No | A secondary unique name, auto-generated unless you override it with a part number |
+| **Unit of Measure** | No | How the item is counted: Each, kg, m² |
+| **Category** | No | The grouping the product list uses by default, and a report filter |
+
+The rule that saves the most confusion later: keep Product Id short and stable, because a planner reads it on the Gantt and a kiosk operator reads it on the shop floor. Formal part numbers belong in Product Name. If you rename a product that routings or scheduled jobs already use, the system asks whether to update related references, and answering yes propagates the new name to the routing, the Gantt, and the work center detail views.
+
+Unit of measure carries one piece of scheduling relevance. Each unit definition has a scheduling behavior of hours, pieces, or both, which signals whether resources using that unit should be capacity-planned by time or by throughput. That signal is consumed at the work center level, where the capacity type is set. Keep the two consistent and nobody gets confused about why a paint booth measured in square metres schedules the way it does.
+
+## Routing readiness, visible from the catalog
+
+The product list carries a **BOR** column, and it is the fastest data-quality check in the application. It has exactly three values:
+
+| Cell | Meaning | Action |
+|---|---|---|
+| **Active BOR** | One routing exists | None; the product is schedulable |
+| **No BOR** | No routing yet | Build one before ordering the product |
+| **⚠️ N BORs (Legacy)** in red | The product resolves to more than one routing | Consolidate to a single routing |
+
+Because the column is a stable categorical value rather than free text, you can sort, filter, and group on it. One click buckets a 400-part catalog into schedulable, not-yet-schedulable, and needs-cleanup. The inline check or circle marker beside the product name carries the same information in a glyph.
+
+The legacy multi-routing condition deserves a word. Current practice is one routing per product, and the whole scheduling and quoting chain assumes it. A product that resolves to several routings makes it ambiguous which one drives the schedule, so every red row is a data-cleanup task rather than a configuration option. Getting your catalog clean here is part of the [greenfield setup sequence](/blog/edgebic-greenfield-setup-walkthrough).
+
+## Cost, price, and where they land
+
+Two money fields sit on the product and both feed quoting rather than scheduling:
+
+- **Rollup Cost** is the per-unit cost used when estimating a quote's cost and margin.
+- **Sale Price** is the revenue side of the same calculation.
+
+New quote simulations use the current values. Existing quotes keep the figures they were created with, because a quote is a historical document and rewriting its numbers retroactively would break the audit trail. That is the right behavior, and it also means a stale rollup cost quietly understates cost on every new quote until someone fixes it. If you quote a product, keep its cost current. See [quoting against real capacity](/blog/edgebic-quoting-guide) for how those numbers turn into a promise date and a margin.
+
+Quantity on hand is deliberately not editable on the product form. Stock changes go through inventory transactions so the audit trail stays intact, and on installations that do not use inventory the field is simply unused.
+
+## Lead time: the field that does two jobs
+
+Lead time is stored once, in calendar days, and it behaves differently depending on the product's role.
+
+On a **purchased or component item**, lead time back-schedules a planned order's release date: release equals due date minus lead time.
+
+On a **finished good**, lead time is the end-item tail: the window between the last work center operation and the moment the item is genuinely ready to ship. Packing, curing, paint drying, shipping prep. The schedule surfaces it as two columns:
+
+```
+Item Start = end of the last work center operation
+Job End    = Item Start + LeadTime calendar days
+```
+
+The tail consumes no machine capacity. It is time, not work. Job View and the scheduler Gantt draw it as a slate band after the job's last operation, the schedule grids show Item Start and Job End as separate columns, and the dashboard judges lateness against the delivery-ready end rather than the bare last operation.
+
+Worked example. Widget-A carries a lead time of 2. A job's last operation on Assembly-1 finishes Thursday at 14:00. Item Start is Thursday 14:00 and Job End is Saturday 14:00. If the due date is Friday, that job is late even though the machines finished a day early, because two days of packing push delivery-readiness past the promise. Scheduled backward instead, the engine would have aimed the last operation at Wednesday so the tail lands on the due date. That behavior is covered in the [backward scheduling material](/blog/forward-vs-backward-scheduling) and in the platform's own direction rules.
+
+Setting lead time to 0 collapses Item Start and Job End, so shops that do not need a tail never see one.
+
+## The planning attribute set
+
+Beyond identity, cost, and lead time, the product record carries the attributes that decide how an item is replenished. These are the inputs to inventory projection and master production scheduling, and EDGEBIC describes them as a connected planning capability rather than a bolt-on:
+
+| Attribute | What it decides |
+|---|---|
+| **Build Method** | Make-to-order, make-to-stock, or make-to-stock with a per-order override |
+| **Stocked** | Whether inventory transactions happen at all for this item |
+| **Reorder Method** | None, reorder point, or min/max |
+| **Lot Size Rule** | Exact shortfall, or round up to a multiple of the reorder quantity |
+| **Min / Max / Reorder Level / Reorder Quantity** | The trigger levels and refill targets |
+| **Safety Stock** | The buffer level; a replenishment trigger by default |
+| **Yield** | Good-unit fraction, expressed as a decimal in (0, 1] |
+| **Forecast Consumption Rule** | Greater-of, or firm demand consuming forecast first |
+| **Demand / Planning Time Fences** | How far out firm demand replaces forecast, and how far out committed rows are frozen |
+| **Setup Family** | The changeover group used for sequence-dependent setup |
+
+Two of these repay attention immediately.
+
+**Yield** inflates the suggested start quantity so that scrap does not become a shortage. If a replenishment calculation lands on 150 good units needed and yield is 0.90, the suggestion becomes the ceiling of 150 divided by 0.90, which is 167 units to start. Enter yield as a fraction, always: 0.92 for 92 percent, 1.0 for no scrap.
+
+**Setup Family** links the product to a changeover group so the sequence-dependent setup matrix can be maintained at family level instead of product-by-product. Ten products in two families need a 2-by-2 matrix instead of a 10-by-10 one. A product left unassigned acts as its own family, which means only product-level matrix entries apply to it and everything else falls back to the flat step setup time. See [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover) for the concept and the paint-shop math.
+
+## When you need which attributes
+
+You do not need the full set on day one. A useful order:
+
+1. **Always**: Product Id, unit of measure, category. Enough to build routings and orders.
+2. **Before you quote**: rollup cost and sale price on anything a customer sees.
+3. **Before you promise dates on finished goods**: lead time, if there is real post-production time.
+4. **When you carry stock**: build method, stocked flag, reorder method, and levels.
+5. **When changeovers hurt**: setup family, then the matrix.
+
+Everything past step 1 is additive. Nothing breaks because it is unset, and the [planning layer guide](/blog/edgebic-planning-guide) covers how the stock and forecast attributes feed the projection and MPS grids once you are ready for them.
+
+## What the product record does not do
+
+Saving a product never reschedules anything. Dropdowns update immediately, the lead-time tail redraws on Job View at once, and quote figures change for new simulations. Machine bookings move only on the next scheduling run. That separation is deliberate: master data edits should not silently rearrange the shop floor.
+
+The counterpart is deletion, which does cascade. Deleting a product removes its routing and flushes the production schedule rows tied to it, with no undo. Old products left in place cost nothing, so retire rather than delete.
+
+For the setup sequence, continue to [how to set up products in EDGEBIC](/blog/how-to-set-up-products-in-edgebic). For the failure modes and their symptoms, see [product setup mistakes](/blog/product-setup-mistakes-edgebic). And for the full platform picture, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) and the [product hub](/edgebic) tie the modules together.
+
+<Accordion title="What does a product record control in production scheduling software?">
+A product record is the master file every routing, manufacturing order, quote, and inventory movement points back at. In EDGEBIC it carries the identifier planners read on the Gantt, the unit of measure, the cost and sale price that feed quote margin, the lead time that defines the delivery-ready tail after the last operation, and the planning attributes that decide whether the item is built to stock or only against a customer order.
+</Accordion>
+
+<Accordion title="What is the difference between Product Id and Product Name in EDGEBIC?">
+Product Id is the short identifier shown on routings, orders, quotes, and the schedule, and it is the only required field on the product form. Product Name is a secondary unique name, auto-generated unless you override it with your formal part number. The practical convention is to keep Product Id human and short, such as Widget-A, and keep numbering schemes in Product Name.
+</Accordion>
+
+<Accordion title="Does product lead time consume machine capacity?">
+No. Lead time on a finished good is a delivery-ready tail measured in calendar days, not work booked on a machine. It runs from the end of the last work center operation (Item Start) to the moment the item is ready to ship (Job End). No work center allocation changes because of it, but backward scheduling reserves the window and the dashboard judges lateness against the delivery-ready end.
+</Accordion>
+
+<Accordion title="What does the BOR column on the product list tell you?">
+The BOR column answers whether a product can be scheduled without opening the routing module. It shows one of exactly three values: Active BOR (one routing exists, the healthy state), No BOR (no routing yet, so the product cannot be scheduled), or a red multiple-BORs legacy warning meaning old data left more than one routing on the item and which one gets used is ambiguous.
+</Accordion>

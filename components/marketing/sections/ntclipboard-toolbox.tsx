@@ -1,336 +1,184 @@
 'use client';
 
 import Link from 'next/link';
-import { Check, CircleCheck } from 'lucide-react';
+import { Check } from 'lucide-react';
 
-import { GridSection } from '@/components/marketing/fragments/grid-section';
-import { Button } from '@/components/ui/button';
-import { YouTubeFacade } from '@/components/ui/youtube-facade';
+import { Routes } from '@/constants/routes';
+
+/**
+ * The two EDGEBIC editions.
+ *
+ * The export name is unchanged on purpose: seven pages render this section, and
+ * keeping the name means they all pick up the new story without edits.
+ */
+
+type Edition = {
+  name: string;
+  price: string;
+  priceNote: string;
+  role: string;
+  body: string;
+  features: string[];
+  inherits?: string;
+  href: string;
+  cta: string;
+  isComplete?: boolean;
+};
+
+const editions: Edition[] = [
+  {
+    name: 'EDGEBIC APS',
+    price: '$25,000',
+    priceNote: 'Advanced planning and scheduling',
+    role: 'A plan the shop can actually run',
+    body: 'Finite capacity scheduling for a plant that already knows what it needs to build. Every date the plan gives you is one the machines, shifts and people can genuinely hit.',
+    features: [
+      'Finite capacity scheduling, forward and backward',
+      'Schedule optimization, never worse than the plan you had',
+      'Multi-shift capacity with holidays, downtime and overrides',
+      'The Planner view: jobs and machines on one screen',
+      'Drag and drop, staged until you save',
+      'One live plan shared across every workstation',
+      'Sequence-dependent setup, work center groups and alternates',
+      'ERP integration by import and export'
+    ],
+    href: Routes.Edgebic,
+    cta: 'Explore EDGEBIC APS'
+  },
+  {
+    name: 'EDGEBIC Complete',
+    price: '$35,000',
+    priceNote: 'Planning, materials and inventory',
+    role: 'The whole planning stack, one system',
+    body: 'Everything in APS, plus the material side. Work out what to build and what to buy, and see the jobs that are waiting on a delivery instead of finding out on the floor.',
+    inherits: 'Everything in EDGEBIC APS, plus:',
+    features: [
+      'Multi-level MRP with dependent demand',
+      'Inventory: on-hand ledger, projected balance, available to promise',
+      'Master production schedule',
+      'Purchasing, suppliers and receiving',
+      'Material pegging: a job waits for the order that covers it',
+      'Sales orders and firm demand'
+    ],
+    href: Routes.Edgebic,
+    cta: 'Explore EDGEBIC Complete',
+    isComplete: true
+  }
+];
 
 export function NTClipboardToolBox(): React.JSX.Element {
   return (
-    <GridSection hideVerticalGridLines containerProps={{ className: 'px-0 sm:container' }}>
-      <div>
-        {/* Solutions for Every Business Size */}
-        <div className="">
-          {/* <div className="mb-6 text-center">
-              <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                From Job Shops to SMBs to Multi-Nationals
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                Solutions to fit any production scheduling application and
-                budget
+    <section className="w-full">
+      <div className="px-4 pb-12 pt-0 sm:px-6">
+        {/* <div className="w-full text-center">
+          <h2 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
+            Two editions, one engine
+          </h2>
+          <p className="text-lg leading-relaxed text-slate-600">
+            EDGEBIC is the current generation of Resource Manager DB, carrying
+            the finite capacity engine that has planned work for GE, Cummins,
+            BAE Systems and the US Navy. Start with scheduling, or take the
+            material side with it.
+          </p>
+        </div> */}
+
+        {/*
+          Row-aligned on purpose. The list is the grid and each edition is a
+          subgrid spanning every row, so the names, prices, descriptions and
+          buttons sit on the same baselines no matter how long the copy in one
+          column runs.
+        */}
+        <ul className="mx-auto mt-4 grid max-w-5xl gap-x-12 gap-y-14 md:grid-cols-2 md:grid-rows-[auto_auto_auto_auto_1fr_auto] md:gap-y-0">
+          {editions.map((edition) => (
+            <li
+              key={edition.name}
+              className={`grid gap-y-4 border-t-2 pt-6 md:row-span-6 md:grid-rows-subgrid md:gap-y-0 ${
+                edition.isComplete ? 'border-cyan-600' : 'border-slate-300'
+              }`}
+            >
+              <h3
+                className={`text-2xl font-bold ${
+                  edition.isComplete ? 'text-cyan-700' : 'text-slate-900'
+                }`}
+              >
+                {edition.name}
+              </h3>
+
+              <div className="mt-3">
+                <p className="text-3xl font-bold text-slate-900">
+                  {edition.price}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {edition.priceNote}
+                </p>
+              </div>
+
+              <p className="mt-4 text-base font-semibold text-slate-800">
+                {edition.role}
               </p>
-            </div> */}
 
-          <div className="mt-6 grid gap-4 lg:gap-6 grid-cols-1 lg:grid-cols-3 px-2 sm:px-0">
-            {/* Excel Templates - Operations Manager */}
-            <div className="flex flex-col">
-              {/* Option Label above card */}
-              <div className="mb-4 text-center">
-                <span className="text-lg font-bold text-[#003d5c]">
-                  DIY in Excel
-                </span>
-              </div>
-              <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
-                {/* Image Section */}
-                <div className="relative overflow-hidden rounded-lg">
-                  <div className="relative aspect-video bg-slate-100">
-                    <img
-                      src="/image.png"
-                      alt="Resource Manager For Excel"
-                      className="absolute inset-0 size-full object-cover"
-                    />
-                  </div>
-                  <div className="bg-slate-50 px-4 py-2 text-center">
-                    <p className="text-sm font-bold italic text-slate-700">
-                      Just Do It in Excel
-                    </p>
-                  </div>
-                </div>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {edition.body}
+              </p>
 
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="mb-4 ">
-                    <span className="text-lg font-bold text-gray-900">
-                      {' '}
-                      Resource Manager For Excel{' '}
-                    </span>
-                    <span className="text-sm"> (RMX)</span>
-                  </h3>
-
-                  {/* Feature Description with Icon */}
-                  <div className="mb-4 rounded-lg bg-blue-50 p-3">
-                    <div className="flex items-start gap-2">
-                      <div className="mt-0.5">
-                        <CircleCheck className="size-5 text-blue-600" />
-                      </div>
-                      <p className="text-sm text-blue-900">
-                        Entry-level production scheduling solution for creating
-                        routing steps and scheduling according to capacity
-                        limitations.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mb-6 flex-1 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Features BOR (Bill of Resources) for routings and
-                        material
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Finite Capacity</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Basic MRP/Inventory</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Leverages Excel (speed and 1,000,000 rows/tab)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Forward and/or Reverse Scheduling
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-auto">
-                    <Button
-                      variant="outline"
-                      className="mb-4 w-full border-green-200 text-lg font-bold text-green-700 hover:bg-green-50"
-                      asChild
+              <div className="mt-6">
+                {edition.inherits && (
+                  <p className="mb-3 text-sm font-semibold text-cyan-700">
+                    {edition.inherits}
+                  </p>
+                )}
+                <ul className="space-y-2.5">
+                  {edition.features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2.5"
                     >
-                      <Link href="/resource-manager-for-excel-2">
-                        View Details
-                      </Link>
-                    </Button>
-                    {/* <div className="text-center text-3xl font-bold text-green-700">
-                      $1K+
-                    </div> */}
-                  </div>
-                </div>
+                      <Check
+                        className="mt-0.5 size-4 shrink-0 text-green-600"
+                        aria-hidden="true"
+                      />
+                      <span className="text-sm leading-snug text-slate-700">
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
 
-            {/* Resource Manager DB */}
-            <div className="flex flex-col">
-              {/* Option Label above card */}
-              <div className="mb-4 text-center">
-                <span className="text-lg font-bold text-[#003d5c]">
-                  APS Single User
-                </span>
+              <div className="mt-8">
+                <Link
+                  href={edition.href}
+                  className={`inline-flex w-full items-center justify-center rounded px-6 py-3 text-base font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 ${
+                    edition.isComplete
+                      ? 'bg-cyan-600 text-white hover:bg-cyan-700'
+                      : 'border border-slate-300 text-slate-900 hover:border-slate-400 hover:bg-slate-50'
+                  }`}
+                >
+                  {edition.cta}
+                </Link>
               </div>
-              <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
-                {/* Image Section */}
-                <div className="relative overflow-hidden rounded-lg">
-                  <div className="relative aspect-video bg-slate-100">
-                    <img
-                      src="/singleuser.png"
-                      alt="Resource Manager DB"
-                      className="absolute inset-0 size-full object-cover"
-                    />
-                  </div>
-                  <div className="bg-slate-50 px-4 py-2 text-center">
-                    <p className="text-sm font-bold italic text-slate-700">
-                      Single-User Source of Truth
-                    </p>
-                  </div>
-                </div>
+            </li>
+          ))}
+        </ul>
 
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="mb-4 ">
-                    <span className="text-lg font-bold text-gray-900">
-                      {' '}
-                      Resource Manager DB{' '}
-                    </span>
-                    <span className="text-sm"> (RMDB)</span>
-                  </h3>
-
-                  {/* Feature Description with Icon */}
-                  <div className="mb-4 rounded-lg bg-orange-50 p-3">
-                    <div className="flex items-start gap-2">
-                      <div className="mt-0.5">
-                        <CircleCheck className="size-5 text-orange-600" />
-                      </div>
-                      <p className="text-sm text-orange-900">
-                        Advanced production planning and scheduling solution
-                        that adapts to your existing data and workflows.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mb-6 flex-1 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Production Planning and Scheduling Your Way
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Includes everything in (RMX) plus
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Data Integration with other systems
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Advanced Planning and Scheduling Tools (APS)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Automatic Maintenance Options
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-auto">
-                    <Button
-                      variant="outline"
-                      className="mb-4 w-full border-green-200 text-lg font-bold text-green-700 hover:bg-green-50"
-                      asChild
-                    >
-                      <Link href="/resource-manager-db-2">View Details</Link>
-                    </Button>
-                    {/* <div className="text-center text-3xl font-bold text-green-700">
-                      $3K+
-                    </div> */}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Premium - EDGEBI */}
-            <div className="flex flex-col">
-              {/* Option Label above card */}
-              <div className="mb-4 text-center">
-                <span className="text-lg font-bold text-[#003d5c]">
-                  Multi User plus Graphical Interface
-                </span>
-              </div>
-              <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
-                {/* Image Section */}
-                <div className="relative overflow-hidden rounded-lg">
-                  <div className="relative aspect-video bg-slate-100">
-                    <img
-                      src="/multi user.png"
-                      alt="EDGEBI"
-                      className="absolute inset-0 size-full object-cover"
-                    />
-                  </div>
-                  <div className="bg-slate-50 px-4 py-2 text-center">
-                    <p className="text-sm font-bold italic text-slate-700">
-                      Intuitive and easy to use
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="mb-4 ">
-                    <span className="text-lg font-bold text-gray-900">
-                      {' '}
-                      EDGEBI{' '}
-                    </span>
-                    <span className="text-sm"> (Bundled w/ RMDB)</span>
-                  </h3>
-
-                  {/* Feature Description with Icon */}
-                  <div className="mb-4 rounded-lg bg-purple-50 p-3">
-                    <div className="flex items-start gap-2">
-                      <div className="mt-0.5">
-                        <CircleCheck className="size-5 text-purple-600" />
-                      </div>
-                      <p className="text-sm text-purple-900">
-                        Graphical overlay with business intelligence for
-                        intuitive drag-and-drop schedule management.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mb-6 flex-1 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Easy, Graphical configuration
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Completely and easily customizable
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Multi-User</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Custom Dashboards\KPIs</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">
-                        Heat Maps, Utilization Calendars, and so much more
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-auto">
-                    <Button
-                      variant="outline"
-                      className="mb-4 w-full border-green-200 text-lg font-bold text-green-700 hover:bg-green-50"
-                      asChild
-                    >
-                      <Link href="/edgebi">View Details</Link>
-                    </Button>
-                    {/* <div className="text-center text-3xl font-bold text-green-700">
-                      $10K+
-                    </div> */}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          {/* <div className="mt-6 text-center">
-                            <div className="mx-auto max-w-7xl rounded-3xl bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-                                <h3 className="mb-4 text-2xl font-bold">
-                                    Start Growing with User Solutions
-                                </h3>
-                                <p className="mb-6 text-lg text-muted-foreground">
-                                    Production Planning and Scheduling Solutions for every
-                                    business size and budget
-                                </p>
-                                <div className="flex flex-wrap justify-center gap-4">
-                                    {/* <Button>
-                                        <Link href="/product-2">See Feature List</Link>
-                                    </Button> */}
-          {/* <Button variant="outline">
-                                        <Link href="/contact-us">Schedule Demo</Link>
-                                    </Button> */}
-          {/* </div>
-                </div>
-            </div> */}
-        </div>
+        <p className="mx-auto mt-12 max-w-3xl text-center text-sm leading-relaxed text-slate-600">
+          Already running RMDB, EDGEBI or Resource Manager for Excel?{' '}
+          <Link
+            href={Routes.RmdbToEdgebic}
+            className="font-semibold text-cyan-700 underline-offset-4 hover:underline"
+          >
+            See what changes when you move to EDGEBIC
+          </Link>
+          , or{' '}
+          <Link
+            href={Routes.Contact}
+            className="font-semibold text-cyan-700 underline-offset-4 hover:underline"
+          >
+            talk to us about which edition fits
+          </Link>
+          .
+        </p>
       </div>
-    </GridSection>
+    </section>
   );
 }

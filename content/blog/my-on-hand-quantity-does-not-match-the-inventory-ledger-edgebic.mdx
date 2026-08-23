@@ -1,0 +1,90 @@
+---
+title: "My On-Hand Quantity Does Not Match the Inventory Ledger"
+description: "When a part's on-hand number disagrees with the sum of its ledger entries, the ledger is authoritative and the on-hand is a cache. Here is how to confirm the drift and reconcile it."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - on hand does not match ledger
+  - inventory cache drift
+  - inventory ledger reconciliation
+  - quantity on hand wrong
+  - inventory adjustment to reconcile
+  - ledger sum vs on hand
+targetPhrase: "on hand does not match ledger"
+wordCount: 1310
+readingTime: 7
+faqQuestions:
+  - question: "Why does my on-hand quantity disagree with the ledger sum?"
+    answer: "The on-hand number is a cached total that should always equal the sum of the part's ledger entries. When a write path updated one without refreshing the other, the two drift apart. The ledger is the authoritative record because it is append-only: every receipt, issue, adjustment, and reversal is a line you can inspect. The on-hand figure is a convenience total derived from those lines, so when they disagree, trust the ledger."
+  - question: "How do I confirm the drift is real and not a display lag?"
+    answer: "Run the full inventory anomaly scan. The on-hand cache-drift check compares the cached on-hand against the ledger sum for every part and reports any difference beyond a tiny rounding tolerance. Its detail line shows the cached value, the ledger sum, and the exact gap. If the check reports the part, the drift is real and stored, not a screen that has not refreshed."
+  - question: "How do I reconcile a drifted on-hand quantity?"
+    answer: "Post an adjustment entry equal to the gap so the ledger and the cache agree. If a physical count reveals the true figure, adjust to that instead and correct both. Never delete ledger entries to force the numbers together: the ledger is append-only by design, and a deleted line destroys the audit trail. Post a corrective adjustment, then re-run the anomaly scan to confirm the check clears."
+  - question: "Can a negative on-hand be correct?"
+    answer: "Temporarily, yes. If a job consumed stock and posted its issue before the build that replenishes it posted its receipt, the ledger can show a negative balance for a stocked part until the build completes. That is a separate check from cache drift. A permanent negative means more was issued than was ever received, which calls for an opening balance or an adjustment receipt."
+qaQuestions:
+  - question: "The anomaly scan says a part shows on-hand 480 but the ledger sums to 450. Which number do I fix and how?"
+    answer: "Fix the cache to match the ledger, because the ledger is the authoritative append-only record. Open the part's transaction history and confirm the entries really do total 450 with no phantom receipt or missing issue. If the entries are correct, post an adjustment of minus 30 so the cache falls to 450. If instead a physical count shows the true figure is 480, the ledger is missing a receipt, so post an adjustment receipt of plus 30 and both land on 480. Either way the fix is a posted adjustment, never an edit to the on-hand field alone."
+  - question: "We ran a big reschedule and afterward three parts show cache drift that was not there before. Did the reschedule corrupt inventory?"
+    answer: "Most likely the reschedule posted or reversed consume issues and one of those write paths did not refresh the cached on-hand. The ledger entries themselves are usually correct; it is the derived total that lagged. Reconcile each part with an adjustment equal to its reported gap, then re-run the anomaly scan. If drift reappears on the next reschedule, that points to a write path that is not recomputing the cache after posting, which is worth a support ticket with the anomaly detail attached."
+---
+
+**When a part's on-hand quantity disagrees with the sum of its ledger entries, the ledger wins: it is the authoritative append-only record, and the on-hand number is a cached total derived from it.** Drift means a write path changed one without refreshing the other. [EDGEBIC by User Solutions](/edgebic) has a built-in check that confirms the drift and shows the exact gap, and the fix is a posted adjustment, never an edit to the on-hand field.
+
+This post is part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It explains why the ledger is the source of truth, how to confirm the drift, and how to reconcile it without breaking the audit trail.
+
+## The Ledger Is the Truth, On-Hand Is a Cache
+
+Every inventory movement is a line in the [inventory ledger](/blog/what-is-an-inventory-ledger): receipts, issues, adjustments, and reversals. The ledger is append-only, which means nothing is ever edited or deleted in place. To correct a mistake you post a reversal or an adjustment, and the history stays intact. That property is what makes the ledger trustworthy for an audit.
+
+The on-hand quantity is not a separate fact. It is a running total that should always equal the sum of the part's ledger lines. It exists so screens and netting calculations do not have to re-sum the whole ledger on every read. When it matches the ledger, it is a convenience. When it does not, it is a stale copy, and the ledger is still correct.
+
+## Confirming the Drift Is Real
+
+Do not judge drift by eye. EDGEBIC's inventory anomaly checks include an on-hand cache-drift check that compares the cached on-hand against the ledger sum for every part, and reports any gap larger than a tiny rounding tolerance.
+
+Two things to know about running it:
+
+- The cache-drift check is plant-wide. It runs on a full anomaly scan, not on a report filtered to a single job. Filtering hides it.
+- The detail line shows three numbers: the cached on-hand, the ledger sum, and the difference. That difference is the exact adjustment you will post.
+
+If the check reports the part, the drift is stored, not a screen waiting to refresh. To see the underlying lines, [audit the inventory ledger for the part](/blog/how-to-audit-the-inventory-ledger-for-a-part-in-edgebic) and confirm the entries really do total the ledger sum the check reported.
+
+## Reconciling Without Breaking the Trail
+
+Once the drift is confirmed, decide which number is correct.
+
+| Situation | Correct number | Action |
+|---|---|---|
+| Ledger entries are all correct, cache is stale | The ledger sum | Post an adjustment equal to the gap to bring the cache in line |
+| A physical count reveals the true figure | The counted figure | Post an adjustment receipt or issue so the ledger reaches the count |
+
+Either path uses a posted [inventory adjustment](/blog/how-to-make-an-inventory-adjustment-in-edgebic). The rule that never bends: do not delete ledger entries to force the numbers together. The ledger's value is its completeness. A deleted line destroys the very history you would need to explain the discrepancy later. Post a corrective line instead, then re-run the anomaly scan to confirm the cache-drift check clears.
+
+## Do Not Confuse Drift With a Negative Balance
+
+Cache drift and a negative on-hand are different problems. A negative ledger balance on a stocked part is often temporary and correct: a job consumed stock and posted its issue before the build that replenishes it posted its receipt. That is a timing check, not a cache check, and it clears itself when the build completes. A permanent negative means more was issued than was ever received, which needs an opening balance or an adjustment receipt rather than reconciliation, and [an on-hand balance that went negative](/blog/my-on-hand-balance-went-negative-edgebic) covers telling the temporary timing gap from the missing receipt. The [inventory ledger overview](/blog/edgebic-inventory-ledger-explained) covers the full set of ledger states.
+
+## When Drift Follows a Reschedule
+
+If drift appears right after a large reschedule, the usual cause is a consume-issue posting or reversal that did not refresh the cached total. The ledger lines are typically correct; the derived on-hand lagged. Reconcile each reported part with an adjustment, then watch the next reschedule. Drift that reappears on every run points to a write path not recomputing the cache, and that is worth a support ticket. For the broader picture of how scheduling and inventory stay in step, see [how a scheduler nets demand against inventory](/blog/how-a-scheduler-nets-demand-against-inventory) and the related symptom [inventory on-hand looks wrong after a reschedule](/blog/inventory-on-hand-looks-wrong-after-a-reschedule-edgebic). The [troubleshooting guide](/blog/edgebic-troubleshooting-guide) links the neighboring inventory checks.
+
+<Accordion title="Why does my on-hand quantity disagree with the ledger sum?">
+The on-hand number is a cached total that should always equal the sum of the part's ledger entries. When a write path updated one without refreshing the other, the two drift apart. The ledger is the authoritative record because it is append-only: every receipt, issue, adjustment, and reversal is a line you can inspect. The on-hand figure is a convenience total derived from those lines, so when they disagree, trust the ledger.
+</Accordion>
+
+<Accordion title="How do I confirm the drift is real and not a display lag?">
+Run the full inventory anomaly scan. The on-hand cache-drift check compares the cached on-hand against the ledger sum for every part and reports any difference beyond a tiny rounding tolerance. Its detail line shows the cached value, the ledger sum, and the exact gap. If the check reports the part, the drift is real and stored, not a screen that has not refreshed.
+</Accordion>
+
+<Accordion title="How do I reconcile a drifted on-hand quantity?">
+Post an adjustment entry equal to the gap so the ledger and the cache agree. If a physical count reveals the true figure, adjust to that instead and correct both. Never delete ledger entries to force the numbers together: the ledger is append-only by design, and a deleted line destroys the audit trail. Post a corrective adjustment, then re-run the anomaly scan to confirm the check clears.
+</Accordion>
+
+<Accordion title="Can a negative on-hand be correct?">
+Temporarily, yes. If a job consumed stock and posted its issue before the build that replenishes it posted its receipt, the ledger can show a negative balance for a stocked part until the build completes. That is a separate check from cache drift. A permanent negative means more was issued than was ever received, which calls for an opening balance or an adjustment receipt.
+</Accordion>

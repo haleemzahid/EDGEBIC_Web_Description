@@ -1,0 +1,84 @@
+---
+title: "What Is a Setup Matrix Hygiene Check?"
+description: "A setup matrix hygiene check finds changeover cells that can never apply: negatives, duplicates, self-pairs, and cells pointing at deleted products or families. Definition and how EDGEBIC reports it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - setup matrix hygiene check
+  - changeover matrix validation
+  - duplicate setup matrix cell
+  - self pair setup cell
+  - orphan setup family
+  - sequence dependent setup audit
+targetPhrase: "setup matrix hygiene check"
+wordCount: 1140
+readingTime: 6
+faqQuestions:
+  - question: "What is a setup matrix hygiene check?"
+    answer: "A setup matrix hygiene check audits a sequence-dependent changeover matrix for cells that are wrong or can never apply. It finds five conditions: a negative changeover time, a duplicate cell for the same from-to pair on the same machine, a self-pair cell where the from and to are identical, a cell pointing at a work center, product, or family that has been deleted or deactivated, and a product assigned to a setup family that no longer exists. Only the negative is critical; the rest are warnings."
+  - question: "Why is a self-pair cell useless rather than just redundant?"
+    answer: "Because the resolver returns zero setup for a same-product or same-family changeover before it ever consults the matrix. Running more of the same part needs no changeover, so that answer is decided up front. A cell saying that going from Black Gloss to Black Gloss takes forty minutes can therefore never be read, no matter how the schedule sequences the work. It is a data entry slip, and the fix is to remove the cell rather than to change its value."
+  - question: "How do duplicate cells get created if the editor only allows one per pair?"
+    answer: "The matrix editor writes one row per cell, so ordinary use cannot produce a duplicate. Duplicates come from writes that bypass the editor, typically a bulk load or a direct database change during a migration. They matter because the engine builds a lookup from the matrix and two rows for the same key means whichever one loaded last silently wins, so the changeover time in the plan becomes non-deterministic."
+qaQuestions:
+  - question: "We migrated our changeover table from a spreadsheet and the hygiene check came back with sixty warnings. Where do we start?"
+    answer: "Start with the duplicates, because they are the ones that make the plan unpredictable rather than merely stale. Two rows for the same machine and the same from-to pair mean the changeover time depends on load order, so the same schedule can produce different setup numbers on different runs. Clear those first. Then work the cells pointing at deleted or inactive products, work centers, and families, since those are dead weight that will never match anything and only make the matrix harder to read. Self-pairs come last: they are harmless, just noise. Any negative value is critical and should be corrected before you rely on the matrix at all."
+  - question: "A product's family cells never seem to apply even though the family matrix is filled in. What should we check?"
+    answer: "Look at the product's own family assignment. If it points at a setup family that has been deleted or deactivated, every family-level cell for that product silently fails to match, and the resolver falls through to the routing step's flat setup time instead. Nothing errors and nothing looks broken; the plan simply uses the wrong number. The hygiene check flags exactly this. The fix is either to reassign the product to an active family or to clear the assignment so it is treated as its own family, which at least makes the behavior explicit."
+---
+
+**A setup matrix hygiene check is an audit of a sequence-dependent changeover matrix that finds cells which are wrong or can never apply. It tests five conditions: a negative changeover time, a duplicate cell for the same machine and from-to pair, a self-pair cell where the from and to are the same, a cell referencing a work center, product, or family that has been deleted or deactivated, and a product assigned to a setup family that no longer exists. The negative value reports as critical; the other four report as warnings. All five are plant-wide rather than tied to one job.**
+
+Think of the matrix as the laminated changeover card posted at the paint booth. The card is only useful if every line on it is a changeover that can actually happen, in a time that can actually be spent. This check is the person who walks up to the card and crosses off the lines that describe nothing.
+
+This entry belongs to the [EDGEBIC by User Solutions](/edgebic) glossary. For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the underlying concept, the definition of a [setup matrix entry](/blog/what-is-a-setup-matrix-entry).
+
+## How the Setup Matrix Hygiene Check Works
+
+### Negative changeover time
+
+A changeover cannot take less than no time. The service that maintains the matrix rejects a negative value, so a negative in the data means it arrived by a route that bypassed that validation, usually a direct bulk load. The engine clamps it to zero when it schedules, so the plan is safe, but the configuration is wrong and the planner is looking at a number the engine will never use. This is the one critical firing in the family.
+
+### Duplicate cell
+
+The editor writes one row per cell, keyed by the machine, the from side, and the to side. Two rows for that same key can only come from outside the editor. They matter because the engine loads the matrix into a lookup, and two rows for one key means the last one loaded wins. That makes the changeover time in the plan depend on load order rather than on your intent.
+
+### Self-pair cell
+
+Running more of the same part needs no changeover, and the resolver answers that before it ever reaches the matrix. A cell describing a from and a to that are identical, whether at product level or family level, can therefore never be consulted. It is not harmful, but it is noise on a table people read.
+
+### Cell pointing at something that no longer exists
+
+A cell that names a work center, product, or setup family which has been deleted or deactivated cannot match anything a planner will ever schedule. It is stale configuration left behind by a deletion, and it makes the matrix look fuller than it is.
+
+### Product assigned to a missing family
+
+If a product's family assignment points at a family that no longer exists or has been deactivated, every family-level cell for that product quietly fails to match. There is no error. The resolver simply falls through to the routing step's flat setup time, so the plan uses a different number from the one the matrix appears to define.
+
+## Why Hygiene Matters Here Specifically
+
+Sequence-dependent setup is the one place in a schedule where wrong configuration is nearly invisible. A missing cell does not fail; it falls back. A duplicate does not fail; it picks one. A dead family reference does not fail; it skips the family tier. In every case the plan builds cleanly and the number is simply not the one you intended.
+
+That is why the family runs plant-wide rather than per job. You are not investigating a job here. You are auditing a table.
+
+## A Concrete Example
+
+A powder coating shop migrates its changeover table out of a spreadsheet: fourteen colors across two booths, with a family layer grouping them into Light, Medium, and Dark.
+
+The hygiene check comes back with three findings. Nine duplicate cells, because the spreadsheet had the same pair listed twice with slightly different times and the bulk load wrote both. Four self-pairs, because the spreadsheet included a diagonal of same-color rows carrying a five-minute purge time. And one product pointing at a Dark family that was renamed and re-created during the migration, so the original record was left inactive.
+
+The duplicates are cleared first: with two rows per key, the same schedule was producing different total setup on different runs, which is the finding that actually changes the plan. The self-pairs are removed next as tidying, since the resolver already answers zero for same-color runs before it looks at the matrix. Last, the stray product is reassigned to the live Dark family, and its family cells start matching again.
+
+## How EDGEBIC Reports Setup Matrix Hygiene
+
+In EDGEBIC, the setup matrix tests run inside the Scheduler Anomalies report under the Reports menu. Because they audit configuration rather than a plan, they are plant-wide only: run a full scan rather than a single-job one. The natural cadence is after any bulk change to the matrix, after deleting a product or a work center, and as part of commissioning sequence-dependent setup for the first time.
+
+Each firing names the cell so the fix is a direct edit in the matrix editor rather than a hunt. In four of the five cases the fix is to remove the cell; in the fifth it is to reassign the product.
+
+The neighboring definitions are the [setup matrix entry](/blog/what-is-a-setup-matrix-entry) itself, the [setup family](/blog/what-is-a-setup-family-sequence-dependent-changeover) that supplies the second tier, and the [setup source](/blog/what-is-a-setup-source-in-scheduling) code that records which tier actually answered. For the mechanism, see [the EDGEBIC setup matrix explained](/blog/edgebic-setup-matrix-explained), and for the practical walkthrough of the report, [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic).
+
+A clean matrix is the difference between a changeover table you trust and one you argue about.

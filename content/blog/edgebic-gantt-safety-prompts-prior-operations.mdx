@@ -1,0 +1,114 @@
+---
+title: "The Safety Prompts That Keep Gantt Drags Honest in EDGEBIC"
+description: "Prevent scheduling errors gantt drag mistakes cause: EDGEBIC's prior-operations prompt, target-date warnings, and hard validations keep manual moves honest."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Visual Scheduling
+author: user-solutions
+cluster: edgebic-visual-scheduling
+pillarSlug: edgebic-visual-scheduling-guide
+keywords:
+  - prevent scheduling errors gantt drag
+  - gantt drag validation
+  - prior operations actuals prompt
+  - schedule data integrity
+  - override and warn scheduling
+  - manual schedule change safety
+targetPhrase: "prevent scheduling errors gantt drag"
+wordCount: 1900
+readingTime: 9
+faqQuestions:
+  - question: "What is the prior-operations prompt on the EDGEBIC Gantt?"
+    answer: "It is a safety gate that fires when you save a change on an operation whose earlier operations in the same job have no actual dates logged yet. EDGEBIC warns that no actuals exist on prior work centers, lists them, and offers to auto-log their planned values as actuals, tagged as system auto-filled so you can spot them later. Cancel to go log the earlier operations properly; OK to accept the backfill and continue."
+  - question: "Does EDGEBIC block drags that overload a machine?"
+    answer: "No. Capacity on the Gantt is governed by an override-and-warn contract: the system surfaces warnings but does not block the move, because the planner often knows things the model does not. Hard validation is reserved for structural data integrity, such as refusing an actual end earlier than its actual start. When you want capacity re-checked, press Re-Schedule and the engine re-plans around your saved moves."
+  - question: "Why did my bar move in time but snap back to its original machine lane?"
+    answer: "That job is a capacity-request job and work-center replacement is disabled for those in your configuration. The drag's time shift is accepted, but the lane change silently reverts, and a status message tells you so. It is a deliberate guard: those jobs are pinned to their machine on purpose, and the prompt-free revert prevents an accidental cross-lane drop from rerouting them."
+  - question: "How can I tell later which actuals were auto-filled by the prompt versus logged by an operator?"
+    answer: "Backfilled entries carry a system auto-filled tag visible in the actuals grid, so reviewers can distinguish convenience data from operator-recorded fact. If precision matters for those operations, replace the backfilled values with real dates and hours afterward. The audit trail also records every save, so the full change history of any job is one right-click away."
+qaQuestions:
+  - question: "An operator skipped logging steps 1 and 2, and I need to record step 3's dates now. What actually happens when I save?"
+    answer: "The save triggers the prior-operations prompt: a warning that no actual dates are logged to prior work centers, naming the missing ones. Cancel leaves your change staged so you can log steps 1 and 2 properly first, which is the cleaner path. OK auto-fills both steps' actuals from their planned dates, tagged as auto-filled, and completes your save. The pragmatic rule: OK when the earlier steps ran roughly to plan, Cancel when they deviated enough that planned dates would be fiction."
+  - question: "What stops a typo like an actual end date before the actual start date from getting into the schedule?"
+    answer: "A hard validation. Inverted actual dates are rejected on every write path, not warned about, because a negative-duration operation corrupts downstream math: progress percentages, remaining-hours rollups, and the Gantt rendering itself. This is the validate-and-reject tier, reserved for physically impossible data. Judgment calls like overloading a machine stay in the warn tier, where you decide."
+---
+
+**EDGEBIC by User Solutions splits Gantt safety into two tiers: hard validation rejects data that cannot be true (an actual end before its actual start), while everything that is merely questionable (moving before a target date, stacking a machine past capacity, saving actuals out of order) triggers a warning that informs you and then gets out of your way.** The design goal is a chart you can trust after a month of heavy manual editing, without ever feeling the software fighting your judgment.
+
+This post catalogs those guardrails: the prior-operations prompt that protects actuals integrity, the warnings that fire during drags, the hard validations underneath, and the audit trail that makes every manual change reviewable. It completes the [drag-and-drop rescheduling guide](/blog/drag-and-drop-rescheduling-in-edgebic), which covers the moves themselves; here we cover what keeps the moves honest.
+
+## Why Warn Instead of Block?
+
+A drag-and-drop Gantt faces a genuine design fork. Validate-and-reject keeps data pristine but makes the planner fight the tool: the customer emergency, the operator who started early, the broken fixture are all realities the model cannot see, and a blocked drag at 6 a.m. is how planners go back to whiteboards. Override-and-warn trusts the human but risks silent data rot if nothing polices the edits.
+
+EDGEBIC's answer is to refuse the binary. The [pros and cons of drag-and-drop scheduling](/blog/drag-and-drop-scheduling-pros-cons) are real on both sides, so the guardrails are tiered:
+
+| Tier | Behavior | Reserved for |
+|---|---|---|
+| Hard validation | Rejects the write | Data that is physically impossible |
+| Safety prompt | Stops and asks, with a listed reason and a choice | Changes with cascading data consequences |
+| Warning | Surfaces a status message, does not block | Questionable but legitimate judgment calls |
+| Silent guard | Applies a configured rule and tells you after | Site policies, like machine-pinned jobs |
+
+Everything below sorts into that ladder.
+
+## The Headline Gate: the Prior-Operations Prompt
+
+The most important prompt on the Gantt protects the integrity of your actuals history. Here is the scenario. A job runs three steps. Steps 1 and 2 ran, but nobody logged them. Now you drag step 3 to its real dates and press Save Changes.
+
+Without a gate, your schedule would now claim step 3 happened while steps 1 and 2 never started: a job whose history is impossible, and whose progress rollups, remaining-hours math, and [planned-versus-actual reading](/blog/reading-the-edgebic-gantt-planned-vs-actual) are all quietly wrong.
+
+Instead, EDGEBIC stops the save and shows the prompt: a warning that no actual dates are logged to prior work centers, listing the missing ones, with two exits:
+
+- **Cancel.** Your change stays staged (still pending on screen, nothing written), and you go log the earlier operations properly first. This is the cleaner path whenever the earlier steps deviated from plan.
+- **OK.** EDGEBIC backfills the prior operations' actuals from their planned dates and completes your save. Every backfilled entry is tagged **system auto-filled**, so a reviewer can always distinguish convenience data from operator-recorded fact.
+
+The tag is the detail that makes OK defensible. Auto-filled actuals are honest about what they are: an assumption that the prior steps ran to plan, visibly marked so you can replace them with real numbers when precision matters. The pragmatic rule: OK when the earlier steps ran roughly on plan, Cancel when they did not.
+
+One operational footnote: after an acknowledged backfill, the Gantt does a full reload, because operations changed in the database beyond the ones on your screen. Save your other pending work first rather than combining a backfill save with a pile of unrelated staged drags.
+
+## The Warning Tier: Informed, Not Obstructed
+
+Three warnings fire during ordinary drag work, each a status message rather than a wall:
+
+**The target-date warning.** Drag an operation to start before its target start date and EDGEBIC tells you so. Sometimes that is exactly the plan (pulling work forward into freed capacity); sometimes it is a misread of the chart. The warning makes sure it is never an accident. Sites that manage by target dates can tighten or relax this check in configuration.
+
+**The multiple-replacement warning.** Drag an operation to a different machine lane while another operation in the same job already has a machine change pending, and you get a heads-up. Two simultaneous reroutes on one job is occasionally intended and frequently a mistake; the warning makes you count.
+
+**The out-of-sequence review.** After saves, EDGEBIC can detect jobs whose operations now appear out of order and show a warning dialog listing them. Combined with the amber Downstream Changed flags on later operations, this is your review queue: resolve it by dragging the flagged steps or by pressing Re-Schedule and letting the engine re-plan the affected jobs around your changes.
+
+## The Hard Floor: Validations That Do Reject
+
+Underneath the warnings sits a small set of non-negotiables, and inverted actual dates is the flagship: **an actual end earlier than its actual start is rejected on every write path.** No prompt, no override. A negative-duration operation is not a judgment call; it corrupts progress math, remaining-hours rollups, and the chart rendering itself, so it simply cannot be saved.
+
+The same philosophy governs structure elsewhere in the product: the routing editors validate chains before saving, and completed work is never moved by any reschedule. The pattern is consistent: **facts get validated, judgment gets warned.** That split is what lets a [finite capacity scheduler](/blog/finite-vs-infinite-capacity-scheduling) coexist with a planner who overrides it daily.
+
+## The Silent Guards: Policy Applied for You
+
+Some sites pin certain jobs to their machines by policy. For capacity-request jobs with work-center replacement disabled, a cross-lane drag accepts the time shift but silently reverts the lane change, with a status message explaining what happened. The bar moves in time and snaps back to its machine. It looks like a glitch the first time; it is a configured guard doing its job.
+
+Similarly, bars carrying externally fed actuals (the ERP Actuals state) cannot be overridden from the Gantt at all: the external feed is the system of record for those dates, and corrections belong in the feed. And the synthetic lead-time tail bar cannot be dragged, resized, or edited, because it is display-only information, not schedulable work.
+
+## The Backstop: Everything Is Auditable
+
+Guardrails at save time are half the story; reviewability afterward is the other half. Every save writes a change-history event. Right-click any bar and **View Audit Trail** opens the job's full history: every reschedule, drag, and completion event. Combined with the auto-filled tags on backfilled actuals and the visible states on every bar (Applied, Resource Replaced, Planned Applied), a supervisor can reconstruct exactly what was changed by hand, when, and what the engine did about it.
+
+That reviewability is what makes override-and-warn sustainable in a multi-planner shop. Nobody has to wonder whether the chart was quietly edited; the edits are first-class, visible, and attributable.
+
+## A One-Screen Cheat Sheet
+
+| You see | It means | Do |
+|---|---|---|
+| Prompt: no actuals on prior work centers | Earlier steps in the job were never logged | Cancel and log them, or OK to backfill with tagged planned values |
+| Status: moved before target start | Your drag lands earlier than the operation's target date | Confirm it is intentional |
+| Status: another machine change pending on this job | Two reroutes staged on one job | Review the pending set before saving |
+| Dialog: operations out of sequence | Saved moves left a job's steps out of order | Drag the flagged steps or press Re-Schedule |
+| Save rejected: inverted dates | Actual end precedes actual start | Fix the dates; this one is not negotiable |
+| Bar moved in time, snapped back to its lane | Machine-pinned job policy | Expected; check the status message |
+| Bar will not respond at all | ERP-fed actuals or the lead-time tail | Correct the feed, or nothing: the tail is display-only |
+
+## Guardrails Are Why the Chart Stays Trusted
+
+A schedule that is easy to edit and hard to corrupt is rare, and it is exactly the combination that keeps planners on the tool instead of around it. That balance runs through everything EDGEBIC does on the Gantt, and it reflects what User Solutions has learned since 1991 across shops from ten people to the US Navy, GE, BAE Systems, and Cummins: software earns trust by respecting both the planner's judgment and the data's integrity, never one at the other's expense.
+
+[See the full EDGEBIC platform](/edgebic), start with the [visual scheduling pillar guide](/blog/edgebic-visual-scheduling-guide), or bring your messiest actuals-logging story to a demo and watch the prompts handle it with US.

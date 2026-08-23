@@ -1,0 +1,103 @@
+---
+title: "How to Tell Whether Anything Is Actually Hosting Your Syncs"
+description: "A healthy idle integration host writes no run rows, so run history cannot tell you whether anything is running. What the liveness beacon reports, including from workstations that host nothing."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - integration host status
+  - is my sync running
+  - scheduled sync monitoring
+  - unattended integration host
+  - shared scheduling database
+  - ERP sync health check
+targetPhrase: "integration host status"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "Why can't run history tell me whether my integrations are running?"
+    answer: "Because a healthy host with nothing due writes no run rows at all. An empty run history is exactly what a perfectly working quiet hour looks like, and it is also exactly what a site with no host at all looks like. The two states are indistinguishable from the history alone, which is why EDGEBIC records a separate liveness beacon. Every host stamps its beacon on a short cycle whether or not it has anything to run, so the question 'is anything alive' has an answer independent of whether anything has happened."
+  - question: "What does a workstation that hosts nothing still report?"
+    answer: "It still stamps a beacon, marked as a consumer rather than a host. That is deliberate. A workstation that has been told not to host dispatches nothing, so it writes no run rows, and if it also wrote no beacon it would be indistinguishable from a machine that is switched off. The consumer beacon says 'this application is running, signed in, and deliberately hosting nothing.' It answers a real question during a rollout: did the setting take effect, or did somebody just not open the application today?"
+  - question: "How do I tell a paused host from a dead one?"
+    answer: "By the beacon, which keeps stamping while a host is paused. Pausing stops the schedule dispatch and the file watching, so no runs fire and no run rows appear, but the host itself is alive and says so on its usual cycle. A dead host stops stamping and its last-seen time falls behind. So a recent beacon with no runs means paused or quiet, while a stale beacon means the process is gone. That distinction is the difference between unpausing something and going to look at a server."
+qaQuestions:
+  - question: "We turned workstation hosting off across the plant last month and now nothing is importing. Where do I start?"
+    answer: "Look at what is reporting itself as a host, because the likely answer is nothing. Turning hosting off on every workstation is only half of the change; the server service has to be installed and running to take over. If your workstations are all reporting as consumers and no server host is present, then the setting worked and the replacement never arrived. That state is quiet in a nasty way: nothing was attempted, so there is no failed run anywhere to lead you to it. The consumer beacons are what make it diagnosable, since they prove the workstations are running and deliberately doing nothing rather than being switched off."
+  - question: "A scheduled integration did not fire this morning. What is the order of checks?"
+    answer: "Work outward from the host. First, is any host alive and recently seen? If not, nothing could have fired. Second, is that host paused, since pausing stops dispatch while the beacon keeps stamping. Third, is the integration itself enabled and is its schedule enabled, which are two separate settings. Fourth, has a full interval actually elapsed since the last dispatch, because the interval is measured from one dispatch to the next rather than from a clock time. Fifth, was a run already in flight for that integration, in which case the attempt was refused and will be retried. Each step is cheaper than the next and most reports stop at the first two."
+---
+
+**A healthy integration host with nothing due writes no run rows at all, so an empty run history and a plant with no host running look identical.** [EDGEBIC by User Solutions](/edgebic) closes that gap with a separate liveness beacon that every host stamps on a short cycle, including workstations that have been told to host nothing.
+
+This post is about reading that signal, which is the difference between knowing your syncs are running and merely not having seen them fail. For the argument about where hosting should live, read [why your ERP sync belongs on a server](/blog/why-your-erp-sync-belongs-on-a-server-not-a-workstation).
+
+## The Question Run History Cannot Answer
+
+Run history is excellent at what it does. Every run writes a row before any work begins and finalizes it when the run ends, so a run is visible even if it fails halfway, and a crash leaves a detectable interrupted row rather than a silent gap. [Reading run logs and run history](/blog/reading-edgebic-run-logs-and-run-history) covers that surface in full.
+
+But run history is a record of things that happened. It has nothing at all to say about things that never started.
+
+Consider two sites at eleven in the morning, both with an integration on a fifteen minute interval, both showing an empty run history for the last hour.
+
+The first has a host running normally and no rows because the source has produced no changes worth importing. Everything is fine.
+
+The second has no host at all, because the last workstation with hosting enabled was replaced in June and nobody noticed. Nothing has run since. Nothing has failed either, because failing requires attempting.
+
+From the history alone, those two sites look the same. That is the problem the beacon exists to solve.
+
+## What the Beacon Reports
+
+Every EDGEBIC process capable of hosting stamps a small liveness record on a regular cycle of about thirty seconds. The record says who it is, what kind of process it is, and when it last checked in. That is all it needs to say.
+
+Because it stamps on a timer rather than when work happens, it answers the question run history cannot: something is alive, right now, and it is this.
+
+Crucially, it keeps stamping while a host is paused. Pausing an EDGEBIC host stops schedule dispatch and file watching, so no runs fire and no rows appear, but the process itself is alive and continues to say so. That single decision is what makes "paused" distinguishable from "dead", which are two very different problems with two very different fixes.
+
+## The Consumer Beacon
+
+The most easily overlooked part of this design is what a workstation that hosts nothing reports.
+
+On a shared database with a server service, the correct configuration is that every planner's workstation has hosting turned off. Such a workstation dispatches nothing, so it writes no run rows. If it also wrote nothing else, it would be indistinguishable from a workstation that is switched off, or one where nobody signed in today.
+
+So it still stamps a beacon, marked as a consumer rather than a host. The meaning is precise: this application is running, it is connected to the shared database, it is picking up changes made elsewhere, and it is deliberately dispatching nothing.
+
+That matters in two moments.
+
+**During a rollout.** You turn hosting off on twelve workstations and want to know it took effect. Twelve consumer beacons is proof. Silence is not, because silence could mean the setting worked or could mean nobody opened the application.
+
+**When you are counting hosts.** Anything asking "is something actually hosting?" has to exclude consumers from the count. A consumer beacon is evidence of a healthy workstation, and it is not evidence that anybody is dispatching your nightly ERP pull. Reading a consumer as a host is the one way to misread this signal, and it produces false confidence at exactly the wrong moment.
+
+## The Four States, and What Each One Means
+
+| What you see | What it means | What to do |
+|---|---|---|
+| A host beacon, recently seen, runs appearing | Working normally | Nothing |
+| A host beacon, recently seen, no runs at all | Paused, or genuinely nothing due | Check whether the host is paused, then check the integration is enabled |
+| Only consumer beacons | Every workstation is opted out and no server host exists | Install or start the server service |
+| No beacons at all | No EDGEBIC process is running against this database | Check the service, then check that anyone is signed in anywhere |
+
+The third row is the one to watch for after a rollout, because it is the natural consequence of doing half of a correct change: turning hosting off everywhere is right, and it is only right once the replacement is running.
+
+## The Diagnostic Order
+
+When somebody reports that a scheduled integration did not fire, work outward from the host. Each check is cheaper than the next, and most reports stop at the first two.
+
+1. **Is any host alive and recently seen?** If not, nothing could have fired, and no other check will tell you anything.
+2. **Is that host paused?** Pausing stops dispatch while the beacon keeps stamping, which is exactly the state that looks alive and does nothing.
+3. **Is the integration enabled, and is its schedule enabled?** These are two separate settings and either one alone will keep it quiet.
+4. **Has a full interval actually elapsed since the last dispatch?** The interval is measured from one dispatch to the next rather than from a wall clock time, so an integration that ran at 10:07 on a fifteen minute interval is next due at 10:22, not on the quarter hour.
+5. **Was a run already in flight?** A second attempt against an integration already running is refused rather than duplicated, and it will be retried on the next tick.
+
+For file-watched integrations, add one more: the watched folder has to exist when the host starts. A folder that is missing, or a mapped drive the service account cannot see, results in a watcher that is skipped rather than one that fires and fails.
+
+## Two Things the Beacon Does Not Do
+
+It does not tell you an integration is producing good data. A host can be perfectly alive and importing rows that map to the wrong fields. That is what run rows, per-row outcomes and counts are for.
+
+And it is not an alert. Nothing emails you when a beacon goes stale, so the useful practice is a short weekly look: are the hosts I expect present, are their last-seen times recent, and are the workstations reporting as consumers rather than as hosts. That takes under a minute and catches the silent case that nothing else will.
+
+For the wider set of routine checks on a shared deployment, read [keeping the EDGEBIC database healthy over time](/blog/keeping-the-edgebic-database-healthy-over-time), and the full administrator reference is the [EDGEBIC admin guide](/blog/edgebic-admin-guide).

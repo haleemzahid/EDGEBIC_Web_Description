@@ -1,0 +1,162 @@
+---
+title: "Running Parallel SMT and Assembly Lines"
+description: "Electronics parallel line scheduling: when two SMT lines halve a build, when they must start together, and when the second line is only a fallback."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - electronics parallel line scheduling
+  - smt line capacity scheduling
+  - parallel work center electronics
+  - dual line pcb assembly planning
+  - alternate line routing scheduling
+  - simultaneous machine scheduling
+targetPhrase: "electronics parallel line scheduling"
+wordCount: 1770
+readingTime: 9
+faqQuestions:
+  - question: "How does a scheduler split one job across two SMT lines?"
+    answer: "EDGEBIC by User Solutions supports independent parallel work centers: two or more machines allocated at the same time on the same operation, each with its own capacity checked and consumed. A 16-hour placement job across two equal lines becomes 8 hours of wall-clock time with both lines booked. The engine only commits when it finds a window where every machine in the group is genuinely free at the same moment."
+  - question: "What is the difference between a parallel line and an alternate line?"
+    answer: "A parallel line runs at the same time as the primary and shares the work. An alternate line replaces the primary when it would finish sooner, and is chosen before scheduling begins. Parallel answers 'run this job on both lines'. Alternate answers 'run this job wherever it finishes first'. Configuring one when you meant the other produces a plan that is wrong in a way nobody notices until the floor disagrees with it."
+  - question: "What happens if one line in a parallel group is down for maintenance?"
+    answer: "The whole group waits. Independent parallel scheduling is all or nothing: the engine searches day by day for a window where every machine in the group has capacity at the same start time, and it will not let one line start alone. If one line is unavailable Monday and Tuesday, the group starts Wednesday. That is deliberate, because splitting a job across machines that cannot actually run together produces a plan the floor has to unpick."
+  - question: "Do parallel machines need to share a shift?"
+    answer: "Yes, and they must share the same shift record rather than merely the same hours. The engine intersects shifts by identity, so two shifts with identical start and end times but separate records do not count as common. If a parallel group never finds a slot despite obvious free capacity, mismatched shift records are the first thing to check."
+qaQuestions:
+  - question: "We have two SMT lines with the same feeders. A 200-board job needs 16 hours of placement. What does the schedule look like on one line versus two?"
+    answer: "On one line, 16 hours of an 8-hour day shift means Monday 08:00 to 16:00 and Tuesday 08:00 to 16:00, finishing Tuesday afternoon.\n\nConfigured as independent parallel with both lines checked and consumed, the engine looks for a window where both are free at the same start. Both are open Monday: SMT-1 takes 8 hours Monday 08:00 to 16:00 and SMT-2 takes 8 hours in the same window. The operation completes Monday 16:00 rather than Tuesday, and both lines' capacity pools are consumed normally, so neither line looks free to another job. Throughput on that operation doubles and the downstream test step gains a full day."
+  - question: "Our conformal coat and cure has to run as one synchronized pass across two chambers. That is not the same as splitting a job, is it?"
+    answer: "No, and it is worth configuring differently. Splitting is independent parallel: each machine earns its own slot and consumes its own capacity. Lockstep is dependent parallel, where a secondary machine mirrors the primary's timing exactly and its hours are scaled by a factor.\n\nIn practice the primary chamber earns the slot through the normal capacity search, and the mirror is written with identical start and end timestamps. A factor of 1.0 means equal work; 0.5 means half. The mirrors are not capacity-checked, which is the trade: you get guaranteed synchronization, and you take on the responsibility of not booking that mirrored chamber for an unrelated job in the same window."
+---
+
+**Two SMT lines are only worth two lines if the schedule knows they can run the same job at the same time.** EDGEBIC by User Solutions models that three different ways, and choosing the wrong one is the most common configuration mistake in high-mix electronics. This post covers what each mode does, what the engine actually checks, and how to pick.
+
+## The Pain: Capacity That Exists on Paper and Not in the Plan
+
+A typical mixed-technology plant has two placement lines, several test stations, a couple of conformal coat chambers, and one or two operations that physically require more than one machine running together.
+
+The scheduling system usually models all of that as a list of independent work centers. So a 16-hour placement job goes on one line for two days while the second line sits idle in the plan, and a supervisor manually splits it every week. Or worse: the plan books both chambers for a synchronized coat pass without ever checking that both are free at the same moment, and the discovery happens when an operator finds one chamber already loaded.
+
+The distinction that fixes this is not "do you support parallel machines". It is which of three quite different behaviors you actually need.
+
+## Three Modes, Three Different Answers
+
+| Mode | What it means | Capacity behavior |
+|---|---|---|
+| Independent parallel | Two or more machines run the operation at the same time, sharing the work | Every machine's capacity is checked and consumed |
+| Dependent parallel | A secondary machine mirrors the primary's timing exactly, hours scaled by a factor | The mirror is written without a capacity check |
+| True alternate | A different machine replaces the primary when it would finish sooner | The chosen machine's own times are used; selection happens before scheduling |
+
+The full mechanism, including the resolver and the rollback behavior, is in [parallel work centers explained](/blog/edgebic-parallel-work-centers-explained). What follows is how each mode plays out on an electronics floor.
+
+## Independent Parallel: Two Lines, Half the Time
+
+This is the mode most people mean when they say parallel.
+
+Take an assembly operation, 200 boards, 16 hours of work. Primary line Assembly-1, alternative Assembly-2 configured as parallel with capacity checked and a factor of 1.0. Both run an 8-hour day shift Monday to Friday. Earliest start Monday 08:00.
+
+The engine searches for a simultaneous slot: a date, shift, and start time where every machine in the group has genuine capacity at the same moment. Monday's day shift shows 8 hours free on each line, so the slot is found.
+
+| Schedule | Work center | Start | End | Hours |
+|---|---|---|---|---|
+| S-1 | Assembly-1 | Mon 08:00 | Mon 16:00 | 8 |
+| S-2 | Assembly-2 | Mon 08:00 | Mon 16:00 | 8 |
+
+The operation completes Monday 16:00 rather than Tuesday 16:00. Both capacity pools are consumed, so neither line looks free to a different job in that window. Throughput on that operation doubles, honestly.
+
+The search is all or nothing. If Assembly-2 is down for maintenance Monday and Tuesday, the group does not let Assembly-1 start alone. The engine walks day by day until it finds a window where every machine has capacity, and starts them together on Wednesday. That is the right behavior even though it looks conservative, because a half-committed parallel operation is a plan the floor has to unpick by hand.
+
+## Dependent Parallel: Machines That Must Move Together
+
+Some operations are not a split. They are one operation that physically occupies more than one machine.
+
+A synchronized two-chamber coat and cure pass. A multi-head press that must index together. A test fixture bank driven by one controller. In these cases the secondary machines are not earning their own slot; they are along for the ride.
+
+Dependent parallel handles it by mirroring. The primary machine earns its window through the normal capacity search. The secondary machines then receive schedule rows with identical start and end timestamps, and hours scaled by a factor. A factor of 1.0 means equal work, 0.5 means half, 2.0 means twice.
+
+Consider a synchronized drill or coat operation with 10 hours on the primary across a day shift plus part of the next:
+
+| Machine | Window | Hours | Source |
+|---|---|---|---|
+| Primary | Mon 08:00 to 16:00 | 8 | Capacity checked |
+| Primary | Tue 08:00 to 10:00 | 2 | Capacity checked |
+| Mirror A | Mon 08:00 to 16:00 | 8 | Mirrored |
+| Mirror A | Tue 08:00 to 10:00 | 2 | Mirrored |
+| Mirror B | Mon 08:00 to 16:00 | 8 | Mirrored |
+| Mirror B | Tue 08:00 to 10:00 | 2 | Mirrored |
+
+Every timestamp matches within each pair. Synchronization is guaranteed by construction rather than by search.
+
+The trade is explicit and you should know it going in: mirrors are registered without a capacity check. The primary earns the slot; the mirrors follow. That means a mirrored machine can be booked in a window where an unrelated job also wants it, and the schedule will not stop you. Reserve dependent parallel for machines that genuinely have no independent life, and do not use it as a shortcut for "these two usually run together".
+
+A worked walkthrough of the synchronized case is in [the synchronized multi-spindle example](/blog/synchronized-multi-spindle-scheduling-example-edgebic).
+
+## True Alternate: Whichever Line Finishes First
+
+The third mode is not simultaneity at all. It is choice.
+
+Three test stations, one primary and two alternates, each with its own run time. The primary is fully booked Monday. Alternate 1 can start Monday. Alternate 2 can start Tuesday.
+
+Before any capacity is allocated, the resolver compares projected completion across the candidates:
+
+| Candidate | Own run time | Projected completion |
+|---|---|---|
+| Primary | 8 h | Wednesday 10:00 |
+| Alternate 1 | 6 h | Monday 16:00 |
+| Alternate 2 | 8 h | Tuesday 16:00 |
+
+Alternate 1 wins, the step's work center is switched to it, and scheduling proceeds as though it had always been the primary. Note that the alternate's own run time is used rather than the primary's scaled by a factor: a faster station with a better fixture is planned at its real speed.
+
+In a high-mix shop where boards can run on several test stations with different cycle times, this is where lead time quietly comes back. The mode is worth configuring on every operation that genuinely has more than one home.
+
+## Choosing the Right Mode
+
+Three questions settle it in most cases.
+
+**Can the operation be split across machines and still be correct?** If yes, independent parallel. Two SMT lines placing halves of a lot. Two benches building the same harness.
+
+**Must the machines start and finish at exactly the same instant because they are one physical process?** If yes, dependent parallel, and accept that the mirrors are not capacity-checked.
+
+**Is only one machine going to run it, but you do not care which?** True alternate.
+
+The mode that gets misused most is dependent parallel, chosen because it always finds a slot. It always finds a slot precisely because it does not check, which is the opposite of what you want from a capacity plan.
+
+## All or Nothing, and What Happens When It Fails
+
+Independent parallel scheduling is deliberately committed as a unit, and it is worth seeing the failure case because it explains a schedule that otherwise looks unhelpfully conservative.
+
+Take a three-machine group where the second machine is down Monday and Tuesday.
+
+| Day | Machine 1 | Machine 2 | Machine 3 | Result |
+|---|---|---|---|---|
+| Monday | available | maintenance | available | rejected |
+| Tuesday | available | maintenance | available | rejected |
+| Wednesday | available | available | available | slot found |
+
+All three start together Wednesday 08:00. The job is two days later than machine 1 alone could have started, and that is correct: letting machine 1 start alone would produce a plan the floor has to unpick, with two thirds of an operation stranded.
+
+Behind that, every allocation the engine makes during a parallel attempt is paired with an undo action. If the attempt fails partway through, the placements already made are reversed in order and the capacity they consumed is released. A half-committed parallel group never survives into the saved plan, and a retry sees an untouched capacity picture rather than the residue of a failed attempt.
+
+One caution follows from the dependent mode. Because mirrors are registered without a capacity check, a machine that appears only as a dependent mirror should not also be the primary home for unrelated single-machine jobs. The unrelated job will see apparently free capacity in a window a mirror already occupies. Keep mirror-only machines out of the general routing pool and the hazard does not arise.
+
+## The Configuration Detail That Silently Breaks Groups
+
+Independent parallel requires a common shift across every machine in the group, and the engine intersects shifts by identity rather than by hours. Two shifts with the same start and end times but separate records are not common.
+
+That single fact accounts for most "no simultaneous capacity found" reports on floors where the machines are obviously free. If a parallel group never schedules, check that every machine in it references the same shift record before looking anywhere else. Shift structure is covered in [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained).
+
+Two other checks are worth running when a group refuses to schedule: whether the machines have enough instances configured for the hours being requested, and whether one of them carries a holiday or downtime rule that removes the window.
+
+## Parallel Lines and the Rest of the Plan
+
+Parallel capacity interacts with everything downstream. Halving a placement operation is only worth it if the test step can absorb the earlier arrival, which is where overlapping the operations helps: see [overlapping board build and test](/blog/edgebic-for-electronics-lot-streaming).
+
+It also interacts with multi-level routings. A board branch running on two lines finishes earlier, which pulls the module join step earlier, which pulls final test earlier. The connection is automatic once the routing graph is right: see [scheduling multi-level electronic assemblies](/blog/edgebic-for-electronics-sub-assemblies).
+
+And it interacts with bottleneck thinking. Doubling capacity on an operation that was never the constraint changes nothing except where the queue sits. Identify the constraint first: [production bottleneck identification](/blog/production-bottleneck-identification) is the place to start.
+
+Where the shared machine is a process tool and the real cost is the recipe change between lots, see [semiconductor scheduling and recipe changeovers](/blog/edgebic-for-semiconductor-scheduling). For scheduling practice across electronics manufacturing, see the [electronics manufacturing scheduling overview](/blog/electronics-manufacturing-scheduling) and the [electronics manufacturing scheduling software page](/electronics-manufacturing-scheduling-software). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product, [EDGEBIC](/edgebic).

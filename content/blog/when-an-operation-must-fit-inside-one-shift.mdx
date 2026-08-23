@@ -1,0 +1,112 @@
+---
+title: "When an Operation Must Fit Inside One Shift"
+description: "Most operations spill across shifts until their hours are placed. Some cannot. How the cross-shift and partial-shift rules work, what they cost, and when to turn them off."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - cross shift scheduling
+  - shift boundary constraint
+  - operation splitting scheduling
+  - multi shift allocation
+  - finite capacity scheduling
+  - shift capacity
+targetPhrase: "cross-shift operation scheduling"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "Can one operation run across two shifts?"
+    answer: "By default, yes. EDGEBIC allows cross-shift work, so an operation whose hours exceed a single shift's remaining capacity spills into the next available shift, and the next, until every hour is placed. That is what lets a 20-hour operation schedule on eight-hour shifts without a planner splitting it by hand. The behavior is a setting, so an operation that physically must complete within one shift can be told to require a single shift instead."
+  - question: "What happens when cross-shift work is turned off?"
+    answer: "The whole operation must fit inside one shift's usable capacity or it is not placed there. The engine keeps searching forward for a shift that has enough remaining hours to take the operation in one piece. In a busy plant that can push the operation out by days, because a shift with six free hours is useless to a seven-hour operation that cannot be broken. The plan becomes harder to fit, which is the cost of the guarantee that the operation never straddles a shift change."
+  - question: "What is partial shift utilization?"
+    answer: "It is the rule that lets the engine commit only part of a shift to an operation, such as using three hours of an eight-hour shift and leaving five for other work. It is on by default, and it is what makes fine-grained packing of a shift possible. Together with the cross-shift rule it decides how freely an operation may be broken up: across shift boundaries, and within a single shift."
+qaQuestions:
+  - question: "My heat-treat operation keeps getting split across a shift change and the parts are ruined. How do I stop it?"
+    answer: "That operation should not allow cross-shift work. When the rule is off for it, the engine will only place the operation on a shift whose remaining usable hours can absorb the entire duration in one piece, so it can never straddle the boundary between two shifts. Expect the schedule to move out: an operation that needs seven hours and cannot be broken will skip every shift that has fewer than seven free hours, and on a loaded machine that can mean several days of searching. That delay is the honest price of a constraint your process genuinely has, and it is far cheaper than scrapping a load."
+  - question: "Is turning off cross-shift work the same as one job per day?"
+    answer: "No, and mixing them up creates plans nobody wants. Turning off cross-shift work says an operation must complete inside a single shift, and it says nothing about who else uses that machine. One job per day is a work center rule that gives each machine instance to a single job for the whole day, which is about exclusivity rather than about shift boundaries. A furnace that cannot be interrupted mid-cycle wants the single-shift rule; a paint booth that cannot change color mid-day wants the one-job-per-day rule. Some processes want both, and they are set independently."
+---
+
+**By default EDGEBIC by User Solutions lets an operation cross shift boundaries: if the hours exceed what one shift can absorb, the operation spills into the next available shift and the next until every hour is placed. That behavior is a setting, and turning it off forces the whole operation to fit inside a single shift's usable capacity or move to a shift that can take it whole. A companion rule, partial shift utilization, decides whether the engine may commit only a fraction of a shift.** Together the two rules define how freely an operation is allowed to be broken up, and they are the difference between a schedule that packs tightly and one that never interrupts a process mid-cycle.
+
+Most operations are happy to be broken. A few will scrap a load if they are.
+
+## The default: spill until the hours are placed
+
+When the allocator places an operation, it walks the calendar forward from the operation's earliest start, collects shifts that still have usable capacity, and consumes them in order until the required hours are gone. A 20-hour operation on eight-hour shifts typically lands as eight, eight, and four across three shifts.
+
+This is the behavior described in [how multi-shift allocation fills capacity](/blog/how-multi-shift-allocation-fills-capacity), and it is why planners do not have to hand-split long operations. It also reflects how most machining, assembly, and fabrication genuinely works: the operator hands the job over at shift change, the next operator continues, and the part does not care.
+
+The engine treats the spill as one operation, not as several. The routing step keeps a single identity, a single start, and a single end, with the hours distributed across the shifts it consumed. That matters for reporting, because the operation's total is not fragmented into pieces that have to be reassembled later.
+
+## Turning the spill off, and what it costs
+
+Some processes cannot be handed over. A furnace cycle that must run to completion, a cure that cannot be paused, a batch that degrades if it sits half-processed, and any operation where stopping means scrapping the load all share the same requirement: it starts and finishes inside one continuous working window.
+
+With cross-shift work turned off for such an operation, the placement rule changes from "consume shifts until satisfied" to "find one shift that can take the whole thing." The search still walks forward the same way. It simply rejects any shift whose usable remaining hours are smaller than the operation's full duration.
+
+The cost is a harder packing problem. A shift with six free hours is worth six hours to a normal operation and worth nothing to a seven-hour operation that cannot be broken. On a loaded machine, the fragments left behind by other work can make the first genuinely usable window several days out, even though the machine looks busy rather than full.
+
+That is not the engine being unhelpful. It is the plan telling the truth about a real process constraint. The alternative, a plan that shows the furnace cycle straddling the 16:00 handover, is a plan that will produce a scrapped load and a late job.
+
+## A worked example: a seven-hour cure
+
+A curing operation needs 7 hours and runs on an oven with two shifts, 08:00 to 16:00 and 16:00 to 00:00, each offering eight usable hours. Today the day shift already has three hours of other work booked, leaving five, and the night shift is completely free.
+
+With cross-shift work allowed:
+
+- The engine consumes the five remaining day-shift hours from 11:00 to 16:00.
+- It carries the remaining two hours into the night shift, 16:00 to 18:00.
+- The operation is shown as 11:00 to 18:00. The oven stops at the handover and restarts. The load is ruined.
+
+With cross-shift work turned off for this operation:
+
+- The day shift offers five usable hours. Seven are needed. The shift is rejected.
+- The night shift offers eight usable hours. Seven fit. The operation is placed 16:00 to 23:00, in one piece.
+- The operation finishes five hours later than the split version showed, and it actually finishes, because the cure was never interrupted.
+
+The comparison is the whole argument. The first plan is shorter and wrong. The second is longer and executable.
+
+## Partial shift utilization, the second dial
+
+The cross-shift rule governs whether an operation may cross a boundary. Partial shift utilization governs whether an operation may take less than a full shift.
+
+It is on by default, which is what allows the day shift in the example above to give up exactly five hours and keep the earlier three booked for something else. Without it, the granularity of the schedule coarsens: an operation either takes a shift or it does not, and small operations start consuming whole shifts of capacity they do not need.
+
+For nearly every shop the default is right, because fine-grained packing is how you get real utilization out of a calendar. The setting exists for the narrow case where a machine cannot practically be shared within a shift at all, and even then the one-job-per-day rule, described in [how one-per-day dedicates a machine for a full day](/blog/how-oneperday-dedicates-a-machine-for-a-full-day), is usually the better expression of that intent.
+
+## Where the two rules do not overlap
+
+It is worth separating three constraints that get conflated:
+
+- **Cross-shift work** is about whether one operation may straddle a boundary. It concerns the operation.
+- **Partial shift utilization** is about whether an operation may take only part of a shift. It concerns the granularity of packing.
+- **One job per day** is about whether a machine instance may serve more than one job in a day. It concerns exclusivity of the machine.
+
+A furnace that cannot be interrupted mid-cycle needs the first. A booth that cannot change color mid-day needs the third. A cell that needs both sets both, and they do not interfere with each other.
+
+There is also a difference from splitting a job across machines, which is a separate decision entirely and is covered in [when to split a job versus run it whole](/blog/when-to-split-a-job-vs-run-it-whole). Splitting across machines shortens elapsed time by using more resources. Splitting across shifts uses the same resource on more days. Only one of them adds capacity.
+
+## The planning takeaway
+
+Leave cross-shift work on for the great majority of your routing steps, because it is what lets long operations schedule sensibly against real calendars. Turn it off deliberately, per operation, where the process cannot survive an interruption, and accept that those operations will wait for a window that can hold them whole.
+
+When you do turn it off, expect the schedule to lengthen and read that as information. If a non-interruptible seven-hour operation regularly cannot find a whole shift, the real message is that the machine's day is too fragmented, which is a capacity conversation, not a settings conversation. The same logic that makes [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) useful applies here: the constraint was always real, and the plan is now showing it.
+
+The wider allocation mechanics are in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). To see how your non-interruptible operations pack against your own shift calendar, [bring your routings to a demo](/edgebic).
+
+<Accordion title="Can one operation run across two shifts?">
+By default, yes. EDGEBIC allows cross-shift work, so an operation whose hours exceed a single shift's remaining capacity spills into the next available shift, and the next, until every hour is placed. That is what lets a 20-hour operation schedule on eight-hour shifts without a planner splitting it by hand. The behavior is a setting, so an operation that physically must complete within one shift can be told to require a single shift instead.
+</Accordion>
+
+<Accordion title="What happens when cross-shift work is turned off?">
+The whole operation must fit inside one shift's usable capacity or it is not placed there. The engine keeps searching forward for a shift that has enough remaining hours to take the operation in one piece. In a busy plant that can push the operation out by days, because a shift with six free hours is useless to a seven-hour operation that cannot be broken. The plan becomes harder to fit, which is the cost of the guarantee that the operation never straddles a shift change.
+</Accordion>
+
+<Accordion title="What is partial shift utilization?">
+It is the rule that lets the engine commit only part of a shift to an operation, such as using three hours of an eight-hour shift and leaving five for other work. It is on by default, and it is what makes fine-grained packing of a shift possible. Together with the cross-shift rule it decides how freely an operation may be broken up: across shift boundaries, and within a single shift.
+</Accordion>

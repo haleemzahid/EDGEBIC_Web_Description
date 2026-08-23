@@ -1,0 +1,85 @@
+---
+title: "My Transit Days Used Calendar Days Instead of Working Days"
+description: "When a transit set to working-day mode quietly counts calendar days, the routing step's work center is missing or inactive. Reactivate or reassign it, then re-run."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - transit days calendar vs working days
+  - working day transit fell back to calendar
+  - transit days missing work center
+  - transit days longer than set
+  - inter-step transit time
+  - transit mode anomaly
+targetPhrase: "transit days calendar vs working days"
+wordCount: 1300
+readingTime: 7
+faqQuestions:
+  - question: "Why did my working-day transit count calendar days instead?"
+    answer: "Working-day transit needs an active work center on the routing step to resolve which days count as working days. If that work center is missing, inactive, or deleted, the engine cannot read a working calendar and silently falls back to calendar-day arithmetic. The transit then spans weekends and holidays, so it lands later than intended. Reactivating or reassigning the step's work center and re-running scheduling restores working-day counting."
+  - question: "What is the difference between calendar-day and working-day transit?"
+    answer: "Calendar-day transit counts every day including weekends and holidays, so three calendar days from a Friday lands on Monday. Working-day transit counts only working days, so three working days from a Friday skips the weekend and lands later. Transit is set per routing step to one mode or the other; working-day mode needs an active work center to know which days are working days for that machine."
+  - question: "How do I tell if transit fell back to calendar days?"
+    answer: "The transit lands later than a working-day count would predict, spanning a weekend or holiday it should have skipped, and the routing step is set to working-day mode but its work center is missing or inactive. The anomaly report flags a working-day transit whose work center cannot be resolved. Reactivate or reassign the work center on that step and re-run scheduling to get working-day counting back."
+qaQuestions:
+  - question: "We set three working days of transit between our two plants, but the receiving step keeps landing a couple of days later than we expect. What is off?"
+    answer: "Working-day transit skips weekends only if the engine can read a working calendar, and it reads that from the routing step's work center. If that step's work center was deactivated or removed, the engine cannot tell which days are working days, so it quietly counts three calendar days instead, which drags the arrival across a weekend. Check the step's work center: reactivate it or point the step at an active one, then re-run scheduling. The transit should tighten back to the working-day count you intended."
+  - question: "Transit works fine on most routings but one always overshoots. Both are set to working-day mode. Why only that one?"
+    answer: "The difference is almost certainly the work center on the overshooting step. Working-day mode depends on an active work center to supply the working calendar; calendar mode does not need one. If the misbehaving routing has a step whose work center was deleted or set inactive, that step alone falls back to calendar days while the others, with live work centers, count working days correctly. Confirm and fix the work center on that step, then re-run scheduling for the affected job."
+---
+
+**A transit set to working-day mode that quietly counts calendar days has lost the work center it needs to read a working calendar: the routing step's work center is missing, inactive, or deleted.** Without an active work center, the engine cannot tell which days are working days, so it silently falls back to calendar-day arithmetic, and the transit spans weekends and holidays it should skip. Reactivating or reassigning the step's work center and re-running scheduling restores working-day counting.
+
+[EDGEBIC by User Solutions](/edgebic) lets a routing step add transit time between operations in one of two modes: calendar days, which count every day, or working days, which count only working days. Working-day mode needs an active work center to supply the calendar. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), explains the silent fallback and how to fix it.
+
+## Calendar Days Versus Working Days
+
+Transit adds a delay between two steps, useful for moving work between plants or letting material ship. It runs in one of two modes:
+
+- **Calendar days** count every day, so three calendar days from a Friday lands on Monday.
+- **Working days** count only working days, so three working days from a Friday skips the weekend and lands later.
+
+Working-day mode has to know which days are working days, and it gets that from the routing step's work center. When that work center is present and active, the transit counts working days correctly. When it is missing or inactive, the engine has no calendar to read, so it silently drops to calendar-day arithmetic. The transit still happens; it just counts the wrong days and lands sooner on the calendar than a working-day count would, which usually means the arrival is off from what you planned.
+
+## How to Tell
+
+The tell is a transit that overshoots or lands across a weekend it should have skipped, on a step set to working-day mode. The anomaly report flags a working-day transit whose work center is missing, inactive, or deleted, naming the routing step. A useful comparison: if most routings honor their working-day transit and one does not, the odd one out almost always has a step whose work center is gone, since calendar mode needs no work center and would not show the difference.
+
+This is a separate story from [queue time and flow time fighting each other](/blog/queue-time-and-flow-time-are-fighting-each-other-edgebic); transit is its own inter-step delay with its own mode setting.
+
+## The Fix
+
+Restore the working calendar by giving the step a live work center:
+
+1. Open the routing and find the step flagged for working-day transit with a missing work center.
+2. If the work center was deactivated or deleted by mistake, reactivate or restore it so it exists and is active again.
+3. If the machine is genuinely gone, reassign the step to an active work center that supplies the right working calendar.
+4. Re-run scheduling for the affected job.
+
+With an active work center in place, the engine reads its working calendar and the transit counts working days as intended, tightening the arrival back to the date you planned. See [how to add transit days between two steps](/blog/how-to-add-transit-days-between-two-steps-in-edgebic) for where the mode and value live, and [how queue and transit times work](/blog/edgebic-queue-and-transit-times-explained) for how transit composes with the rest of the timing.
+
+## Confirming the Fix
+
+After reactivating or reassigning the work center and re-running scheduling, re-open the anomaly report and confirm the transit chip returns zero rows. On the Gantt, the downstream step should now start on the working-day count you intended, skipping weekends and holidays rather than spanning them.
+
+## Prevention
+
+- **Keep transit steps on live work centers.** Any routing step that uses working-day transit depends on its work center staying active. Before deactivating a machine, check whether any working-day transit relies on it.
+- **Deactivate rather than delete.** A deactivated work center still supplies enough to keep references clean; a deleted one removes the calendar the transit needs. Prefer deactivation for machines with routing history.
+- **Choose the mode deliberately.** Decide calendar days or working days for each transit on purpose. Calendar mode needs no work center and never hits this fallback, so it can be the safer choice when the delay is a pure ship time that should count weekends anyway.
+- **Audit after imports.** If routings or work centers [sync from your ERP](/edgebic-erp-integration) and a machine is dropped or deactivated in the source, a scheduling pass and an anomaly-report read catch a transit that quietly reverted to calendar days.
+
+<Accordion title="Why did my working-day transit count calendar days instead?">
+Working-day transit needs an active work center on the routing step to resolve which days count as working days. If that work center is missing, inactive, or deleted, the engine cannot read a working calendar and silently falls back to calendar-day arithmetic. The transit then spans weekends and holidays, so it lands later than intended. Reactivating or reassigning the step's work center and re-running scheduling restores working-day counting.
+</Accordion>
+
+<Accordion title="What is the difference between calendar-day and working-day transit?">
+Calendar-day transit counts every day including weekends and holidays, so three calendar days from a Friday lands on Monday. Working-day transit counts only working days, so three working days from a Friday skips the weekend and lands later. Transit is set per routing step to one mode or the other; working-day mode needs an active work center to know which days are working days for that machine.
+</Accordion>
+
+<Accordion title="How do I tell if transit fell back to calendar days?">
+The transit lands later than a working-day count would predict, spanning a weekend or holiday it should have skipped, and the routing step is set to working-day mode but its work center is missing or inactive. The anomaly report flags a working-day transit whose work center cannot be resolved. Reactivate or reassign the work center on that step and re-run scheduling to get working-day counting back.
+</Accordion>

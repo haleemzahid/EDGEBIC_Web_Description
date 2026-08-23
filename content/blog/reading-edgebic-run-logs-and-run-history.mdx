@@ -1,0 +1,84 @@
+---
+title: "Reading EDGEBIC Run Logs and Run History"
+description: "Where EDGEBIC run logs live and how to read them: import run files, integration run history, startup errors, and the audit trail an admin actually needs."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - scheduling software run logs
+  - import run history
+  - integration run monitoring
+  - reading application logs manufacturing
+  - scheduling software audit trail
+  - troubleshooting scheduling software
+targetPhrase: "scheduling software run logs"
+wordCount: 1350
+readingTime: 7
+faqQuestions:
+  - question: "Where do EDGEBIC run logs live?"
+    answer: "EDGEBIC keeps several distinct log surfaces, each tied to a kind of activity. Import runs write one file per run, opened directly from the import result dialog. Scheduled integration runs keep a persistent run history you can browse in the application, each with its own log file. Startup errors write to a dedicated log for support. Security events accumulate in an append-only audit trail inside the database. Knowing which surface owns which event is the whole skill of reading them."
+  - question: "How do you read an EDGEBIC integration run history?"
+    answer: "Open the Integration tab and select a run to see its status, row counts, and a detail view that reads the tail of that run's log file. Each run row is written before any work starts and finalized when the run ends, so a run is always visible even if it fails midway. A run stuck showing Running after a crash is flipped to Interrupted by the startup sweep, so an orphaned run is a detectable state rather than a silent gap."
+  - question: "What does an import run log tell you?"
+    answer: "An import run log records the outcome of every row the import touched: created, updated, reused, or failed, with the reason for each failure. You open it from the result dialog that appears when an import finishes, so the log is one click from the tally rather than buried. Reading it is how you turn a summary count like twelve failures into twelve specific rows you can fix in the source and re-import."
+qaQuestions:
+  - question: "A scheduled overnight sync did not update the products we expected. Where do I start?"
+    answer: "Open the Integration tab and find last night's run in the run history. The run row shows its status and row counts first: if it reads Interrupted, the application restarted before it finished and the startup sweep flipped it, so the fix is confirming the machine stayed up. If it reads Completed but the counts are low, open the run detail to read the log tail and see which rows were reused or failed and why. Because each run keeps its own log, you are reading exactly that run rather than a merged stream, and the row-level reasons point you at the source data to correct."
+  - question: "Support asked for logs after EDGEBIC failed to open. What do I send?"
+    answer: "A startup failure writes to a dedicated log separate from the day-to-day run logs, and that is the file support wants. When EDGEBIC cannot open its database it shows a recovery window rather than crashing, and that same failure is captured in the startup log. Send that file along with a note of what changed recently, like a moved server or a switched data source. For an operational problem rather than a startup one, the relevant import or integration run log is the better attachment, because it carries the row-level detail."
+---
+
+**EDGEBIC keeps several distinct run logs, and reading them well means knowing which surface owns which event: import runs write one file per run, scheduled integrations keep a browsable run history, startup errors write to a dedicated file, and security events accumulate in an append-only audit trail inside the database.** In [EDGEBIC by User Solutions](/edgebic) a log is not a single wall of text to grep. It is a set of purpose-built records, each opened from the place that produced it, so a question about what happened has a specific answer rather than a search.
+
+This post is the administrator's map of those surfaces. For the full reference behind every control mentioned here, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide). This piece names controls that live in the Integration tab, the import result dialog, and the recovery window, never any internal path.
+
+## Import Run Logs: One File Per Run
+
+Every import you run, whether from a file or through the data-import workflow, produces a result dialog when it finishes. That dialog shows the tally (how many records were created, updated, reused, or failed) and it opens the run's own log file directly. Import runs write one file per run, so you are always reading the outcome of exactly the run you just executed.
+
+The value of the file over the tally is specificity. A summary that says twelve rows failed is a headline. The log turns it into twelve named rows, each with the reason it failed, so you can correct the source spreadsheet and re-import instead of guessing. This is the difference between knowing something went wrong and knowing what to fix.
+
+If you run imports regularly, treat the log as the second half of every import, not an optional extra. The tally tells you whether to celebrate; the log tells you what to do next.
+
+## Integration Run History: The Persistent Record
+
+Scheduled and file-watched syncs run without anyone watching, so they need more than a momentary dialog. The Integration tab keeps a persistent run history: a list of every run with its status, timing, and row counts, plus a detail view that reads the tail of that run's log.
+
+Two design choices make this history trustworthy. First, a run row is written before any work begins and finalized only when the run ends, so a run is always visible even if it fails partway. Second, a run that was still marked Running when the application restarted is flipped to Interrupted by the startup sweep, so a crash leaves a detectable orphan rather than a silent gap. When you scan the history and see a clean sequence of Completed rows, that is real evidence the syncs are healthy. When you see an Interrupted row, you know exactly which run to investigate.
+
+The run history also outlives the integration that produced it. Deleting an integration definition does not erase its past runs, because the audit value of the history is separate from the definition. An admin reviewing what happened last quarter can still see it even if the integration itself was retired.
+
+## Startup Errors: The Recovery Log
+
+When EDGEBIC cannot open its database at launch, it does not crash. It opens a recovery window that shows the error with expandable details, embeds a data-source editor so you can fix the connection on the spot, and offers to retry, reset to the default local database, repair the database, or exit. That same failure is written to a dedicated startup log.
+
+This log is the one support asks for when the application will not start, because it captures the condition before the main application ever loads. A shared server that was down for maintenance, a data source pointed at the wrong place, or a permissions change on the database file all land here. Pair the log with a note of what changed recently and the diagnosis is usually quick. For a broader view of connection problems, the [database connection troubleshooting guide](/blog/troubleshooting-edgebic-database-connections) walks the same recovery window in detail.
+
+## The Security Audit Trail
+
+Security-relevant events (sign-ins, account and permission changes) accumulate in an append-only audit trail inside the database. It is not a run log you open from a dialog. It is a permanent record your administrator or support queries when a compliance question arrives.
+
+Two things keep that record meaningful. There is no in-app screen to browse it yet, so treat it as a queryable record rather than a dashboard. And its value depends on account hygiene: one account per person, never a shared login, so that every entry names a real individual. That is exactly why [role-based access](/blog/how-role-based-access-protects-the-schedule) insists on individual accounts. A shared "planner" login turns the audit trail into a record that cannot answer the question it exists to answer.
+
+## Which Log for Which Question
+
+The skill is matching the question to the surface. This table is the shortcut.
+
+| The question | The log to read | Where to open it |
+|---|---|---|
+| Why did these rows not import? | Import run log | Import result dialog |
+| Did last night's sync run, and cleanly? | Integration run history | Integration tab |
+| Why will EDGEBIC not start? | Startup error log | Recovery window points to it |
+| Who changed this account or permission? | Security audit trail | Queried from the database |
+| Why did a reschedule move this job? | Schedule change record | Accumulated in the database |
+
+The last row points at the schedule change record, which logs every accepted schedule change so a plan's history is traceable. It is the audit surface planners care about most, and it is covered in [the EDGEBIC schedule change log](/blog/the-edgebic-schedule-change-log-audit-trail).
+
+## A Reading Habit Worth Keeping
+
+None of this is heavy. Read the import log after every import that reports failures. Glance at the integration run history when a scheduled sync matters, looking for Interrupted rows and low counts. Keep the startup log in mind as the thing support wants when the application will not open. And keep accounts one-per-person so the audit trail stays worth querying.
+
+A team that reads its logs by habit catches a broken sync the morning after rather than the week after, and hands support a specific file instead of a vague symptom. One further surface sits behind these when a scheduling run itself is the mystery: [the EDGEBIC scheduling session log](/blog/reading-the-edgebic-scheduling-session-log) is the decision-by-decision trace to reach for once the failure dialog and the anomaly report have not explained what happened. For the wider operational picture behind these surfaces, see [what production scheduling is](/blog/what-is-production-scheduling), and for the full administrator reference, return to the [EDGEBIC admin guide](/blog/edgebic-admin-guide).

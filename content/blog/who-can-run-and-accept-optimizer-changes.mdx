@@ -1,0 +1,87 @@
+---
+title: "Who Can Run and Accept Optimizer Changes"
+description: "Viewing, running, accepting, and configuring the optimizer are four separate permissions. Here is how to split them across planners, supervisors, and administrators."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - optimizer permissions
+  - scheduling software roles
+  - who can accept a schedule
+  - production planning access control
+  - schedule optimization software
+  - role based scheduling access
+targetPhrase: "optimizer permissions"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "Are optimizer permissions separate from scheduling permissions?"
+    answer: "Yes. EDGEBIC treats the optimizer as its own permission group, with distinct codes for viewing the optimizer, running a proposal, accepting one, and configuring the engine. That separation exists because running the optimizer changes nothing while accepting a proposal writes to the plan. A role can be allowed to explore alternatives without being allowed to commit one."
+  - question: "Can I let a supervisor run the optimizer without letting them change the plan?"
+    answer: "Yes, and it is a common setup. Grant the view and run permissions and withhold the accept permission. The supervisor can open the Optimizer tab, pick a goal, run it, and read the verdict, the comparison table, and the move list. They cannot commit the proposal. Since a run writes nothing until Accept, there is no risk in letting more people look."
+  - question: "How does a new permission reach the administrator role?"
+    answer: "Automatically. EDGEBIC reflects over its permission registry at startup and grants every registered code to the administrator role, on existing databases as well as new ones. That means a release that ships a new optimizer permission does not lock administrators out of the feature it just shipped. Custom roles that behave like administrators are not auto-granted by design, so grant those in the role matrix."
+qaQuestions:
+  - question: "Our night planner keeps accepting optimizer proposals that upset the day shift. What is the clean fix?"
+    answer: "Withhold the accept permission from the night planner role and keep view and run. They can still study alternatives and hand you the Explain text, which copies to the clipboard for an email. You accept in the morning with the day shift in the room. If the plan changed overnight, Accept refuses on a stale proposal and offers a rerun, so you are never committing yesterday's answer."
+  - question: "Who should hold the configure permission for the optimizer engine?"
+    answer: "Keep it narrow, typically one or two administrators. The engine choice sits in Options under Schedule and decides whether runs use the multi-run search or the mathematical solver. It is a site level decision, not a per-run one, and both engines carry the same never-worse guarantee, so there is no operational reason for planners to change it day to day."
+---
+
+**Viewing the optimizer, running a proposal, accepting one, and configuring the engine are four separate permissions in EDGEBIC, so you can let people explore alternatives without letting them commit one.** That split follows the shape of the feature itself. A run computes in memory and writes nothing. Accept is the single action that writes to the plan. Treating them as one permission would force you to choose between hiding a useful analysis tool and handing out the authority to change the floor's day.
+
+EDGEBIC by User Solutions carries permissions as a registry rather than a set of hard-coded switches, which is why the optimizer arrived with its own codes rather than borrowing the general scheduling ones. This post covers the four permissions, sensible role splits, and how new codes reach the administrator role without a manual step.
+
+## The four permissions
+
+| Permission | What it allows | Typical holder |
+|---|---|---|
+| View | Open the Optimizer tab and read a result | Planners, supervisors, operations managers |
+| Run | Start a run, pick a goal and a time budget, cancel | Planners, senior supervisors |
+| Accept | Commit a proposal to the plan and write the audit record | Planners with plan authority |
+| Configure | Change the optimizer engine in Options under Schedule | Administrators |
+
+The important line is between Run and Accept. Everything up to Accept is reversible by doing nothing: a proposal lives only on the screen, and closing the application drops it. Accept persists the plan through the same pipeline a normal scheduling run uses and writes one audit record. That is the moment authority matters, and it is the moment the permission model separates.
+
+## Why running is safe to share
+
+The three promises printed under every optimizer result are the reason you can grant Run widely: nothing saved yet, completed work untouched, and never worse than current plan. A run does not lock records, does not disturb other users' views, and does not touch the database. Two planners can run the optimizer at the same time on the same data and neither will see the other's proposal, because proposals are held in memory and never shared.
+
+That makes Run a low-risk permission to hand a supervisor who wants to test an idea. Give them view and run, let them try the Fewest changes goal mid-week, and let them bring you the result. The Explain dialog copies its whole plain-language story to the clipboard, so the conversation happens over the same text that would land in the audit record if you accepted. See [the optimizer Explain dialog and audit trail](/blog/the-optimizer-explain-dialog-and-audit-trail).
+
+## Why accepting should be narrow
+
+Accept does four things at once. The proposed starts and ends replace the current ones for exactly the operations in the move list. Completed and in-progress steps pass through unchanged, as in every reschedule. Work center load re-forms around the new plan. And one audit record is written capturing the goal, the numbers before and after, the moves, and the seed.
+
+Every one of those is visible to the whole plant within seconds. The Gantt, Job View, the Drive Schedule grid, and the dashboards all refresh. If two people can Accept and neither knows the other is looking, the floor sees a plan change with no owner. Keeping Accept narrow gives every change a name.
+
+There is a built-in guard for the near-miss case. If the plan changed while a proposal was being reviewed, because a colleague rescheduled or actuals landed from the floor, Accept refuses rather than overwrite. A banner appears asking you to rerun on the latest data, with a button that does exactly that. See [optimizer staleness protection](/blog/staleness-protection-in-the-optimizer). That guard protects data, not authority, so it is not a substitute for a sensible permission split.
+
+## Three role patterns that work
+
+**Single planner shop.** One person holds view, run, and accept. Configure sits with whoever administers the installation. This is the simplest setup and the most common in small plants.
+
+**Planner plus supervisors.** The planner holds all three operational permissions. Supervisors hold view and run so they can test scenarios for their own areas and bring evidence to the daily meeting. Nobody but the planner commits.
+
+**Split shifts.** Each shift's planner holds view and run. Accept is held by the shift that owns the committed plan, typically day shift. Off-shift planners produce proposals and hand them over with the copied Explain text. The staleness guard makes this safe: if the plan moved overnight, a stale proposal cannot be accepted by accident.
+
+## How new permissions reach administrators
+
+When a release adds a permission code, EDGEBIC grants it to the administrator role at startup, on existing databases as well as new ones. This is deliberate. Without it, every release that shipped a new module would quietly lock administrators out of the feature it just shipped, and someone would have to notice and fix the role matrix by hand.
+
+Custom roles that behave like an administrator are not auto-granted. That is also deliberate: a role you built for your plant is yours to define, and silently widening it on upgrade would be the wrong default. If you maintain a super planner role of your own, add new optimizer permissions to it in the role matrix after an upgrade.
+
+## Permissions are not the only gate
+
+Two other things limit what a proposal can do, and they apply regardless of who is running it.
+
+Completed and in-progress work is never moved. That is the same contract every reschedule honors, not an optimizer-specific courtesy, and it means even a user with Accept cannot rewrite what the floor already recorded. See [how the optimizer preserves completed and started work](/blog/how-the-optimizer-preserves-completed-and-started-work).
+
+Every proposal is measured against your current plan before you see it, and a proposal that is not strictly better is never shown as an improvement. A user with Accept cannot commit a downgrade, because a downgrade never reaches the Accept button.
+
+## The bottom line
+
+Split the optimizer's four permissions along the line the feature already draws: viewing and running write nothing and can be shared widely, accepting writes the plan and should be narrow, and configuring the engine is a site level administrator decision. Administrators inherit new codes automatically at startup, while custom roles you built need a manual grant after an upgrade. To set them, open your role matrix and look for the optimizer group. For the feature itself, read the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) and [what happens when you accept an optimized schedule](/blog/what-happens-when-you-accept-an-optimized-schedule), and explore the platform at [EDGEBIC](/edgebic).

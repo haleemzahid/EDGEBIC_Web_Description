@@ -1,0 +1,141 @@
+---
+title: "EDGEBIC + Fishbowl: The Complete Scheduling Integration Guide"
+description: "Fishbowl production scheduling integration with EDGEBIC step by step: export parts, bills of material and manufacture orders, map columns once, schedule at finite capacity."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Fishbowl production scheduling integration
+  - Fishbowl finite capacity scheduling
+  - Fishbowl manufacturing scheduling
+  - EDGEBIC Fishbowl integration
+  - Fishbowl work order scheduling
+  - import mask ERP integration
+  - Fishbowl shop floor scheduling
+targetPhrase: "Fishbowl production scheduling integration"
+wordCount: 2020
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC have a certified Fishbowl connector?"
+    answer: "No, and that is a deliberate design choice. EDGEBIC integrates with Fishbowl through reusable Excel, CSV, and database import masks rather than a certified connector. You map the columns of a Fishbowl export once, and every later run is two clicks. Nothing is installed inside Fishbowl, no schema is extended, and no interface object joins your ERP's upgrade path."
+  - question: "What Fishbowl data does EDGEBIC need to build a finite capacity schedule?"
+    answer: "Parts and open manufacture or work orders carry most of the model, and a bill of material export helps if you want components on the routing. The operation-level detail Fishbowl does not hold (work centers, operation sequence, run and setup times) is built once in EDGEBIC. Each export goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed."
+  - question: "Will adding EDGEBIC change how Fishbowl is used?"
+    answer: "No. Fishbowl stays the system of record for parts, inventory, purchasing, and manufacture orders. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machine counts, and hands dates and dispatch lists back as Excel files. Inventory transactions and order entry keep running exactly as they do today, so no Fishbowl process has to be redesigned."
+  - question: "How do finite capacity dates get back into Fishbowl?"
+    answer: "Through Excel and whatever date field your manufacture order process already uses. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, and every report exports to Excel or PDF with the column layout you saved. There is no automated write-back, which is deliberate: changes to Fishbowl records stay inside your existing process."
+qaQuestions:
+  - question: "Our Fishbowl bills of material carry stages, but the stages have no run times. Can EDGEBIC use them as the routing?"
+    answer: "Use them as a starting outline, not as the finished routing. A Fishbowl bill of material tells you which parts a stage consumes, and stages give you a rough sequence, but scheduling needs the operation detail Fishbowl does not carry: which work center each stage runs on, hours per unit, and setup time. The efficient path is to export the bill of material as a scaffold, then fill in the work center and the times once in EDGEBIC, either in the graphical routing designer or in a routing spreadsheet built from the export. After that one-time build, every future manufacture order for that part reuses the routing automatically, so you never re-enter it."
+  - question: "We run several Fishbowl locations. Should they all import into one EDGEBIC database?"
+    answer: "Split by scheduling decision, not by Fishbowl structure. If the locations share machines, share operators, or transfer work between sites, keep them in one database and use departments to group each site's work centers, because the engine can only balance load across resources it can see. If each location plans independently and never borrows capacity, a database per location keeps files small and each planner's view focused. The order count is rarely the deciding factor, since imports stream row by row rather than loading a whole workbook into memory."
+---
+
+**Integrating Fishbowl with EDGEBIC means exporting the parts and open manufacture orders Fishbowl already holds to Excel or CSV, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Fishbowl carries parts, inventory, and manufacture orders well; the operation-level routing it does not carry (work centers and run and setup times per step) is built once inside EDGEBIC. Executable dates then export back for your team and your customers. There is no add-in inside Fishbowl and no certified connector to maintain through an upgrade.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with business systems this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins, including Cummins scheduling across 33 locations from AS400-era data. This guide covers the Fishbowl case specifically: what to export, where the routing detail comes from, what the engine does with the result, and what a realistic first two weeks looks like.
+
+## Where Fishbowl stops and detailed scheduling starts
+
+Fishbowl is very good at inventory and order management. Parts, stock levels, purchase orders, manufacture orders, and the bill of materials all belong there and should stay there. What Fishbowl does not do is finite capacity scheduling, and that is the gap a planner feels every morning:
+
+- Which of these open manufacture orders actually fits on the constraint machine this week?
+- If the rush job jumps the queue, which promised dates slip and by how much?
+- Is the assembly cell loaded to 80 percent or 140 percent next Tuesday?
+
+Those are finite capacity questions, and answering them means modeling shifts, machine instances, changeover sequences, and operator skills against every open order at once. Fishbowl schedules manufacture orders by date and availability but does not sequence them against real machine capacity, which is why a dedicated scheduling layer beside it is the standard pattern. The general argument is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the wider product comparison is on the [RMDB versus Fishbowl page](/compare-products/rmdb-vs-fishbowl).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every system, Fishbowl included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Fishbowl to EDGEBIC | Parts | Excel or CSV export to Product import mask |
+| Fishbowl to EDGEBIC | Bills of material (optional scaffold) | Export to BOR import mask, two-pass |
+| EDGEBIC (built once) | Work centers, operation times | Graphical designer or Workcenter and BOR masks |
+| Fishbowl to EDGEBIC | Open manufacture or work orders | Export to SalesOrder import mask |
+| Floor to EDGEBIC | Confirmed hours (optional) | Export to Actuals import mask |
+| EDGEBIC to Fishbowl | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (an Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row carries headings, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks: pick the mask, press Do It.
+
+Every row in your file produces exactly one outcome: **Created**, **Updated**, **Reused** (found and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row. Nothing half-imports silently.
+
+## Step 1: export parts and manufacture orders
+
+Two Fishbowl exports carry the demand and the item master, and an optional third gives you a routing scaffold.
+
+1. **Parts.** The part number, description, unit of measure, and any cost or price columns you want visible. The identifier is the natural key and matching is case-insensitive, so `PUMP-A` in the file finds `Pump-A` in the database.
+2. **Open manufacture or work orders.** Part, quantity, order reference, and dates.
+3. **Bills of material (optional).** One row per component, useful as a scaffold when you build routings.
+
+Any report or export in Fishbowl that saves to Excel or CSV is a valid source. You are not writing plugins, not touching the database directly, and not asking for a new interface. The file is the interface.
+
+## Step 2: build the routing detail once
+
+Fishbowl gives you parts and a rough bill of materials, but not the operation detail scheduling needs. You supply that one time, two clean ways:
+
+- **Draw it.** In the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour) you place each operation on a work center, set hours per unit and setup time, and connect the steps in order.
+- **Import it from a spreadsheet.** Write one row per operation (end product, work center, sequence number, hours per unit, setup time) and load it through the BOR mask. A Fishbowl bill of material export makes a useful starting point here: the parts and rough sequence are already listed, and you add the work center and the times.
+
+Number sequences in gaps of 10 so inserting a step next quarter becomes 25 and nothing renumbers. Work centers are entered directly or loaded from a small spreadsheet whose most important column is `Number_Of_Instances`, the count of identical machines each center holds.
+
+## Step 3: why the routing import takes two passes
+
+Routings are the hardest data to build because operations reference each other: step 10 feeds step 20 feeds step 30. A naive row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import therefore runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product so the routing renders as one connected flow.
+
+Keep all of one product's steps in one file, because a routing import wipes and recreates that product's steps once per run, which is what makes re-imports idempotent. And re-importing is safe for running orders, because every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: orders in, then run the scheduler
+
+The order import maps part, quantity, reference, and dates. When your export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as `{Ref}-{line}`, which keeps a multi-line order together instead of scattering it.
+
+One rule matters more than any other: **imports never schedule anything.** After the run, imported orders sit as unscheduled demand. You then run the scheduler, which states its scope before it plans (how many jobs are new and how many existing jobs are being rescheduled), and the new work slots around everything already committed on the floor. Data movement and planning stay separate on purpose. The modes are covered in [EDGEBIC scheduling modes explained](/blog/edgebic-scheduling-modes-explained).
+
+Once the data is in, the whole engine applies to your Fishbowl work: finite capacity across multiple shifts and machine instances, [work center groups that re-shop the machine pool on every reschedule](/blog/edgebic-work-center-groups-explained), a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending executable dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet. The work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved, which turns a dispatch list into a saved report rather than a document someone rebuilds each morning.
+
+From there, revised dates go back into Fishbowl through whatever date field your manufacture order process already uses. There is no automated write-back, which is deliberate: your inventory data stays under your team's control. The category framing is on the [ERP scheduling add-on page](/erp-scheduling-add-on).
+
+## A realistic first two weeks
+
+The method behind this guide has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. Fishbowl shops usually spend the extra runway on the routing build, because the part and order files map quickly.
+
+| Days | Work |
+|---|---|
+| 1 to 2 | Export parts and open orders; build and run those two masks; verify counts against Fishbowl |
+| 3 to 5 | Build work centers and routings (drawn or imported from the bill of materials scaffold) |
+| 6 | Run the first full finite capacity schedule |
+| 7 to 9 | Compare EDGEBIC dates to your current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 10 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+If you are starting from an empty database, the [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the sequence in detail, and the [Fishbowl to EDGEBIC data mapping reference](/blog/fishbowl-to-edgebic-data-mapping-reference) is the field-level lookup you keep open while building masks.
+
+## Prove it with your own export
+
+The fastest evaluation is not a feature list, it is your own file. Export this week's open manufacture orders and your part list, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and once one routing exists you leave having watched your own plant scheduled against its own capacity. Shops weighing several systems can also read the [QuickBooks](/blog/edgebic-quickbooks-integration-guide) and [Odoo](/blog/edgebic-odoo-integration-guide) versions of this guide: the method is identical, which is the point.
+
+<Accordion title="Does EDGEBIC have a certified Fishbowl connector?">
+No, and that is a deliberate design choice. EDGEBIC integrates with Fishbowl through reusable Excel, CSV, and database import masks rather than a certified connector. You map the columns of a Fishbowl export once, and every later run is two clicks. Nothing is installed inside Fishbowl, no schema is extended, and no interface object joins your ERP's upgrade path.
+</Accordion>
+
+<Accordion title="What Fishbowl data does EDGEBIC need to build a finite capacity schedule?">
+Parts and open manufacture or work orders carry most of the model, and a bill of material export helps if you want components on the routing. The operation-level detail Fishbowl does not hold (work centers, operation sequence, run and setup times) is built once in EDGEBIC. Each export goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="Will adding EDGEBIC change how Fishbowl is used?">
+No. Fishbowl stays the system of record for parts, inventory, purchasing, and manufacture orders. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machine counts, and hands dates and dispatch lists back as Excel files. Inventory transactions and order entry keep running exactly as they do today, so no Fishbowl process has to be redesigned.
+</Accordion>
+
+<Accordion title="How do finite capacity dates get back into Fishbowl?">
+Through Excel and whatever date field your manufacture order process already uses. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, and every report exports to Excel or PDF with the column layout you saved. There is no automated write-back, which is deliberate: changes to Fishbowl records stay inside your existing process.
+</Accordion>

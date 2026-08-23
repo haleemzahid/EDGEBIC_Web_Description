@@ -1,0 +1,145 @@
+---
+title: "Overlapping Operations When Changeovers Are Sequence-Dependent"
+description: "The lot streaming setup time interaction in EDGEBIC: piece-count overlap uses the resolved changeover, so resequencing a machine moves every downstream start."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - lot streaming setup time interaction
+  - sequence dependent setup overlap
+  - transfer batch setup time
+  - changeover matrix scheduling
+  - operation overlap calculation
+  - setup source audit trail
+targetPhrase: "lot streaming setup time interaction"
+wordCount: 1985
+readingTime: 10
+faqQuestions:
+  - question: "Does the sequence-dependent changeover time affect when a downstream operation can start?"
+    answer: "On a discrete machine using piece-count overlap, yes, directly. The overlap formula is the resolved setup plus the transfer batch multiplied by hours per piece, so a changeover that resolves to four hours instead of thirty minutes pushes the downstream start three and a half hours later on that job alone. The flow-lag model behaves differently: it is a pure start-to-start lag in hours and setup plays no part in it."
+  - question: "Which setup value does the overlap formula use, the matrix value or the routing default?"
+    answer: "Whichever the resolver produced for that operation on that run. The resolver runs once per operation, caches its answer, and the overlap formula reads the cached value, falling back to the routing's flat setup only when no cached value exists. That means a matrix hit and the overlap calculation always agree, and you never get a schedule where the operation is priced with one changeover and the handoff computed with another."
+  - question: "Why is the setup resolved once and cached rather than recomputed when the overlap is calculated?"
+    answer: "Because by the time the overlap is computed, the operation's own allocation has already been written to the machine. Asking again what ran here last would find this job's own product and return a zero changeover, which would silently shorten the overlap window. Caching the first answer is what keeps the handoff honest."
+  - question: "If I reorder the jobs on a machine, do the downstream start times change?"
+    answer: "Yes, and often by more than planners expect. Reordering changes which changeover each job incurs, the changeover feeds the overlap formula, and the overlap sets the downstream earliest start. Sequencing like products together shortens changeovers and pulls every downstream operation earlier at the same time. That is two benefits from one decision, and it is why sequencing and overlap should be reviewed together."
+  - question: "Do I need a full reschedule after editing the changeover matrix?"
+    answer: "Yes, if you want existing scheduled jobs to pick it up. A full reschedule clears the per-run cached setup values on every routing step before rebuilding, so the new matrix cells are read fresh. Incremental modes leave already-scheduled jobs alone, so their operations keep the changeover they were planned with until they are rescheduled for some other reason."
+qaQuestions:
+  - question: "Our lathe runs 100 shafts at half an hour each with a transfer batch of 20. How much does the changeover actually move the deburr start?"
+    answer: "The overlap window is the resolved setup plus twenty pieces at half an hour, so ten hours of running plus whatever the changeover resolves to. Coming off the same product, the changeover is zero and deburr starts ten hours after the lathe starts. Coming off a two-hour changeover, deburr starts at twelve hours. The lathe's own finish is unchanged at fifty-two hours either way, so the changeover is moving the overlap point, not the operation."
+  - question: "We set a transfer batch on a paint booth and nothing overlapped. What went wrong?"
+    answer: "The booth is almost certainly flagged as a continuous process, which disables piece-count overlap on every operation routed to it and falls back to the flow lag instead. The anomaly report has a check for exactly this pairing, and it will name the operation. Either clear the continuous-process flag if the booth genuinely produces countable pieces, or leave it set and express the overlap as a start-to-start lag in hours instead."
+---
+
+**On a discrete machine, [EDGEBIC by User Solutions](/edgebic) computes operation overlap as the resolved changeover time plus the transfer batch multiplied by hours per piece, which means a sequence-dependent changeover matrix does not just lengthen an operation: it moves every downstream start on that routing.** The two features share one number, and the way that number is resolved and cached is the whole interaction.
+
+If either mechanism is new, read [lot streaming explained](/blog/edgebic-lot-streaming-explained) and [the setup matrix explained](/blog/edgebic-setup-matrix-explained) first. For the definitional pieces, [what is a transfer batch](/blog/what-is-a-transfer-batch) and [what is a setup family](/blog/what-is-a-setup-family-sequence-dependent-changeover) cover the vocabulary. This post is about the seam between them.
+
+## The Shared Number
+
+Two of the three overlap behaviors are relevant here.
+
+**Piece-count overlap** fires when an operation carries a transfer batch above zero and its machine is not flagged as a continuous process. The downstream operation's earliest start is:
+
+```
+upstream start + resolved setup + min(transfer batch, order quantity) × hours per piece
+                + transfer delay
+```
+
+Setup is in that formula, in front of the run time, because the machine must be changed over before the first piece exists.
+
+**Flow-lag overlap** fires when the transfer batch is zero (or the machine is continuous-process) and a flow step is set. The downstream earliest start is simply the upstream start plus that many hours. Run hours, quantity, and setup all play no part. So the setup matrix has no effect at all on a flow-lag operation.
+
+That asymmetry is the first thing to internalize. If your overlap is expressed in hours of head start, changeover data will not move it. If your overlap is expressed in pieces, changeover data moves it on every job.
+
+## Why the Value Is Resolved Once and Cached
+
+The resolver that produces a changeover time walks a short chain: cold start, same product, product-level matrix cell, family-level matrix cell, then the routing default and finally the machine default. [The five-level chain post](/blog/how-edgebic-resolves-setup-time-the-five-level-chain) covers each level. What matters here is *when* it runs.
+
+It runs once, when the operation's total hours are assembled, and the answer is cached on the routing step for the rest of that scheduling run. The overlap formula then reads the cached value rather than asking again.
+
+There is a concrete reason for that, and it is not performance. By the time the overlap is being computed, the operation's own allocation has already been written into the machine's capacity map. If the resolver ran a second time, the question "what ran on this machine most recently" would find this job's own product and return a zero changeover. The overlap window would silently shrink by the whole changeover, the downstream operation would be planned to start before its material could physically exist, and nothing in the plan would look wrong.
+
+Caching the first answer removes that trap entirely. The operation's duration and the handoff to the next operation always agree on one changeover value.
+
+The cache is deliberately per run. It is cleared at the start of each full rebuild and never saved, so a changeover resolved against last week's sequence cannot leak into this week's plan.
+
+## What This Looks Like With Real Numbers
+
+Take a lathe running 100 shafts at 0.5 hours per piece, with a transfer batch of 20 and a half-hour material-handling delay. The full run is 50 hours of cutting plus whatever the changeover costs.
+
+| Preceding job | Resolved changeover | Overlap window | Deburr may start |
+|---|---|---|---|
+| Same shaft, back to back | 0 h | 0 + 20 × 0.5 + 0.5 | 10.5 h after the lathe starts |
+| Different product, same family | 0.5 h from the family cell | 0.5 + 10 + 0.5 | 11.0 h after the lathe starts |
+| Different family | 2.0 h from the family cell | 2.0 + 10 + 0.5 | 12.5 h after the lathe starts |
+
+The lathe's own finish barely moves between those rows relative to a 50-hour run. What moves is the moment deburring can begin: two hours of spread on a single job, from a decision about job order that has nothing to do with either operation's own content.
+
+Now scale that across a machine that runs eight jobs a day. Sequencing by changeover cost is usually sold as a way to recover setup hours. On a routing that uses piece-count overlap, it also pulls every downstream operation earlier. That second effect is invisible in a setup-hours report and very visible in a lead-time report.
+
+## Cold Start Is Not Zero
+
+The first job scheduled on a machine in a run has no prior product, so the resolver returns a cold start and uses the routing's own setup, not zero. That is correct: the machine still needs its initial preparation even though there is no changeover from anything.
+
+For the overlap formula, that means the first job on a machine each run gets a slightly later overlap point than a steady-state job coming off the same product would. Planners occasionally read that as a bug. It is the honest answer, and the alternative (assuming a free changeover on the first job of every run) would understate every plan.
+
+Only the same-product case returns a genuine zero. If two different products in one family should also change over in zero minutes, the family-to-itself cell has to be entered explicitly as zero. Leaving it blank falls through to the routing default, and on a routing that streams by pieces, that default lands directly in the overlap window.
+
+## After a Partial Completion, Reality Wins
+
+The most valuable part of the interaction shows up on reschedules.
+
+When a job has actuals, the analysis records the product that was *physically* last completed on each machine and instance. The resolver consults that first, before it looks at anything in the planning state. So the changeover cost for the first remaining operation on that machine reflects what the machine actually ran, not what an earlier plan assumed it would run.
+
+That flows straight into the overlap formula. A downstream operation waiting on a partially completed upstream operation is timed from the real changeover the floor is about to perform.
+
+There is a second reschedule behavior worth knowing. When the upstream operation is already in progress, the overlap is not projected from the formula at all if the piece counts say otherwise. Logged piece counts are summed day by day, and if the transfer batch threshold has already been crossed, the downstream start is set to the end of the shift on the crossing day rather than to a formula result. The formula is a projection used only until real piece counts exist. [How actuals flow into the schedule](/blog/how-actuals-flow-into-the-edgebic-schedule) covers the wider mechanism.
+
+## Synchronized Machines Do Not Re-Resolve
+
+A synchronized secondary machine mirrors its partner's schedule, and its changeover is stamped as inherited rather than resolved independently. That is correct by definition: the two machines are performing one physical setup at the same time on the same fixture, so resolving a second changeover for the mirror would double-count it.
+
+The practical read is that the audit column on a mirrored row will always say the value came from the parent. Do not go looking for a matrix hit there.
+
+## Four Configuration Conflicts the Report Catches
+
+Because both mechanisms write into the same handoff, the anomaly report carries specific checks for the combinations that are legal to enter and ambiguous in intent. [The anomaly checks explained](/blog/what-the-edgebic-anomaly-checks-actually-look-for) covers the full catalog; these four are the ones relevant here.
+
+| Symptom | What the engine does | What to do |
+|---|---|---|
+| Both a transfer batch and a flow step set on one operation | Uses the transfer batch on a discrete machine, ignores the flow step | Clear whichever one you did not intend |
+| Transfer batch set on a continuous-process machine | Ignores the batch entirely, falls back to the flow lag | Clear the continuous-process flag, or express the overlap in hours |
+| Transfer batch at or above the order quantity | Caps at the order quantity, so the overlap equals a full serial wait | Lower the batch so it is a genuine sublot |
+| Queue time and a flow step on the same operation | The overlap result replaces the queue-adjusted end, discarding the queue | Move the wait into the transfer delay instead |
+
+The last one deserves emphasis because it is easy to configure with good intentions. Both overlap models return their result as the successor's gate, replacing whatever the queue calculation produced. If an operation genuinely needs both an overlap and a physical handling wait, express the wait as a transfer delay, which is added on top of the overlap window, rather than as queue time, which is discarded. The [queue and transit mistakes post](/blog/queue-and-transit-mistakes-edgebic) has the longer treatment.
+
+## Verifying the Two Features Agree
+
+Two columns tell you everything after a run.
+
+The **setup source** column names where the changeover came from: a product-level cell, a family-level cell, the routing default, the machine default, a cold start, a same-product zero, or a mirror. Product and family hits are shown at full brightness and the rest muted, so a machine that should be running on matrix data and is showing routing defaults everywhere is visible at a glance. That usually means one of the two products in the pair has no family assigned, because a family lookup needs both sides.
+
+The **setup reason** column carries the sentence version, naming the two products or families and the minutes.
+
+If the sources look right and the overlap still looks wrong, check the order quantity against the transfer batch, then check whether the machine is flagged continuous-process. Those two account for most of it. [Setup matrix mistakes](/blog/setup-matrix-mistakes-edgebic) and [lot streaming mistakes](/blog/lot-streaming-mistakes-edgebic) list the rest with symptoms.
+
+## Practical Sequence for Setting Both Up
+
+1. Decide the overlap model per operation first. Countable pieces on a discrete machine means a transfer batch. A continuous stream means a flow lag in hours, and the setup matrix will not touch it.
+2. Build changeover families before individual product overrides. Families carry roughly all of the useful data at a fraction of the cell count, and the product level exists for genuine exceptions.
+3. Enter the family-to-itself zero cells explicitly wherever consecutive different products in one family really do change over for free.
+4. Set the transfer batch to a real sublot the floor will actually move, not to a number that happens to divide the order.
+5. Run a full reschedule after matrix edits so cached changeover values are cleared and rebuilt.
+6. Read the setup source column and confirm matrix hits appear on the non-first jobs in each machine's sequence.
+
+One sizing note on step four. A transfer batch that is too small produces an overlap the floor cannot honor, because nobody is moving four pieces at a time across the shop. A batch that is too large collapses toward a serial wait, and at or above the order quantity it is a serial wait exactly. The useful range is the smallest quantity your material handling will actually move as a unit: a full tote, a full rack, a full pallet layer. Ask the people who move the parts rather than dividing the order quantity by a number that looks tidy.
+
+Both features are opt-in per operation, and both do nothing until you configure them, so there is no rush and no risk in staging the rollout one machine at a time. Start with the machine where changeovers hurt most, which is usually the one where the sequencing argument gets loudest.
+
+For the broader picture of how a step's timing is assembled, [how EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing) traces the whole chain from allocation to handoff. For the other pairings that catch planners out, from machine pools meeting parallel operations to transit and operators, [the feature interactions that surprise people](/blog/advanced-scheduling-feature-interactions-edgebic) catalogs fourteen of them with the symptom, the reason, and the fix. For the full feature map, see the [complete guide](/blog/edgebic-complete-guide).

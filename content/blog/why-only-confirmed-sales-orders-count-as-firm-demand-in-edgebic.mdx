@@ -1,0 +1,109 @@
+---
+title: "Why Only Confirmed Sales Orders Count as Firm Demand in EDGEBIC"
+description: "EDGEBIC treats a sales order as firm demand only when its status is Confirmed. Here is why the status gate matters, how open quantity is bucketed, and the traps to avoid."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - firm demand sales order
+  - confirmed order status
+  - open quantity bucketing
+  - sales order line due date
+  - demand planning firm orders
+  - draft order excluded
+targetPhrase: "confirmed sales orders firm demand"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "When does a sales order become firm demand in EDGEBIC?"
+    answer: "A sales order contributes firm demand only when its status is Confirmed. Draft, Shipped, Closed, and Cancelled orders are all excluded. Confirming an order is a deliberate act that signals the commitment is commercially locked, and from that moment every open line on the order surfaces as firm demand in inventory projection and the MPS grid, bucketed by each line's own due date."
+  - question: "What quantity from a confirmed line counts as demand?"
+    answer: "The open quantity, which is ordered quantity minus quantity already shipped, floored at zero. A line ordered for 100 with 40 shipped contributes 60 units of firm demand. This updates automatically as shipments are recorded, so firm demand always reflects what is still owed to the customer without any planner intervention. Open quantity is computed from the two stored figures, not stored itself."
+  - question: "Which date does a sales order line get bucketed by?"
+    answer: "Each line is bucketed by its own due date, not the order header's requested date. This matters because one order can carry lines with different due dates, and each should land in the bucket where that product is actually needed. A line whose due date is already in the past is rolled forward into today's bucket, so overdue demand never disappears into a history bucket."
+qaQuestions:
+  - question: "A planner marked an order Confirmed before pricing was agreed and now the plan shows demand that is not real. What happened?"
+    answer: "Confirming an order immediately enters its lines into the demand pipeline. The moment the status flips to Confirmed, every open line surfaces as firm demand and can drive a projected stockout and a build suggestion. The documented best practice is to confirm an order only when it is commercially locked, because the status is the gate. If pricing is still open, keep the order in Draft, where its lines are excluded from firm demand entirely."
+  - question: "We turned on MPS mode but firm demand for our stocked items shows zero. Why?"
+    answer: "MPS mode sources firm demand from confirmed sales order lines rather than from open make-to-order jobs. If you enable it before entering sales order lines, there are no confirmed lines to read, so firm demand for make-to-stock items reads zero and the MPS suggests building everything from scratch. The documented migration order is to enter and confirm the sales order lines first, then switch to MPS mode, so real demand is present when the new sourcing takes over."
+---
+
+**A sales order counts as firm demand in EDGEBIC only when its status is Confirmed.** Draft, Shipped, Closed, and Cancelled orders are excluded. EDGEBIC by User Solutions makes the status a deliberate gate: confirming an order is the act that says the commitment is commercially locked, and from that point every open line on it drives inventory projection and the master production schedule. This post explains why the gate exists, exactly what quantity and date each confirmed line contributes, and the traps that catch planners who misunderstand the rule.
+
+The gate sounds like a small detail. It is actually the boundary between a plan built on real commitments and a plan built on maybes. For the wider planning context, see the [inventory and planning pillar](/blog/edgebic-planning-guide); for how orders drive demand more broadly, see [how sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic).
+
+## Firm Demand Versus Forecast
+
+Manufacturing planning runs on two kinds of independent demand. Forecast demand is a statistical estimate of future need. Firm demand is demand that is contractually committed and must be honored. The two are treated very differently: forecast can be consumed, netted, and suppressed inside a fence, while firm demand always flows through in full because a customer is owed those units.
+
+For firm demand to mean anything, the system has to know which records are genuine commitments. A quote is not a commitment. A draft order being negotiated is not a commitment. Only an order the business has agreed to fulfill is. EDGEBIC encodes that judgment as the Confirmed status, and it counts nothing else.
+
+## The Status Gate: Confirmed and Nothing Else
+
+A sales order moves through a lifecycle: Draft when entered, Confirmed when committed, Shipped when fulfilled, Closed when administratively finished, and Cancelled when withdrawn. Only Confirmed produces firm demand.
+
+| Status | Counts as firm demand? |
+|---|---|
+| Draft | No, still being entered or negotiated |
+| Confirmed | Yes, the commitment is locked |
+| Shipped | No, already fulfilled |
+| Closed | No, administratively finished |
+| Cancelled | No, withdrawn |
+
+The gate is binary and it is at the header level, so confirming the order confirms all its lines at once. This is why confirming is a meaningful action rather than a formality: it is the single switch that moves an order's lines into the demand that drives builds. The documented guidance is to confirm only when the order is commercially locked, because a premature confirmation puts phantom demand into the plan.
+
+## What a Confirmed Line Contributes: Open Quantity
+
+A confirmed line does not contribute its full ordered quantity. It contributes its open quantity, which is the ordered quantity minus the quantity already shipped, floored at zero. A line ordered for 500 with 350 shipped contributes 150 units of firm demand.
+
+Open quantity updates itself as shipments are recorded. When the shipped figure on a line rises, the open quantity falls, and the next projection reflects the lower firm demand automatically. No planner has to adjust the demand: recording the shipment is enough. This keeps firm demand equal to what is still owed to the customer at every moment, which is exactly the number a build plan should react to.
+
+Consider a line for 500 units shipped in stages:
+
+| Event | Quantity shipped | Open quantity (firm demand) |
+|---|---|---|
+| Line created | 0 | 500 |
+| First partial shipment | 150 | 350 |
+| Second shipment | 350 | 150 |
+| Final shipment | 500 | 0 |
+
+By the final shipment, the line contributes zero firm demand, having handed off all its units to actual dispatch.
+
+## Bucketing by Line Due Date
+
+Each confirmed line is bucketed by its own due date, not the order header's requested date. This matters because one order can carry several lines with different due dates, and each product should land in the bucket where it is genuinely needed. A single order might need product A in week 2 and product B in week 5; bucketing by line due date puts each demand where it belongs.
+
+Overdue lines are handled deliberately. A line whose due date has already passed is rolled forward into today's bucket rather than left in a history bucket. This prevents missed demand from vanishing: an order that was due last week and is still open shows up as demand you still have to satisfy now, exactly where a planner would expect to see it.
+
+## Why the Gate Prevents Double-Counting
+
+There is a deeper reason the status gate matters, and it is about not counting the same demand twice. When a make-to-order job is created from a sales order line, the line is the demand and the job is the shop's answer to it. If a plan counted both the confirmed line and its fulfilling job, one customer's 60 units would appear as 120 units of requirement, a stockout would be projected that does not exist, and the system would recommend building stock nobody asked for.
+
+EDGEBIC's MPS mode resolves this by sourcing firm demand from confirmed sales order lines and treating build-to-stock jobs purely as supply. The line is counted once, on the demand side; the job is counted once, on the supply side, as a scheduled receipt. The confirmed-line gate is what makes the line the single, authoritative demand record. This is covered further in [the six demand sources behind every job](/blog/the-six-demand-sources-behind-every-job-in-edgebic).
+
+## The Traps to Avoid
+
+Three mistakes follow directly from misunderstanding the gate.
+
+The first is confirming too early. The moment an order is Confirmed, its lines enter the demand pipeline and can trigger builds. Confirming before pricing or terms are agreed injects demand that may never materialize. Keep an order in Draft until it is commercially locked.
+
+The second is the MPS migration order. When MPS mode is switched on, firm demand starts coming from confirmed sales order lines instead of from open make-to-order jobs. If you enable the mode before entering any lines, firm demand for make-to-stock products reads zero and the MPS suggests building everything from nothing. The documented fix is to enter and confirm the sales order lines first, then enable the mode, so real demand is present when the new sourcing takes over.
+
+The third is forgetting to confirm at all. A planner can create an order and add every line correctly, but if the order stays in Draft, none of it appears as firm demand. If a product that clearly has orders shows zero firm demand, the first thing to check is whether the parent order was ever confirmed.
+
+## Available to Promise Depends on the Same Gate
+
+The confirmed-line gate does more than drive builds; it also underpins available-to-promise, the number that tells you how much you can commit to a new customer without breaking existing promises. Available to promise is computed against firm demand, and firm demand is confirmed lines only. Forecast never consumes available to promise. This is deliberate and important: a bucket can show plenty of projected stock built partly on a forecast, yet have little available to promise because confirmed orders already claim the real supply.
+
+The practical rule is to promise against available to promise, not against the projected balance. A planner who quotes a delivery off a healthy projected balance that is propped up by forecast can over-promise, because the forecasted portion is not committed supply. Quoting off available to promise, which only counts confirmed demand against real receipts, keeps promises honest. The confirmed-line gate is what makes available to promise trustworthy, because it guarantees the demand side of the calculation is genuine commitments rather than estimates.
+
+## The Payoff
+
+The status gate is what lets EDGEBIC treat firm demand as truly firm. Because only confirmed orders count, the demand that drives builds is demand the business has actually committed to. Because open quantity tracks shipments automatically, that demand shrinks as you fulfill it without any manual upkeep. Because lines bucket by their own due dates, the demand lands where it is needed rather than where the order was placed. The result is a plan you can trust to react to real commitments and nothing else.
+
+One last operational habit follows from the gate. When you review a plan, treat confirming as the deliberate checkpoint it is. An order sitting in Draft is a signal that the commercial terms are still open, and that is exactly the right time for its demand to be invisible to the plan. Moving it to Confirmed is the moment you accept that the business will build for it, so the demand appearing in the projection is the correct consequence, not a surprise. Planners who treat the Confirmed switch as a meaningful decision, rather than a formality clicked on every new order, get a demand picture they can trust, because every number in it traces to a commitment someone chose to make.
+
+To follow a confirmed line all the way to a schedule, read [from sales order to MPS to schedule](/blog/from-sales-order-to-mps-to-schedule-in-edgebic). For the fences that decide when forecast joins firm demand, read [demand fence versus planning fence](/blog/demand-fence-vs-planning-fence-in-edgebic).

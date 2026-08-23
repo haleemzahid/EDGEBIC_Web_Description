@@ -1,0 +1,89 @@
+---
+title: "How Moving Average Cost Updates on Each Receipt in EDGEBIC"
+description: "How EDGEBIC recomputes a product's moving average cost on every receipt, why issues leave it unchanged, and how each cost is captured on the ledger entry for history."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - moving average cost
+  - inventory valuation
+  - weighted average cost
+  - inventory receipt
+  - inventory ledger
+  - unit cost
+targetPhrase: "moving average cost"
+wordCount: 1300
+readingTime: 7
+faqQuestions:
+  - question: "What is moving average cost in EDGEBIC?"
+    answer: "Moving average cost is a product's running weighted-average unit cost, recomputed every time stock is received. When a receipt lands, EDGEBIC blends the cost of the incoming units with the value of the stock already on hand and divides by the new total quantity. The result is stored on the product and used as the valuation cost for that item until the next receipt shifts it again."
+  - question: "Does issuing or consuming stock change the moving average cost?"
+    answer: "No. Only receipts change the moving average cost. Issues, whether a manual pick or a job consuming from stock, draw units out at the current average and leave the average itself unchanged. This matches standard weighted-average accounting: consuming stock does not re-value what remains, it just reduces the quantity. The average only moves when new units arrive at a different cost and blend into the pool."
+  - question: "Why is a unit cost stored on each ledger entry as well as on the product?"
+    answer: "Because the product carries only the current average, while each ledger entry captures the cost at the moment it posted. Storing the cost on the entry gives you a permanent historical record: you can look back at any receipt or issue and see the average that was in effect then, even after later receipts have moved the product's live average. The product field answers what the item is worth now; the ledger entries answer what it was worth at each movement."
+qaQuestions:
+  - question: "We received a cheap lot and our part's cost barely moved. Why did it not drop to the new lot's price?"
+    answer: "Because moving average cost blends the new units with everything already on hand, it does not replace the old cost. If you held 500 units at 10.00 and received 100 at 6.00, the new average is the total value, 5000 plus 600, divided by the new total quantity of 600, which is about 9.33. The cheap lot pulled the average down, but only in proportion to its share of the pool. A small receipt against a large on-hand balance moves the average a little; a large receipt against a small balance moves it a lot. If you expected the price to snap to 6.00, that would be a last-cost method, not the weighted average EDGEBIC uses."
+  - question: "We want to audit what a job cost us in materials. Where does the cost come from?"
+    answer: "Read the ledger. Each inventory movement for the product carries the unit cost that was in effect when it posted, so an issue that fed a job records the average cost at that moment, not today's average. Open the transaction history for the part, find the issue tied to the job, and its captured unit cost times the quantity is the material value consumed. Because the cost is stamped on the entry rather than recomputed later, the number stays stable even after new receipts move the product's live average. That is what makes the ledger a trustworthy cost audit trail."
+---
+
+**[EDGEBIC by User Solutions](/edgebic) recomputes a product's moving average cost every time stock is received, blending the incoming units' cost with the value already on hand, while issues draw stock out at the current average and never change it; each movement also captures the cost in effect on its own ledger entry, so the history stays exact.** That single rule, receipts move the average and issues do not, is the whole model, and it keeps your inventory valuation honest without any manual revaluation.
+
+This post walks the receipt calculation, why consumption leaves the average alone, and why every ledger entry stores its own cost. For the ledger that records these movements, see the [EDGEBIC inventory ledger explained](/blog/edgebic-inventory-ledger-explained), and for the wider planning picture start from the [EDGEBIC planning guide](/blog/edgebic-planning-guide).
+
+## The Receipt Calculation
+
+Moving average cost is a running weighted average. When a receipt posts, EDGEBIC takes the value of the stock already on hand, adds the value of the incoming units, and divides by the new total quantity.
+
+The arithmetic is plain. Suppose a part holds 100 units at an average cost of 12.50, so the pool is worth 1250. A receipt of 200 units arrives at 14.00, worth 2800. The new average is the combined value over the combined quantity:
+
+```
+(1250 + 2800) / (100 + 200) = 4050 / 300 = 13.50
+```
+
+The product's moving average cost becomes 13.50. Notice it landed between the old 12.50 and the new 14.00, weighted toward the larger incoming lot. Every future valuation of that part uses 13.50 until the next receipt shifts it again.
+
+## Why Issues Leave the Average Alone
+
+Consuming stock does not change the average, and that is by design. When an issue posts, whether a manual pick, a scrap draw, or a job consuming from stock, EDGEBIC reduces the quantity at the current average cost. It does not re-value the units that remain.
+
+This is standard weighted-average behavior. Drawing units out of a pool tells you nothing new about what the remaining units cost, so the average holds steady. If you hold 300 units at 13.50 and issue 80, you still hold 220 units at 13.50. The value dropped, the quantity dropped, but the per-unit average did not move. Only a new receipt at a different price can shift it, because only a receipt adds units whose cost differs from the pool.
+
+## Each Movement Carries Its Own Cost
+
+The product field holds the current average. Every ledger entry holds the cost that was in effect the moment it posted. These are two different jobs.
+
+The product's moving average answers a present-tense question: what is this item worth right now. The ledger entries answer a historical question: what was it worth at each movement. When a receipt posts, its entry records the receipt cost. When an issue posts, its entry records the average in effect at that instant. Later receipts move the product's live average, but they never rewrite the numbers already stamped on past entries.
+
+That separation is what makes the ledger a reliable cost audit. You can open the transaction history for a part months later and read exactly what each receipt cost and what each issue consumed, even though the product's current average has moved on since.
+
+## A Worked Example: Auditing a Job's Material Cost
+
+Say a job pulled 80 units of a casting from stock in June. At the time, the casting's moving average cost was 9.33, reached after a mix of receipts earlier in the year.
+
+To audit the job, you open the casting's transaction history, find the issue tied to that job, and read its captured unit cost of 9.33. The material value the job consumed is 80 times 9.33, about 746. Two receipts have landed since June and the casting's live average is now 9.80, but the June issue still reads 9.33, because its cost was stamped when it posted. Your audit uses the real cost at the time, not a number that drifted after the fact.
+
+This is why the ledger, not the product's current field, is the right place to reconstruct historical cost. The product tells you the item's value today; the ledger tells you what it cost at every movement.
+
+## What Moves the Average and What Does Not
+
+Keeping the model straight is easy once you know which movements touch the average.
+
+| Movement | Changes the average? | Effect |
+|---|---|---|
+| Receipt (build to stock, purchase, return) | Yes | Blends incoming cost into the pool |
+| Issue (pick, scrap, consume from stock) | No | Draws units out at the current average |
+| Adjustment (cycle-count correction) | Depends on the direction and cost applied | Corrects quantity; a costed positive correction behaves like a receipt |
+| Opening balance | Yes, it seeds the average | Sets the initial cost when a product is first stocked |
+
+The pattern is clear: units arriving at a cost move the average, units leaving do not, and the very first opening balance sets the starting point.
+
+## Keeping Valuation Trustworthy
+
+Moving average cost is only as good as the receipt costs you feed it. Post receipts at their real landed cost, seed a new part with an accurate opening balance, and let issues flow at the running average. Do that and the product's valuation stays current with no manual revaluation, while the ledger keeps a permanent, entry-by-entry record you can audit any time.
+
+For how receipts and issues are recorded in the first place, see [why inventory transactions are append-only](/blog/why-inventory-transactions-are-append-only-in-edgebic), and for the accounting concept in general terms, read about [inventory carrying cost](/blog/inventory-carrying-cost). To see how a completed build posts the receipt that moves this average, read [how a build-to-stock job replenishes inventory](/blog/how-a-build-to-stock-job-replenishes-inventory).

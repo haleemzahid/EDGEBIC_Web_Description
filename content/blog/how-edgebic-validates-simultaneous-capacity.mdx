@@ -1,0 +1,157 @@
+---
+title: "How EDGEBIC Validates Simultaneous Capacity"
+description: "Simultaneous capacity validation scheduling explained: the four gates every candidate window must clear, the common shift rule, and rollback on failure."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - simultaneous capacity validation scheduling
+  - parallel machine capacity check
+  - common shift intersection
+  - all or nothing scheduling
+  - schedule rollback manufacturing
+  - mirrored schedule factor
+targetPhrase: "simultaneous capacity validation scheduling"
+wordCount: 1980
+readingTime: 10
+faqQuestions:
+  - question: "How does a scheduler check that several machines are free at the same time?"
+    answer: "EDGEBIC walks forward one calendar day at a time. For each day it intersects the shifts every machine in the group runs, and for each shared shift it proposes a start time and puts it through four validation gates: individual capacity, simultaneous start, instance conflicts, and continuous capacity. All four must pass for the window to be accepted. If any fails, the whole window is rejected and the search moves to the next shift or the next day."
+  - question: "What are the four validation gates for parallel scheduling?"
+    answer: "Gate one checks that each machine has a real capacity slot with at least a usable sliver of hours from the proposed start. Gate two checks that the exact start moment falls inside every machine's shift window with no conflicting allocation already sitting on it. Gate three checks that each machine has enough physical instances and that no instance is claimed twice inside the group. Gate four checks that capacity runs continuously from the start to the projected end without fragmentation."
+  - question: "Why does a parallel group get delayed instead of starting with the machines that are free?"
+    answer: "Because a parallel group is a statement that the operation needs all those machines at once. Starting two of three and leaving the third for later produces a plan that cannot be executed as written. EDGEBIC advances the search day by day until every member is simultaneously free, so a two-day maintenance window on one machine delays the whole group by two days rather than producing an impossible schedule."
+  - question: "What happens if a parallel operation fails partway through scheduling?"
+    answer: "Every successful allocation registers an undo action as it is made, and a failure runs those actions in reverse order. Schedule rows are removed and the capacity they consumed is released, so the shift map and the run state return to exactly what they were before the attempt. No partial group is left behind, which is what makes it safe for the engine to try a window and reject it."
+  - question: "Do mirrored machines go through the same capacity validation?"
+    answer: "No, and that is deliberate. Only the lead machine of a synchronized group is placed against real capacity. Dependent machines receive copies of its schedule without a capacity check, because they are physically committed to the same operation. The consequence is that a mirrored machine can show more allocated hours than its shift contains, which is intended behavior surfaced by an audit check rather than hidden."
+qaQuestions:
+  - question: "Two assembly lines both run 08:00 to 16:00 and both look free, but the group never schedules. Where do I look first?"
+    answer: "At the shift records rather than the shift times. Common shifts are found by matching the shift itself across every machine in the group, so two rows created separately that both read 08:00 to 16:00 count as no shift in common and gate one is never even reached. Open both machines' associated shift lists and confirm the same row appears on each. Delete the duplicate and assign the shared row, then reschedule."
+  - question: "One machine in our three-machine group is down Monday and Tuesday. What does the plan look like?"
+    answer: "All three machines start Wednesday. Monday and Tuesday both fail gate one for the machine under maintenance, so those windows are rejected outright and the search advances. On Wednesday every member has capacity, all four gates pass, and the group is placed together. The operation is two days later than the two healthy machines could have started, which is the honest answer for work that genuinely needs all three."
+---
+
+**Before EDGEBIC places a parallel operation, it has to prove that every machine in the group can start at the same moment, and it does that by putting each candidate window through four validation gates that must all pass.** Any single failure rejects the entire window, not just the machine that failed it. That all-or-nothing rule is what makes a parallel plan from [EDGEBIC by User Solutions](/edgebic) physically executable rather than optimistic.
+
+This post is the mechanism. For the three categories of multi-machine operation, read [parallel and alternate work centers explained](/blog/edgebic-parallel-work-centers-explained). For the configuration fields, read [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic).
+
+## The Pipeline Around the Gates
+
+The gates sit inside a larger sequence, and knowing the sequence explains several behaviors that otherwise look arbitrary.
+
+**Phase zero: alternates are resolved first.** Before any parallel logic runs, the true alternate resolver walks the routing and decides which machine each operation will actually use. It projects a completion time on the primary and every active candidate, switches the operation to the fastest, and then removes the alternate entries so nothing downstream sees them. A machine pool feeds this same step: pool members are expanded into candidates before the resolver runs and are chosen by the pool's own strategy.
+
+**Phase one: the group is classified.** Whatever alternate entries remain are all of the parallel kind, and each is sorted into one of two piles by its finite capacity setting. Checked means independent: this machine's capacity will be checked and consumed. Unchecked means dependent: this machine will be mirrored.
+
+**Phase two: a strategy is chosen.** Four situations get four handlers. Work with actuals to preserve, an anchor-constrained step, a partial completion, and the normal case. The normal case covers the overwhelming majority of runs and is what this post follows.
+
+**Phase three: the two-part placement.** Independent machines (plus the primary) are placed together through the simultaneous search. Dependent machines are then mirrored from the primary's finished schedule.
+
+An operation with no alternate entries at all skips the whole pipeline and takes the ordinary single-machine path, so there is no way to accidentally invoke parallel logic on a normal step.
+
+## The Search Loop
+
+For a group of independent machines, the search is straightforward to describe and strict to satisfy:
+
+```
+for each date from the earliest start forward:
+    find the shifts common to EVERY machine in the group on this date
+    for each common shift:
+        propose start = later of (shift start, earliest allowed start)
+        if all four gates pass for every machine:
+            accept this window
+    advance to the next date
+```
+
+If the search reaches the end of its horizon without an accepted window, the run reports that no simultaneous capacity was found, and any partial work is rolled back. It does not fall back to scheduling part of the group.
+
+## The Common Shift Rule
+
+The first line of that loop is where most real failures happen, and it is worth stating precisely.
+
+Common shifts are found by intersecting the shift **records** assigned to each machine, not by comparing the hours those records contain. Two shifts created separately that both read 08:00 to 16:00 on the same weekdays are two different records. A group split across them has no shift in common, so the intersection is empty on every date and the gates are never even reached. The symptom is a group that never schedules, with no obvious cause, on machines that visibly run the same hours.
+
+The fix is to assign one shared shift row to every machine in the group. It costs nothing and removes the entire failure mode. The same rule applies whenever machines are set to use their own shifts rather than the plant-wide list, which is exactly when duplicate shift records tend to appear. [How to schedule jobs across shifts](/blog/how-to-make-jobs-span-shifts-in-edgebic) covers shift assignment in general.
+
+A holiday, a whole-day downtime, or a weekday the shift does not cover removes that machine from the intersection for that date, which removes the date from consideration for the whole group.
+
+## The Four Gates
+
+Once a shared shift and a proposed start time exist, each candidate window is tested four ways. All four must pass for every machine.
+
+| Gate | What it proves | Typical failure |
+|---|---|---|
+| **1. Individual capacity** | Each machine has a real capacity slot on this date and shift, with at least a usable sliver of hours available from the proposed start | One machine is fully booked, on holiday, or in a downtime window |
+| **2. Simultaneous start** | The exact start moment falls inside every machine's shift window, and no existing allocation already occupies that moment | The proposed start is before one machine's shift opens, or another job is already running on it at that instant |
+| **3. Instance conflicts** | Each machine has enough physical instances for its share of the work, and no instance is claimed twice within the group | A machine needs more instances than it has, or two group members would compete for the same instance |
+| **4. Continuous capacity** | Capacity runs uninterrupted from the start to the projected end, with no fragmentation gap in between | An existing booking sits in the middle of the window, splitting the available time into unusable pieces |
+
+Read the gates as four distinct questions rather than four versions of the same one. Gate one asks whether there is room. Gate two asks whether the group can begin at the same instant. Gate three asks whether there are enough physical machines to honor the plan. Gate four asks whether the room is contiguous, because an operation that needs six unbroken hours cannot use two separate three-hour fragments.
+
+Any failure rejects the whole window. That is the all-or-nothing principle stated in code: the search does not accept a window for two machines out of three and defer the third.
+
+## Worked Example: Two Assembly Lines
+
+A 16-hour assembly operation on a 200-piece order. Assembly-1 is the primary, Assembly-2 is an independent parallel machine at factor 1.0. Both run an 8-hour day shift, and they share the same shift record. Earliest start Monday 08:00.
+
+The search examines Monday first:
+
+| Machine | Capacity available | Gate 1 | Gate 2 | Gate 3 | Gate 4 |
+|---|---|---|---|---|---|
+| Assembly-1 | 8 h | pass | pass | pass | pass |
+| Assembly-2 | 8 h | pass | pass | pass | pass |
+
+The window is accepted at Monday 08:00. Each machine is then scheduled through the normal allocation path from that agreed start, so Assembly-1 takes 8 hours and Assembly-2 takes 8 hours, both running 08:00 to 16:00. The operation completes Monday at 16:00 rather than Tuesday, and both machines' capacity is genuinely consumed so no other job can claim the same window afterwards.
+
+## Worked Example: One Machine Down
+
+Same group, three machines this time, and one is out for maintenance Monday and Tuesday.
+
+| Date | Machine 1 | Machine 2 | Machine 3 | Result |
+|---|---|---|---|---|
+| Monday | 10 h available | 0 h (maintenance) | 10 h available | Gate 1 fails for machine 2, window rejected |
+| Tuesday | 10 h available | 0 h (maintenance) | 10 h available | Gate 1 fails again, window rejected |
+| Wednesday | 10 h available | 10 h available | 10 h available | All gates pass, group accepted |
+
+All three machines start Wednesday 08:00. The operation is delayed two days rather than letting the two healthy machines start alone. For work that genuinely requires all three, that is the correct plan: a schedule showing machines 1 and 3 running Monday would be a schedule nobody could execute.
+
+This is also the trade-off to weigh before adding a fourth machine to a group. Every additional member adds another calendar that has to agree, which makes simultaneous windows rarer. When the goal is more capacity rather than more machines on one operation, [a machine pool](/blog/what-is-a-work-center-group-machine-pool) is the better structure.
+
+## Mirroring: Copied, Not Validated
+
+Dependent machines take an entirely different path, and the difference is the point.
+
+After the primary machine's schedule exists, each dependent machine receives a copy of it, resource by resource. The copy preserves start time, end time, shift, instance number, and transaction date exactly, and changes only three things: the machine identity, the hours (multiplied by the machine's factor), and an audit marker recording that this row was mirrored rather than placed.
+
+Setup hours are copied one to one rather than scaled, because both machines physically set up over the same clock period. The mirrored row also carries the same routing step identity as the primary, since a mirror is not a separate operation but the same operation running on additional hardware. That identity is what keeps the audit checks from misreading mirrors as orphaned rows.
+
+No capacity gate runs on a mirror. The machine is physically committed to the primary's operation, so the copy is written whether or not its shift has nominal room. The visible consequence is that a mirrored machine can show more allocated hours than its shift contains, and a load view can read above 100 percent on a machine used only as a mirror. That is intended behavior for synchronized hardware, and it is surfaced by an audit check rather than hidden.
+
+It is also the reason to reserve the dependent category for machines that really are joined. The bypass is a promise about physics. Apply it to machines that merely tend to run together and you will over-book them. The [synchronized multi-spindle walkthrough](/blog/synchronized-multi-spindle-scheduling-example-edgebic) shows the copy in action with real timestamps.
+
+## Rollback: Why Trying Is Safe
+
+The search is willing to attempt a window and abandon it because every allocation is reversible.
+
+As each schedule row is created and its capacity consumed, an undo action is registered alongside it. If any later part of the placement fails, those actions are executed in reverse order: rows are removed from the run, and the capacity they claimed is released back into the shift map. The engine returns to exactly the state it held before the attempt began.
+
+Reverse order matters. Allocations are made in sequence and can depend on each other, so undoing them last-in-first-out is the only ordering that reliably restores the original state.
+
+The practical effect is that a failed parallel placement leaves nothing behind. There is no half-scheduled group to clean up, no phantom capacity consumed by a machine that never got a schedule row, and no need to clear and rebuild the plan after a failure.
+
+## When It Fails
+
+A run that cannot find a simultaneous window reports it rather than degrading silently. Four checks resolve nearly all of them:
+
+1. **Shift records.** Confirm every machine in the group holds the same shift row, not merely the same hours. This is the first thing to check, every time.
+2. **Load.** Look at how heavily each member is already booked and for how many days forward. A group whose members are individually near capacity may have no simultaneous window for a long time even though each machine has hours free.
+3. **Calendars.** A holiday or downtime on any member removes that date for the whole group.
+4. **Group size.** Ask whether the operation genuinely needs every machine at once. If it needs one of several, true alternates or a machine pool will schedule where a parallel group cannot.
+
+## Next Steps
+
+The configuration errors behind most of these failures, with their symptoms, are collected in [parallel work center mistakes](/blog/parallel-work-center-mistakes-edgebic). For how each machine's hours are actually placed once the group agrees on a start, read [how EDGEBIC allocates hours across shifts](/blog/how-edgebic-allocates-hours-across-shifts). The [complete guide to EDGEBIC](/blog/edgebic-complete-guide) shows how parallel scheduling connects to the rest of the platform.

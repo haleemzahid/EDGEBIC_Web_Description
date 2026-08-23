@@ -1,0 +1,157 @@
+﻿---
+title: "Tracking Print Jobs From Press to Bindery"
+description: "Print shop job tracking scheduling: shop-floor taps that separate makeready from run, count good and spoiled sheets, and feed the next reschedule automatically."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - print shop job tracking scheduling
+  - shop floor data collection printing
+  - makeready time tracking
+  - spoilage tracking printing
+  - bindery scheduling software
+  - production punch tracking
+  - job status visibility printing
+targetPhrase: "print shop job tracking scheduling"
+wordCount: 1777
+readingTime: 9
+faqQuestions:
+  - question: "What is print shop job tracking scheduling?"
+    answer: "It is capturing what actually happened at each station and feeding it straight back into the plan. An operator taps a terminal to open makeready, start the run, record good and spoiled sheets, and finish. Those taps become time segments and piece counts against the specific operation, which means the schedule knows where every job stands and can reschedule the remaining work from reality instead of from an estimate."
+  - question: "How does the shop floor terminal know which job to show?"
+    answer: "It runs against the same database as the planning application, with no middle layer, so each station shows the operations scheduled to it. An operator selects the job and taps a state. Only one open time segment can exist per operation and machine at a time, so tapping a new state closes the previous segment and opens the next, which is what keeps the record unambiguous."
+  - question: "Can makeready and run time be measured separately?"
+    answer: "Yes, and they should be. Setup and run are different states, so the terminal records them as separate segments with their own start and end times. Setup can be broken further into sub-phases such as teardown, fixturing, tooling and first article. That is the granularity a makeready reduction project needs, because knowing the changeover took 90 minutes is not actionable while knowing first article took 20 of them is."
+  - question: "What happens to completed work when the schedule is rebuilt?"
+    answer: "It is not moved. Operations that have logged actual start and end dates are preserved exactly as they happened, and the engine reschedules only the remaining work, starting from where the job genuinely stands. That is why a reschedule after a press breakdown produces a plan a supervisor recognizes rather than one that rewrites Monday's history to make Tuesday look tidy."
+qaQuestions:
+  - question: "Our operators already fill in a job ticket. Why add taps at a terminal?"
+    answer: "Because a ticket is read once, days later, and a tap changes the plan the same shift. The documented example shows why the difference matters: a run planned at 7.0 hours logged 7.53, with 42 good sheets and one spoiled, giving an observed rate of 5.58 pieces per hour against a standard of 7.14. A quality hold ate 1.5 hours. On a ticket that is a scribbled note nobody aggregates. In the system it is a reason-coded time segment, the job's remaining work reschedules from the real position, and the pattern shows up across a month of jobs so you can act on it."
+  - question: "An operator tapped Complete an hour early on Friday. Do we live with the wrong number?"
+    answer: "No, a supervisor corrects it and the correction is auditable. In the documented case a run recorded 4.83 hours instead of 5.83. The supervisor opens the history for that operation, edits the hours and types a reason. The system writes a separate adjustment record holding the original value, the new value, who changed it and why, then rebuilds the daily totals. The original entry is untouched: the adjustment is the record of the edit. You get the right number and the trail that explains it, which matters when the same data supports customer billing."
+---
+
+**Print shop job tracking scheduling closes the loop between the plan and the floor: an operator's taps become time and piece records on a specific operation, and the next reschedule starts from those records rather than from an estimate.** [EDGEBIC by User Solutions](/edgebic) captures this through a shop-floor terminal that runs against the same database as the planning application, so the moment a run starts on Press-2 the planner's Gantt knows.
+
+For the mechanism in general terms, read [actuals tracking explained](/blog/edgebic-actuals-tracking-explained). For the wider scheduling problem a high-mix print operation shares with other shops, see [job shop scheduling challenges](/blog/job-shop-scheduling-challenges), and for the cross-industry map, [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## Why a print job is hard to locate
+
+A commercial job crosses more stations than most people count: prepress, press, coating, cutting, folding, stitching or binding, trimming, packing. It may leave the building for lamination or foiling in the middle. It may be split, with half a run going to one finishing line and half to another.
+
+The question "where is job 4471" therefore has no single answer, and the usual substitutes fail in predictable ways. A whiteboard is current only where someone updated it. A job ticket is accurate but is read once, after the fact. A walk through the plant works and takes twenty minutes each time.
+
+The alternative is to record state where it changes, at the station, as it changes, and to make that record the same object the schedule reasons about.
+
+## The punch model
+
+The terminal is deliberately simple, because it lives next to a press and gets used with ink on the operator's hands.
+
+Each tap opens one time segment and closes the one before it. A segment carries a state, a start, an end, and the operation it belongs to. Only one open segment can exist per operation and machine at a time, which is what stops the record becoming ambiguous when two people tap in the same minute.
+
+Six states cover a print floor:
+
+| State | Meaning on a print job |
+|---|---|
+| Setup | Makeready: plates, ink, register, first article |
+| Run | Producing sellable sheets |
+| Idle | Machine available, not working this job |
+| Down | Machine unavailable: fault, maintenance, no material |
+| Rework | Reprinting or correcting |
+| Teardown | Wash-up and strip after the run |
+
+Only Run and Rework produce pieces. That separation is what makes the data useful later: makeready hours and run hours never get averaged into one meaningless figure.
+
+Pieces are counted as good, spoiled or rework. Spoilage always carries a reason code, which is how makeready waste, plate faults and stock problems become a Pareto chart rather than an anecdote.
+
+## Hours, sheets, or both
+
+Different stations count differently, and the terminal accommodates all of them without being configured station by station: during a run the elapsed clock advances on its own and the good and spoiled counters are there to tap.
+
+What differs is which number your shop treats as the truth for a given operation. A press with a sheet counter is read by its sheets. A hand-finishing bench is read by its hours. A bindery line that has to report both for costing records each independently.
+
+That choice is expressed when the day is logged, in the daily grid shared by the planner and the terminal's manual entry. Leave Auto Calc Hours ticked and the side you did not type is derived from a rate that is snapshotted onto the record when the segment opens. Snapshotting matters: if the routing standard is edited three months later, historical records still reflect the rate that was in force when the work ran, so old reports stay true.
+
+## What a shift's data looks like
+
+The documented example is a machining run and the shape is identical on a press.
+
+An operator taps Setup at 08:00, then Start Run at 08:28. The setup segment closes at 0.47 hours and the run segment opens, which also stamps the operation's actual start. Through the shift the operator taps good pieces to a total of 42 and records one spoiled sheet against a quality reason at 10:15. At 16:00 the operator taps Complete: the run segment closes at 7.53 hours and the operation's actual end is stamped.
+
+The daily rollup for that date reads:
+
+| Date | Planned hours | Actual hours | Actual pieces | Observed rate |
+|---|---|---|---|---|
+| Jan 7 | 7.00 | 7.53 | 42 | 5.58 per hour |
+
+Three things are now visible that a job ticket would not have given you. Actual beat plan by half an hour. The observed rate of 5.58 is well under the standard of 7.14, and the 1.5-hour quality hold explains it. And the spoiled sheet is attached to a reason code, so the same cause can be counted across a month.
+
+Note what the rollup excludes. The 0.47 hours of setup is not in the work-hours figure, and neither are Down or Idle segments. Those feed availability and loss analysis rather than inflating the job's production hours.
+
+## A job that spans two days with a stoppage
+
+The second documented example follows a booth job across two days: setup from 07:50, run from 08:45, a machine fault at 10:30 that opens a Down segment with a coolant reason, back to run at 11:45, end of shift at 16:00, resume the next morning, complete at 11:00.
+
+The rollup shows 6.00 hours on day one and 3.08 on day two, against a plan of 7 hours. The 1.25-hour Down segment sits in the history with its reason code. Setup and the overnight idle segment do not pollute the production figure.
+
+For a print shop that is exactly the shape of an overnight run interrupted by a blanket wash or a stock problem. The planner sees hours over plan and can name the cause without asking anyone.
+
+## Corrections that leave a trail
+
+Operators mistap. The third documented example is a Complete pressed an hour early, recording 4.83 hours instead of 5.83.
+
+A supervisor opens the operation's history, edits the hours and types a reason. The system writes a separate adjustment record holding the operation, the field changed, the old and new values, who made the change and the reason text, then rebuilds the daily totals from 4.83 to 5.83. The original entry is not overwritten: the adjustment is the record of the edit.
+
+That design matters in a shop where the same hours support customer billing. You can correct the number and still show exactly what was changed and why.
+
+The system also refuses impossible data at every write path. An actual end that would land before its actual start is rejected rather than stored, so the inverted-date records that quietly corrupt reporting in spreadsheet-based tracking never enter the data.
+
+## Reason codes are where the value accumulates
+
+A stoppage without a reason is a number. A stoppage with a reason is a project.
+
+Reasons are grouped into categories so the list stays short at the terminal and still aggregates usefully afterwards. A print floor typically needs machine causes (blanket, register, feeder, ink system), material causes (stock fault, curl, wrong pallet, ink not delivered), quality causes (color out, register out, marking) and process causes (waiting on approval, waiting on plates, waiting on the previous operation).
+
+Two rules make the list work. Keep it short enough that an operator can find the right entry in two taps, because a long list gets defaulted to whatever is at the top. And build it with the crew rather than for them, using the words they already use.
+
+Spoilage carries a reason too, which is what turns waste into something you can attack. Makeready waste and running waste come from different causes and respond to different fixes, and separating them at the point of capture is the only way to tell them apart later.
+
+## How tracking changes the schedule
+
+This is the part that separates data collection from scheduling.
+
+**Completed work is never moved.** Operations with logged actual start and end dates are preserved exactly as they happened. A reschedule rebuilds the remaining work only, from where the job genuinely stands. Nobody has to explain why Monday changed.
+
+**In-progress work keeps its machine.** A job an operator has started stays on the press it started on through subsequent reschedules, which is the only sane answer when the plates are already hung.
+
+**Remaining work starts from reality.** If a press ran two hours over, downstream operations move by two hours in the plan rather than in a phone call.
+
+**Changeover pricing follows the real sequence.** When the schedule prices the next job's makeready, it asks what actually ran on that press according to the logged data, not what a rebuilt plan assumed. That interaction is covered in [ink and substrate changeovers](/blog/edgebic-for-print-shops-setup-matrix).
+
+The mechanics of that rebuild are covered in [rescheduling explained](/blog/edgebic-rescheduling-explained).
+
+## Getting it running on a print floor
+
+1. **Put a terminal where the work is**, at the press and at the main finishing lines. Stations that share a work bench can share one.
+2. **Agree which number leads at each station.** Presses with counters are read by sheets, hand finishing by hours. Record both only where costing genuinely needs it, by unticking Auto Calc Hours when the day is logged.
+3. **Build a short reason-code list** with the crew, covering the stoppages and spoilage causes they actually see. A long list gets ignored; a short one gets used.
+4. **Turn on setup sub-phases** on the presses if you are running a makeready reduction project. Teardown, fixturing, tooling and first article as separate segments is what makes the project measurable.
+5. **Agree the correction routine.** Supervisors correct, with a reason, and the trail is the record.
+6. **Read the first week's data before changing anything.** The gap between planned and observed rates is usually the most useful thing a print shop learns in its first month, and it often points at makeready rather than at press speed.
+
+## What it is worth
+
+Three returns, in order of how quickly they arrive.
+
+Job status stops being a walk through the plant. Anyone can see which operations are open, on which machine, and how far through.
+
+Standards get corrected. Observed rates against routing standards, gathered over a few hundred jobs, tell you which quotes are wrong. That feeds estimating as much as scheduling.
+
+And the schedule becomes believable. A plan that starts from where jobs actually are, and never rewrites what already happened, is one the floor will follow. The alternative, a plan rebuilt from estimates every morning, teaches everyone to ignore it by the second week.
+
+The companion mechanisms for this sector are covered in [ink and substrate changeovers](/blog/edgebic-for-print-shops-setup-matrix) and [working backward from the delivery date](/blog/edgebic-for-print-shops-due-date-scheduling).
+
+Bring one press, one finishing line and a week of job tickets to a demo of [print shop scheduling software](/print-shop-scheduling-software), and we will show you what the same week looks like as live data.

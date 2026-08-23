@@ -1,0 +1,90 @@
+---
+title: "CNC Shops and Operator Skills: When the Setter Is the Constraint"
+description: "CNC operator skill scheduling models the certified setter as a finite resource, so lights-out cells start on the hours one operator actually has, not machine count."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - CNC operator skill scheduling
+  - operator constraint scheduling
+  - lights-out machining scheduling
+  - certified setter scheduling
+  - labor constraint machine shop
+  - attend fraction scheduling
+targetPhrase: "CNC operator skill scheduling"
+wordCount: 1980
+readingTime: 10
+faqQuestions:
+  - question: "How does operator skill scheduling handle lights-out machining?"
+    answer: "A routing step can declare that it only needs an operator for setup, not for the run, by setting the operator attention to zero for the run phase. The scheduler books the setter's hours for the setup, then lets the machine run unattended into unstaffed evening hours. With one operator and seven machines each needing one hour of setup, all seven can start on the same day because the operator spends seven of eight hours setting up and the cutting runs itself."
+  - question: "What stops the scheduler from booking one setter onto five machines at once?"
+    answer: "The engine keeps a per-operator ledger of hours for each day and shift. When a step needs a certified operator, its window is only offered if a qualified operator still has hours left that day, and the hours committed are capped at what the pool can afford. Once a setter's eight hours are spent, the next job needing that skill slides to the next day the operator is on the roster, instead of double-booking a person who can only be in one place."
+  - question: "How do you tell the scheduler that one operator tends two machines?"
+    answer: "Set the operator attention for the run phase to 0.5, meaning half a person per machine-hour. Eight of the operator's hours then buy sixteen machine-hours of attended running. A fully attended job uses 1.0, one operator-hour per machine-hour. A two-person job uses 2.0. Setup always books one full operator regardless, because one person sets a machine up. The attention figure only scales the run phase."
+  - question: "What happens when the only certified operator takes vacation?"
+    answer: "Enter the time off as an inclusive date range on that operator. On the next scheduling run, any step that needs their skill and has no other qualified operator slides past the vacation to the first day they are back. If the step is pinned to that specific person, it slides through their absence rather than quietly handing the work to someone uncertified. The absence becomes visible schedule movement, which is the point."
+qaQuestions:
+  - question: "We run a lights-out third shift, but only two of our people can prove a job on the five-axis. The schedule assumes any machine can start any time and it is always wrong by morning. What actually fixes this?"
+    answer: "The schedule is wrong because it only sees machines, and your real constraint is the setter. Attach a skill to the five-axis steps, certify your two qualified people, and set the run attention to zero so the step gates only on setup. Now the plan books the certified operator's hours for each setup and lets the cut run unattended overnight. With one setter available and setups of one hour each, the schedule will start as many machines as that setter can set up in a shift, roughly seven or eight, and slide the ninth to the next day. You get a lights-out plan that is actually staffable, not one that falls over at the first machine nobody could prove."
+  - question: "Our senior programmer is the bottleneck, not the mills. How do we see that in the plan instead of finding out when jobs stack up behind him?"
+    answer: "Model him as an operator with the skill his steps require and roster the days he works. The engine then tracks his hours in a ledger, so two jobs that both need him on Monday cannot both schedule Monday if he only has eight hours. The second one moves to Tuesday, visibly, in the plan. If a job must run on his hands specifically, pin the step to him and it will wait for him rather than routing to anyone else. Either way, the constraint shows up as schedule movement you can plan around instead of a queue that forms on the floor."
+---
+
+**CNC operator skill scheduling models the certified operator as a finite resource alongside the machine, so EDGEBIC by User Solutions plans on the hours your setters and programmers actually have, not just the number of spindles you own.** For a CNC shop, the constraint is rarely the machine. It is the one person who can prove a five-axis program, run the CMM, or set up the Swiss lathe. This post is about scheduling that person into the plan, and what it does to lights-out running in particular.
+
+The mechanics of building a realistic finite plan are in [what is production scheduling](/blog/what-is-production-scheduling). The idea that the true limit is often a single resource is the theme of [production bottleneck identification](/blog/production-bottleneck-identification). Here the bottleneck wears steel-toe boots.
+
+## The schedule that only sees machines
+
+Until you tell it otherwise, a scheduler sees a work center as capacity: shifts, holidays, machine count. It has no concept of the person who has to stand at that machine. So a shop with one operator certified on Inconel can happily schedule five Inconel jobs on five machines in the same shift, and the plan is fiction before the first tool touches metal.
+
+CNC shops feel this sharply because the skill gap is real and narrow. The programmer who can prove the tricky part, the setter trusted on the multi-axis, the inspector on the CMM. When the schedule assumes any machine can start any job at any time, it overcommits those people daily, and the floor spends the morning re-juggling what the plan got wrong overnight. This is the "silent slip" that makes crews stop trusting the system and go back to a printed list.
+
+## Skills, certifications, and an hours ledger
+
+The fix is to make the operator a second constraint on the routing step. A step names the skill it needs, for example a five-axis setup or a CMM inspection. Operators hold certifications for the skills they are qualified on, with optional expiry dates so a lapsed cert drops out of the plan automatically. A weekly roster records which shifts each operator works, and time-off ranges record their absences.
+
+The engine turns that into a per-operator ledger of hours, keyed by operator, date, and shift. When it schedules a step that needs a skill, it asks a simple question at each candidate window: does a qualified operator, rostered for this shift and not on leave, still have hours left that day? A window with no staffed hours is never offered; the step slides forward to the next day someone qualified is available. And the hours it commits are capped at what the qualified pool can afford, so a day can never oversell a person.
+
+The result is the everyday sanity check the machine-only plan lacked. One welder certified on Inconel, two Inconel jobs on two machines: the first job books the welder Monday, the second finds Monday's pool empty and moves to Tuesday. Certify a second person and both run Monday, one on each machine, exactly as a foreman would staff it.
+
+## Lights-out machining: the setter is the constraint, not the run
+
+Here is where CNC shops win. Most machining does not need a person for the whole cut. It needs a person for the setup, then the machine runs itself. Operator skill scheduling models that directly with an attention figure on the run phase.
+
+Set the run attention to zero, meaning setup-only, and the step gates the operator on setup alone. The run books nobody, so cutting can execute on completely unstaffed evening hours. Setup always books one full operator, because a person sets a machine up.
+
+Take seven CNC mills, one certified operator with eight hours a day, and seven jobs that each need one hour of setup and nine hours of unattended run.
+
+| Item | Value |
+|---|---|
+| Operator cost per job | 1 hour setup, 0 for the run |
+| Operator's daily hours | 8 |
+| Jobs that can start on day one | 7 (seven hours of setup) |
+| The eighth job | Fits in the last hour |
+| The ninth setup | Slides to the next day |
+
+Seven machines start Monday, the operator spends seven of eight hours setting up, and the cutting runs itself into the evening. The ninth setup does not fit and moves to Tuesday, honestly. This is a lights-out plan that is actually staffable, which a machine-count plan can never produce. The attention concept is explained in full in [what attend fraction means in operator scheduling](/blog/what-is-attend-fraction-operator-scheduling).
+
+The same knob covers the other cases. Set it to 0.5 and one operator tends two machines: eight of their hours buy sixteen machine-hours of attended running. Set it to 1.0 for fully attended work, one operator-hour per machine-hour. Set it to 2.0 for a two-person job, where each machine-hour books two operator-hours.
+
+## Pinning the job to a named person
+
+Sometimes the work must run on one specific person's hands, not just anyone with the certificate. Pin the step to that operator and the plan staffs it only with them. The step then slides through their vacation and roster gaps rather than silently handing the work to someone else. A named person's absence becomes visible schedule movement, which is exactly what you want a planner to see and approve, not a substitution nobody signed off on. Pin a job to a person who is not certified for its skill and the plan fails fast with a clear reason, before it schedules anything wrong.
+
+## Where this sits next to setup sequencing and alternates
+
+Operator scheduling composes cleanly with the other CNC levers. Sequence-dependent setup times, covered in [CNC setup sequencing](/blog/edgebic-for-cnc-shops-setup-sequencing), decide how long a changeover takes; the operator ledger decides whether a qualified person is there to do it. Alternate machines, covered in [alternate machine scheduling](/blog/edgebic-for-cnc-shops-alternate-machines), give a job more than one place to run; the skill check narrows that to the machines a staffed operator can actually cover. And the whole thing sits on top of the shift and machine model behind [lights-out CNC scheduling](/blog/edgebic-for-cnc-shops-lights-out-scheduling), so unattended running and staffed running share one plan.
+
+When no operator data is loaded, or on steps with no skill, every one of these checks does nothing and the plan behaves exactly as a machine-only plan would. You add the constraint where it matters, on the certified work, and leave everything else alone.
+
+## Setting it up in a CNC shop
+
+Three steps get you to a staffable plan. Create the skills your work actually gates on, the specific certifications that separate your senior people from the rest. Certify and roster those operators, with expiry dates where certs lapse and time-off ranges for their leave. Then decide the attention on each skill-bearing step: zero for lights-out setup-only running, a fraction for one person on several machines, one for fully attended, more for crews.
+
+From there the plan tells the truth about labor. The five-axis cell starts only as many machines as a setter can prove, the senior programmer's queue shows up as schedule movement instead of a pile-up on the floor, and vacations move work rather than breaking promises. That is the kind of shop-floor honesty User Solutions has built for manufacturers since 1991, from defense programs sequencing tens of thousands of tasks to Cummins running the same methods across dozens of locations.
+
+Bring your hardest-to-staff cell to a demo. [Show us the certified work that bottlenecks your shop](/edgebic) and we will schedule it against the operators you actually have. For the full industry picture, the [EDGEBIC by industry guide](/blog/edgebic-by-industry) maps every capability to the shops that use it.

@@ -1,0 +1,99 @@
+---
+title: "Running a Restore Drill for Your EDGEBIC Database"
+description: "A backup you have never restored is a hypothesis. Here is a one-hour EDGEBIC restore drill: restore into a separate database, verify the plan, and record how long it took."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - restore drill
+  - backup verification manufacturing
+  - disaster recovery scheduling software
+  - recovery time objective
+  - scheduling database backup
+  - tested backup
+targetPhrase: "restore drill"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "What is a restore drill and why does a scheduling system need one?"
+    answer: "A restore drill is a rehearsal in which you take a real backup and turn it back into a working system somewhere that is not production. A scheduling system needs one because the plan is the plant's short-term memory: routings, capacity, actuals to date, and every commitment made from them. A backup nobody has restored is a hypothesis about recovery, not a recovery plan, and the day you find out otherwise is the worst possible day to find out."
+  - question: "Where should you restore an EDGEBIC backup during a drill?"
+    answer: "Into a separate database, never over production. On the DataSource tab you point an installation at a different database name on the same server, restore the backup there through whichever path your IT team supports, and work against it. The database you left is untouched, so switching back afterward is a settings change and a restart. Restoring over the live database during a drill turns a rehearsal into an incident."
+  - question: "What should you measure during a restore drill?"
+    answer: "Three numbers and one name. How long the restore took from decision to working sign-in, how old the restored data was, and how much work would have to be re-entered to close that gap. The name is who performed it, because a restore only one person can do is a single point of failure. Record all four, because next quarter's drill is only useful if you can compare it to this one."
+qaQuestions:
+  - question: "How long should a restore take before we should worry?"
+    answer: "Compare it to the work you would have to redo, not to an abstract target. If the restore takes ninety minutes and the backup is a night old, the real cost is the ninety minutes plus a day of orders, actuals, and reschedules to re-enter, and whether that is acceptable is a plant decision rather than an IT one. What is never acceptable is not knowing the number. Run the drill, write down both figures, and take them to whoever owns the consequence. If a day of re-entry is too much, the fix is a more frequent backup, not a faster restore."
+  - question: "Our backup is a few months old and the software has been upgraded since. Will it still restore?"
+    answer: "Yes, and that direction is the safe one. Restoring an older database into current software applies the pending schema updates on first launch, which is exactly what happens on any upgrade. The direction that fails is the reverse: a backup taken on newer software restored onto an older installation, where the schema is ahead of what the application expects. That is one more reason to run the drill on a schedule rather than only during an emergency, because the drill is where you discover which direction you are actually in."
+---
+
+**A restore drill is a rehearsal in which a real EDGEBIC backup becomes a working system in a separate database, verified by signing in and running the scheduler.** In [EDGEBIC by User Solutions](/edgebic) taking a backup is one click, which is exactly why so few plants ever test one. This post is the one-hour drill, what to verify, and the numbers worth writing down.
+
+The backup habit itself is covered in [keeping the database healthy over time](/blog/keeping-the-edgebic-database-healthy-over-time). This post assumes you already take backups and asks the harder question: has one ever become a system again?
+
+## Why the Schedule Deserves Its Own Drill
+
+Plants that back up their ERP religiously often treat the scheduling database as derived data, on the reasoning that it can always be rebuilt from the ERP. That is half true and the wrong half.
+
+What the ERP can give back: products, orders, customers, quantities, due dates.
+
+What it cannot give back: your routings with their setup times, queue times, transit days, and alternate work centers; your shift definitions and holiday calendars; your capacity overrides and the reasons entered for them; every actual logged since the last export; and the current plan itself, along with the commitments made from it. Rebuilding all of that is weeks of work, and it is the work that made the schedule believable in the first place.
+
+So the drill is not an IT formality. It is the difference between losing a day and losing a quarter.
+
+## The Drill, Start to Finish
+
+Block an hour. Do it on a quiet morning, not during month end.
+
+**Step 1: Take a fresh backup and note the time.** On the local single-file database, the Export button on the DataSource tab makes a timestamped copy in one click and is safe to use while the application is running. On SQL Server, ask for the most recent backup from the rotation rather than making a special one, because the drill should test what actually exists on a normal day.
+
+**Step 2: Prepare somewhere to restore into.** Point an installation at a different database name on the same server using the DataSource tab. The database does not have to exist beforehand: the connection test will report that the server is reachable, sign-in succeeded, and the database will be created on first launch. That is the expected message. Building this environment is covered in [setting up a training copy](/blog/setting-up-a-training-copy-of-edgebic).
+
+**Step 3: Restore into it.** For the local database, close the application first so the file handle is released, then put the backup copy in place of the working database and reopen. For SQL Server, use whichever restore path your IT team supports into the training catalog. Start the clock when you begin, not when you finish reading the runbook.
+
+**Step 4: Prove it is a system, not a file.** This is the step people skip, and it is the only one that answers the question. Sign in. Then run four checks.
+
+**Step 5: Switch back and write the numbers down.** Returning production to its own database is the same tab and the same restart, and the database you were using is untouched.
+
+## The Four Verification Checks
+
+| Check | What good looks like |
+|---|---|
+| Sign in as a named planner, not as the administrator | Roles and users restored intact, so the plant can work |
+| Count work centers, products, and routings | The numbers match what you expect from that date |
+| Open a recent job and read its actuals | Logged hours and actual dates survived, so the boundary between done and remaining is right |
+| Run the scheduler and read the plan | The engine produces a believable plan on the restored data |
+
+The fourth is the one that matters most and the one nobody thinks to do. Data can restore perfectly and still fail to produce a plan, usually because something referenced is missing. Running the scheduler once on the restored database is a five-minute test that converts "the restore worked" into "the plant could run."
+
+Signing in as a planner rather than as the administrator matters for a related reason: it is the only way to confirm the role assignments came back, and role problems are invisible from an administrator account that holds every permission by definition.
+
+## The Numbers to Record
+
+Write four things down after every drill, in the same place each time.
+
+**Time to working sign-in.** From the decision to restore, to a planner being able to work. That is your real recovery time, and it is always longer than the file copy.
+
+**Data age.** How old the restored data was, in hours. This is the size of the hole you would have to re-enter.
+
+**Re-entry cost.** Roughly what would have to be redone to close that hole: a shift of actuals, a day of new orders, one reschedule. Expressed in hours of planner time, this number is what a plant manager can actually act on.
+
+**Who did it.** If the answer is one person, that person is a single point of failure and the next drill should be run by someone else with them watching.
+
+Comparing this quarter's four numbers against last quarter's is what turns a drill into a program. Put it on the [quarterly admin health check](/blog/the-quarterly-edgebic-admin-health-check).
+
+## Two Things the Drill Usually Teaches
+
+**Restores across versions go one way.** An older backup restored into current software applies the pending schema updates on first launch, which is the ordinary upgrade path and is safe. A backup taken on newer software restored onto an older installation is the direction that fails. Knowing which direction you are in is a drill discovery, not an emergency one.
+
+**A connection failure is rarely a data problem.** If the application cannot reach its database it shows a recovery window rather than the main window, with the error, an embedded connection editor, and four actions: retry, reset to the default local database, repair the database, or exit. Repair rebuilds internal version bookkeeping for a database whose structure is already current and does not change your data. Practicing that window during a drill means nobody meets it for the first time during an incident. See [database recovery and repair explained](/blog/edgebic-database-recovery-and-repair-explained).
+
+## What the Drill Is Really For
+
+Fast, dependable deployment has been a User Solutions habit since 1991, and the documented Plastilite integration with a Fourth Shift ERP that took five days is the same discipline as this one: prove the small things before you need them. A backup nobody has restored is an assumption. An hour a quarter turns it into a fact, and the fact is what lets you answer a plant manager honestly when they ask how long a bad morning would cost.
+
+For the full administrator reference, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide); for the destructive operations that should always be preceded by a backup, [the data clear tool](/blog/the-edgebic-data-clear-tool-when-to-use-it); and for the gates that come before any of this, [what an admin checks before go-live](/blog/what-an-admin-checks-before-edgebic-go-live).

@@ -1,0 +1,144 @@
+---
+title: "Onboarding a New Product: From Blank Routing to First Scheduled Job"
+description: "A new product onboarding walkthrough in EDGEBIC: create the product, build a six step routing with real hours, add the material, and schedule the first order end to end."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - new product onboarding scheduling
+  - build a routing for a new product
+  - first scheduled job walkthrough
+  - bill of routing setup
+  - production routing example
+  - schedule a new part number
+targetPhrase: "new product onboarding scheduling"
+wordCount: 1780
+readingTime: 9
+faqQuestions:
+  - question: "What do you have to create before a new product can be scheduled?"
+    answer: "A product record, a routing with at least one work center step, and an order. EDGEBIC schedules a job by reading the product's routing and booking each step against a work center calendar, so a product with no routing produces no plan. In this walkthrough the sequence is product first, routing second, order third, and the first scheduling run happens only after all three exist."
+  - question: "How long should a new routing take to build?"
+    answer: "For a six step part with known times, about 20 minutes of data entry plus one validation run. The entry itself is one row per operation with a work center, a setup time, a per-piece run time, and a link to the next step. The time that actually matters is the validation: schedule one small order, compare the planned hours against what the shop believes, and fix the row that disagrees before you release anything."
+  - question: "What is the difference between setup time and per-piece hours on a routing step?"
+    answer: "Setup time is charged once per operation regardless of quantity, and per-piece hours are multiplied by the order quantity. A step with 1.0 hour of setup and 0.25 hours per piece costs 1.0 hour on a one-piece order and 26 hours on a 100-piece order. Getting this split right is what makes a routing scale correctly from a sample run to a production quantity."
+qaQuestions:
+  - question: "We only have a rough idea of the run times for a brand-new part. Should we wait until we have real data before entering the routing?"
+    answer: "No, enter your best estimate and correct it from actuals. A routing with approximate hours gives you a schedulable plan today; an empty routing gives you nothing. Run the first order, have operators log hours on the kiosk, then compare logged hours against planned hours on that job. In this walkthrough the estimate for the mill step was 0.30 hours per piece and the first 40 piece run logged 13.6 hours against a planned 13.0, which is a 5 percent estimating error and not worth changing. A step that logs 40 percent over is the one you revisit."
+  - question: "The new part shares a machine with three running jobs. Will scheduling it push those jobs out?"
+    answer: "Not the started ones. Recorded work is never moved by a scheduling run, so operations with logged hours keep their slots exactly. The new job competes only for capacity that is genuinely unbooked, which is why the first scheduled date for a new part is often later than anyone expects. In this walkthrough the mill was already committed for two days, so the new job's mill step landed on the third day and the finish date reflected that honestly rather than pretending the machine was free."
+---
+
+**Onboarding a new product for scheduling is three records and one validation run: the product, its routing, and an order, followed by a scheduling run you check against what the shop actually believes.** This walkthrough takes a brand-new bracket through that whole sequence in [EDGEBIC by User Solutions](/edgebic), from an empty product list to a committed first job with real dates. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so the mechanics are visible in numbers rather than described in general terms.
+
+The routing is where most of the work sits, and it is also where most of the mistakes get made. Every number you type there is multiplied by every order that part ever runs, so an hour spent getting a routing right pays back for years.
+
+## The Cast: One New Bracket, Six Operations
+
+Ridgeline Metalworks has won a repeat order for a welded mounting bracket. Engineering has released the drawing, the shop has quoted the operations, and the planner has this on paper:
+
+| Step | Work center | Setup | Per piece | Notes |
+|---|---|---|---|---|
+| 10 | Raw plate (material) | n/a | n/a | 1 plate per unit, 5 day lead time |
+| 20 | SAW-1 | 0.5 h | 0.10 h | Cut to length |
+| 30 | MILL-2 | 1.0 h | 0.30 h | Two faces |
+| 40 | DRILL-1 | 0.5 h | 0.15 h | Four holes |
+| 50 | WELD-A | 0.75 h | 0.40 h | Two fillets |
+| 60 | INSP-1 | 0 | 0.05 h | Final check |
+
+The first order is 40 pieces, due Friday, September 12. Every work center runs one instance on a day shift, Monday to Friday, 08:00 to 16:00.
+
+## Step 1: Create the Product
+
+Open the **Products** area and add the product. The bracket needs a unique number, a name, and a unit of measure. Set the type so the record reads correctly to whoever opens it next: a finished good that is sold, a work in process item that feeds an assembly, or a raw material that is only ever consumed.
+
+Two fields are worth filling now rather than later. The unit cost feeds the cost side of any quote simulation you run for this part. The lead time is the tail EDGEBIC adds after the last operation when it computes the job's end date, so a part with a two day pack-and-ship tail should say so here rather than surprising you when the first due date comparison reads late.
+
+The full field-by-field version of this step is [how to add a new product](/blog/how-to-add-a-new-product-in-edgebic).
+
+## Step 2: Build the Routing, One Row at a Time
+
+Open the **BOR** tab and select the new product. The grid opens empty in **Data Grid** mode. Click **Add Step** and fill the row.
+
+For step 20, the saw operation:
+
+1. Click the item selection button in the **WC/Product Id** column and pick **Workcenter**, then SAW-1.
+2. Enter **Setup** 0.5 and the per-piece hours 0.10.
+3. Give it **Sequence** 20.
+4. Point **Next In Sequence** at step 30.
+
+Repeat for steps 30 through 60. The sequence numbers do not have to be consecutive and it is a good habit to leave gaps, because inserting a deburr operation later between 40 and 50 is then a single row at 45 rather than a renumbering exercise across the whole routing.
+
+Step 10 is different. It is a material row, not a machine operation, so in the item picker you choose **Product** rather than **Workcenter** and select the raw plate. Enter the quantity per unit (1) and the lead time in days (5), then point it at the operation that consumes it, step 20. A material row books no machine capacity at all: its timing columns switch to not applicable, and its only job is to record what is consumed, where, and how long it takes to have on hand. The detail is in [how to add a material step to a routing](/blog/how-to-add-a-material-step-to-a-routing-in-edgebic).
+
+If the flow is easier for you to see than to read, the **Designer** mode shows the same routing as a diagram you can connect by dragging. The two modes edit the same data, so use whichever makes the structure obvious.
+
+## Step 3: Sanity-Check the Arithmetic Before You Schedule Anything
+
+Before running the scheduler, do the multiplication yourself for a 40 piece order. It takes two minutes and it catches the class of error that is otherwise invisible until a supervisor complains.
+
+| Step | Setup | 40 x per piece | Total |
+|---|---|---|---|
+| 20 SAW-1 | 0.5 | 4.0 | **4.5 h** |
+| 30 MILL-2 | 1.0 | 12.0 | **13.0 h** |
+| 40 DRILL-1 | 0.5 | 6.0 | **6.5 h** |
+| 50 WELD-A | 0.75 | 16.0 | **16.75 h** |
+| 60 INSP-1 | 0 | 2.0 | **2.0 h** |
+| | | | **42.75 h total** |
+
+Forty-two and three quarter hours of work over five sequential operations on single-instance machines. On 8 hour days with no overlap, the floor for this job is about six working days of elapsed time even if every machine were completely free. Knowing that number before you schedule means you can read the result instead of arguing with it.
+
+The classic entry error shows up here: a step that reads 3.0 hours where you meant 3.0 minutes multiplies into 120 hours on a 40 piece order. If your quoted times came from the shop in minutes, convert them before entry or use the conversion available during an import, covered in [how to convert minutes to hours during an import](/blog/how-to-convert-minutes-to-hours-during-an-import-in-edgebic).
+
+## Step 4: Enter the Order
+
+Open the **Schedule** area, go to the **Drive Schedule** tab, and add the order: the bracket, quantity 40, due Friday September 12, priority in the band you use for standard work, direction forward. The job appears with an **Unscheduled** badge because entering an order plans nothing on its own.
+
+## Step 5: Run the Scheduler and Read the Result
+
+Tick the new job and run **Drive Schedule**. The engine reads the routing, walks the steps in dependency order, and books each operation into the first genuinely free window on its work center.
+
+The result for this first run:
+
+```
+        Mon 1   Tue 2   Wed 3   Thu 4   Fri 5   Mon 8   Tue 9
+SAW-1   [4.5h]
+MILL-2          [--- 13.0 h over Tue + Wed ---]
+DRILL-1                         [6.5h]
+WELD-A                                  [--- 16.75 h Fri + Mon + Tue ---]
+INSP-1                                                          [2.0h]
+```
+
+Job end lands Tuesday September 9, three days ahead of the Friday due date. The **Days Late** column reads 0.
+
+The mill step is the one to look at. It did not start Monday afternoon after the saw finished, because MILL-2 already carried two committed jobs. The engine placed the bracket in the first window the mill genuinely had free, which is what finite capacity means: capacity is a real, finite pool that jobs draw down, not an assumption that a machine is always available. The distinction is spelled out in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## Step 6: Validate Against Reality, Then Correct the Routing
+
+Release the job. As the operators run it, they log hours on the kiosk against each operation. When the job closes, compare planned against logged:
+
+| Step | Planned | Logged | Variance |
+|---|---|---|---|
+| 20 SAW-1 | 4.5 | 4.2 | -7% |
+| 30 MILL-2 | 13.0 | 13.6 | +5% |
+| 40 DRILL-1 | 6.5 | 6.4 | -2% |
+| 50 WELD-A | 16.75 | 21.5 | **+28%** |
+| 60 INSP-1 | 2.0 | 2.1 | +5% |
+
+Four steps are inside normal estimating noise and need no action. The weld step is not. Twenty-eight percent over on the largest operation in the routing is the difference between shipping early and shipping late once this part runs at volume.
+
+Go back to the routing, open step 50, and raise the per-piece hours from 0.40 to 0.52, which is what the logged 21.5 hours implies once the 0.75 setup is removed. Save. From the next order forward, every plan for this bracket carries the true number.
+
+This is the loop that makes a routing get better instead of quietly rotting: schedule with an estimate, log actuals, compare, correct the one row that is wrong. Two or three orders in, a routing built this way is more accurate than one somebody agonized over for a week in a spreadsheet.
+
+## What This Walkthrough Proves
+
+1. **A schedulable product is three records.** Product, routing, order. Nothing else is required for a first plan.
+2. **Setup and per-piece hours are different fields for a reason.** One is charged once, the other multiplies by quantity, and the split is what makes a routing scale from a sample to a production run.
+3. **Material rows carry time, not capacity.** A five day lead time on a purchased plate affects when the consuming step can begin without booking a machine hour anywhere.
+4. **The first scheduled date is honest, not optimistic.** A shared machine that is already committed pushes a new job out, and seeing that on day one is better than discovering it on the floor.
+5. **Actuals are how a routing gets accurate.** The one step that ran 28 percent over is worth more than the four that were close.
+
+For the routing structures this walkthrough did not need, [building a multi-level assembly routing](/blog/building-a-multi-level-assembly-routing-in-edgebic) covers sub-assemblies, and [onboarding a new work center and rebalancing](/blog/onboarding-a-new-work-center-and-rebalancing-edgebic) is the same discipline applied to capacity rather than to a part.

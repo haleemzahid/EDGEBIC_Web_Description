@@ -1,0 +1,119 @@
+---
+title: "Eight Queue Time and Transit Setup Mistakes That Distort a Schedule"
+description: "Queue time setup mistakes in production scheduling: vendor waits in the wrong field, calendar versus working transit, padded buffers, and how each one shows up."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - queue time setup mistakes
+  - transit days configuration errors
+  - routing buffer mistakes
+  - scheduling lead time padding
+  - calendar days vs working days
+  - queue time troubleshooting
+  - production routing errors
+targetPhrase: "queue time setup mistakes"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "Why does my queue time stretch further than the hours I entered?"
+    answer: "Queue time is shift-aware, so it only consumes hours inside active shifts. Four hours entered on a Friday afternoon with an 08:00 to 16:00 single-shift calendar uses whatever is left of Friday and finishes Monday morning, which reads as a three-day gap on the Gantt. The setting is correct; the calendar is doing the rest."
+  - question: "Should a vendor turnaround be queue time or transit days?"
+    answer: "Transit days. Queue time pauses over your weekends and holidays, so a five-day plating turnaround entered as 40 hours of queue stretches to seven or more calendar days on the plan. Transit days run straight through, which is how a vendor's turnaround actually behaves, and calendar-day mode is the right setting for an outside process."
+  - question: "What happens if I add transit days to both a material step and the operation after it?"
+    answer: "The same delay is counted twice. A material step already absorbs its transit internally when its dates are built, so the engine skips the separate transit calculation there. Adding transit days to the material step alone is harmless and does nothing extra; adding them to both inflates the routing by the full transit a second time."
+  - question: "Is padding every routing step with queue time a safe way to protect delivery dates?"
+    answer: "No. Padding inflates quoted lead times, hides which work center is actually constraining the shop, and gets consumed by the first disruption anyway. Queue time already accounts for the largest share of lead time in most job shops. Add buffer deliberately where variation is real, protect the constraint, and let the finite capacity schedule show you the rest."
+  - question: "Why did my queue buffer disappear from the plan?"
+    answer: "Check whether the same routing step also carries a lot streaming setting. When streaming fires, its gate replaces the queue-adjusted end and the queue on that step never reaches the schedule. Move the hours into transfer delay, which sits on top of the streaming gate, or put the queue time on the downstream step where it applies after that step's own operation."
+qaQuestions:
+  - question: "We quote 12-day lead times but our routings only contain about 30 hours of work. Where is the rest coming from?"
+    answer: "Open the routing and total the queue hours and transit days separately from the run hours. In most shops the answer is that queue was added step by step over years, a couple of hours at a time, by planners protecting themselves against a variation that has since been fixed. Convert each queue entry to calendar time on your shift pattern, because two hours entered on a single-shift Friday is really a weekend, then challenge every entry that nobody can name a physical reason for. The remainder is capacity, which the load report will show you."
+  - question: "Two plants share a routing and the working-day transit resolves differently than we expected. What is going on?"
+    answer: "Working-day transit is counted against the sending work center's calendar, not the receiving one. If the sender runs Monday to Friday and the receiver runs Monday to Saturday, the count follows the sender and can resolve to a moment the receiver would have been open earlier. The allocator then finds the first feasible slot at the receiver, so nothing is broken, but the plan is more conservative than the physical route. Use calendar-day transit when the two ends keep different calendars."
+---
+
+**Most distorted schedules are not caused by the engine getting the math wrong: they are caused by a physical wait being entered in a field that behaves differently than the wait does.** Eight patterns account for nearly every queue and transit problem in EDGEBIC by User Solutions. Each has a recognizable symptom on the Gantt, and most take under a minute to correct once you know what you are looking at.
+
+The fields themselves are covered in [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained), the configuration steps in [how to set queue, flow, and transit times](/blog/how-to-set-queue-flow-and-transit-times-in-edgebic), and the order of application in [how EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing).
+
+## 1. A Vendor Turnaround Entered as Queue Time
+
+**Symptom.** Outside-process jobs are consistently quoted longer than the vendor's stated turnaround, and the overrun grows across weekends.
+
+**Cause.** Queue time only ticks during your active shifts. A plater's five-day turnaround entered as 40 hours of queue pauses every night and all weekend, stretching to seven calendar days or more. The plater's truck does not pause.
+
+**Fix.** Use transit days with calendar-day mode for anything that leaves your control. Reserve queue time for waits that happen inside your plant, where your shift calendar genuinely governs when the wait can end.
+
+## 2. An In-Plant Move Entered as Transit Days
+
+**Symptom.** A twenty-minute cart ride costs a full day on the schedule.
+
+**Cause.** Transit days are whole days, and in working-day mode they resolve to the end of the last counted shift. There is no way to express twenty minutes in that field. The engine does exactly what it was told and the plan loses a day.
+
+**Fix.** Put short moves in queue time (if they need somebody on shift) or transfer delay (if the handling is continuous, such as a conveyor). Keep transit days for genuine off-site or inter-plant sends.
+
+## 3. Calendar Versus Working Days Left on Default
+
+**Symptom.** Two similar vendor steps produce start dates two days apart for no reason anybody can explain.
+
+**Cause.** The two modes diverge sharply around weekends. From an operation ending Thursday at noon, three calendar transit days lands Sunday noon, so the next step starts Monday morning. Three working transit days counts Friday, Monday, Tuesday and resolves to end of shift Tuesday, so the next step starts Wednesday. Same number, two days apart.
+
+**Fix.** Make the mode a deliberate answer per step. Outside vendors get calendar days, because their turnaround runs through your weekend. Internal courier runs that only operate on shift days get working days. Then document the choice in the step's notes so the next planner does not flip it.
+
+## 4. Queue Time on a Streamed Step
+
+**Symptom.** A planner adds a cooling buffer to an overlapped step, reschedules, and the buffer is not in the plan.
+
+**Cause.** When lot streaming fires, its gate replaces the queue-adjusted end. The queue hours never reach the schedule, because the streaming time is the successor's answer by definition.
+
+**Fix.** Move the hours to transfer delay on the same step, or put queue time on the downstream step where it applies after that step's own work. The configuration audit flags every step carrying both a flow lag and a queue time, so the pairing is easy to find in bulk.
+
+## 5. Transit Days on Both a Material Step and Its Successor
+
+**Symptom.** Purchased-material jobs start later than the receipt date justifies, by exactly the transit amount.
+
+**Cause.** A material step already absorbs its transit when its own dates are built, so the engine deliberately skips the separate transit stage for those steps. Setting transit days on the material step **and** the operation after it counts the same journey twice.
+
+**Fix.** Set the transit once, on the step that physically sends or receives the work. Extra transit days on a material step alone are harmless, so the cheap correction is to clear it from the successor.
+
+## 6. Transfer Delay Used Where Shift-Aware Behavior Was Wanted
+
+**Symptom.** A two-hour handling delay resolves to 17:00 on a Friday, past the end of an 08:00 to 16:00 shift, and the next operation is planned to start at a moment the plant is closed.
+
+**Cause.** Transfer delay is flat elapsed hours. It does not pause overnight, on weekends, or on holidays, by design, because it exists to model conveyor and robot handling that genuinely runs whenever material is ready.
+
+**Fix.** If the handling only happens when somebody is on shift, use queue time instead. Keep transfer delay for continuous handling and for cooling measured in minutes.
+
+## 7. The Wait on the Wrong Step
+
+**Symptom.** Gaps in the schedule are consistently one operation off from where the shop says the parts are sitting.
+
+**Cause.** Every one of these fields applies after its **own** step's operation. A cool-down after milling belongs on the milling step. Putting it on the drilling step delays drilling's successor instead, which moves the gap one operation downstream.
+
+**Fix.** Ask where a person standing on the floor would say the parts are waiting, and put the field on the step that produces that wait. Then verify on the Gantt that the gap moved to the right place.
+
+## 8. Padding Queue Time Everywhere
+
+**Symptom.** Quoted lead times are three or four times the work content in the routing, and nobody can name a physical reason for most of the buffer.
+
+**Cause.** Queue gets added a couple of hours at a time, by different planners, over years, to protect against variation that may have been fixed since. Because queue is shift-aware, each entry is worth more calendar time than it looks: two hours on a single-shift Friday is a weekend.
+
+**Fix.** Total the queue hours in a routing separately from the run hours and convert each entry to calendar time on your real shift pattern. Challenge anything nobody can justify physically. Padding does not protect a date, it just moves the promise: the disruption consumes it anyway, and in the meantime it hides which work center is actually constraining the shop. [Queue time as a scheduling lever](/blog/queue-time-scheduling-lever) covers the wider argument, and [production bottleneck identification](/blog/production-bottleneck-identification) covers what to protect instead.
+
+## Two Things That Look Wrong and Are Not
+
+**A zero queue does not skip a holiday.** If an operation ends on a Friday holiday and the step carries no queue time, the handoff is that Friday timestamp and nothing advances it. The capacity allocator then finds the first working slot, normally Monday. Nothing is missing: the waiting is being done by the capacity search rather than by a configured buffer, which is the correct division of labor.
+
+**Calendar transit landing on a weekend is intentional.** Three calendar transit days from Thursday noon resolves to Sunday noon, and that timestamp will never be a start time in a Monday-to-Friday plant. It does not need to be. The value is a gate, and the allocator searches forward from it to the first real opening. Switching to working days to "fix" a weekend timestamp usually costs you a day you did not mean to spend.
+
+## Working the List
+
+When a gap looks wrong, run the checks in this order. Queue first (convert it to calendar time before deciding it is wrong), then streaming (which discards queue on the same step), then transit and its mode, then the step ownership. If none of the four explains the gap, it is capacity, and the composed handoff was only ever an earliest start rather than a booking.
+
+Two habits prevent most of this. Enter every buffer as a statement somebody could verify by standing at the machine, and review transit modes whenever you add a vendor or a plant. Master data outlives the person who typed it, which is why an unexplained buffer is a liability rather than a safety margin.
+
+For the wider catalog of scheduling symptoms and causes, see the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). Bring a routing with lead time you cannot account for to a demo of [EDGEBIC](/edgebic) and we will total the buffers with you.

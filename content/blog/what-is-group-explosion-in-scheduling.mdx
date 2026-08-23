@@ -1,0 +1,76 @@
+---
+title: "What Is Group Explosion in Scheduling?"
+description: "Group explosion converts a machine-pool routing step into one nominal machine plus a candidate per member just before selection, so the core engine never sees a group."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - group explosion scheduling
+  - work center group expansion
+  - machine pool resolution
+  - alternate work center candidates
+  - group step scheduling
+  - resource group explosion
+targetPhrase: "group explosion scheduling"
+wordCount: 1080
+readingTime: 5
+faqQuestions:
+  - question: "What is group explosion in scheduling?"
+    answer: "Group explosion is the engine pre-pass that turns a routing step bound to a machine pool into a concrete plan the scheduler can act on. Just before machine selection runs, it converts the group-bound step into a nominal primary machine plus one alternate candidate for each remaining member, each candidate carrying its own pre-computed hours. After the explosion, the core engine only ever sees real machines with real capacity, never an abstract group."
+  - question: "Why does the engine explode a group instead of scheduling it directly?"
+    answer: "Because a pool is a routing concept with no capacity of its own, the scheduler cannot book hours against it. Group explosion translates the pool into the shape the engine already understands: a primary machine with a list of alternates. That lets the same proven machine-selection logic that handles alternate work centers pick the winner, so pooling reuses battle-tested code rather than adding a parallel scheduling path the engine would have to learn."
+  - question: "What happens if a group is empty or unknown at schedule time?"
+    answer: "The step is left unexploded and a loud warning is logged, rather than being silently scheduled on a wrong machine or dropped. An empty or unresolved group means the engine has no members to turn into candidates, so it refuses to guess. Failing visibly is safer than failing quietly: the planner sees the warning, fixes the group membership, and reschedules."
+qaQuestions:
+  - question: "We bound dozens of routing steps to a MILLING group. Does exploding all of them on every run slow scheduling down noticeably?"
+    answer: "In practice, no. Group explosion is a lightweight translation step that runs once per group-bound step just before selection, turning the group into a primary plus a short candidate list. The heavy lifting, machine selection and capacity booking, is the same work the engine already does for steps with alternate work centers, whether or not a group was involved. The explosion adds a small, bounded amount of work proportional to the number of members, not a new expensive search."
+  - question: "How does group explosion decide which machine becomes the nominal primary before selection even runs?"
+    answer: "It sorts the members deterministically: the designated primary member first, then by priority, then by machine identity as a tiebreaker, and stamps the top of that list as the nominal primary. That gives the step a stable, predictable starting machine name before the resolver makes its real choice. The resolver may still pick a different member based on speed and current load, so the nominal primary is the pre-printed name on the ticket, not the final dispatch decision."
+---
+
+**Group explosion is the engine pre-pass that converts a routing step bound to a machine pool into a concrete nominal primary machine plus one alternate candidate per remaining member, each carrying its own pre-computed hours, immediately before machine selection runs, so the core scheduling engine never has to understand what a group is.** It is the dispatcher turning "any mill" into a shortlist of the three actual mills before choosing which one gets the job.
+
+This entry is part of the [EDGEBIC by User Solutions](/edgebic) glossary; the broader dictionary lives in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## Why the Engine Explodes a Group
+
+A [work center group](/blog/what-is-a-work-center-group-machine-pool) is a routing concept with no capacity of its own. The scheduler cannot book hours against a pool, because a pool is not a machine. So a group-bound step has to be translated into something the engine can actually schedule.
+
+The engine already knows how to schedule a step that has a primary machine plus a list of alternate machines: it picks the best available one. Group explosion reuses that. Rather than teaching the engine a brand-new "group" path, the explosion reshapes the group into the primary-plus-alternates form the engine already handles. The core engine stays simpler, and pooling rides on proven selection logic instead of a parallel code path.
+
+## How It Works
+
+Just before machine selection, each group-bound step is expanded:
+
+- The pool's members are sorted deterministically (the designated primary first, then by priority, then by machine identity as a tiebreaker). The top of that list becomes the **nominal primary** stamped onto the step.
+- Every remaining member becomes an alternate candidate.
+- Each candidate carries its own pre-computed effective hours, reflecting that machine's speed factor and setup, so the resolver is comparing real numbers.
+
+After the explosion, the step looks exactly like an ordinary step with alternate work centers, and the same [selection strategy](/blog/what-is-a-selection-strategy-in-scheduling) machinery chooses the winner. If a group is empty or cannot be resolved, the step is left unexploded and a loud warning is logged, so the failure is visible rather than a silent wrong assignment.
+
+## A Concrete Example
+
+Group MILLING has three members: Mill-1 (baseline speed, designated primary), Mill-2 (faster), and Mill-3 (slower, simpler setup). A routing step targets MILLING.
+
+At schedule time, group explosion sorts the members, stamps Mill-1 as the nominal primary, and creates Mill-2 and Mill-3 as alternate candidates. It pre-computes each candidate's hours from its own speed factor and setup. The step now reads, to the rest of the engine, as "primary Mill-1, alternates Mill-2 and Mill-3, with these hours each." The resolver then picks whichever member finishes first (or earliest starts, or the primary first) given real capacity. The engine never saw the word "group"; it saw three real machines with real hours.
+
+## How EDGEBIC Uses It
+
+In EDGEBIC, group explosion runs immediately before the alternate-machine resolver on every scheduling run. It converts each group-bound step into a nominal primary plus one true-alternate candidate per remaining member, each with its own effective hours, and then the standard resolver picks the member per the group's strategy. Because the explosion is transient and re-runs each time, a not-yet-started step naturally [re-shops](/blog/what-is-re-shopping-in-work-center-group-scheduling) the pool on the next reschedule against fresh capacity.
+
+The per-member hours the explosion carries come from the group's [factor-from-base](/blog/what-is-factor-from-base-in-work-center-groups) rule, so speed differences are honored without the setup ever being scaled. And because the pool holds no capacity of its own, the explosion is what keeps [phantom capacity](/blog/what-is-phantom-capacity-in-scheduling) impossible: the engine only ever books against real member buckets. For the wider picture, see the [work center groups overview](/blog/edgebic-work-center-groups-explained), and for how alternates work in general, [what is a true alternate work center](/blog/what-is-a-true-alternate-work-center).
+
+<Accordion title="What is group explosion in scheduling?">
+Group explosion is the engine pre-pass that turns a routing step bound to a machine pool into a concrete plan the scheduler can act on. Just before machine selection runs, it converts the group-bound step into a nominal primary machine plus one alternate candidate for each remaining member, each candidate carrying its own pre-computed hours. After the explosion, the core engine only ever sees real machines with real capacity, never an abstract group.
+</Accordion>
+
+<Accordion title="Why does the engine explode a group instead of scheduling it directly?">
+Because a pool is a routing concept with no capacity of its own, the scheduler cannot book hours against it. Group explosion translates the pool into the shape the engine already understands: a primary machine with a list of alternates. That lets the same proven machine-selection logic that handles alternate work centers pick the winner, so pooling reuses battle-tested code rather than adding a parallel scheduling path the engine would have to learn.
+</Accordion>
+
+<Accordion title="What happens if a group is empty or unknown at schedule time?">
+The step is left unexploded and a loud warning is logged, rather than being silently scheduled on a wrong machine or dropped. An empty or unresolved group means the engine has no members to turn into candidates, so it refuses to guess. Failing visibly is safer than failing quietly: the planner sees the warning, fixes the group membership, and reschedules.
+</Accordion>

@@ -1,0 +1,705 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "User Solutions EDGEBIC Licensing API",
+    "version": "1.0.0",
+    "description": "Public REST API for the EDGEBIC / EDGEBI desktop applications by User Solutions, Inc. It covers self-service license requests, per-device license activation (seat-based), runtime validation, seat release, and seat-gated software update checks.\n\nSecurity model: the license key (format `NTCB-XXXX-XXXX-XXXX-XXXX-XXXX`) is the credential. Any operator email may activate a key while a seat is free; the seat count is the limit, not the email. The server stores only a SHA-256 hash of the key.\n\nDevice fingerprint: `/api/license/request`, `/api/license/activate`, and `/api/software/latest` derive a device fingerprint server-side from request headers (`User-Agent`, `Accept-Language`, `X-Timezone`, `X-Screen-Resolution`, `X-Hardware-Info`). `X-Hardware-Info` is the primary per-machine distinguisher - always send it, or two machines can collapse into one seat. The algorithm is `SHA-256(platform | language | timezone | screenResolution | hardwareInfo)`.\n\nHuman-readable documentation: https://usersolutions.com/developers",
+    "contact": {
+      "name": "User Solutions, Inc.",
+      "url": "https://usersolutions.com/contact-us",
+      "email": "us@usersolutions.com"
+    },
+    "termsOfService": "https://usersolutions.com/terms-of-use"
+  },
+  "externalDocs": {
+    "description": "Developer resources and integration guide",
+    "url": "https://usersolutions.com/developers"
+  },
+  "servers": [
+    {
+      "url": "https://usersolutions.com",
+      "description": "Production"
+    }
+  ],
+  "tags": [
+    {
+      "name": "license",
+      "description": "License request, activation, validation, and seat release for the EDGEBIC / EDGEBI desktop applications."
+    },
+    {
+      "name": "software",
+      "description": "Seat-gated software update checks and gated installer downloads."
+    },
+    {
+      "name": "system",
+      "description": "Service health."
+    }
+  ],
+  "paths": {
+    "/api/license/request": {
+      "post": {
+        "operationId": "requestLicense",
+        "tags": ["license"],
+        "summary": "Submit a self-service license request for this device",
+        "description": "Self-registers the calling device in the admin approval queue. Re-posting from the same device while pending updates the existing request (no duplicates). If the device was already approved, the license key is returned immediately. No authentication required. Rate limit: 30 requests/minute/IP. Send the device fingerprint headers on every call.",
+        "parameters": [
+          { "$ref": "#/components/parameters/XHardwareInfo" },
+          { "$ref": "#/components/parameters/XTimezone" },
+          { "$ref": "#/components/parameters/XScreenResolution" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LicenseRequestInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request queued (`status: pending`), or the device was already approved and the key is returned (`status: approved`).",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LicenseRequestStatus" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      },
+      "get": {
+        "operationId": "pollLicenseRequest",
+        "tags": ["license"],
+        "summary": "Poll a pending license request for approval",
+        "description": "Poll until the request is approved, then pick up the license key. The key is returned only to the matching requester: same `email` and same device fingerprint (derived from the fingerprint headers). No authentication required.",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "description": "The requester email used on the original POST.",
+            "schema": { "type": "string", "format": "email" }
+          },
+          { "$ref": "#/components/parameters/XHardwareInfo" },
+          { "$ref": "#/components/parameters/XTimezone" },
+          { "$ref": "#/components/parameters/XScreenResolution" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current request status. `licenseKey` is present only when `status` is `approved`.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LicenseRequestStatus" }
+              }
+            }
+          },
+          "404": {
+            "description": "No request found for this email + device.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["not_found"] }
+                  }
+                }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/api/license/activate": {
+      "post": {
+        "operationId": "activateLicense",
+        "tags": ["license"],
+        "summary": "Activate a license on this device (consume a seat)",
+        "description": "Binds the calling machine to one seat on the license. Idempotent for the same machine: re-activating refreshes `lastSeenAt` instead of consuming another seat. Returns `409` when all seats are in use. The license key is the credential - no other authentication. Send the device fingerprint headers.",
+        "parameters": [
+          { "$ref": "#/components/parameters/XHardwareInfo" },
+          { "$ref": "#/components/parameters/XTimezone" },
+          { "$ref": "#/components/parameters/XScreenResolution" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ActivateLicenseInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Seat consumed (or refreshed for this machine).",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ActivationResult" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": {
+            "description": "License has been revoked.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid (unknown) license key.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "409": {
+            "description": "License seat limit reached - all seats are in use. An admin must release a seat or raise the seat cap.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/Error" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "seats": {
+                          "type": "integer",
+                          "description": "Total seats on the license."
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/api/license/validate": {
+      "post": {
+        "operationId": "validateLicense",
+        "tags": ["license"],
+        "summary": "Validate that this device still holds an active seat",
+        "description": "Lightweight runtime check: valid when the license is `active` and this device holds an active seat, matched by `systemFingerprint` OR `processorId`. Unlike activate, this endpoint takes `systemFingerprint` in the request body.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ValidateLicenseInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The device is licensed.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ValidateLicenseResult" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data, or the license is not active.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ValidateLicenseError" }
+              }
+            }
+          },
+          "403": {
+            "description": "System validation failed - this device holds no active seat.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ValidateLicenseError" }
+              }
+            }
+          },
+          "404": {
+            "description": "License not found.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ValidateLicenseError" }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/api/license/deactivate": {
+      "post": {
+        "operationId": "deactivateLicense",
+        "tags": ["license"],
+        "summary": "Release this device's seat",
+        "description": "The inverse of activate: frees the seat this machine holds so another device can reuse it. Matches the seat by `systemFingerprint` OR `processorId`. Idempotent: if the device holds no active seat it still returns `200` with `alreadyReleased: true`. Never changes the license status itself - seat occupancy is the only thing it touches. Rate limit: 30 requests/minute/IP.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeactivateLicenseInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Seat released, or already free (`alreadyReleased: true`).",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeactivateLicenseResult" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": {
+            "description": "Invalid (unknown) license key.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/api/software/latest": {
+      "post": {
+        "operationId": "checkSoftwareUpdates",
+        "tags": ["software"],
+        "summary": "Check for software updates (seat-gated)",
+        "description": "Machine-to-machine update check plus install write-back. Returns only the calling customer's software, never the whole catalog. Seat-gated: once a license has occupied seats, the caller must hold one (matched by fingerprint or `processorId`). Authenticate with the license key via `Authorization: Bearer <key>` (preferred) or the `X-License-Key` header. Rate limit: 20 requests/minute/IP.",
+        "security": [
+          { "licenseKeyBearer": [] },
+          { "licenseKeyHeader": [] }
+        ],
+        "parameters": [
+          { "$ref": "#/components/parameters/XHardwareInfo" },
+          { "$ref": "#/components/parameters/XTimezone" },
+          { "$ref": "#/components/parameters/XScreenResolution" }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SoftwareLatestInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The caller's available software and download URLs (short-lived, license-bound tokens).",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SoftwareLatestResult" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing license key.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "403": {
+            "description": "License not active, or this device holds no active seat.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown license key.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/api/software/download": {
+      "get": {
+        "operationId": "downloadSoftware",
+        "tags": ["software"],
+        "summary": "Download an installer with a token from the update check",
+        "description": "Streams an installer using the short-lived, license-bound token minted by `checkSoftwareUpdates` (token TTL is about one hour). Rate limit: 10 requests/minute/license.",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "description": "Signed download token returned in a `downloadUrl` by `/api/software/latest`.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The installer binary.",
+            "content": {
+              "application/octet-stream": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired token.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "healthCheck",
+        "tags": ["system"],
+        "summary": "Service health check",
+        "description": "Returns the running application version when the service and its database are healthy. Returns `503` with an empty body when the database is unreachable.",
+        "responses": {
+          "200": {
+            "description": "Service is healthy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "string",
+                      "description": "Running application version."
+                    }
+                  },
+                  "required": ["version"]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unhealthy (database unreachable). Empty body."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "licenseKeyBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "The EDGEBIC license key (`NTCB-XXXX-XXXX-XXXX-XXXX-XXXX`) passed as a bearer token."
+      },
+      "licenseKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-License-Key",
+        "description": "The EDGEBIC license key passed as a header (alternative to the bearer form)."
+      }
+    },
+    "parameters": {
+      "XHardwareInfo": {
+        "name": "X-Hardware-Info",
+        "in": "header",
+        "required": false,
+        "description": "Primary per-machine distinguisher for the server-side device fingerprint - a stable value such as the processor ID, motherboard serial, or a hashed machine GUID. Strongly recommended on every call: without it, two machines can hash to the same fingerprint and collapse into one seat.",
+        "schema": { "type": "string", "example": "BFEBFBFF000906EA" }
+      },
+      "XTimezone": {
+        "name": "X-Timezone",
+        "in": "header",
+        "required": false,
+        "description": "IANA timezone of the device, a fingerprint component.",
+        "schema": { "type": "string", "example": "America/Detroit" }
+      },
+      "XScreenResolution": {
+        "name": "X-Screen-Resolution",
+        "in": "header",
+        "required": false,
+        "description": "Primary display resolution of the device, a fingerprint component.",
+        "schema": { "type": "string", "example": "1920x1080" }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request data (validation failure). `details` carries field-level issues.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Too many requests - back off and retry.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Unexpected server error - retry with backoff.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "description": "Structured error envelope returned by every endpoint on failure.",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message."
+          },
+          "details": {
+            "type": "array",
+            "description": "Field-level validation issues (present on 400 responses).",
+            "items": { "type": "object" }
+          }
+        },
+        "required": ["error"]
+      },
+      "LicenseKey": {
+        "type": "string",
+        "description": "EDGEBIC license key. The key is the secret - keep it out of logs and crash reports.",
+        "pattern": "^NTCB(-[A-Z0-9]{4}){5}$",
+        "example": "NTCB-AB12-CD34-EF56-GH78-JK90"
+      },
+      "LicenseRequestInput": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Device owner / requester email."
+          },
+          "customerName": {
+            "type": "string",
+            "description": "Display name for the customer or site."
+          },
+          "company": { "type": "string", "description": "Company name." },
+          "product": {
+            "type": "string",
+            "description": "Product being requested, e.g. `EDGEBI`."
+          },
+          "deviceName": {
+            "type": "string",
+            "description": "Shown in the admin approval inbox, e.g. `LINE-PC-07`."
+          },
+          "processorId": {
+            "type": "string",
+            "description": "Stable hardware identifier for this machine.",
+            "example": "BFEBFBFF000906EA"
+          },
+          "systemInfo": {
+            "type": "string",
+            "description": "Free-form system description, e.g. `Windows 11 / i7`."
+          },
+          "operatorEmails": {
+            "type": "array",
+            "description": "All operator emails on this device; every one is added to the license roster.",
+            "items": { "type": "string", "format": "email" }
+          }
+        },
+        "required": ["email", "processorId"]
+      },
+      "LicenseRequestStatus": {
+        "type": "object",
+        "properties": {
+          "requestId": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "licenseKey": {
+            "$ref": "#/components/schemas/LicenseKey"
+          },
+          "seats": {
+            "type": "integer",
+            "description": "Seat count on the issued license (present when approved)."
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional admin note."
+          }
+        },
+        "required": ["requestId", "status"]
+      },
+      "ActivateLicenseInput": {
+        "type": "object",
+        "properties": {
+          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Operator email - automatically added to the license roster."
+          },
+          "processorId": {
+            "type": "string",
+            "description": "Stable hardware identifier for this machine."
+          },
+          "systemInfo": {
+            "type": "string",
+            "description": "Free-form system description."
+          },
+          "deviceName": {
+            "type": "string",
+            "description": "Optional device label."
+          }
+        },
+        "required": ["licenseKey", "email", "processorId", "systemInfo"]
+      },
+      "ActivationResult": {
+        "type": "object",
+        "properties": {
+          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
+          "email": { "type": "string", "format": "email" },
+          "status": { "type": "string", "enum": ["active"] },
+          "activatedAt": { "type": "string", "format": "date-time" },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Null for perpetual licenses."
+          },
+          "systemFingerprint": {
+            "type": "string",
+            "description": "Server-issued fingerprint for this device. Store it - `validate` and `deactivate` match on it."
+          },
+          "processorId": { "type": "string" },
+          "seats": { "type": "integer", "description": "Total seats on the license." },
+          "seatsUsed": { "type": "integer" },
+          "seatsRemaining": { "type": "integer" }
+        },
+        "required": ["licenseKey", "email", "status", "seats", "seatsUsed", "seatsRemaining"]
+      },
+      "ValidateLicenseInput": {
+        "type": "object",
+        "properties": {
+          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
+          "systemFingerprint": {
+            "type": "string",
+            "description": "The server-issued fingerprint from activation."
+          },
+          "processorId": {
+            "type": "string",
+            "description": "Fallback seat match when the fingerprint changed."
+          }
+        },
+        "required": ["licenseKey", "systemFingerprint", "processorId"]
+      },
+      "ValidateLicenseResult": {
+        "type": "object",
+        "properties": {
+          "valid": { "type": "boolean", "enum": [true] },
+          "purchaseId": { "type": "string" },
+          "activatedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "customerName": { "type": "string", "nullable": true },
+          "seats": { "type": "integer" }
+        },
+        "required": ["valid", "purchaseId", "seats"]
+      },
+      "ValidateLicenseError": {
+        "type": "object",
+        "properties": {
+          "valid": { "type": "boolean", "enum": [false] },
+          "error": { "type": "string" }
+        },
+        "required": ["valid", "error"]
+      },
+      "DeactivateLicenseInput": {
+        "type": "object",
+        "description": "At least one of `systemFingerprint` / `processorId` is required.",
+        "properties": {
+          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
+          "systemFingerprint": {
+            "type": "string",
+            "description": "The server-issued fingerprint from activation."
+          },
+          "processorId": {
+            "type": "string",
+            "description": "Fallback seat match."
+          }
+        },
+        "required": ["licenseKey"]
+      },
+      "DeactivateLicenseResult": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "status": { "type": "string", "enum": ["released"] },
+          "alreadyReleased": {
+            "type": "boolean",
+            "description": "True when the device held no active seat (idempotent no-op)."
+          },
+          "seats": { "type": "integer" },
+          "seatsUsed": { "type": "integer" },
+          "seatsRemaining": { "type": "integer" }
+        },
+        "required": ["success", "status", "alreadyReleased"]
+      },
+      "SoftwareLatestInput": {
+        "type": "object",
+        "description": "All fields optional; the license key travels in the `Authorization` or `X-License-Key` header (or `licenseKey` in the body, legacy).",
+        "properties": {
+          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
+          "processorId": { "type": "string" },
+          "product": { "type": "string", "example": "EDGEBI" },
+          "version": {
+            "type": "string",
+            "description": "Currently installed version (write-back for the admin dashboard).",
+            "example": "10.2"
+          },
+          "releaseDate": { "type": "string", "example": "3/6/2026" },
+          "downloadUrl": { "type": "string", "format": "uri" }
+        }
+      },
+      "SoftwareLatestResult": {
+        "type": "object",
+        "properties": {
+          "software": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "productName": { "type": "string" },
+                "description": { "type": "string" },
+                "latestVersion": { "type": "string" },
+                "downloadUrl": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "Gated download URL carrying a short-lived, license-bound token (about 1 hour TTL)."
+                },
+                "releaseDate": { "type": "string" }
+              },
+              "required": ["productName", "latestVersion"]
+            }
+          }
+        },
+        "required": ["software"]
+      }
+    }
+  }
+}

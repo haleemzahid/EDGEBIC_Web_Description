@@ -1,0 +1,100 @@
+---
+title: "A Satisfied-From-Stock Job Still Shows a Work Center Row: Causes and Fixes"
+description: "A fully covered job should carry one material-shaped row and no machine work. Why a work center row appears on it and what it breaks downstream."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - satisfied from stock work center row
+  - fully covered job shows operation
+  - material shaped schedule row
+  - partial coverage netting
+  - stock covered job scheduled work
+  - consume from stock shape
+targetPhrase: "satisfied from stock job shows a work center row"
+wordCount: 1125
+readingTime: 6
+faqQuestions:
+  - question: "What should a fully covered job look like on the schedule?"
+    answer: "One material-shaped row and nothing else. A job whose entire demand is met from stock does no machine work, so it carries a single row with no work center, no routing step link, and no labor hours, with its tracked hours shown as not applicable. That row exists so the job is visibly accounted for rather than silently absent. Any machine operation on a fully covered job is a shape problem worth clearing, because several downstream checks read that shape."
+  - question: "Why does a work center row on a covered job cause other anomalies?"
+    answer: "Because several validators use the material shape as their skip signal. A row with no work center and no routing link is understood to be a stock movement and is passed over by the checks that look for a missing routing link, missing resources, and unexplained sequential gaps. Put a real work center on that row and those checks stop skipping it, so they fire as false positives on every later scan until the shape is corrected."
+  - question: "Is a mix of stock coverage and real operations ever correct?"
+    answer: "Yes. Partial coverage is normal: stock covers part of the demand, the remainder is built, and the job legitimately shows both a stock movement and real operations. The check is only about a job whose status says the whole demand was met from stock, because that job should have no machine work at all. If your job is partially covered, the operations are correct and the status is what to verify."
+qaQuestions:
+  - question: "Our covered job shows an operation on a machine, and that machine is now over-booked for the day. Are the two connected?"
+    answer: "They can be. A job that should have consumed stock and stopped is instead holding a slot on a machine, so the capacity it takes is capacity another job cannot have. Re-run scheduling for the job: after the netting decision the engine emits the material-shaped row for full coverage and releases the machine. Then re-check the work center for the day. If it is still over-booked after a clean re-run, the over-booking has a separate cause and deserves its own look."
+  - question: "How do I tell whether the job was fully covered or only partly covered?"
+    answer: "Compare the ordered quantity with the quantity the netting drew from stock. Full coverage means the whole ordered quantity came from inventory and nothing needed building, and the job's status says so. Partial coverage means only part came from stock and the balance was scheduled as real work, which is why operations appear. The transaction history for the product, filtered to the job number, shows the quantity that was actually issued, and that number is the one that settles it."
+---
+
+**A job whose whole demand is met from inventory should carry exactly one material-shaped row: no work center, no routing step link, and no labor hours, with tracked hours shown as not applicable.** [EDGEBIC by User Solutions](/edgebic) emits that row so a fully covered job stays visible in the plan without holding machine capacity, and the plant-wide anomaly scan flags any covered job that carries a real work center row instead.
+
+The row's shape is load bearing, not cosmetic. Several other checks use it as a skip signal, so a wrongly shaped row produces false findings on every later scan. This post covers what the correct shape is, why the wrong shape spreads, and the correction, alongside the other netting symptoms in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the netting mechanism see [what is consume-from-stock netting](/blog/what-is-consume-from-stock-netting), and for the full-coverage behavior see [when an order is fully satisfied from stock](/blog/when-an-order-is-fully-satisfied-from-stock-in-edgebic).
+
+## What You Are Seeing
+
+The job's status says the demand was satisfied from stock, so you expect no work on any machine. The schedule shows an operation anyway: a work center, a time window, and possibly hours. A plant-wide anomaly scan lists the job as critical, saying its row is not material-shaped.
+
+## Why It Happens
+
+### Cause 1: The Coverage Decision and the Emitted Row Disagree
+
+When netting finds enough stock to cover the whole order, the engine stops scheduling work and emits the single material-shaped row. If a machine operation appears alongside the covered status, the row that was written does not match the decision that was made. Re-running scheduling re-makes the decision and emits the correct shape.
+
+**How to tell:** the status says fully covered, the quantity issued from stock equals the ordered quantity, and an operation is present anyway.
+
+### Cause 2: The Coverage Was Actually Partial
+
+Partial coverage looks similar at a glance and is completely legitimate. Stock covers part of the demand, the remainder is built, and the job shows both a stock movement and real operations. What differs is the status and the quantities.
+
+**How to tell:** the quantity drawn from stock is less than the ordered quantity, and the operations correspond to the balance that had to be built.
+
+### Cause 3: The Job Mixes Completed Work With Later Coverage
+
+Netting runs after completed steps have been preserved, so a job that already has actual work recorded keeps that work. Operations on such a job are history, not a shape error, and they are correct to be there.
+
+**How to tell:** the operations carry actual start or end dates rather than being purely planned.
+
+## Why the Shape Matters Downstream
+
+Three validators treat a row with no work center and no routing link as a stock movement and skip it: the one that looks for a missing routing link on machine work, the one that looks for operations with no assigned resources, and the one that flags a long unexplained gap between sequential steps. Give that row a real work center and none of them skip it any more, so all three start reporting on a row that was never meant to be judged by their rules.
+
+That is the practical cost of leaving this uncorrected: not one row, but a growing set of false findings that make later scans harder to read.
+
+## How to Fix It
+
+- **Re-run scheduling for the job.** The netting decision is re-made and the fully covered case emits the material-shaped row.
+- **Confirm the coverage quantity** in the product's transaction history, filtered to the job number. If the issued quantity is less than the ordered quantity, the coverage was partial and the operations are correct.
+- **Leave completed work alone.** Operations carrying actual dates are history and a reschedule does not move them.
+- **Re-scan plant-wide** to confirm the row cleared and that the three related checks stopped firing on that job.
+
+## How to Diagnose It, in Order
+
+1. **Run a plant-wide anomaly scan,** since this check does not appear on a job-filtered run.
+2. **Read the job's status** and note whether it claims full coverage.
+3. **Compare ordered quantity against issued quantity** in transaction history for the product. That comparison separates full coverage from partial coverage in one step.
+4. **Check whether the operation carries actual dates.** If it does, it is preserved history.
+5. **Re-run scheduling and re-scan.** A clean run clears both the shape row and the false findings it was generating.
+
+## How to Prevent It
+
+- **Re-scan after any run that involved stock netting,** which is the point where shape problems appear.
+- **Read status and quantity together.** Status alone does not tell you whether coverage was full, and the issued quantity does.
+- **Treat a cluster of unrelated-looking findings on one covered job as a shape symptom,** rather than working each one separately. The triage habit is covered in [several anomaly checks fired on one job](/blog/several-anomaly-checks-fired-on-one-job-edgebic).
+- **Keep the balance the netting reads honest.** Coverage decisions are only as sound as the on-hand figure behind them, which is why [a satisfied-from-stock job did not draw down inventory](/blog/a-satisfied-from-stock-job-did-not-draw-down-inventory-edgebic) is worth clearing at the same time.
+
+<Accordion title="What should a fully covered job look like on the schedule?">
+One material-shaped row and nothing else. A job whose entire demand is met from stock does no machine work, so it carries a single row with no work center, no routing step link, and no labor hours, with its tracked hours shown as not applicable. That row exists so the job is visibly accounted for rather than silently absent. Any machine operation on a fully covered job is a shape problem worth clearing, because several downstream checks read that shape.
+</Accordion>
+
+<Accordion title="Why does a work center row on a covered job cause other anomalies?">
+Because several validators use the material shape as their skip signal. A row with no work center and no routing link is understood to be a stock movement and is passed over by the checks that look for a missing routing link, missing resources, and unexplained sequential gaps. Put a real work center on that row and those checks stop skipping it, so they fire as false positives on every later scan until the shape is corrected.
+</Accordion>
+
+<Accordion title="Is a mix of stock coverage and real operations ever correct?">
+Yes. Partial coverage is normal: stock covers part of the demand, the remainder is built, and the job legitimately shows both a stock movement and real operations. The check is only about a job whose status says the whole demand was met from stock, because that job should have no machine work at all. If your job is partially covered, the operations are correct and the status is what to verify.
+</Accordion>

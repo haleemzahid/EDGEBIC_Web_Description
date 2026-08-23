@@ -1,0 +1,126 @@
+---
+title: "Queue Time and Transit Time in EDGEBIC: What Each Field Models"
+description: "Queue time and transit time in scheduling: how shift-aware queues, calendar transit days, and flat handling delays differ, and when to use each field."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - queue time transit time scheduling
+  - shift aware queue time
+  - transit days production scheduling
+  - between operation time manufacturing
+  - routing step timing fields
+  - outside process scheduling
+  - move time vs queue time
+targetPhrase: "queue time transit time scheduling"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "What is the difference between queue time and transit time in scheduling?"
+    answer: "Queue time is a wait that happens inside your plant and only ticks during working shifts. Transit time is travel to somewhere else and is normally counted in whole days. A 4-hour queue starting Friday at 14:00 finishes Monday morning because nights and weekends do not count. Three transit days starting Thursday at noon lands Sunday at noon if you count calendar days."
+  - question: "Is queue time counted on nights and weekends?"
+    answer: "No. Queue time in EDGEBIC is shift-aware, so it consumes only hours that fall inside an active shift on the work center's calendar. A 4-hour queue that begins at 14:00 on a Friday with an 08:00 to 16:00 shift uses 2 hours that afternoon and the remaining 2 hours on Monday from 08:00 to 10:00. Holidays and idle days do not tick either."
+  - question: "Should transit days count calendar days or working days?"
+    answer: "Use calendar days when the parts are at an outside vendor whose calendar you do not control, because their weekend is not your shift schedule. Use working days when the transit is internal or courier-based and should skip your own non-working days. Both modes are available per routing step, and calendar days is the default."
+  - question: "What field models a forklift run between two machines?"
+    answer: "Transfer delay, which is flat elapsed hours added after a lot streaming handoff. It is not shift-aware, so use it for genuinely continuous handling such as a conveyor, a robot cycle, or a short move that happens whenever the material is ready. If the move only happens during a shift, model it as queue time on the downstream step instead."
+  - question: "Why does a routing need three separate timing fields instead of one?"
+    answer: "Because the three model different physical realities and behave differently on the calendar. A cooling buffer should pause overnight, a vendor shipment should not, and a lot streaming handoff should pull the next step earlier rather than push it later. Collapsing them into one number would force every between-step wait to behave the same way, which is exactly how schedules stop matching the floor."
+qaQuestions:
+  - question: "Our parts go out for plating and come back three days later. Queue time or transit days?"
+    answer: "Transit days, set to 3, with calendar days left on. Queue time would be wrong twice over: it would pause over your weekend even though the plater's truck does not care about your shift calendar, and it would consume hours from your own work center's availability. Transit days simply move the handoff forward and let the allocator find the first feasible slot when the parts return. If the send is a courier that genuinely skips weekends, switch that step to working days instead."
+  - question: "We put an 8-hour cure time as queue time and the next step still lands two days later. Is the queue wrong?"
+    answer: "The queue is probably right and the shift calendar is doing the rest. Eight hours of shift-aware queue starting at 13:00 on a single-shift Friday uses 3 hours before end of shift and finishes at 11:00 Monday. Then the downstream work center has to have a free slot at or after 11:00, and if Monday morning is already loaded the operation lands Tuesday. Check the work center's load before assuming the buffer is at fault."
+---
+
+**Between the end of one operation and the start of the next, EDGEBIC by User Solutions models three different kinds of waiting, and each one behaves differently on the calendar.** Queue time is a shift-aware buffer inside your plant. Transit days are whole days of travel somewhere else. Transfer delay is flat elapsed hours of handling. Lot streaming, the fourth mechanism, works in the opposite direction and pulls the next step earlier. Putting a wait in the wrong field is one of the most common reasons a schedule stops matching the shop floor.
+
+This post explains what each field models and when to reach for it. If you want the general case for managing queues as a lead time lever, read [queue time: the biggest scheduling lever](/blog/queue-time-scheduling-lever). If you want the term defined on its own, see [what is queue time](/blog/glossary/queue-time). This post is about the fields.
+
+## The Gap Between Two Operations Is Not One Number
+
+Ask a planner why operation 20 starts two days after operation 10 finishes and you will usually get several answers stacked together: the parts have to cool, then they get carted to the far building, then they wait for the plater, then they wait for a machine. Those are four different waits with four different physical causes, and they behave differently when the calendar changes.
+
+The cooling stops overnight, because nobody moves hot parts at 2am and the clock effectively pauses. The plater's three days run straight through your weekend, because it is their calendar, not yours. The cart ride takes twenty minutes whenever the material is ready. And the wait for a machine is not a wait you configure at all: it is what the capacity allocator produces after everything else has been applied.
+
+A scheduling system that offers one "move time" field forces all four to behave identically. That is fine until you add a holiday, change a shift pattern, or run the same routing through a second plant, at which point every schedule quietly drifts from reality in a way nobody can trace.
+
+## The Four Mechanisms
+
+| Field | Unit | Ticks during | Direction | Typical use |
+|---|---|---|---|---|
+| **Queue time** | hours | Active shifts only | Pushes later | Cooling, drying, drip time, inspection wait, internal buffer |
+| **Transit days** | days | Calendar or working days | Pushes later | Outside vendor, heat treat, plating, inter-plant move |
+| **Transfer delay** | hours | All elapsed hours | Pushes later | Forklift run, conveyor, robot cycle after a streamed handoff |
+| **Lot streaming** | pieces or hours | n/a | Pulls **earlier** | Overlapping a long operation with the next one |
+
+## Queue Time: The Shift-Aware Buffer
+
+Queue time answers "how long must this sit before the next step may begin?", and it counts only hours that fall inside an active shift.
+
+Take an operation that ends Monday at 14:30 on a work center running 08:00 to 16:00, Monday through Friday, with a 4-hour queue:
+
+| Stage | Queue remaining | Clock |
+|---|---|---|
+| Operation ends | 4.0 h | Mon 14:30 |
+| Monday's shift, 14:30 to 16:00 | 2.5 h | Mon 16:00 |
+| Tuesday's shift, from 08:00 | 0 h | **Tue 10:30** |
+
+The next operation cannot begin before Tuesday 10:30. The overnight gap from Monday 16:00 to Tuesday 08:00 contributes nothing, and neither would a holiday or a weekend. That is the behavior you want for a cure, a cool-down, or a drip: those processes need shop hours, not wall-clock hours, because somebody has to be there to move the material at the end of them.
+
+One consequence catches people out. A zero queue does not skip anything: it simply returns the operation's end time unchanged. If an operation ends on a Friday holiday with no queue configured, the handoff time is that Friday timestamp, and the allocator then finds the first real opening, which is normally Monday. Nothing is wrong. The waiting is being done by the capacity search rather than by a configured buffer.
+
+## Transit Days: Travel, in Whole Days
+
+Transit days model work leaving the work center: an outside heat treater, a plating vendor, a truck to another building or another plant. The unit is days, and each routing step chooses how those days are counted.
+
+**Calendar days** (the default) is flat addition. An operation ending Thursday at 12:00 with three calendar transit days hands off at Sunday 12:00. The result may land on a weekend, and that is correct: the parts are at a vendor whose schedule has nothing to do with your shift calendar. The allocator then searches from Sunday noon and finds the first available slot, which for a Monday-to-Friday plant is Monday morning.
+
+**Working days** counts only days that have at least one active shift on the work center. From the same Thursday noon with three working transit days:
+
+| Day | Has shifts | Counted |
+|---|---|---|
+| Friday | Yes | 1 |
+| Saturday | No | skipped |
+| Sunday | No | skipped |
+| Monday | Yes | 2 |
+| Tuesday | Yes | 3 |
+
+The handoff resolves to the **end of the last shift** on Tuesday, so 16:00, not midnight. That end-of-shift detail matters: it means the downstream operation cannot start until the work center reopens after the transit, which is Wednesday morning.
+
+Notice how much the two modes diverge once weekends are involved. Three calendar days from Thursday is a Monday start. Three working days from Thursday is a Wednesday start. Both are defensible; only one describes your actual send. Choose per step, deliberately.
+
+## Transfer Delay: Flat Handling Hours
+
+Transfer delay is the handling lag that rides on top of a lot streaming handoff: the trolley run, the conveyor time, the cooling minutes before a batch can be lifted. It is flat elapsed hours and it is not shift-aware.
+
+That distinction is worth stating plainly, because it is the field's one sharp edge. A 2-hour transfer delay applied at 15:00 on a Friday resolves to 17:00 that same Friday, past the end of an 08:00 to 16:00 shift, even though nobody is going to move anything until Monday. If the handling genuinely only happens during a shift, use queue time on the downstream step instead. If it is a conveyor that runs whenever material arrives, transfer delay is exactly right.
+
+## Lot Streaming: The One That Pulls Earlier
+
+The fourth mechanism is the odd one out. Queue, transit, and transfer delay all push the next step later. Lot streaming pulls it earlier, by letting the successor start once a set number of pieces exist upstream rather than waiting for the whole order.
+
+Because it works in the opposite direction, it also takes precedence: when streaming fires on a routing step, its result becomes the successor's gate and queue time on that same step is discarded. That is not a bug to work around, it is the definition of streaming, and the platform's configuration audit flags the combination so intent stays explicit. [Lot streaming explained](/blog/edgebic-lot-streaming-explained) covers the models, and [how EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing) covers the exact ordering when several of these appear on one step.
+
+## Choosing the Right Field
+
+Answer three questions about the wait:
+
+1. **Does the material leave the work center's control?** If it goes to a vendor or another site, that is transit days. If it sits at the station or in a rack nearby, it is queue time.
+2. **Should the clock pause overnight?** If a person has to be present for the wait to end, use queue time. If the wait continues regardless (a vendor's truck, a conveyor), use transit days or transfer delay.
+3. **Are you trying to push later or start earlier?** Everything above pushes later. If the goal is to overlap two operations, none of these fields is the answer and you want lot streaming instead.
+
+## What Happens After the Fields Are Applied
+
+All of these produce an **earliest start**, not a booking. Once the composed time is known, the capacity allocator searches from that moment for a real shift opening on the downstream work center, respecting instances, utilization, holidays, and everything else already loaded. That is why a correctly configured 8-hour queue can still be followed by a two-day gap: the buffer was right and the machine was busy.
+
+When two routing branches feed one assembly step, the assembly waits for whichever branch resolves latest. The engine keeps the later of the two handoff times, which is the correct behavior for a join and the reason a sub-assembly's delay propagates to the parent. [Sub-assemblies in the designer](/blog/sub-assemblies-in-the-edgebic-designer) covers how those joins are drawn.
+
+## Where to Go Next
+
+[How to set queue, flow, and transit times](/blog/how-to-set-queue-flow-and-transit-times-in-edgebic) walks the configuration step by step, including the calendar-versus-working-day choice. [How EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing) shows the exact order the mechanisms are applied and works an example end to end. [Queue and transit mistakes](/blog/queue-and-transit-mistakes-edgebic) covers the configurations that produce plans nobody can hit.
+
+For the wider platform picture, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide) and [what is production scheduling](/blog/what-is-production-scheduling). Bring one routing with an outside process on it to a demo of [EDGEBIC](/edgebic) and we will model the send with you.

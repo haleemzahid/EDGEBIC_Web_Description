@@ -1,0 +1,100 @@
+---
+title: "A Satisfied-From-Stock Job Did Not Draw Down Inventory: Causes and Fixes"
+description: "When a job is marked satisfied from stock but the ledger shows no consumption, on-hand is overstated. Why the issue entry goes missing and how to post it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - satisfied from stock no issue
+  - consume from stock missing ledger entry
+  - on hand overstated after netting
+  - inventory issue not posted
+  - stock draw down missing
+  - consume issue anomaly
+targetPhrase: "satisfied from stock job did not draw down inventory"
+wordCount: 1174
+readingTime: 6
+faqQuestions:
+  - question: "Why is a job marked satisfied from stock with no matching issue on the ledger?"
+    answer: "The status was set but the consumption entry was never posted, which means the persist step that writes the draw-down did not complete for that job. The practical effect is that on-hand is overstated by the quantity the job supposedly consumed, so later jobs net against stock that is not physically there. Re-running scheduling for the job runs the full round trip again and posts the issue, and the posting is written so that a repeat run does not double it."
+  - question: "Does a what-if or simulation run consume stock?"
+    answer: "No, and that is deliberate. A simulation shows you what netting would do without touching the ledger, so a job that shows as satisfied from stock inside a simulation has no consumption entry behind it and should not have one. Only a real scheduling run posts the issue. If the status appears on a live job with no ledger entry, confirm the job actually went through a real run rather than a what-if before you go looking further."
+  - question: "How do I confirm the draw-down really posted?"
+    answer: "Open the transaction history for the product and filter to the job number. A satisfied-from-stock job should show one issue entry pegged to it and no build receipt, because no work was scheduled. If you see the issue, the round trip completed. If you see nothing, the job is the case this article covers. If you see a reversed entry, the consumption was posted and then backed out, which is a different story worth reading in full."
+qaQuestions:
+  - question: "Our on-hand looked healthy all week and then three jobs short-shipped. Two of them were satisfied from stock. Are those related?"
+    answer: "Very likely. A satisfied-from-stock job that never posted its issue leaves the balance overstated by exactly the quantity it claimed, so the next jobs net against stock that was already spoken for and schedule nothing. Run a plant-wide anomaly scan and look for jobs flagged as satisfied from stock with no consumption entry. Re-run scheduling for each one, then check the transaction history to confirm the issue landed before you trust the balance again."
+  - question: "I re-ran scheduling for the job and now I am worried the issue posted twice. How do I check?"
+    answer: "Open the transaction history for the product and filter to that job number. You should see exactly one non-reversed issue pegged to it. The posting path is written to be repeatable, so a second run does not stack a second draw-down, but the history is the place to confirm rather than assume. If you do find two live entries, post a reversal for the extra one rather than deleting it: the ledger is append-only and a reversal preserves the trail."
+---
+
+**When a job carries a satisfied-from-stock status but the ledger has no consumption entry pegged to it, the stock was never actually drawn down and on-hand is overstated by the quantity the job claimed.** [EDGEBIC by User Solutions](/edgebic) flags this on its plant-wide anomaly scan, because a schedule that says stock was used and a ledger that says otherwise cannot both be right.
+
+This post covers why the entry goes missing, why a simulation run is a legitimate exception, and how to correct the balance without inventing history. It sits with the other inventory symptoms in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanism itself see [what is consume-from-stock netting](/blog/what-is-consume-from-stock-netting), and for the full-coverage case see [when an order is fully satisfied from stock](/blog/when-an-order-is-fully-satisfied-from-stock-in-edgebic).
+
+## What You Are Seeing
+
+A job shows the satisfied-from-stock status. It scheduled no operations, which is correct: its whole demand was met from inventory. But the transaction history for the product has no issue entry pegged to that job, so the on-hand balance never went down. Downstream, later jobs net against a quantity that is not really available.
+
+## Why It Happens
+
+### Cause 1: The Persist Step That Posts the Issue Did Not Run
+
+The status flip and the ledger post belong to the same round trip at the end of a scheduling run. When that round trip does not complete for a job, the status can land without its consumption entry. That leaves the schedule and the ledger telling different stories about the same quantity.
+
+**How to tell:** the job's status is satisfied from stock, the transaction history for the product shows no entry pegged to the job number, and the on-hand balance is higher than the shop floor believes.
+
+### Cause 2: The Run Was a Simulation
+
+A what-if or quote simulation deliberately does not post to the ledger. It shows the netting result so you can judge a promise date or a coverage question without moving inventory. A job that shows as satisfied from stock inside a simulation is correct to have no consumption entry.
+
+**How to tell:** the result came from a what-if or a quote rather than a live scheduling run.
+
+### Cause 3: The Entry Was Posted and Then Reversed
+
+The ledger never deletes. A consumption that was backed out appears as a reversal rather than as an absence, and the balance goes back up by the reversed quantity. That is a different situation from a missing entry and needs a different response.
+
+**How to tell:** the history shows an entry for the job and a matching reversal.
+
+## How to Fix It
+
+- **Re-run scheduling for the job.** The full round trip runs again and posts the consumption. The posting path is repeatable, so a second run does not stack a second draw-down.
+- **Confirm in transaction history.** Filter to the job number and look for one live issue entry and no build receipt. A satisfied-from-stock job schedules no work, so there is nothing to receive, and if one does carry a machine row anyway, [a satisfied-from-stock job that still shows a work center row](/blog/a-satisfied-from-stock-job-still-shows-a-work-center-row-edgebic) covers what that breaks downstream.
+- **If the run was a simulation, do nothing to the ledger.** Schedule the job through a live run when you are ready to commit the coverage.
+- **If you find a reversal, decide deliberately.** Either re-post the consumption or accept the stock back into the balance, but do not delete the reversal.
+
+## How to Diagnose It, in Order
+
+1. **Run a plant-wide anomaly scan.** This check is plant-wide, so a job-filtered run will not produce its rows.
+2. **List the flagged jobs** and note the products and quantities involved.
+3. **Open transaction history per product,** filtered to each job number, and confirm the entry is absent rather than reversed. [How to audit the inventory ledger for a part](/blog/how-to-audit-the-inventory-ledger-for-a-part-in-edgebic) covers the reading.
+4. **Re-run scheduling for each affected job.**
+5. **Re-scan and re-check the history** to confirm the entries landed and the balance moved.
+
+## Why the Overstated Balance Matters More Than the Row
+
+The anomaly row is a warning, but its downstream effect is not small. Netting is only as good as the balance it reads. A product whose on-hand is overstated by one job's worth of coverage will satisfy the next job from stock that does not exist, and the shortage surfaces on the floor rather than in the plan. That is why this check is worth clearing quickly even though it never blocks a run.
+
+Keep it distinct from cache drift, where the stored on-hand number and the ledger total disagree with each other. Here the ledger and the balance agree, and both are wrong together because a movement that should have been recorded was not. The reading for the other case is [my on-hand quantity does not match the inventory ledger](/blog/my-on-hand-quantity-does-not-match-the-inventory-ledger-edgebic).
+
+## How to Prevent It
+
+- **Scan plant-wide after every bulk scheduling run,** not just after single-job runs. A bulk run covers more jobs and therefore more chances for a gap to go unnoticed.
+- **Check the history whenever a job flips to satisfied from stock** on a product you care about. One filtered look confirms the movement.
+- **Keep simulations clearly separated from live runs** in how you talk about them, since the same status appears in both and only one of them moves stock.
+- **Never patch the balance by typing over the on-hand number.** Post an adjustment with a reason instead, which keeps the ledger as the single trail everything else is measured against.
+
+<Accordion title="Why is a job marked satisfied from stock with no matching issue on the ledger?">
+The status was set but the consumption entry was never posted, which means the persist step that writes the draw-down did not complete for that job. The practical effect is that on-hand is overstated by the quantity the job supposedly consumed, so later jobs net against stock that is not physically there. Re-running scheduling for the job runs the full round trip again and posts the issue, and the posting is written so that a repeat run does not double it.
+</Accordion>
+
+<Accordion title="Does a what-if or simulation run consume stock?">
+No, and that is deliberate. A simulation shows you what netting would do without touching the ledger, so a job that shows as satisfied from stock inside a simulation has no consumption entry behind it and should not have one. Only a real scheduling run posts the issue. If the status appears on a live job with no ledger entry, confirm the job actually went through a real run rather than a what-if before you go looking further.
+</Accordion>
+
+<Accordion title="How do I confirm the draw-down really posted?">
+Open the transaction history for the product and filter to the job number. A satisfied-from-stock job should show one issue entry pegged to it and no build receipt, because no work was scheduled. If you see the issue, the round trip completed. If you see nothing, the job is the case this article covers. If you see a reversed entry, the consumption was posted and then backed out, which is a different story worth reading in full.
+</Accordion>

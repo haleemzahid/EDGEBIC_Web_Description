@@ -65,14 +65,13 @@ export const revalidate = 86400;
 export const dynamicParams = true;
 
 // ---------------------------------------------------------------------------
-// Static params — pre-render only the 60 most-recently published glossary posts.
-// All other slugs are generated on first request and cached via ISR.
+// Static params — pre-render every glossary term at build time. See the note on
+// the same function in blog/[slug]/page.tsx: the old cap left most terms
+// rendering cold on a crawler's first visit.
 // ---------------------------------------------------------------------------
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   return allPosts
     .filter((post) => post.slugAsParams.startsWith('glossary-'))
-    .sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime())
-    .slice(0, 60)
     .map((post) => ({
       slug: post.slugAsParams.replace(/^glossary-/, '')
     }));

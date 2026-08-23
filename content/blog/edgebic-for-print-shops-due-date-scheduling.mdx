@@ -1,0 +1,151 @@
+---
+title: "Working Backward From the Delivery Date in Print"
+description: "Print shop due date scheduling: place a job latest-feasible from the mail date, reserve the delivery tail, and fall back to forward when it will not fit."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - print shop due date scheduling
+  - backward scheduling printing
+  - mail date scheduling
+  - just in time print production
+  - delivery lead time scheduling
+  - late job detection printing
+  - print production planning software
+targetPhrase: "print shop due date scheduling"
+wordCount: 1771
+readingTime: 9
+faqQuestions:
+  - question: "What is backward scheduling in a print shop?"
+    answer: "Backward scheduling places a job as late as it can safely run so it finishes at or before the delivery date, rather than starting it as early as possible. Steps are placed in reverse order: the last operation is right-aligned to the deadline, the one before it is aligned to that placed start, and so on back to the first. The slack ends up in front of the job instead of after it."
+  - question: "When should a print job be scheduled backward rather than forward?"
+    answer: "Backward suits jobs with a hard delivery event and a real cost to finishing early: mailings, event collateral, dated promotional material and anything where artwork can still change. Forward suits jobs where risk matters more than storage, because slack after the work absorbs disruption. The direction is chosen per order, so both kinds can live in the same schedule."
+  - question: "Does a due date mean the end of the due day or the start of it?"
+    answer: "A date-only due date is treated as finish by the end of that day, so the engine anchors to the following midnight. A due date entered with a time is honoured exactly. The end-item lead time is then subtracted from that anchor, so manufacturing has to finish early enough for the delivery tail to land the job on the promised day."
+  - question: "What happens when a backward job cannot fit in the time available?"
+    answer: "The whole order rolls back and is forward-scheduled from its earliest start instead, so backward scheduling never fails where forward would have succeeded. The job is recorded as backward infeasible, and depending on a site setting the planner is prompted with the proposed forward plan before anything is saved. That prompt shows the forward window and how late the result would be, so a date can be renegotiated before the plan is committed."
+qaQuestions:
+  - question: "We have a job that has to be in the mail on the 17th. How does the engine work out when to start printing?"
+    answer: "It works back from the delivery, subtracting the tail first. With a date-only due date of Friday the 17th the anchor is Saturday midnight, and a two-day product lead time for bindery handoff and courier pulls the manufacturing deadline back to Thursday the 16th at midnight. The last operation is then right-aligned inside the previous shift, the one before it is aligned to that start allowing for any queue time, and so on. In the worked example that puts the press run on Thursday the 9th through Monday the 13th, with three days of slack sitting in front of the job rather than behind it."
+  - question: "If a backward job silently forward-schedules and ends up late, will we find out before the customer does?"
+    answer: "Yes, in two places. The session log records exactly one reason per job for the direction it took, including infeasibility with the rollback detail, so you can ask why any specific job went forward. And the anomaly report carries a check that flags every backward-direction job whose plan ends after its due date. Run that report after each scheduling pass and the late backward jobs are a list rather than a discovery. If you would rather be stopped than informed, switch the site setting so a job that does not fit raises the prompt before anything is saved."
+---
+
+**Print shop due date scheduling is the discipline of placing a job as late as it can safely run so it lands on the delivery date, not weeks before it.** Print work is full of hard dates: a mailing drop, a trade show, a dated promotion. [EDGEBIC by User Solutions](/edgebic) can schedule an order backward from that date, reserve the delivery tail, and roll the whole order forward automatically when the just-in-time plan will not fit.
+
+For the mechanism in general terms, read [backward scheduling explained](/blog/edgebic-backward-scheduling-explained), and for the category-level comparison, [forward versus backward scheduling](/blog/forward-vs-backward-scheduling). For the cross-industry map, see [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## Why print shops care about finishing late rather than early
+
+Forward scheduling starts everything as soon as possible and accumulates slack at the end. That is the right instinct when disruption is the main risk, because the slack absorbs it.
+
+Print has a second risk that forward scheduling makes worse. Finishing three weeks early means the job is printed before the customer's final artwork approval settles, before a price or a date on the piece can change, and before anyone knows the quantity is right. It also means pallets of finished work occupying floor space that a jobbing shop does not have.
+
+Backward scheduling inverts the trade. Work is right-aligned to the delivery date, so the plan holds the job until it is time, the slack sits in front, and material commitment happens later. The cost is that any disruption immediately threatens the promise, which is why the direction is chosen per order rather than imposed on the shop.
+
+```
+FORWARD:  start ->[press][bind][trim]. . . . . . . . . .| delivery
+BACKWARD: start |. . . . . . . . . .[press][bind][trim] -> delivery
+```
+
+## What the engine actually does
+
+The backward pass places operations in reverse order. The last operation is right-aligned to a deadline. The operation before it is aligned to that placed start, allowing for any queue time between them. This repeats back to the first operation, and each placement is verified against the one after it before the pass moves on.
+
+Two boundaries govern the pass. The **floor** is the order's earliest start: no operation may be placed before it. The **anchor** is the deadline the last operation must end by, and it is built in two steps.
+
+First, a due date entered as a date only means finish by the end of that day, so the anchor is the following midnight. A due date entered with a time is honoured exactly.
+
+Second, the end-item lead time is subtracted. That is the delivery, cure or ship tail after the last production operation, held in calendar days on the product. For print it is the courier or postal handoff, an outsourced mailing house, or a customer collection window.
+
+The result is two dates on every job that a print shop already talks about informally:
+
+- **Item start date**: the end of the last production operation, when the printed piece physically exists.
+- **Job end date**: item start plus the lead time, when the job is delivery ready.
+
+The gap between them appears on the Gantt as a tail that consumes no machine capacity. It is a promise about logistics, not about presses.
+
+## A worked backward job
+
+A three-operation job of 40,000 pieces. Press 22 hours, bindery 8 hours, trim and pack 4 hours, with a 4-hour queue between the bindery and trim for glue set. Shifts are Monday to Friday, 08:00 to 16:00, one machine per station and no other load.
+
+**Master data.** Floor is Monday July 6. Due date is Friday July 17, entered as a date. Product lead time is 2 days for the mail-house handoff.
+
+**Step 1: the anchor.**
+
+```
+raw anchor = Sat Jul 18 00:00     (end of the due day)
+anchor     = Jul 18 00:00 - 2 days = Thu Jul 16 00:00
+```
+
+All production must be finished by the last working moment before Thursday midnight so the two-day tail lands the delivery on Friday the 17th.
+
+**Step 2: place the last operation.** Trim and pack, 4 hours, right-aligned inside the last shift before the anchor: **Wednesday July 15, 12:00 to 16:00**.
+
+**Step 3: place the bindery.** Its deadline is the trim start of Wednesday 12:00, minus its own 4-hour queue, so effectively Wednesday 08:00. Eight hours right-aligned to that: **Tuesday July 14, 08:00 to 16:00**. Verify: Tuesday 16:00 plus 4 hours of queue is Wednesday 08:00, which is at or before Wednesday 12:00.
+
+**Step 4: place the press.** Its deadline is the bindery start of Tuesday 08:00. Twenty-two hours right-aligned in 8-hour shifts working backward: Monday the 13th takes 8, Friday the 10th takes 8, and Thursday the 9th takes the last 6 from 10:00 to 16:00. The press run is **Thursday July 9 at 10:00 through Monday July 13 at 16:00**. Verify: it ends before Tuesday 08:00 and starts after the Monday July 6 floor.
+
+```
+Jul  6  7  8  9 10 11 12 13 14 15 16 17
+Press         ██ ██ .  . ██
+Bindery                     ██
+Trim                           ▓
+Delivery tail                   ░░░░░   item start Wed 16:00, job end Fri 17
+```
+
+Three days of slack sit in front of the job. Days late is zero on every screen, and the shop has not printed 40,000 pieces two weeks before anyone can use them.
+
+## When it does not fit
+
+Give the same job a due date of Thursday July 9. The anchor becomes Wednesday July 8 at midnight after the lead-time subtraction, and there are only two shifts between the Monday floor and that anchor: 16 working hours against 34 hours of work plus a queue.
+
+The backward attempt fails on the press operation. Rather than leaving a half-placed plan, the whole order rolls back: the bindery and trim placements are removed and the job is forward-scheduled from the floor instead. That is the contract worth remembering. **Backward never fails where forward would have succeeded.** The worst case is a forward plan that is late, which is exactly what you would have had anyway.
+
+The job is recorded as backward infeasible with its due date, earliest start, the forward window, and how many days late the forward result is.
+
+A site setting controls what happens next. Left alone, the forward plan is simply applied and the anomaly report flags it. Switched to prompt, the entire scheduling run is computed and held without being saved, and the planner sees the proposal: here is the forward window, here is the lateness, do you accept, adjust the dates and re-run, or cancel. Nothing persists until that choice is made.
+
+For a print shop taking rush work, that prompt is the moment to call the customer, before the plan is committed and before plates are made.
+
+## The precedence rules worth knowing
+
+Direction is chosen per order, but several things outrank the choice. In order:
+
+| Priority | Condition | Effect |
+|---|---|---|
+| 1 | The job has a pinned target start | Anchored, direction ignored |
+| 2 | The job has logged actuals | Resumes from the real position |
+| 3 | The job has planned pins | Pins hold |
+| 4 | Direction is backward and a real due date exists | Backward pass |
+| 5 | Otherwise | Forward |
+
+Two practical consequences. A backward job with no real due date quietly goes forward, and the session log says so, so an empty or placeholder due date is the first thing to check when a job did not right-align. And backward applies to jobs with no existing schedule: an already-scheduled backward job that is rescheduled resumes forward from where it stands rather than being re-aligned to the due date. That is the correct behavior once plates are hung, and it surprises people the first time.
+
+## Catching the late ones
+
+Two surfaces answer the two different questions.
+
+The scheduling session log records exactly one reason per job for the direction it took: anchor wins, actuals override, pins, missing due date, not a new job, an infeasibility with the rollback detail, or success with the placed window. That answers "why did this job go forward".
+
+The anomaly report carries a check that flags every backward-direction job whose plan ends after its due date. That answers "which jobs are we about to miss". Run it after each scheduling pass and late backward jobs become a list you work through rather than a discovery a customer makes for you.
+
+## Setting it up
+
+1. **Decide the default.** A shop where most work is date-driven can set backward as the site default so new orders and quotes inherit it. Existing orders are untouched.
+2. **Set the direction per job** where the default is wrong, and make sure the job has a real due date. A placeholder date sends it forward.
+3. **Set the product lead time** to the real tail: mail-house handoff, courier transit, customer collection window. The default is one day, not zero, so check it on new products rather than assuming.
+4. **Choose the doesn't-fit behavior.** Prompting is the right setting for a shop that takes rush work and wants a decision point. The setting is read fresh on every run.
+5. **Watch the two dates.** Item start is when the piece exists. Job end is when it is delivery ready. Quoting from the wrong one is how a shop promises a Friday it never had.
+6. **Run the anomaly report** after each pass.
+
+A note on mixing directions. Nothing requires a shop to choose one mode. Dated work runs backward, stock and repeat work runs forward, and both sit in the same schedule competing for the same presses. That is usually the right configuration for a commercial shop, because the two kinds of job genuinely have different risks: a mailing that arrives early is a storage problem, while a reprint that arrives early is simply finished.
+
+## Where it fits with the rest
+
+Backward scheduling decides when work runs. Two other mechanisms decide how long it takes and where the job actually is. Changeover pricing is covered in [ink and substrate changeovers](/blog/edgebic-for-print-shops-setup-matrix), and it matters here because a backward plan built on optimistic makeready has no slack to absorb the error. Shop-floor capture is covered in [tracking print jobs from press to bindery](/blog/edgebic-for-print-shops-job-tracking), which is what lets a backward job resume from its real position when something slips.
+
+Bring three dated jobs, their delivery tails and your current shift pattern to a demo of [print shop scheduling software](/print-shop-scheduling-software), and we will right-align them in the session.

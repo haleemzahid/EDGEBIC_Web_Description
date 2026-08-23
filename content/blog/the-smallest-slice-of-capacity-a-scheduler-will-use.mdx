@@ -1,0 +1,116 @@
+---
+title: "The Smallest Slice of Capacity a Scheduler Will Use"
+description: "Why a finite capacity engine refuses to book six-minute fragments of a shift, how the minimum allocation unit prevents rounding drift, and what it means for short operations."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - minimum allocation scheduling
+  - capacity fragmentation
+  - short operation scheduling
+  - finite capacity scheduling
+  - shift capacity remainder
+  - scheduling precision
+targetPhrase: "minimum allocation unit"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "Why does a scheduler ignore a few minutes of leftover capacity?"
+    answer: "Because booking it costs more than it is worth. EDGEBIC carries a minimum allocation unit, six minutes by default, below which a leftover slice of a shift is not treated as usable capacity. Fragments smaller than that produce bookings nobody can execute, clutter every report with rows of a few minutes, and accumulate rounding error across thousands of allocations. Leaving the sliver unused keeps both the plan and the arithmetic clean."
+  - question: "Does that mean short operations cannot be scheduled?"
+    answer: "No. The minimum applies to how small a slice of a shift the engine will consume, not to how short an operation may be. A 15-minute inspection schedules normally, because 15 minutes is well above the minimum. What the rule prevents is an operation's final few minutes being smeared into a slot that has almost nothing left, and an almost-empty slot being offered as though it were real capacity."
+  - question: "Where does the leftover time go?"
+    answer: "It stays in the shift as unconsumed capacity, and it shows up as a small amount of unused time rather than as a booking. Across a plant that adds up to a fraction of a percent of capacity, which is far less than the disruption of fragment bookings. If you find large amounts of capacity stranded this way, the cause is not the minimum itself but a shift pattern or routing that is producing many near-exhausted slots."
+qaQuestions:
+  - question: "A shift shows 0.08 hours remaining and my operation has 0.08 hours left. Why did the engine move it to tomorrow?"
+    answer: "Because 0.08 hours is under five minutes, below the minimum slice the engine will book. Rather than write a booking of a few minutes into a nearly exhausted shift, the allocator skips that slot and looks for the next one with real usable time. It is the same rule that keeps thousands of micro-bookings out of a plant plan. If the remainder genuinely matters to you, the fix is upstream: adjust the hours per unit or the setup so the operation's total does not leave a sub-minimum tail, or let the operation finish in the next shift, which is what the engine is already telling you."
+  - question: "Could the minimum cause a job to be reported as finished before all its hours are placed?"
+    answer: "In practice the residue involved is tiny, and the engine treats a remainder that has fallen below the threshold as satisfied rather than chasing it into another shift. That is a deliberate closure rule: pursuing a fraction of a minute across another calendar day would move a job's end date for no operational reason. It means a job's placed hours can differ from its nominal hours by less than the minimum unit, which is invisible at any reporting level a shop uses. If you ever see a meaningful gap between planned and placed hours, the cause is elsewhere, usually a capacity or calendar problem rather than rounding."
+---
+
+**A finite capacity engine has to decide how small a piece of a shift is worth booking. EDGEBIC by User Solutions carries a minimum allocation unit, six minutes by default, and treats anything below it as not usable capacity. Slices smaller than the minimum are skipped rather than booked, and a remainder that falls below the threshold is treated as satisfied rather than chased into another day.** It sounds like a rounding detail. It is actually what keeps a plant schedule readable and its arithmetic stable.
+
+The rule shows up on the floor as a question planners ask constantly: why did the engine skip a slot that still showed time left?
+
+## Why fragments are a problem worth solving
+
+Every allocation consumes capacity from a specific shift on a specific day on a specific machine. Over a planning horizon, a busy work center accumulates dozens of partly-consumed slots, and each one carries a remainder. Some of those remainders are meaningful. Many are a handful of minutes left over after a long operation was packed.
+
+If the engine treated every remainder as real, three things follow.
+
+First, the plan fills with unexecutable rows. A three-minute booking on a machine is not work anyone schedules a person to do. It is noise on the Gantt, noise in the dispatch list, and noise in every report that counts operations.
+
+Second, the arithmetic drifts. Hours are stored with real precision, and repeatedly splitting a duration into ever-smaller residues invites accumulation error across thousands of allocations. A rule that refuses to divide below a floor keeps the totals stable.
+
+Third, the search slows for nothing. Evaluating every near-empty slot as a candidate adds work to a capacity search that already walks a long calendar, and the payoff is measured in seconds of plant capacity.
+
+The minimum unit exists to remove all three at once.
+
+## What the rule actually does
+
+Two behaviors follow from a single idea.
+
+When the allocator is deciding whether to consume a slot, it compares the amount it could place there against the floor. If the usable amount is below it, the slot contributes nothing and the search moves on to the next candidate. The slot's remaining time stays unconsumed.
+
+When the operation's own remaining hours have fallen below the floor, the engine treats the operation as placed rather than continuing to search for somewhere to put a fraction of a minute. This is the closure half of the rule, and it prevents an absurd outcome where a job's end date moves into the following week to accommodate a residue smaller than the time it takes to read the dispatch list.
+
+Both halves are conservative in the direction that matters. The engine never invents capacity, and it never leaves a meaningful quantity of work unplaced.
+
+## A worked example: an eight-hour shift and three operations
+
+A machine runs an eight-hour day shift. Three operations are competing for it, and they arrive at the machine in this order.
+
+- Operation A needs 5.0 hours. It is placed, leaving 3.0 hours.
+- Operation B needs 2.95 hours. It is placed, leaving 0.05 hours, which is three minutes.
+- Operation C needs 1.5 hours.
+
+When the allocator evaluates the shift for Operation C, the slot shows 0.05 hours remaining. That is below the six-minute floor, so the slot offers nothing usable and is skipped. Operation C is placed on the next shift with real capacity.
+
+Notice what did not happen. The engine did not book three minutes of Operation C into today and 1.45 hours into tomorrow, producing two rows for one operation and a Gantt bar with an invisible sliver on the wrong day. It produced one clean placement.
+
+Now change Operation B to need 2.98 hours. The shift is left with 0.02 hours, and if Operation B's own final residue had fallen below the floor mid-placement, the engine would have closed it out rather than carrying a fraction of a minute into the night shift. The difference between nominal and placed hours in that case is under a minute on an operation measured in hours, which no shop report resolves.
+
+## What it means for short operations
+
+The rule is about slices, not about operations. A short operation is not affected by it.
+
+An inspection that takes 15 minutes, a deburr that takes 20, a quick gauge check that takes 10: all of these are comfortably above the floor and schedule like any other work. They consume their hours, they appear on the Gantt as short bars, and they gate their successors normally.
+
+The confusion usually comes from the display rather than the engine. A very short bar on a zoomed-out timeline can be hard to see, which is a rendering question, not an allocation question. The operation is placed; the pixels are the problem.
+
+## When stranded capacity is telling you something
+
+A plant loses a fraction of a percent of capacity to unbooked remainders. That is a good trade for a clean plan, and it is not worth engineering around.
+
+If you find that a work center is stranding a noticeable amount of time this way, the minimum is not the cause. It is the symptom. Two patterns produce it.
+
+The first is a routing whose operation durations happen to land just short of the shift, over and over. A step that needs 7.95 hours on an eight-hour shift leaves three minutes behind every single time it runs, which is a routing arithmetic problem worth looking at directly.
+
+The second is a shift pattern chopped into windows too small for the work. If a machine runs several short windows a day and the routing steps are long, most windows will end with a residue that nothing can use. That is a calendar design conversation, and it is closely related to the packing behavior described in [how the allocator fills a partial first shift](/blog/how-the-allocator-fills-a-partial-first-shift).
+
+In both cases the visible loss is a signal about master data, and treating it as a signal is more productive than trying to reclaim minutes.
+
+## Why a floor makes the schedule more trustworthy
+
+There is a general principle underneath this. A schedule earns trust by being executable, and an executable schedule contains only rows a supervisor could hand to a person. Every mechanism that keeps unexecutable rows out of the plan is doing the same job as the mechanisms that keep capacity honest.
+
+That is the same instinct behind treating capacity as [genuinely finite](/blog/finite-vs-infinite-capacity-scheduling) rather than as an average, and behind refusing to load a machine past what its calendar supports. A plan that books three minutes on a machine and a plan that books 30 hours into a 24-hour day are wrong in opposite directions, and both are wrong because nobody can execute them.
+
+The full allocation search that this floor sits inside is described in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the way remaining capacity is computed for each slot in the first place is covered in [how capacity is computed for a work center, shift, and day](/blog/how-capacity-is-computed-for-a-work-center-shift-and-day).
+
+To see how your own routings pack against your shifts, and whether they are leaving usable time behind, [bring your data to a demo](/edgebic).
+
+<Accordion title="Why does a scheduler ignore a few minutes of leftover capacity?">
+Because booking it costs more than it is worth. EDGEBIC carries a minimum allocation unit, six minutes by default, below which a leftover slice of a shift is not treated as usable capacity. Fragments smaller than that produce bookings nobody can execute, clutter every report with rows of a few minutes, and accumulate rounding error across thousands of allocations. Leaving the sliver unused keeps both the plan and the arithmetic clean.
+</Accordion>
+
+<Accordion title="Does that mean short operations cannot be scheduled?">
+No. The minimum applies to how small a slice of a shift the engine will consume, not to how short an operation may be. A 15-minute inspection schedules normally, because 15 minutes is well above the minimum. What the rule prevents is an operation's final few minutes being smeared into a slot that has almost nothing left, and an almost-empty slot being offered as though it were real capacity.
+</Accordion>
+
+<Accordion title="Where does the leftover time go?">
+It stays in the shift as unconsumed capacity, and it shows up as a small amount of unused time rather than as a booking. Across a plant that adds up to a fraction of a percent of capacity, which is far less than the disruption of fragment bookings. If you find large amounts of capacity stranded this way, the cause is not the minimum itself but a shift pattern or routing that is producing many near-exhausted slots.
+</Accordion>

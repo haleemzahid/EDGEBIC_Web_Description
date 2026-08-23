@@ -1,0 +1,136 @@
+---
+title: "Importing Sub-Assembly Routings From Your ERP"
+description: "How to bring multi-level BOM and sub-assembly routings out of your ERP into EDGEBIC: one routing per level, how a child feeds its parent, and the import order that wires them."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - import sub-assembly routings ERP
+  - multi level BOM scheduling import
+  - sub-assembly feeds parent job
+  - routing import end product
+  - EDGEBIC sub-assembly import
+  - ERP BOM levels scheduling
+targetPhrase: "importing sub-assembly routings from your ERP"
+wordCount: 1580
+readingTime: 8
+faqQuestions:
+  - question: "How do I import a multi-level BOM into EDGEBIC?"
+    answer: "Export one routing per level, not one flattened routing for the finished item. Each sub-assembly is a product with its own steps, and the parent routing consumes it as a component at the step where it is needed. The routing import groups rows by end product, so as long as every row names the product its steps belong to, the levels land as separate routings that connect through the component relationship."
+  - question: "Does a sub-assembly need its own work order from the ERP?"
+    answer: "Not necessarily. If your ERP issues separate work orders per level, import them and they schedule as related jobs. If it issues one order for the finished item, the sub-assembly still schedules as part of that job's routing, because the parent step that consumes the component waits for the component's steps to finish. Both shapes work, and the choice belongs to whichever your shop actually runs."
+  - question: "What order should I import routings when there are several BOM levels?"
+    answer: "Order does not matter for correctness, because the routing import auto-creates any product it names that does not exist yet. It does matter for readability, so importing the lowest level first means every reference resolves to a product you already recognize. What does matter absolutely is keeping every step of a given product in the same file, since the import wipes and recreates that product's steps once per run."
+qaQuestions:
+  - question: "Our ERP exports a flattened routing that lists all 22 operations for the finished item, including the ones that are really sub-assembly work. Should we import it that way?"
+    answer: "It will schedule, but you lose the thing that makes multi-level scheduling useful, which is the ability to start a sub-assembly early and independently. A flat 22-step routing forces strict sequence, so the bracket welding cannot begin until the housing machining ahead of it in the list is done, even though physically nothing connects them. Split the export by level instead: one routing for each sub-assembly and one for the parent that consumes them. The scheduler can then run branches concurrently where capacity allows and only converge at the step that needs the component. On a shop with any real parallelism, that difference is usually days of lead time, not hours. Most ERPs can export by level even when the default report flattens, so check the report options before assuming a rebuild is needed."
+  - question: "We have a sub-assembly used by four different parents. Do we export it four times?"
+    answer: "No, export it once. It is one product with one routing, and each parent references it as a component. Exporting it under four parents would put the same product's steps in the file more than once, and since the routing import wipes and recreates a product's steps per run, the later group simply overwrites the earlier one. The result is a routing that looks right and was written three times unnecessarily. Keep one routing per product, and let the parent relationships do the connecting. This also means a change to that sub-assembly is a single re-import, and every parent picks it up on its next schedule rather than needing four separate corrections."
+---
+
+**To bring a multi-level BOM out of your ERP, export one routing per level rather than a single flattened routing for the finished item: each sub-assembly is a product with its own steps, and the parent consumes it as a component at the step where it is needed.** That structure is what lets the scheduler run branches concurrently and converge only where the physical assembly requires it, which on most shops is worth days of lead time.
+
+EDGEBIC by User Solutions has been importing routings this way since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, multi-level work is the norm rather than the exception. The Nimitz refit alone carried more than 26,000 tasks, which is only manageable when structure is preserved instead of flattened.
+
+## The flattening trap
+
+Many ERP routing reports default to a flat list: every operation needed to make the finished item, numbered in one sequence. It imports cleanly and schedules without complaint, and it quietly costs you time.
+
+The problem is that a flat list implies a strict order. If the bracket welding sits at sequence 60 and the housing machining at sequence 40, the scheduler will not start the welding until the machining is done, even though the two share nothing physically. Real shops run those branches at the same time.
+
+Preserving the levels restores the parallelism. The scheduler then converges only at the assembly step that genuinely needs the component, and everything upstream of that step competes for capacity on merit rather than on list position. The general concept is in [what is a sub-assembly in manufacturing](/blog/what-is-a-sub-assembly-in-manufacturing) and the plan-side behavior in [how a sub-assembly feeds its parent job](/blog/how-a-sub-assembly-feeds-its-parent-job).
+
+## What the export should look like
+
+One row per operation, and every row names the product its steps belong to. That is the whole contract.
+
+| Column | Meaning |
+|---|---|
+| End product | The product these steps make |
+| Sequence | Operation order within that product |
+| Work center | Where the operation runs |
+| Run time | Hours per unit |
+| Setup time | Hours per job |
+| Queue time | Buffer before the operation |
+| Component product | The item consumed at this step, where applicable |
+
+A three-level assembly produces three groups of rows in one file, or three files, whichever your report writer makes easy. The import groups by end product either way.
+
+The full column-level treatment for a single-level routing is in [mapping routings versus operations from your ERP](/blog/mapping-routings-vs-operations-from-your-erp), and it applies unchanged here.
+
+## How the import wires the levels
+
+The routing import runs in two passes for exactly this reason.
+
+**Pass one** reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Auto-creation is what makes import order irrelevant for correctness: a parent routing that references a sub-assembly not yet imported creates that product as a placeholder, and the later routing import fills in its steps.
+
+**Pass two** groups the buffered rows by end product, sorts each group by sequence number, writes them, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product.
+
+The result renders as connected branches in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour), and [how the designer shows sub-assembly branches](/blog/how-the-designer-shows-sub-assembly-branches) covers reading it.
+
+## The one rule that will bite you
+
+The routing import **wipes and recreates a product's steps once per run**. That behavior is what makes re-imports idempotent, and it has two consequences for multi-level exports.
+
+**Keep every step of a product in one file and one run.** If a product's ten steps arrive split across two runs, the second run's wipe deletes the first run's five.
+
+**Do not export a shared sub-assembly under each parent.** A component used by four parents is one product with one routing. Exporting it four times writes the same steps four times, with only the last one surviving. Export it once and let the component relationship connect it to each parent.
+
+That second point matters practically: a change to a shared sub-assembly then becomes one re-import that every parent picks up on its next schedule, rather than four corrections that drift apart.
+
+## Import order: readability, not correctness
+
+Because pass one auto-creates missing products, you can import in any order. For a human reading the result, lowest level first is easier, since every reference resolves to something already visible.
+
+A workable sequence for a multi-level model:
+
+1. Items, so products exist with descriptions and units.
+2. Work centers, so routing steps match real machines instead of creating empty ones.
+3. Routings, lowest level to highest.
+4. Work orders.
+5. Actuals.
+
+Reconcile after each, using the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist). The two checks that matter most for multi-level work are step counts per product and whether each branch actually connects, because a duplicate sequence number within one product leaves a step floating.
+
+## Work orders: one per level or one for the top
+
+Both shapes work, and the right one is whichever your shop physically runs.
+
+**Separate work orders per level.** The ERP issues an order for the sub-assembly and another for the parent. Import both, and they schedule as related jobs. This suits shops that build sub-assemblies to stock or in different areas with their own paperwork.
+
+**One order for the finished item.** The sub-assembly still schedules, because the parent routing's component step waits on the component's steps. This suits make-to-order shops that build the whole thing as one flow.
+
+What you should not do is mix the two for the same product family, since the plan then double-counts the sub-assembly work: once inside the parent's routing and once as its own job. The [job number alignment post](/blog/keeping-job-numbers-aligned-between-erp-and-edgebic) covers the identifier conventions that keep related jobs visibly related.
+
+## Scheduling behavior worth knowing
+
+Two behaviors surprise people the first time they see them, and both are correct.
+
+**A sub-assembly can be scheduled before its parent starts.** That is the point. If the component has a long lead operation, the scheduler pulls it forward so it is ready when the assembly step needs it. The case is explained in [a sub-assembly scheduled before its parent](/blog/a-sub-assembly-scheduled-before-its-parent-edgebic).
+
+**Actuals are logged per level.** Hours reported against a sub-assembly attach to that work, not to the parent, so variance reads per product. That is covered in [how sub-assembly actuals are logged separately](/blog/how-subassembly-actuals-are-logged-separately).
+
+## Then the engine plans the whole tree
+
+With levels preserved, the full engine applies across the structure: finite capacity across shifts and machine instances, work center groups, sequence-dependent setups, lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows the import layer that every ERP uses.
+
+The refresh rhythm does not change: routings re-import whenever engineering changes them, using the behavior described in [handling engineering changes with a routing re-import](/blog/handling-engineering-changes-via-erp-re-import), and the weekly shape is in the [ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine).
+
+## Bring a real assembly
+
+Export one multi-level product, all levels, and [bring it to a demo](/contact-us). Watching the branches schedule concurrently instead of in a single line is the fastest way to see what preserving the structure is worth on your own parts.
+
+<Accordion title="How do I import a multi-level BOM into EDGEBIC?">
+Export one routing per level, not one flattened routing for the finished item. Each sub-assembly is a product with its own steps, and the parent routing consumes it as a component at the step where it is needed. The routing import groups rows by end product, so as long as every row names the product its steps belong to, the levels land as separate routings that connect through the component relationship.
+</Accordion>
+
+<Accordion title="Does a sub-assembly need its own work order from the ERP?">
+Not necessarily. If your ERP issues separate work orders per level, import them and they schedule as related jobs. If it issues one order for the finished item, the sub-assembly still schedules as part of that job's routing, because the parent step that consumes the component waits for the component's steps to finish. Both shapes work, and the choice belongs to whichever your shop actually runs.
+</Accordion>
+
+<Accordion title="What order should I import routings when there are several BOM levels?">
+Order does not matter for correctness, because the routing import auto-creates any product it names that does not exist yet. It does matter for readability, so importing the lowest level first means every reference resolves to a product you already recognize. What does matter absolutely is keeping every step of a given product in the same file, since the import wipes and recreates that product's steps once per run.
+</Accordion>

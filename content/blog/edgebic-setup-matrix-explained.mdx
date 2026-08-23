@@ -1,0 +1,130 @@
+---
+title: "The EDGEBIC Setup Matrix: Sequence-Dependent Changeover, Explained"
+description: "Sequence dependent setup matrix software explained: how families, matrix cells, and product overrides replace a flat setup number with the real changeover time."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - sequence dependent setup matrix software
+  - changeover matrix scheduling
+  - setup family scheduling
+  - sequence dependent setup time
+  - changeover time scheduling software
+  - setup time matrix manufacturing
+  - paint line scheduling software
+targetPhrase: "sequence dependent setup matrix software"
+wordCount: 1950
+readingTime: 10
+faqQuestions:
+  - question: "What is a sequence-dependent setup matrix?"
+    answer: "A sequence-dependent setup matrix is a lookup table that gives changeover time as a function of what the machine ran last and what it will run next. A paint booth may need 5 minutes to go from white to cream and 240 minutes to go from black to white. A single flat setup number on the routing cannot express that difference, so the schedule either overstates the easy changeovers or understates the hard ones."
+  - question: "How does EDGEBIC store changeover times?"
+    answer: "In three tiers per work center. Setup families group products that change over the same way, a family matrix holds the from-family to to-family minutes, and a product matrix holds overrides for specific pairs that break their family rule. Values are stored in minutes, which is the unit planners actually use on the floor, and converted to hours by the engine."
+  - question: "Why is the setup matrix defined per work center?"
+    answer: "Because changeover physics belong to the machine, not the product. Two booths of the same model can have different flush times because of seal wear, line length, or age. Defining the matrix per work center also means a product pair can be expensive on one machine and free on another, which is exactly the kind of routing decision a planner needs the schedule to reflect."
+  - question: "Do I have to fill in the whole matrix before it works?"
+    answer: "No. Any pair without a matrix cell falls back to the routing step's setup time, so a partly filled matrix improves the cells you entered and leaves the rest exactly as they were. Start with the transitions that hurt, usually the handful of long flushes or purges, and add cells as the shop confirms real times."
+  - question: "Does the setup matrix slow scheduling down?"
+    answer: "No. The matrix is loaded once before a scheduling run and every lookup after that is a direct table read. When no matrix entries exist at all, the engine skips the whole mechanism and uses the flat routing setup exactly as before, so the feature costs nothing until a planner enters the first cell."
+qaQuestions:
+  - question: "We have 120 products on one paint booth. Is that 14,400 cells to fill in?"
+    answer: "No, and this is why families exist. Group those 120 products into the eight or so groups that genuinely change over the same way (lights, mediums, darks, metallics, primers, clears, specials, and a catch-all) and the matrix collapses to 8 by 8, which is 64 cells. Most of those are zero or trivially small. You will typically fill the six or eight that hurt, add two or three product-level overrides for the pairs that break their family rule, and be done in an afternoon."
+  - question: "Our scheduled hours went up after we entered the matrix. Did we make things worse?"
+    answer: "You made the plan honest, which usually looks worse before it looks better. Three paint jobs planned with a flat 30-minute setup finish on paper at 12:45 while the floor takes about 11 hours, because the real white-to-black and black-to-white flushes were never in the plan. With the matrix those same jobs plan out at 8.75 hours, which overflows the shift and tells you the truth. The next move is a sequencing decision, and running the lights before the darks brings the same three jobs down to 4.75 hours of honest plan."
+---
+
+**A sequence-dependent setup matrix replaces a single setup number on a routing step with a lookup of what the machine just ran and what it runs next.** In EDGEBIC by User Solutions that lookup is defined per work center, entered in minutes, and organized in three tiers so a shop with a hundred products does not have to fill in ten thousand cells. The result is a schedule whose changeover hours match the ones the floor actually spends.
+
+If you want the family concept defined on its own, read [what is a setup family](/blog/what-is-a-setup-family-sequence-dependent-changeover). If you want the arithmetic run across six paint jobs, read the [paint-booth changeover walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic). This post is the capability: what it is, when you need it, and what it costs to maintain.
+
+## Why One Setup Number Is Not Enough
+
+Ask a paint shop supervisor how long a changeover takes and the honest answer is a question: "from what to what?" White to cream is five minutes of purge. Black to white is four hours of solvent flush and color match. Red to white is three. Same booth, same crew, same day, a 48-fold difference in time.
+
+A routing step that holds one setup number has to pick a single value for all of it. Every option is wrong:
+
+- **Pick the average** and the light changeovers look expensive while the dark ones look free. The plan is wrong in both directions and the errors do not cancel, because sequence decides which errors you get.
+- **Pick the worst case** and you refuse work you could have taken, because the schedule says the booth is full when it is not.
+- **Pick the best case**, which is what most shops do, and the schedule promises deliveries the floor cannot make.
+
+The third failure is the expensive one, because it looks like success until the orders are late. Three paint jobs sequenced white, black, white with a flat 30-minute setup finish on paper at 12:45. On the floor the two real flushes are 240 minutes each and the day runs about 11 hours. Nobody typed a wrong number. The data model simply could not hold the right one.
+
+Changeover reduction has been a standard improvement target for decades and is one of the practices the [Manufacturing Extension Partnership](https://www.nist.gov/mep) works on with small manufacturers. The prerequisite that gets skipped is measurement: you cannot schedule around a cost you have never written down.
+
+## The Three Tiers
+
+EDGEBIC stores changeover in three layers that stack, not compete.
+
+| Tier | What it holds | Typical size | Role |
+|---|---|---|---|
+| **Setup families** | Groups of products that change over identically | 5 to 10 per work center | Collapses the matrix |
+| **Family matrix** | From-family to to-family, in minutes | Families squared | The workhorse: most cells live here |
+| **Product overrides** | Specific from-product to to-product pairs | A handful | The escape hatch for pairs that break their family rule |
+
+**Families** do the heavy lifting. A hundred products on one booth is a ten thousand cell problem stated product by product. Grouped into eight families it is a sixty-four cell problem, and most of those cells are zero. That reduction is the difference between a feature planners maintain and one they abandon after the first afternoon.
+
+**The family matrix** is where you spend your time. It is a small grid: for each pair of families, how many minutes does the changeover take on this machine? Light to light is often zero. Light to dark might be 60. Dark to light might be 240. Fill the cells that matter and leave the rest.
+
+**Product overrides** cover the exceptions. Red belongs to the light family, so red to black would normally take the light-to-dark time of 60 minutes. But red specifically needs an extra solvent flush, so a product-level cell says 90 minutes for exactly that pair. The override wins whenever it exists and the family rule covers everything else.
+
+## Why It Lives on the Work Center
+
+The matrix is defined per work center, and that is deliberate rather than incidental.
+
+Changeover physics belong to the machine. Two booths of the same model can have different flush times because one has older seals or a longer line. A furnace that ramps slowly needs more alloy-change time than the identical unit next to it. Storing the matrix per machine lets those differences be true at the same time.
+
+It also makes routing decisions visible. If a product pair costs 240 minutes on booth one and 30 on booth two, the schedule now knows something useful about where that job should run. A matrix defined per product would flatten exactly the information you want.
+
+## Minutes In, Hours Out
+
+Matrix values are entered in **minutes**. Planners say "a thirty-minute flush" and "a four-hour changeover", not "0.5 decimal hours", so the field takes the number they already have on the wall. The engine converts to hours internally.
+
+Zero is a valid and useful value. A family-to-family cell of zero says these two groups run back to back with no changeover at all, which is precisely the fact you want the schedule to exploit when you sequence like with like.
+
+## What the Schedule Tells You Afterwards
+
+Every scheduled operation records where its setup time came from. That audit trail is the part planners end up using daily, because it turns "why is that number 4 hours?" from an argument into a lookup.
+
+| Source | Meaning |
+|---|---|
+| **Product matrix** | A specific from-product to to-product cell matched |
+| **Family matrix** | A family-level cell matched |
+| **Same product** | The machine was already running this product: zero changeover |
+| **Cold start** | Nothing had run on this machine yet, so the routing default applied |
+| **Routing default** | No matrix cell matched, so the step's own setup time was used |
+| **Machine default** | No matrix cell and no routing setup, so the work center's default applied |
+
+Alongside the code sits a readable sentence, for example "Family matrix (Light to Dark) for White to Black: 60 min." The job view shows matrix-driven rows at full brightness and the fallback rows in a muted style, so you can scan a schedule and see immediately which changeovers the sequence logic actually priced.
+
+That distinction is worth more than it sounds. A screen full of muted rows means your matrix is not covering the transitions that are happening, which is usually a missing family assignment rather than a missing cell. The five-level resolution order behind those codes is covered in [how EDGEBIC resolves setup time](/blog/how-edgebic-resolves-setup-time-the-five-level-chain).
+
+## Do You Need It?
+
+You need a setup matrix when changeover time varies by more than a rounding error depending on sequence. In practice that means:
+
+- **Paint, coating, and printing.** Color changes are the canonical case: light to dark is cheap, dark to light is expensive.
+- **Chemicals and food.** Allergen changeovers, flavor purges, and cleaning validation between incompatible products.
+- **Heat treat.** Alloy or temperature changes between recipes, with same-recipe runs costing nothing.
+- **Plastics and extrusion.** Resin and color purges, where the purge quantity depends on both materials.
+- **Textiles.** Dye lots and the same light-before-dark logic as paint.
+
+You do **not** need it when your changeover is genuinely the same regardless of what ran before: a fixture swap that takes 20 minutes whatever the part, a tool change with a fixed cycle. Leave the flat routing setup in place. The matrix is not a general improvement, it is a specific answer to a specific kind of variation, and shops that do not have that variation gain nothing from maintaining one. For those cases the general practice in [changeover time reduction](/blog/changeover-time-reduction) is the better investment.
+
+## What It Costs, and What It Does Not Do
+
+**The maintenance cost is small and front-loaded.** Group your products once, fill the cells that hurt, add the two or three overrides your team argues about. If a pair has no cell, the routing default applies and nothing breaks, so a partly filled matrix is a working matrix.
+
+**The runtime cost is zero.** The matrix is loaded once before each scheduling run and every lookup is a direct table read. With no entries at all, the engine skips the mechanism entirely and behaves exactly as it did before, which means turning the feature on cannot change any schedule until somebody enters a cell.
+
+**It does not resequence your jobs for you.** The matrix prices the changeovers in whatever order the schedule produces. Making the cost visible is the platform's job; deciding to run the lights before the darks is a planning decision, and the [paint-booth walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic) shows what that decision was worth on six real jobs: 630 minutes of changeover down to 90.
+
+**It does not reduce setup time.** It reports it. The reduction still comes from the shop floor work described in [job shop setup time reduction](/blog/job-shop-setup-time-reduction). What the matrix gives you is the number to aim at and the evidence that the aim was good.
+
+## Where to Go Next
+
+[How to build a setup matrix](/blog/how-to-build-a-setup-matrix-in-edgebic) walks the families, the grid, the overrides, and the export. [How EDGEBIC resolves setup time](/blog/how-edgebic-resolves-setup-time-the-five-level-chain) covers the five-level chain, cold starts, and what happens on a reschedule. [Setup matrix mistakes](/blog/setup-matrix-mistakes-edgebic) covers the configurations that leave the matrix silently unused.
+
+For where changeover sits among the platform's other scheduling mechanisms, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). Bring your two worst changeovers and the machine they happen on to a demo of [EDGEBIC](/edgebic) and we will price them in a live schedule.

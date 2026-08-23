@@ -1,0 +1,102 @@
+---
+title: "How the EDGEBIC Optimizer Cuts Total Setup Time"
+description: "The EDGEBIC optimizer can sequence jobs to slash changeover hours the base scheduler never sees, modeling sequence-dependent setup as a solvable circuit. Here is the mechanism."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - cut setup time optimizer
+  - sequence dependent setup optimization
+  - changeover reduction scheduling
+  - CP-SAT setup circuit
+  - production schedule optimization software
+  - least setup goal
+targetPhrase: "cut total setup time"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "How does the EDGEBIC optimizer reduce setup time?"
+    answer: "It reorders jobs so similar jobs run back to back, minimizing the changeover hours between them. The base scheduler plans one job at a time and cannot see downstream setup consequences, but the optimizer scores the whole plan including setup and chooses the sequence with the least total changeover. With the mathematical solver and a setup matrix, changeover becomes part of the model the solver optimizes directly."
+  - question: "Do I need a setup matrix for the optimizer to cut setup time?"
+    answer: "To target setup specifically, yes. The Least setup goal only appears once sequence-dependent setup data is configured, and the setup key performance indicator only shows when setup data exists. Without a matrix, the optimizer still improves due dates and makespan, but it cannot reason about which job-to-job transitions are cheap and which are expensive."
+  - question: "What is sequence-dependent setup and why does it matter to the optimizer?"
+    answer: "Sequence-dependent setup means the changeover time depends on what ran before, not just what runs next. White to black paint might take one hour, but black to white might take four. The base scheduler treats setup as fixed per job, so it misses these savings. The optimizer, given the matrix, sequences jobs to keep the cheap transitions and avoid the expensive ones."
+qaQuestions:
+  - question: "Our paint booth loses hours every day to color changes. Can the optimizer really help, and by how much?"
+    answer: "Yes, this is the textbook case. Give EDGEBIC the sequence-dependent setup matrix so it knows each color-to-color changeover cost, pick the Least setup goal, and select the mathematical solver if your booth is a single machine with no closed windows in the horizon. The solver then models changeover as a sequence it optimizes directly, grouping light-to-dark runs. On a queue with several expensive dark-to-light transitions, cutting the sequence down to one or two of them frees real production hours from the same shifts."
+  - question: "Will cutting setup time ever make a job late?"
+    answer: "It can, and the goal you pick governs that trade. The Least setup goal ranks setup first but still carries due dates on a lower tier, and the whole plan is clamped never-worse than your current one. If grouping two jobs to save a changeover would push a third past its due date in a way that loses on your goal, the optimizer will not choose it. If protecting dates matters more this week, pick On-time first instead and let setup be the secondary tier."
+---
+
+**The EDGEBIC optimizer cuts total setup time by choosing the job sequence that keeps cheap changeovers and avoids expensive ones, a saving the base scheduler cannot see.** The scheduler plans one job at a time and treats setup as a fixed cost per job. The optimizer scores the whole plan, changeover hours included, and with a sequence-dependent setup matrix the mathematical solver models those changeovers as a circuit it optimizes directly. On a shop where setup is a real drain, such as a paint booth or a heat-treat line, that reordering converts wasted changeover hours into production hours from the same shifts.
+
+EDGEBIC by User Solutions makes this the job of a dedicated goal preset, the Least setup goal, backed by either [optimizer layer](/blog/the-two-layers-of-the-edgebic-optimizer). This post explains the mechanism: why the base scheduler misses setup savings, how the optimizer sees them, and what the mathematical solver adds when your setup is sequence-dependent.
+
+## Why the base scheduler leaves setup on the table
+
+The scheduler dispatches jobs in priority order and commits each job's routing before looking at the next. When it places a job on a machine, it charges that job's setup and moves on. It never asks whether a different neighbor would have made the changeover cheaper, because it is not considering the sequence as a whole. It is considering one job at a time.
+
+That is fine when setup is small or the same regardless of order. It is expensive when setup is [sequence-dependent](/blog/sequence-dependent-setup-times): when the changeover cost depends on what ran immediately before. A paint booth is the classic case. Switching from a light color to a slightly darker one might cost a few minutes, but switching from black back to white can cost hours of masking and flushing. The scheduler, dispatching by priority, can easily land black then white then black then white and burn the whole shift on changeovers that a smarter order would have avoided.
+
+## What the optimizer sees that the scheduler does not
+
+The optimizer works on the whole plan. It generates or solves for alternative job sequences, and it scores each one with a single set of key performance indicators that includes total setup hours whenever setup data is present. Because it sees the complete sequence, it can tell that running all the light colors together, then the reds, then the darks, keeps the expensive transitions to a minimum.
+
+Two things have to be in place for this to work:
+
+1. **A sequence-dependent setup matrix.** This is the table that tells EDGEBIC each job-to-job or family-to-family changeover cost. Without it, the optimizer has no way to know which transitions are cheap. See [how EDGEBIC resolves setup time](/blog/how-edgebic-resolves-setup-time-the-five-level-chain) for how the matrix fits the wider setup model.
+2. **The Least setup goal.** This preset ranks total setup first, then due dates, then makespan. It only appears in the goal list once setup data exists, so if you do not see it, the matrix is not yet populated.
+
+## The mathematical solver models changeover as a circuit
+
+With the multi-run search, the optimizer reorders whole jobs and scores the setup that results. That already helps. But the mathematical solver goes further when your setup matrix qualifies: it models the changeover sequence itself as part of the problem it solves.
+
+Under the hood the solver builds a circuit across the operations on each setup-bearing machine. Each ordered pair of operations carries the matrix's changeover cost, and the operation's own time covers only its run. The setup becomes a sequence-dependent gap the solver optimizes directly, which means it does not just pick a good order from a menu, it constructs the order that minimizes changeover while honoring capacity and due dates.
+
+This native setup modeling activates only when it is safe: every machine the matrix references must be a single-instance machine, not a one-per-day machine, and free of closed windows in the planning horizon. For the common single-shift paint booth or single changeover-heavy line, all of that holds, and the Least setup goal becomes genuinely powerful. When a machine does not qualify, the solver locks the affected jobs exactly as scheduled rather than risk a wrong model, which you can read about in [locked jobs and the never-worse guarantee](/blog/locked-jobs-and-the-never-worse-guarantee-in-edgebic).
+
+## A worked example: a paint booth queue
+
+Picture one paint booth, a single machine on one day shift, with six jobs queued for the day. The sequence-dependent setup matrix holds costs like these (illustrative):
+
+| Transition | Setup |
+|---|---|
+| White to cream | 10 min |
+| White to red | 30 min |
+| Red to black | 30 min |
+| Black to white | 240 min |
+| Black to red | 120 min |
+
+The queue by due date sorts to white, black, white, red, black, white. The base scheduler runs that order and charges each changeover as it goes: white to black (60), black to white (240), white to red (30), red to black (30), black to white (240). That is around ten hours of changeover, and the "done by end of shift" plan the scheduler printed was fiction.
+
+Run the optimizer with the Least setup goal and the mathematical solver. It regroups the jobs light to dark, all whites together, then red, then the blacks: white, white, white, red, black, black. Now the transitions are white to white (0), white to white (0), white to red (30), red to black (30), black to black (0). Total changeover falls from around ten hours to about one. The same six jobs, the same shift, but the wasted hours are back in production. On the comparison screen the setup key performance indicator moves sharply in your favor, and the move list shows exactly which jobs slid to form the campaign.
+
+## Reading the trade-off on the screen
+
+Cutting setup is a trade like any other, and EDGEBIC shows it honestly. The Least setup goal ranks setup first but still carries due dates and makespan on lower tiers, and the whole proposal is clamped never-worse than your current plan under that goal. If grouping two jobs to save a changeover would push another job late in a way that loses on the goal, the optimizer will not choose it.
+
+Read the key performance indicator table top to bottom. The setup row shows the hours saved. A lower row might show a small "worse" on makespan or a late job the goal accepted to win the setup reduction. If that trade does not suit this week, switch to [On-time first](/blog/the-ontimefirst-optimizer-preset-explained) and setup becomes the secondary consideration instead of the primary one. Choosing between goals is covered in [how to choose an optimizer goal in EDGEBIC](/blog/how-to-choose-an-optimizer-goal-in-edgebic).
+
+## Setup families make the savings scale
+
+A raw job-to-job matrix explodes on a real shop: a hundred products on one machine would need ten thousand entries. EDGEBIC keeps setup reduction practical by letting you group products into setup families, so the changeover cost lives at the family-to-family level instead of the product-to-product level. Light colors are one family, darks another; alloys of a kind share a family. A machine with a hundred products but eight families needs only a small matrix, and the optimizer still reasons about every transition through the families.
+
+This matters for the optimizer because it is what makes the Least setup goal usable at scale rather than a lab exercise. The solver sequences jobs to keep same-family runs together and to order the family transitions cheaply, exactly as it would with a full product matrix, but the data you had to enter is a fraction of the size. A product can still carry a specific product-level override for a genuinely special pairing, which the resolver checks before falling back to the family cost. The result is a setup model the optimizer can act on without a data-entry project that never ends.
+
+## Getting setup reduction working
+
+To put this to work:
+
+- Populate the sequence-dependent setup matrix so EDGEBIC knows each changeover cost.
+- Open the Optimizer tab and confirm the Least setup goal now appears in the goal list.
+- For a single changeover-heavy machine with no closed windows, select the mathematical solver in Options, Schedule, Optimizer Engine so changeover is modeled natively.
+- Run, read the setup row on the comparison, check the move list for the campaign it built, and Accept if the trade suits your week.
+
+More on setup reduction as a discipline lives in [job shop setup time reduction](/blog/job-shop-setup-time-reduction), the goal itself is covered in [the MinSetup optimizer preset explained](/blog/the-minsetup-optimizer-preset-explained), and the wider context sits in [production schedule optimization](/blog/production-schedule-optimization). For the platform, visit [EDGEBIC](/edgebic) and the [optimizer guide](/blog/edgebic-optimizer-guide).
+
+## The bottom line
+
+Setup time is money the base scheduler cannot recover, because it plans one job at a time and never weighs the sequence. The optimizer weighs the whole sequence, and with a setup matrix the mathematical solver optimizes changeover as a circuit it builds directly. Give EDGEBIC the matrix, pick the Least setup goal, and let it turn a queue of expensive changeovers into a campaign of cheap ones. The saved hours were always there; the optimizer is what finds the order that keeps them.

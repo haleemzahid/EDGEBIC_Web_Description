@@ -1,0 +1,90 @@
+---
+title: "A Report Shows No Rows for a Date Range That Has Jobs: Causes and Fixes"
+description: "An empty report over a window that clearly has jobs usually means the report reads actuals, not the plan. How to tell which source a report uses and get rows back."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - report shows no rows
+  - no data in this window
+  - date range report empty
+  - daily production report empty
+  - report reads actuals
+  - report date range prompt
+targetPhrase: "report shows no rows for a date range"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "Why does a report show no rows when the schedule clearly has jobs in that window?"
+    answer: "Most date-ranged reports read recorded actuals rather than the plan, so a window full of scheduled work returns nothing until hours are logged against it. Daily Production, Shift Production, Earned Value, and OEE all build from the daily hour breakdown and punch records. If no one has logged actuals for those dates, the report is correctly empty and the banner reads no data in this window."
+  - question: "What does the no data in this window banner mean?"
+    answer: "It means the report ran successfully and the query returned zero rows for the dates you chose. It is not an error, a permission block, or a failed query. Treat it as a statement about the data, then check the two things that produce it most often: the window does not overlap any recorded activity, or the report reads a source such as actuals that has nothing in it yet for those dates."
+  - question: "Do report date ranges include both the from and to dates?"
+    answer: "Yes, the day-bounded reports compare on the calendar date and include both endpoints, so a range of the first to the seventh covers all seven days. The trap is a single-day window on a job that ran a night shift crossing midnight, because the hours land on the day the breakdown assigns them. Widen the window by a day on each side when a single-day query comes back empty."
+qaQuestions:
+  - question: "The Daily Production report is blank for last week but the Gantt shows three jobs running every day. Where did the rows go?"
+    answer: "Daily Production reports planned versus actual hours per work center per day, and both columns come from the daily breakdown the scheduler writes at persist time plus the actuals logged against it. Jobs visible on the Gantt that have never been persisted with a breakdown, or a week where nobody logged actuals, produce no rows. Confirm scheduling has been run and saved for that period, then confirm that actuals exist for those dates from either the kiosk or the log actuals screen."
+  - question: "Our Shift Production report shows hours but the operator count is zero for every row. Is the report broken?"
+    answer: "No, that combination has a specific meaning. The hours came from schedule actuals entered by a planner rather than from kiosk punches, and the operator count only counts distinct operator names on punch records. Zero operators with non-zero hours is a kiosk adoption gap, not a staffing gap. If you want operator attribution on those rows, the hours have to be logged at the kiosk rather than typed into the schedule."
+---
+
+**When a report returns no rows for a date range that clearly contains jobs, the usual cause is that the report reads recorded actuals rather than the plan, so a window with scheduled work but no logged hours is correctly empty.** [EDGEBIC by User Solutions](/edgebic) shows a "No data in this window" banner in that case, which tells you the query ran and returned nothing rather than that anything failed.
+
+This post is the detailed version of the empty-report symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanics of the report itself, [how to see daily production totals](/blog/how-to-see-daily-production-totals-in-edgebic) walks the flow.
+
+## What You Are Seeing
+
+You open a report card from the Reports Hub, the date range prompt appears, you set a from and to date that you know contains work, and the grid comes back empty with a banner saying there is no data in this window. Meanwhile the Gantt for those same dates is full of bars.
+
+Nothing is broken. The report and the Gantt are reading different things.
+
+## Why It Happens
+
+**Cause 1: The report reads actuals, not the plan.** This is the dominant cause. The date-ranged reports that most often come back empty (Daily Production, Shift Production, Earned Value, OEE) build from the daily hour breakdown and from punch records. Those rows exist only where hours have been recorded. A week of scheduled work with no logged actuals produces zero rows, correctly.
+
+**Cause 2: Scheduling has not been persisted for that window.** The planned hours a report shows come from the per-day breakdown the scheduler writes when results are saved, not from the routing's hours times quantity. If a run was generated and never saved, or the window predates the last save, there is no breakdown for those dates to report on.
+
+**Cause 3: The window misses the activity by a day.** Day-bounded reports compare on the calendar date and include both endpoints, so a single-day query is unforgiving. A night shift that crosses midnight lands its hours on the day the breakdown assigns them, which may not be the day the operator thinks of as the shift. Widen the window by a day on each side before concluding anything.
+
+**Cause 4: The report is filtered as well as dated.** Several reports accept a job number or a comma-separated list of jobs alongside the dates. A filter left over from a previous run silently excludes everything else. The anomaly report goes further: some of its structural checks evaluate routing configuration rather than job data, and filtering to a single job suppresses those categories entirely.
+
+**Cause 5: The report needs a picker, not a date range.** A few reports, such as the per-job audit trail, are launched from a job picker instead of a date prompt. If the job list itself is empty, no manufacturing orders exist yet, and that is a different problem from an empty result.
+
+**Cause 6: Sub-assembly rows are excluded by design.** The per-day production reports count parent-step rows only, so a window whose activity was entirely on component steps can look thinner than expected.
+
+## How to Fix It
+
+1. **Read the banner literally.** "No data in this window" means the query succeeded and returned nothing. Stop looking for an error.
+2. **Widen the date range by several days.** If rows appear, the original window simply missed the activity, and you now know which days actually carry it.
+3. **Confirm actuals exist for those dates.** Open the job and check whether hours have been logged from the kiosk or the log actuals screen. If none have, an actuals-based report is right to be empty.
+4. **Confirm scheduling was run and saved for the window.** Planned hours on these reports come from the saved per-day breakdown. Re-run and save scheduling if the window predates your last save.
+5. **Clear any job filter.** Re-launch the report with the job field empty so the query covers the plant. This matters most on the anomaly report, where a job filter suppresses the routing-level checks.
+6. **Check the report actually reads what you assume.** Open the column details for the grid to see what each column is built from. [Using column details](/blog/how-to-use-column-details-in-edgebic) explains how to read a column's definition in place.
+
+## A Worked Example
+
+A supervisor runs Daily Production for a single Tuesday and gets nothing. The Gantt shows two jobs on the mill that day.
+
+Widening to the full week returns rows for Monday, Wednesday, and Thursday, but still nothing for Tuesday. Opening the jobs shows Tuesday's hours were never logged: the operator worked the shift but nobody punched or entered actuals. The Gantt was showing the plan and the report was reporting reality, and the difference between them was the missing entry. The fix is to log Tuesday's hours, after which the row appears with the variance against plan visible.
+
+## How to Prevent It
+
+- **Know which reports read the plan and which read actuals.** The plan-side reports answer "what are we going to do" and the actuals-side reports answer "what did we do." Asking an actuals report about an unlogged week will always disappoint.
+- **Start every investigation with a wide window, then narrow.** A month-wide first pass tells you where the data actually lives in one query.
+- **Clear filters between runs.** Treat the job filter as sticky until proven otherwise, especially on the anomaly report where it changes which checks run at all.
+- **Close the actuals loop daily.** A shop that logs hours the same day never sees this symptom, and its variance reports stay meaningful. [How punches roll up into daily actual hours](/blog/how-punches-roll-up-into-daily-actual-hours) covers the rollup, and [a kiosk punch did not appear in the report](/blog/a-kiosk-punch-did-not-appear-in-the-report-edgebic) covers the case where hours were logged but still do not show.
+
+<Accordion title="Why does a report show no rows when the schedule clearly has jobs in that window?">
+Most date-ranged reports read recorded actuals rather than the plan, so a window full of scheduled work returns nothing until hours are logged against it. Daily Production, Shift Production, Earned Value, and OEE all build from the daily hour breakdown and punch records. If no one has logged actuals for those dates, the report is correctly empty and the banner reads no data in this window.
+</Accordion>
+
+<Accordion title="What does the no data in this window banner mean?">
+It means the report ran successfully and the query returned zero rows for the dates you chose. It is not an error, a permission block, or a failed query. Treat it as a statement about the data, then check the two things that produce it most often: the window does not overlap any recorded activity, or the report reads a source such as actuals that has nothing in it yet for those dates.
+</Accordion>
+
+<Accordion title="Do report date ranges include both the from and to dates?">
+Yes, the day-bounded reports compare on the calendar date and include both endpoints, so a range of the first to the seventh covers all seven days. The trap is a single-day window on a job that ran a night shift crossing midnight, because the hours land on the day the breakdown assigns them. Widen the window by a day on each side when a single-day query comes back empty.
+</Accordion>

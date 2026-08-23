@@ -1,0 +1,77 @@
+---
+title: "What Is Row-Error Tolerance in a Data Import?"
+description: "Row-error tolerance decides whether one bad row fails alone while the import continues, or stops the whole run. Learn both behaviors and when to use each."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - row error tolerance
+  - continue on row error
+  - failed import row
+  - import options
+  - abort on first error
+  - data import validation
+targetPhrase: "row-error tolerance"
+wordCount: 1098
+readingTime: 5
+faqQuestions:
+  - question: "What is row-error tolerance in a data import?"
+    answer: "Row-error tolerance is the per-mask setting that decides what happens when a single row cannot be processed. With tolerance on, which is the default, the offending row is marked Failed with a recorded reason and the run continues through the rest of the file, so one typo does not block a hundred good rows. With tolerance off, the run stops at the first failed row instead. Either way every row that was processed still gets exactly one outcome, and the per-run log names the row and the reason."
+  - question: "Should I turn row-error tolerance off?"
+    answer: "Usually no. The default of continuing is what makes a weekly file practical: bad rows are isolated, reported, and fixed in the source before the next run. Turning tolerance off is useful while you are proving a brand-new mask, because stopping at the first problem puts the failure in front of you immediately instead of at the bottom of a results grid. Once the mask is proven, turn tolerance back on so a single malformed row never costs you the rest of the file."
+  - question: "Is a failed row the same as an aborted run?"
+    answer: "No, and the distinction matters when you are diagnosing. A failed row means the file was read and this particular row could not be applied, usually because a required key cell is blank or does not resolve. An aborted run before any row is processed means the mask itself is incomplete, typically because a field marked required was never mapped. The first is a data problem you fix in the spreadsheet; the second is a mapping problem you fix by editing the mask."
+qaQuestions:
+  - question: "Half my file imported and then the run stopped. What do I do about the half that landed?"
+    answer: "Fix the bad row in the source file and re-run the whole mask, because imports are built to be safe to re-run. Rows that already landed are matched by their business key and come back as Reused or Updated depending on the mask's update setting, not duplicated, so re-running is not a double load. That is the intended recovery path, and it is why re-running is preferred to hand-editing the file down to just the missing rows. Check the per-run log first so you know exactly which row stopped the run and why."
+  - question: "Every row in my run came back Failed. Where do I look first?"
+    answer: "Look at the key column, not at the tolerance setting. A whole file failing almost always means the mapped key cell is not what the import expects: the wrong source column was dragged onto the identifier field, the file has an extra header row so every value is shifted, or a positional mapping is off by one because a column was inserted upstream. Open the log, read the message on the first row, and re-check the mask's mapping for the field named in it. One corrected mapping usually turns the entire run green."
+---
+
+**Row-error tolerance is the import setting that decides whether one bad row fails on its own while the rest of the run continues, or whether the whole run stops at the first problem.** It sounds like a small preference and it is the difference between a five-minute weekly routine and an afternoon of frustration. In EDGEBIC by User Solutions the setting lives on the import mask itself, alongside the mask's other options, and it defaults to continuing, so a single malformed row never costs you the other hundred and ninety-nine.
+
+## How it works
+
+Every row in an import file resolves to exactly one outcome. Created means a new record was written. Updated means an existing record was changed. Reused means an existing record was found and deliberately left alone. Failed means something about the row was wrong and it was not applied. Those four outcomes and their vocabulary are covered in [what is an import row status](/blog/what-is-an-import-row-status).
+
+Row-error tolerance governs only what happens *after* a Failed outcome:
+
+| Setting | Behavior on a bad row | Best for |
+|---|---|---|
+| Tolerance on (the default) | The row is marked Failed with its reason recorded, and the run continues through the remaining rows | Recurring production files where isolated bad rows are normal |
+| Tolerance off | The run stops at that row and does not process the rest of the file | Proving a brand-new mask, where you want the first problem in your face |
+
+The reason for a failure is never lost in either mode. The result dialog summarizes the run with a count line reading created, updated, reused and failed, plus a grid with one entry per file row showing the row number, its status, the key it matched on, a message, and the resulting record id. The per-run log file records the same detail plus the bookkeeping rows the dialog hides. That combination is what turns "the import did not work" into "row 47 has a blank product id."
+
+There is a second, different failure that people frequently confuse with row-error tolerance, and separating them saves real time. If a field the mask marks as required was never mapped, the run aborts immediately and no rows are processed at all, regardless of the tolerance setting. That is a mask problem, fixed by editing the mask and mapping the field. A Failed row, by contrast, is a data problem, fixed in the spreadsheet.
+
+Recovery in both modes is the same move: fix the source and re-run. Imports are designed to be safe to re-run because rows are matched by a business key rather than blindly appended, so rows that already landed come back as Reused or Updated rather than duplicating. That matching behavior is described in [what is an upsert in data import](/blog/what-is-an-upsert-in-data-import), and it is the reason a partial run is an inconvenience rather than a mess.
+
+## A concrete example
+
+A planner runs a saved weekly product mask against this week's price file. The run finishes and the result dialog reads created 3, updated 0, reused 1, failed 1, in two seconds. Four of the five rows behaved exactly as expected. The fifth is highlighted with a message naming the problem, and the log gives its row number.
+
+With tolerance on, the three new products exist, the one matched product was left alone as the mask's update option is off, and the single bad row is a note to send back to whoever produces the file. Total planner effort: read one message.
+
+Now imagine the same file with tolerance off. The run stops at the bad row. Anything before it landed, anything after it did not, and the planner is left reconciling. The fix is to correct the row and re-run the whole file: the earlier rows return as Reused or Updated, the corrected row lands, and the totals come out right. It works, it just costs an extra cycle for no benefit, which is exactly why the default is to continue.
+
+The one case where stopping earns its keep is a first run. A brand-new mask against a file nobody has imported before can be wrong in a way that repeats on every row: the wrong source column dragged onto the identifier, or a positional mapping shifted by one. Stopping at the first failure surfaces that in seconds instead of producing two hundred identical failures to scroll through.
+
+## How EDGEBIC uses it
+
+The setting is one of the checkboxes in a mask's options dialog, and it applies to every entity type, unlike the options that are specific to a single type. Because it lives on the mask rather than being chosen per run, a recurring routine behaves the same way every week without anyone remembering to set it.
+
+Three habits go with it:
+
+- **Dry-run a new mask on ten rows.** Ten rows prove the mapping. Then run the full file with tolerance on.
+- **Read the log after any run with failures.** The dialog gives you counts; the log gives you row numbers and reasons. Log files are written one per run, named after the mask and the timestamp, and are kept until you delete them. See [what is an import run log](/blog/what-is-an-import-run-log) for what is in them.
+- **Treat repeated failures as a source-file conversation.** If the same three rows fail every week, the fix belongs upstream in whatever produces the file, not in a manual patch after each run.
+
+One thing to keep in perspective: no import setting ever changes the plan. Imports write data, and the schedule is recalculated only when you run the scheduler. A file that lands forty new orders leaves forty jobs waiting to be planned and not a single bar on a timeline until the next scheduling run. That separation means an import you have to re-run is never a scheduling emergency.
+
+## The takeaway
+
+Row-error tolerance is a one-checkbox decision with a clear default: let bad rows fail alone, report them precisely, and fix them at the source. Turn it off only while you are proving a new mapping, then turn it back on. Combined with key-based matching, that policy makes a weekly data load boring, which is the highest praise a data routine can earn. To see masks, options and result dialogs in a working system, explore [EDGEBIC](/edgebic), and if you are arriving from the older Resource Manager lineage, [the move from RMDB to EDGEBIC](/rmdb-to-edgebic) maps the equivalents. For neighboring import terms, read [what is an import entity type](/blog/what-is-an-import-entity-type) and [what is a conversion factor in data import](/blog/what-is-a-conversion-factor-in-data-import).

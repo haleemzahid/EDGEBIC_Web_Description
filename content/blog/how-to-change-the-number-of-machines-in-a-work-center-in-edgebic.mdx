@@ -1,0 +1,111 @@
+---
+title: "How to Change the Number of Machines in a Work Center in EDGEBIC"
+description: "How to change a work center's instance count in EDGEBIC: what the No.Instances field does to capacity, when to pool machines, and when to split them instead."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - change number of machines work center
+  - work center instances
+  - no instances field capacity
+  - add machine to work center
+  - instance count scheduling software
+  - multiply capacity instances
+targetPhrase: "change number of machines work center"
+wordCount: 1270
+readingTime: 6
+faqQuestions:
+  - question: "How do you change the number of machines in a work center?"
+    answer: "Edit the work center and change the No.Instances field on the Basic Information tab. It defaults to 1, and each instance is one physical machine. The count multiplies the shift hours directly, so raising it from 2 to 3 on an eight-hour shift takes daily capacity from 16 hours to 24. The change takes effect at the next Drive Schedule run, not immediately."
+  - question: "Does adding an instance double or triple the schedulable capacity?"
+    answer: "It multiplies capacity by the ratio of the new count to the old. Two instances to three is a 50 percent rise, one to two is a doubling. Capacity per day equals shift hours times instances times utilization, so the instance count is a straight multiplier. The extra hours also let more jobs run at once: three instances can run three jobs simultaneously where two could run only two."
+  - question: "When should machines be separate work centers instead of instances?"
+    answer: "When they differ in any way that affects scheduling: different cycle speed, different shifts, or tooling that limits which parts each can run. Instances are for truly identical machines that share one queue. Machines that are interchangeable but different belong in a Work Center Group, where each keeps its own calendar and speed. Pooling unequal machines under one instance count produces a plan no machine can actually hold."
+qaQuestions:
+  - question: "We just added a third identical mill. Do I raise the instance count or add a work center, and will my existing routings need changing?"
+    answer: "Raise No.Instances from 2 to 3 on the existing work center, and no routing changes at all. Every routing step already points at the work center by its WC Id, so the third machine simply joins the shared queue and the engine load-balances across all three. Capacity climbs from 16 hours a day to 24 on an eight-hour shift, and up to three jobs can run at once. Adding a separate work center would instead force you to revisit every routing to decide which of the three it should target, which is exactly the maintenance you avoid by using instances for identical machines."
+  - question: "One of our two presses is noticeably slower than the other. Should they still share an instance count of two?"
+    answer: "No. An instance count assumes the machines are interchangeable at the same speed, so pooling a fast press and a slow one under a count of 2 tells the scheduler it has two machines running at the average rate. The plan then over-promises the slow machine and under-uses the fast one, and neither can hold the dates. Split them into two work centers with their own cycle times, and if routings should be free to use either one, pool them in a Work Center Group so the engine picks the machine that finishes earliest while still honoring each machine's real speed."
+---
+
+**To change the number of machines in a work center, edit it and set the No.Instances field on the Basic Information tab.** Each instance is one physical machine, and the count multiplies shift hours directly. Two instances to three takes an eight-hour work center from 16 hours a day to 24, and the change lands at the next Drive Schedule run.
+
+The instance count is one of the two largest levers on a promise date (the other is the calendar). It is also easy to get subtly wrong, because pooling machines that are not truly identical produces a plausible-looking plan that no machine can keep. This page covers the field and the decision behind it. For the broader instance and utilization setup, read [how to configure machine instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic) from EDGEBIC by User Solutions.
+
+## Before You Start
+
+- **You know the real machine count** the work center should represent.
+- **You have confirmed the machines are identical**: same speed, same shifts, same tooling. If they differ, this is the wrong tool.
+- **You can rerun the schedule.** The new count does not move existing bars on its own.
+
+## What One Number Does
+
+**No.Instances** answers a single question: how many identical machines stand behind this name? The scheduler computes capacity per (work center, shift, date) as:
+
+```
+available hours = shift hours × No.Instances × utilization %
+```
+
+So the instance count is a straight multiplier. A worked case with a two-press bank on Day Shift 08:00 to 16:00:
+
+```
+capacity per day = 8 h × 2 instances = 16 h
+```
+
+Two 8-hour jobs run simultaneously, one per machine, both finishing the same day. A single 16-hour job splits across both and finishes in one day instead of two. The Gantt and the allocation records show which instance ran each slice.
+
+## Step 1: Open the Work Center for Editing
+
+Open the **Workcenter** tab. On the **Work Center Management** grid, read the current value in the **Instances** column, then click ✏️ **Edit** on the work center's row. The **Work Center Configuration** dialog opens on the **Basic Information** tab.
+
+## Step 2: Change No.Instances
+
+Change **No.Instances** to the new machine count. Keep it a whole number for a normal bank of machines. Fractional values (2.5) are accepted for a genuinely half-capacity resource, but whole numbers are the norm and anything else deserves a second look.
+
+Before you type, confirm the machines you are adding are true clones. This is the whole decision:
+
+| The machines are | Use |
+|---|---|
+| Identical (same speed, shifts, tooling) | One work center, raise **No.Instances** |
+| Different but interchangeable for routing | Separate work centers, pooled in a Work Center Group |
+| Genuinely different jobs | Separate work centers |
+
+## Step 3: Save
+
+Click **Save**. The **Instances** column on the grid updates.
+
+## What Changes When You Save
+
+| Surface | Effect |
+|---|---|
+| **Work Center Management** grid | **Instances** column updates immediately |
+| Resource Calendar and dashboards | Show the new capacity on refresh |
+| Existing schedules and promised dates | **Unchanged.** Bars do not move by themselves |
+| Next **Drive Schedule** run | Capacity multiplies or shrinks by the new count, and jobs spread accordingly |
+| Routings | No changes needed. Steps still reference the work center by WC Id |
+
+The routing part is the quiet payoff of using instances over separate work centers: adding a machine touches exactly one field and nothing downstream.
+
+## How to Check It Worked
+
+1. Confirm the new value in the **Instances** column on the grid.
+2. Open the Resource Calendar and read the work center's total capacity for a normal working day. On three instances and an 8-hour shift it should read 24 hours where it read 16.
+3. Run **Drive Schedule**. A job that queued behind capacity should now finish sooner, and simultaneous jobs should appear on the added instance.
+4. Confirm the Gantt shows work distributed across the instances rather than piled on one.
+
+## Common Mistakes
+
+**Pooling unequal machines.** An instance count assumes interchangeable machines at one speed. Add a slow machine to a fast one under a shared count and the scheduler plans against the average, over-promising the slow unit. Split them and use a Work Center Group. This is the first entry in our [work center configuration mistakes](/blog/work-center-configuration-mistakes-edgebic) list.
+
+**A count that does not match the floor.** If the record says three and only two machines run, every date built on that work center assumes 50 percent more capacity than exists. Reconcile the count with the physical floor whenever the mix changes.
+
+**Expecting the plan to update instantly.** The bars on screen were computed against the old count. Run Drive Schedule before you read the new dates or promise anything.
+
+**Confusing instances with One Per Day.** Raising the instance count adds capacity that pools freely. Turning on One Per Day dedicates each instance to one job per day. They are different levers and interact: a three-instance work center with One Per Day on takes exactly three jobs per day, no more.
+
+## Next
+
+The instance count is a straight multiplier, and the only real trap is pooling machines that are not identical. When machines differ but should still share routings, a Work Center Group is the right structure, and [how to remove a machine from a work center group](/blog/how-to-remove-a-machine-from-a-work-center-group-in-edgebic) covers taking a member back out without disturbing running work. To restrict how each instance is used, look at the One Per Day rule in [how to configure machine instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic). More single-task recipes are in the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and the platform overview is at [/edgebic](/edgebic).

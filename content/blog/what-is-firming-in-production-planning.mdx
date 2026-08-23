@@ -1,0 +1,92 @@
+---
+title: "What Is Firming in Production Planning?"
+description: "Firming turns a suggested build quantity into a real manufacturing order. Learn what firming commits, why it is idempotent, and how it differs from suggesting."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - firming production planning
+  - firm a planned order
+  - suggested to firm order
+  - planner commitment planning
+  - firm MPS bucket
+  - replenishment firming
+targetPhrase: "firming in production planning"
+wordCount: 1399
+readingTime: 6
+faqQuestions:
+  - question: "What is firming in production planning?"
+    answer: "Firming is the planner's act of turning a suggested build quantity into a real manufacturing order the plant will actually schedule. Before firming, a suggestion is advice: it appears in the plan, costs nothing, and disappears if the numbers behind it change. After firming, an order exists with a quantity, a due date, and a start date, and it becomes supply the projection counts on. Firming is the deliberate line between what the system proposes and what the business commits to."
+  - question: "What does firming actually create?"
+    answer: "It creates one manufacturing order, marked as building into inventory rather than against a specific customer, and stamped with the origin it was firmed from so the audit trail survives. The order carries the quantity you firmed, rounded up to a whole number of units, a due date, and a start date. Its status is set to scheduled, so it is a real job waiting for the next scheduler run to place it on the calendar. Firming does not itself schedule anything; it creates the commitment the scheduler then plans."
+  - question: "What is the difference between a suggestion and a firm order?"
+    answer: "A suggestion is a calculated hint that appears in a planning bucket when the projected balance falls below its trigger, and it carries no obligation at all. It is not counted as future supply, it does not reserve capacity, and it recalculates from scratch every time the projection runs. A firm order is a persisted record that does count as supply, does consume capacity when scheduled, and stays put until someone changes or cancels it. The gap between them is entirely a matter of human judgment: the system proposes, the planner commits."
+qaQuestions:
+  - question: "I clicked firm twice by accident. Do I now have two orders for the same quantity?"
+    answer: "For a master-schedule bucket, no. Firming the same bucket again is idempotent: if the bucket has already been released and the order it created is still alive, the second call recognizes that and simply returns the existing order rather than creating a duplicate. The safeguard exists precisely because a double click on a slow screen is a normal human event, not an exotic edge case. The one situation where a second firm does create a new order is when the original was deleted out of band, in which case the stale link is replaced and a fresh order takes its place, which is the behavior you want. If you are firming a replenishment suggestion from the inventory calendar rather than a master-schedule bucket, check the resulting orders before repeating the click, and cancel any genuine duplicate you find."
+  - question: "After I firmed, the suggestion disappeared from that bucket. Is that a bug?"
+    answer: "It is the intended result and the clearest sign the firm worked. Firming creates an order that builds into inventory, and the next time the projection runs, that order appears as a scheduled receipt in the bucket where it is due to complete. With that supply now counted, the projected balance for the bucket sits back above its trigger, so the condition that produced the suggestion no longer holds and the suggestion is not regenerated. In other words the advice was taken and the reason for the advice went away. If instead the suggestion persists after firming, look at whether the order landed in a later bucket than you expected, which would leave the earlier bucket still short."
+---
+
+**Firming is the planner's act of converting a suggested build quantity into a real manufacturing order the plant will schedule and build.** Before firming, the number on the screen is advice that recalculates every run and commits nobody. After firming, an order exists with a quantity, a due date, and a start date, and the plan counts on it as supply.
+
+This entry defines firming and shows how it reads inside [EDGEBIC by User Solutions](/edgebic). For the wider index of terms, see the [manufacturing glossary](/blog/manufacturing-glossary); for the advice it acts on, see [what is a replenishment suggestion](/blog/what-is-a-replenishment-suggestion); and for the committed build plan it belongs to, see [EDGEBIC master production schedule explained](/blog/edgebic-master-production-schedule-explained).
+
+## How It Works
+
+Planning produces two kinds of number, and the distinction between them is the whole reason firming exists.
+
+The first kind is calculated advice. When a projected balance falls below its reorder trigger, a suggestion appears in that bucket saying how much to build. It is recomputed from scratch on every projection run, it is not counted as future supply, and it reserves nothing. Change a forecast and the suggestion changes with it. Nothing has been promised.
+
+The second kind is a commitment. Firming takes the suggested quantity, or a quantity a planner has committed in a master-schedule bucket, and writes a manufacturing order. That order has a quantity, a due date, a start date, and a status that marks it as scheduled work waiting to be placed. It is a real record that survives the next projection run.
+
+Three details make the commitment behave properly. The quantity is rounded up to whole units, because you cannot build a fraction of a part. The order is marked as building into inventory, which tells the engine its output goes onto the shelf rather than satisfying one named customer. And the order is stamped with the origin it came from, so you can still tell later which orders arose from replenishment and which from the master schedule.
+
+Firming does not schedule. It creates the commitment; the next scheduler run places it on the calendar against real capacity.
+
+## A Concrete Example
+
+A planner is reviewing a stocked part. Three weeks out, the projected balance dips below the reorder trigger and a suggestion appears in that bucket: build 300.
+
+While it is only a suggestion, nothing has happened. The bucket shows the shortfall and the advice, and if next week's forecast is revised down, the suggestion will simply not reappear. No order exists, no capacity is touched.
+
+The planner judges the demand real and firms the bucket. An order for 300 is created, due in that bucket, building to inventory, with a start date derived from the due date. Its status is scheduled, so it is now waiting for the next scheduler run.
+
+The projection is reloaded. The new order now shows as a scheduled receipt in the bucket where it completes, so the projected balance sits back above the trigger and the suggestion is gone. That disappearance confirms the firm took effect.
+
+Two days later a colleague, not knowing, clicks firm on the same master-schedule bucket. Because that bucket is already released and its order still exists, the second call returns the existing order instead of creating a second one.
+
+## How EDGEBIC Uses It
+
+In EDGEBIC, firming is available from two surfaces that share the same shape. From the inventory calendar, firming a suggested quantity creates a replenishment order for that product, quantity, and bucket date. From the master production schedule, firming a bucket creates a build-to-stock order and marks the bucket as released, linking it to the order it produced.
+
+Both paths write one manufacturing order, marked as building to inventory, with the quantity rounded up to whole units and a status of scheduled. Both stamp the order with its origin, so replenishment orders and master-schedule orders remain distinguishable in any later query or report. The master-schedule path additionally offsets the start date by the product's end-item lead time, so the build finishes early enough for the delivery-ready tail to land on the due date.
+
+The master-schedule firm is also atomic and idempotent. The order creation and the bucket stamp happen in one transaction, so a failure leaves neither behind, and firming an already-released bucket whose order is still alive returns that same order rather than a duplicate. If the order was deleted out of band, the stale link is replaced and a new order is created, which is the sensible recovery.
+
+Once firmed, the order behaves like any other job: it waits for the next scheduler run, consumes real capacity when placed, and posts a receipt into the ledger when it completes.
+
+For the plan the firmed order feeds, see [projected available balance](/blog/what-is-projected-available-balance). For the bucket state that firming advances, see [what is an MPS entry status](/blog/what-is-an-mps-entry-status), and for the tag it leaves behind, see [what is a demand source in production planning](/blog/what-is-a-demand-source-in-production-planning).
+
+<Accordion title="What is firming in production planning?">
+Firming is the planner's act of turning a suggested build quantity into a real manufacturing order the plant will actually schedule. Before firming, a suggestion is advice: it appears in the plan, costs nothing, and disappears if the numbers behind it change. After firming, an order exists with a quantity, a due date, and a start date, and it becomes supply the projection counts on. Firming is the deliberate line between what the system proposes and what the business commits to.
+</Accordion>
+
+<Accordion title="What does firming actually create?">
+It creates one manufacturing order, marked as building into inventory rather than against a specific customer, and stamped with the origin it was firmed from so the audit trail survives. The order carries the quantity you firmed, rounded up to a whole number of units, a due date, and a start date. Its status is set to scheduled, so it is a real job waiting for the next scheduler run to place it on the calendar. Firming does not itself schedule anything; it creates the commitment the scheduler then plans.
+</Accordion>
+
+<Accordion title="What is the difference between a suggestion and a firm order?">
+A suggestion is a calculated hint that appears in a planning bucket when the projected balance falls below its trigger, and it carries no obligation at all. It is not counted as future supply, it does not reserve capacity, and it recalculates from scratch every time the projection runs. A firm order is a persisted record that does count as supply, does consume capacity when scheduled, and stays put until someone changes or cancels it. The gap between them is entirely a matter of human judgment: the system proposes, the planner commits.
+</Accordion>
+
+<Accordion title="I clicked firm twice by accident. Do I now have two orders for the same quantity?">
+For a master-schedule bucket, no. Firming the same bucket again is idempotent: if the bucket has already been released and the order it created is still alive, the second call recognizes that and simply returns the existing order rather than creating a duplicate. The safeguard exists precisely because a double click on a slow screen is a normal human event, not an exotic edge case. The one situation where a second firm does create a new order is when the original was deleted out of band, in which case the stale link is replaced and a fresh order takes its place, which is the behavior you want. If you are firming a replenishment suggestion from the inventory calendar rather than a master-schedule bucket, check the resulting orders before repeating the click, and cancel any genuine duplicate you find.
+</Accordion>
+
+<Accordion title="After I firmed, the suggestion disappeared from that bucket. Is that a bug?">
+It is the intended result and the clearest sign the firm worked. Firming creates an order that builds into inventory, and the next time the projection runs, that order appears as a scheduled receipt in the bucket where it is due to complete. With that supply now counted, the projected balance for the bucket sits back above its trigger, so the condition that produced the suggestion no longer holds and the suggestion is not regenerated. In other words the advice was taken and the reason for the advice went away. If instead the suggestion persists after firming, look at whether the order landed in a later bucket than you expected, which would leave the earlier bucket still short.
+</Accordion>

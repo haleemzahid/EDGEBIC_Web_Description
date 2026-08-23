@@ -1,0 +1,89 @@
+---
+title: "The Working-Hour Timeline in Schedule Optimization"
+description: "How the CP-SAT solver in EDGEBIC measures time: 36-second ticks on a compressed working-hour axis, with nights, weekends, and holidays squeezed out before it solves."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - working hour timeline
+  - CP-SAT scheduling
+  - schedule optimization software
+  - mathematical scheduling solver
+  - working time calendar
+  - production schedule optimization
+targetPhrase: "working-hour timeline"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What is the working-hour timeline in the EDGEBIC optimizer?"
+    answer: "The working-hour timeline is the compressed time axis the mathematical solver in EDGEBIC uses to reason about a schedule. It measures time in 36-second ticks along the union of every work center's open hours, so nights, weekends, and whole-day plant holidays are removed before the solver runs. The result is a smaller, faster problem where every tick is real production time, not idle clock time nobody works."
+  - question: "Why does the optimizer remove nights and weekends from its time axis?"
+    answer: "Because closed time carries no scheduling decisions, so keeping it only makes the problem larger and slower to solve. The mathematical solver compresses the calendar to the union of open hours, meaning any instant where at least one work center is open. Nights, weekends, and whole-day holidays are squeezed out. A job that spans a closed period is still elongated correctly, because each work center's own closures re-enter the model as fixed blocking intervals."
+  - question: "Does the compressed timeline ever over-promise capacity?"
+    answer: "No, and the rounding contract is deliberately conservative. Operation durations always round up to a whole tick so the solver never under-books how long work takes, and available capacity always rounds down so it never over-counts open time. Both rules err on the safe side, so the plan the solver proves is achievable stays achievable when it lands on the real calendar."
+qaQuestions:
+  - question: "Two of my machines run different shifts. How does the solver keep their operations aligned on one clock?"
+    answer: "It puts every operation on one global axis, not a separate axis per machine. The axis is the union of all open hours, so any tick where at least one work center is open exists on it. Each machine then contributes its own closed ranges back as blocking intervals, so an operation on a machine that is dark on Friday is pushed past that gap. This shared axis is what lets a routing step on the saw correctly precede a step on the mill even when the two run different calendars."
+  - question: "We have a job due eight months out. Does that huge horizon slow the solver down?"
+    answer: "No, because the horizon is bounded. The solver builds its timeline from the earliest order start to 30 days past the later of the current plan's last finish and the latest due date, then clamps the whole thing to 800 days. A far-future due date cannot inflate the model beyond that cap, so one distant order does not stretch the time axis for everything else. The compression to open hours only shrinks it further."
+---
+
+**The working-hour timeline is the compressed time axis the mathematical solver in EDGEBIC uses to reason about a schedule.** It measures time in 36-second ticks along the union of every work center's open hours, so nights, weekends, and whole-day plant holidays are removed before the solver ever sees the problem. Every tick on the axis is real production time, which keeps the model small, fast, and faithful to your actual calendar.
+
+EDGEBIC by User Solutions runs its mathematical optimizer, built on Google OR-Tools CP-SAT, on this axis. The multi-run search engine works differently: it re-runs the real scheduler many times, so it inherits the scheduler's own calendar handling directly. The working-hour timeline is specific to the solver, and understanding it explains why the solver is both fast and honest about what it can prove. For the full picture of both engines, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## Why compress the calendar at all
+
+A mathematical solver reasons about every possible arrangement of your operations. The more time units it has to consider, the larger the problem and the longer a proof takes. Wall-clock time is mostly idle: a plant running one 8-hour shift five days a week is closed for 128 of every 168 hours. Feeding those closed hours to the solver would triple the size of the time axis while adding zero scheduling decisions, because nothing can be placed there anyway.
+
+So the solver strips them out. It builds a timeline from the union of open hours, meaning any instant where at least one work center is open. Nights, weekends, and whole-day plant holidays never enter the math. What remains is a dense axis where every position is a real slot that work could occupy. This is one reason the solver can prove a result in seconds where a brute-force pass over raw calendar time would crawl.
+
+## Time in 36-second ticks
+
+On the timeline, the unit of time is a tick of 0.01 hours, which is 36 seconds. There are 100 ticks per working hour. Every start time, duration, and gap in the model is an integer number of ticks, because integer math is what lets the solver prove statements about the schedule cleanly.
+
+Thirty-six seconds is fine enough to match the scheduler's own finest precision, so nothing is lost by rounding to it. A two-hour cut is 200 ticks. A fifteen-minute setup is 25 ticks. The planner never sees ticks: the comparison screen reports hours and clock times exactly as always. Ticks are the internal currency that makes the proof possible.
+
+## One global axis, not one per machine
+
+The timeline is a single global axis shared by every operation, not a separate axis per work center. This matters because routing steps relate machines to each other. A step on the saw must finish before the linked step on the mill begins, and that relationship is only meaningful if both steps sit in the same time space.
+
+If each machine had its own private clock, the solver would have no shared reference to express "saw step ends, then mill step starts." One global axis, built from the union of all open hours, gives every cross-machine precedence link a common ruler. It is the difference between two clocks in two rooms and one clock both rooms can read.
+
+## Per-machine closures come back as blocking intervals
+
+Compressing to the union of open hours raises an obvious question: if the axis only contains time when at least one machine is open, what about a machine that is dark while others run? The answer is that each work center's own closed ranges re-enter the model as fixed blocking intervals.
+
+Suppose the saw runs Monday to Friday but the heat-treat oven is down every Friday for maintenance. Friday exists on the global axis because the saw is open. For the oven, the solver inserts Friday's ticks as a fixed block that no operation can occupy. Any oven job that would have spanned Friday is elongated to step over the block, exactly as it would on the real floor. The compression never loses a real closure. It only removes time that no machine works.
+
+## The rounding contract: always err safe
+
+Converting real durations to whole ticks requires rounding, and the direction of that rounding is a deliberate safety choice:
+
+| Quantity | Rounds | Effect |
+|---|---|---|
+| Operation duration | Up to the next whole tick | The solver never under-books how long work takes |
+| Available capacity | Down to the previous whole tick | The solver never over-counts open time |
+
+Both rules err on the conservative side. A duration is never shortened by rounding, and open capacity is never inflated. The consequence matters: a plan the solver proves is feasible on the compressed axis stays feasible when it maps back to the real calendar, because every rounding decision left a margin rather than borrowed one. This is the same discipline behind [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) generally, where honest capacity is the whole point.
+
+## What the timeline includes in this version, and what it does not
+
+The current solver timeline is honest about its scope. Open time comes from each work center's associated shift hours, minus whole-day holidays at the work center, shift, and plant level. That covers the common single-shift or multi-shift plant cleanly.
+
+Several finer calendar features are not yet on the solver's axis: partial-day holidays, individual downtime windows, daily and monthly capacity overrides, and utilization or efficiency scaling. Rather than model these approximately and risk a wrong plan, the solver locks any job that touches one of them. A locked job is reproduced exactly as the scheduler planned it and consumes its capacity in the model, while the solver optimizes the other jobs around it. This is the same safety rule that governs every feature the solver does not yet model natively, described in [how the optimizer locks features it does not model](/blog/how-the-optimizer-locks-features-it-does-not-model). The multi-run engine has no such limit, because it runs the real scheduler and inherits every calendar feature directly.
+
+## Why this makes the optimizer trustworthy
+
+The working-hour timeline is not a shortcut that trades accuracy for speed. It is the opposite: a representation that is both smaller and more faithful than raw calendar time. Every tick is real work time, every closure is honored as a blocking interval, and every rounding step leaves a margin instead of taking one. That combination is what lets the solver produce a plan and a proof of how close it is to the best possible, the optimality gap explained in [what an optimality gap is in production scheduling](/blog/what-is-an-optimality-gap-production-scheduling).
+
+The horizon is bounded too, so no single distant order inflates the model. The timeline runs from the earliest order start to 30 days past the later of the current plan's last finish and the latest due date, clamped to a maximum of 800 days.
+
+To see the two optimizer layers side by side, read [the two layers of the EDGEBIC optimizer](/blog/the-two-layers-of-the-edgebic-optimizer) and [choosing the optimizer engine](/blog/choosing-the-optimizer-engine-multi-run-or-cp-sat). To understand the model the timeline underpins, see [how the CP-SAT solver models your schedule](/blog/how-the-cp-sat-solver-models-your-schedule). And to try optimization on your own orders, visit [EDGEBIC](/edgebic).
+
+## The bottom line
+
+The working-hour timeline compresses your calendar into 36-second ticks along the union of open hours, removes nights and weekends and whole-day holidays, and brings each machine's closures back as blocking intervals. Durations round up and capacity rounds down, so the solver never over-promises. The result is a small, fast, faithful model that lets the mathematical optimizer prove how good a plan is, without ever inventing time that nobody works.

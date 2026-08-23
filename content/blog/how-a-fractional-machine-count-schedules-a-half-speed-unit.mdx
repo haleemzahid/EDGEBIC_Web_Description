@@ -1,0 +1,86 @@
+---
+title: "How a Fractional Machine Count Schedules a Half-Speed Unit"
+description: "How EDGEBIC models a work center with 2.5 instances, redistributing the partial machine's capacity so a half-size mixer or slower backup unit schedules without over-counting."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - fractional instances
+  - fractional machine count
+  - capacity modeling
+  - half-capacity machine
+  - load balancing scheduling
+  - work center capacity
+targetPhrase: "fractional machine count"
+wordCount: 1470
+readingTime: 8
+faqQuestions:
+  - question: "What does a fractional instance count mean in scheduling?"
+    answer: "A fractional instance count models a work center that has some full machines plus a partial one, such as two full mixers and one half-size unit, written as 2.5 instances. EDGEBIC treats the 0.5 as a machine that contributes half a full machine's hours. The shift capacity is computed as 8 hours times 2.5, and when allocating work the engine redistributes the partial unit's share so the math stays consistent rather than pretending it is a third full machine."
+  - question: "Why not just round a half machine up to a whole one?"
+    answer: "Because rounding up would over-count the partial machine's output and inflate the work center's real capacity. A half-size mixer does not do a full machine's work, so treating 2.5 machines as 3 would promise hours the plant cannot deliver. EDGEBIC keeps the fraction explicit: shift capacity uses the exact 2.5, and the allocator represents the partial unit as a smaller contributor, so the plan reflects the true throughput of the mixed fleet."
+  - question: "How does the engine split work across full and partial machines?"
+    answer: "EDGEBIC redistributes the partial machine's capacity across the full machines so the load balancing stays additive. It computes each full machine's base share, adds back a proportional slice of the partial unit's capacity, and then places a smaller allocation on the partial unit itself for the remainder. The result is that all the machines finish together and the total placed matches the true capacity, without the half unit being treated as a full one."
+qaQuestions:
+  - question: "My blending suite has two full mixers and a half-size mini-mixer. How do I model it and what does a 12-hour job look like?"
+    answer: "Set the work center's instance count to 2.5, meaning two full mixers plus the half unit. On an 8-hour shift the capacity is 8 times 2.5, so 20 hours. For a 12-hour job with load balancing on, the engine redistributes the mini-mixer's share across the two full mixers and then places the remainder on the mini-mixer itself. In practice the two full mixers each take about 4 hours running 08:00 to 12:00, and the mini-mixer covers the equivalent of about 4 hours of blended output, so the whole 12-hour job clears by noon. Without fractional support the engine would have rounded to three identical mixers and over-credited the mini unit's contribution, promising throughput the suite does not actually have."
+  - question: "I set my instance count to 2.1 and the tenth of a machine seems to do nothing. Is that a problem?"
+    answer: "No, that is a deliberate guard. A fractional part at or below a tenth of a machine is treated as negligible, so a 2.1-instance work center schedules like a 2-instance one. The reason is to avoid generating tiny phantom allocations of a few minutes that add complexity without meaningfully changing capacity. If the partial machine genuinely contributes usable throughput, model it with a fraction large enough to matter, such as 0.5 for a half-size unit. If it is a rounding artifact or a machine that only runs occasionally, leaving it as a small fraction that rounds away is the right outcome."
+---
+
+**A fractional machine count is how EDGEBIC by User Solutions models a work center that has full machines plus a partial one, such as two full mixers and a half-size unit, written as 2.5 instances. The engine treats the 0.5 as a machine contributing half a full machine's hours: shift capacity uses the exact 2.5, and when it allocates work it redistributes the partial unit's share across the full machines and places a smaller allocation on the partial unit itself.** It is the honest way to schedule a mixed fleet, one that neither ignores the partial machine nor pretends it is a full one.
+
+Most work centers have a whole number of identical machines. But real shops often have a fleet like two big mixers and one small backup, a fast line and a slower auxiliary, or a cell where one station runs at half the throughput of the others. A fractional count captures that without forcing you to lie in either direction.
+
+## Why the fraction is kept explicit
+
+The tempting shortcut is to round. Two and a half machines, call it three. But a half-size mixer does not do a full machine's work, and rounding up would credit the work center with more capacity than it has, promising hours the plant cannot deliver. Rounding down would waste the partial machine's real contribution.
+
+EDGEBIC keeps the fraction. The shift capacity is computed directly from the exact count: an 8-hour shift with 2.5 instances yields 20 hours, not 24 and not 16. That single number already reflects the true throughput of the mixed fleet, so every downstream estimate built on it is grounded in what the machines can actually do.
+
+## Redistributing the partial machine's capacity
+
+Computing capacity is the easy half. The subtler part is allocating a job across full and partial machines so the load balancing stays consistent and the machines finish together.
+
+When the instance count is fractional and load balancing is on, the engine treats the whole machines and the partial machine differently. It finds the base share each machine would own if capacity were divided evenly, then it takes the capacity that "belongs" to the partial machine and redistributes a proportional slice of it back onto the full machines. This makes the full machines each carry slightly more than a naive even split. Then it places a separate, smaller allocation on the partial machine itself to cover the remainder.
+
+The effect is that the math stays additive: the hours placed across all the machines add up to the true capacity, the full machines shoulder a bit more, and the partial machine contributes exactly its fractional share, no more. All the machines finish together, which is the goal of load balancing, and none is over-credited.
+
+## A worked example: 2.5 mixers on a 12-hour job
+
+Take a blending suite with two full mixers and one half-size mini-mixer, modeled as 2.5 instances, on an 8-hour day shift at full utilization. The shift capacity is 8 times 2.5, which is 20 hours. A job needs 12 hours.
+
+The engine computes a base share per machine, then redistributes the mini-mixer's capacity across the two full mixers so each full mixer's effective share rises. Working through the split, the two full mixers each take about 4 hours, running 08:00 to 12:00, and the mini-mixer covers the equivalent of about 4 hours of blended output. The 12 hours are placed across the three physical stations, and the whole job clears by noon.
+
+The important comparison is the counterfactual. Without fractional support, the engine would have rounded to three identical mixers and over-credited the mini unit's contribution, promising a throughput the suite does not have. The fractional model instead represents the half-size unit as exactly half a machine, so the plan matches the plant.
+
+## The negligible-fraction guard
+
+There is a deliberate boundary at the small end. A fractional part at or below a tenth of a machine is treated as negligible, so a work center set to 2.1 instances schedules like a 2-instance one. The reason is practical: a tiny fraction would otherwise generate a phantom allocation of a few minutes on a barely-there machine, adding complexity without meaningfully changing capacity.
+
+The guidance that follows is simple. If a partial machine genuinely contributes usable throughput, give it a fraction large enough to matter, such as 0.5 for a half-size unit. If the fraction is a rounding artifact or represents a machine that only runs occasionally, letting a small value round away is the right outcome, not a loss.
+
+## When to reach for a fraction
+
+Use a fractional instance count when a work center's machines are not uniform in speed and one of them meaningfully runs slower or smaller than the rest. A half-capacity backup mixer, a slower auxiliary line, a station that processes at a reduced rate, all of these are honestly captured as a fraction of a full machine.
+
+Do not use a fraction to model machines that are genuinely different in more than speed, with their own calendars or their own setups. That is a job for a [work center group](/blog/how-a-work-center-group-shops-a-pool-of-machines), where each machine is its own resource and the pool ties them together as interchangeable choices. A fraction is for one work center whose effective machine count is not a whole number; a group is for several distinct machines you want the scheduler to shop.
+
+Fractional allocation is one of the ways EDGEBIC splits work across instances inside [multi-shift allocation](/blog/how-multi-shift-allocation-fills-capacity), alongside pooled load balancing and one-per-day. How capacity respects real limits at all is the subject of [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the broader trade-off between splitting a job and dedicating a machine is in [load balancing versus dedicated instance scheduling](/blog/load-balancing-vs-dedicated-instance-scheduling). All of it sits inside the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+To model your own mixed fleet with a fractional count and see the throughput it really has, [bring your data to a demo](/contact-us).
+
+<Accordion title="What does a fractional instance count mean in scheduling?">
+A fractional instance count models a work center that has some full machines plus a partial one, such as two full mixers and one half-size unit, written as 2.5 instances. EDGEBIC treats the 0.5 as a machine that contributes half a full machine's hours. The shift capacity is computed as 8 hours times 2.5, and when allocating work the engine redistributes the partial unit's share so the math stays consistent rather than pretending it is a third full machine.
+</Accordion>
+
+<Accordion title="Why not just round a half machine up to a whole one?">
+Because rounding up would over-count the partial machine's output and inflate the work center's real capacity. A half-size mixer does not do a full machine's work, so treating 2.5 machines as 3 would promise hours the plant cannot deliver. EDGEBIC keeps the fraction explicit: shift capacity uses the exact 2.5, and the allocator represents the partial unit as a smaller contributor, so the plan reflects the true throughput of the mixed fleet.
+</Accordion>
+
+<Accordion title="How does the engine split work across full and partial machines?">
+EDGEBIC redistributes the partial machine's capacity across the full machines so the load balancing stays additive. It computes each full machine's base share, adds back a proportional slice of the partial unit's capacity, and then places a smaller allocation on the partial unit itself for the remainder. The result is that all the machines finish together and the total placed matches the true capacity, without the half unit being treated as a full one.
+</Accordion>

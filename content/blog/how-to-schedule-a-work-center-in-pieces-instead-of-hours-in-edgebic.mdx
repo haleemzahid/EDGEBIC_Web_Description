@@ -1,0 +1,101 @@
+---
+title: "How to Schedule a Work Center in Pieces Instead of Hours in EDGEBIC"
+description: "How to run a work center on a pieces-per-hour rate in EDGEBIC so output-limited lines like molding and bottling are never promised a shorter time than they can produce. Where each number lives, and why the rate goes on the routing step."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - pieces based scheduling
+  - pieces per hour work center
+  - capacity type pieces
+  - output rate scheduling
+  - both capacity model
+  - piece rate machine capacity
+targetPhrase: "pieces based scheduling"
+wordCount: 1370
+readingTime: 7
+faqQuestions:
+  - question: "How does EDGEBIC schedule a work center by pieces instead of hours?"
+    answer: "A pieces-based work center is measured by output rather than by clock time, and the rate it is measured against comes from the routing step that runs there. EDGEBIC divides the pieces required by the effective rate to get the hours the job needs, rather than reading a fixed time. This keeps an output-limited line, such as a bottling or molding machine, from being promised a shorter time than its physical rate allows."
+  - question: "What does the Both capacity model do?"
+    answer: "The Both model computes the job time two ways, from the hours the routing step specifies and from the pieces the line can physically produce, then keeps whichever is longer. If a step claims 2.5 hours but the line's rate needs 4.6 hours to make the pieces, Both schedules 4.6 hours. It stops the scheduler from over-promising when the routing hours are optimistic relative to the real output rate."
+  - question: "Where is the piece requirement for a job set?"
+    answer: "On the routing step, and so is the rate. The work center carries the capacity type that says it is measured in output rather than hours, which appears as a read-only column on the work center grid and is loaded through the work center import rather than typed on the edit dialog. Everything else, the pieces required and the per-piece time the rate is derived from, lives on the step. The scheduler combines them: pieces required divided by the effective rate gives the hours to book."
+qaQuestions:
+  - question: "Our bottling line is rated at 120 bottles an hour but really holds about 108. A 500-bottle job keeps getting promised too little time. How do I fix it?"
+    answer: "Plan the line at the rate it really holds rather than its nameplate. Put 108 bottles an hour on the routing step instead of 120, using the converter beside the hours value to turn that rate into the decimal hours per piece the step stores, and a 500-bottle job needs about 4.63 hours instead of 4.17. If the routing step could also be time-limited on some products, use the Both capacity model so the scheduler keeps the longer of the two answers, which here is the piece-limited 4.63 hours. The line is then never promised the optimistic time it cannot meet."
+  - question: "We set a work center to pieces but jobs schedule with infinite duration. What went wrong?"
+    answer: "The output rate is almost certainly zero. A pieces-based work center whose steps carry no rate cannot compute a finite time, because dividing the pieces required by zero has no answer, so the schedule stretches without end. Open the routing steps that run there and give each a non-zero per-piece time. Also confirm the step actually carries a piece requirement; a pieces work center with no pieces to make on the step has nothing to schedule against."
+---
+
+**To schedule a work center in pieces instead of hours in EDGEBIC by User Solutions, load it with a pieces capacity type, then put the output rate and the piece requirement on the routing step that runs there.** The scheduler divides the pieces required by the effective rate to get the job's time, so an output-limited line is never promised a shorter duration than its physical rate allows.
+
+Most work centers schedule fine by time. Pieces mode is for the machines whose real constraint is throughput, not clock hours: bottling lines, molders, packaging cells. This page is the setup for that. For when to pick pieces over hours in the first place, read [pieces-based vs hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic).
+
+## Before You Start
+
+- **The work center already exists** ([how to add a work center](/blog/how-to-add-a-work-center-in-edgebic)).
+- **You know the line's real sustained output rate** in pieces per hour, not just its nameplate rate.
+- **You know the piece requirement per job,** which lives on the routing step.
+- **You can run a work center import,** because capacity type is loaded that way rather than typed on the edit dialog.
+
+## Step 1: Load the Capacity Type as Pieces
+
+**Capacity Type** and **Unit of Measure** are read-only columns on the Work Center Management grid; there is no editor for them on the work center dialog in the current release. Both arrive through the work center import file, along with the optional batch-size columns. Import the line with its type set to pieces, and confirm the grid shows it afterwards.
+
+A third type, **Both**, is covered in Step 4 and is often the safer choice.
+
+## Step 2: Put the Real Rate on the Routing Step
+
+Piece-rate math belongs to the step, not the machine. Open the routing step that runs on this line and set its per-piece time to the rate the line genuinely sustains, not its nameplate rate.
+
+If you know the line in pieces per hour rather than hours per piece, click the small **fx** button beside the hours value to open the **Pieces and Hours Converter**, enter the rate and the period, and it computes the decimal hours per piece for you. You can also type a simple expression such as `1/108` straight into the cell.
+
+This is the step that carries the honest number. A line rated at 120 bottles an hour that holds 108 across a real shift should be entered at 108, because every job through it is sized from this value.
+
+## Step 3: Set the Piece Requirement on the Routing Step
+
+On the same step, set its requirement to pieces and enter the pieces required. The scheduler then combines the two numbers it now has: pieces required, divided by the effective rate, gives the hours to book.
+
+## Step 4: Choose Between Pieces and Both
+
+If some products on this line are time-limited rather than output-limited, load the work center as **Both** rather than pure **Pieces**. Both computes the time from the routing hours and from the piece rate, then keeps whichever is more limiting, so an optimistic routing time can never under-promise a slow line.
+
+## Step 5: Run Drive Schedule
+
+Saving master data never reschedules by itself. Run **Drive Schedule** so the new type and rate reach the plan.
+
+## What Changes When You Save
+
+| Surface | Effect |
+|---|---|
+| Job duration on this work center | Derived from pieces divided by effective rate, not a fixed time |
+| **Both** model, if chosen | Uses the longer of the hours estimate and the piece-limited estimate |
+| Existing schedules | Unchanged until you rerun |
+| Next **Drive Schedule** run | Books the piece-limited hours for jobs on this line |
+
+A worked case: a bottling line rated at 120 bottles an hour holds 108 across a real shift, so 108 is what goes on the routing step. A 500-bottle job needs 500 divided by 108, about 4.63 hours. Had the step been left at the nameplate 120, the same job would have been promised 4.17 hours. Where a step could also be time-limited, the Both model keeps whichever answer is more limiting, and the line is scheduled honestly either way.
+
+## How to Check It Worked
+
+1. Place a test job with a known piece count and run **Drive Schedule**.
+2. On the Gantt, check the job's duration matches pieces divided by the step's effective rate.
+3. For a Both work center, confirm the scheduler used the longer of the two estimates.
+4. Record actual pieces as the job runs to compare planned against real output. See [how to record a piece count](/blog/how-to-record-a-piece-count-in-edgebic).
+
+## Common Mistakes
+
+**Leaving the output rate at zero.** A pieces work center whose steps carry no rate cannot compute a finite time and schedules with unbounded duration. Always give the routing step a non-zero per-piece time.
+
+**Confusing the rate with lost time.** The step's per-piece time models a slower line, not an idle one. For time lost to breaks, changeovers, or maintenance, shape the shift hours or add a downtime event instead, covered in [how to schedule a downtime event for a machine](/blog/how-to-schedule-a-downtime-event-for-a-machine-in-edgebic).
+
+**Forgetting the piece requirement on the step.** The work center holds the capacity type; the routing step holds both the rate and the pieces to make. A pieces work center with no piece requirement on the step has nothing to schedule against.
+
+**Using pure Pieces when the routing time is the real limit.** If some jobs are time-limited and some are output-limited, the Both model protects you either way by keeping the longer estimate.
+
+## Next
+
+Pieces mode makes EDGEBIC schedule an output-limited line at its real throughput, and the Both model guards against optimistic routing times. Put the honest sustained rate on the routing step, and record real pieces to keep the plan grounded. More single-task recipes are in the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and the platform overview is at [/edgebic](/edgebic).

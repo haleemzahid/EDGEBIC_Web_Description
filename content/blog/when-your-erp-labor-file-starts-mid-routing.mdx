@@ -1,0 +1,122 @@
+---
+title: "When Your ERP Labor File Starts Mid-Routing"
+description: "An actuals row can only land on an operation that is already scheduled. When your ERP's labor history begins at step 30, you have three responses and only one of them keeps the record honest."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ERP labor file mid routing
+  - actuals import missing prior steps
+  - acknowledge missing prior actuals
+  - auto-filled actuals from plan
+  - actuals row cannot find operation
+  - go live partway through a job
+targetPhrase: "ERP labor file starting mid-routing"
+wordCount: 1535
+readingTime: 9
+faqQuestions:
+  - question: "Why do my ERP labor rows fail to find their operation?"
+    answer: "An actuals row matches on job number plus work center, and it looks for a scheduled operation. If the job has not been scheduled in EDGEBIC by User Solutions yet, there is nothing for the row to attach to and it fails, no matter how correct the file is. That is why the order of a nightly routine matters: import orders, run the scheduler, then import actuals. The other common cause is a work center identifier that does not match, which is a spelling question rather than a sequencing one."
+  - question: "What does acknowledging missing prior actuals actually do?"
+    answer: "It accepts that earlier routing steps have no recorded work yet and back-fills them from the plan. The system writes actual start equal to planned start, actual end equal to planned end, and actual hours equal to planned hours per day, and tags every day it created with an Auto-filled badge so it stays recognizable. It is an assertion that the earlier steps ran exactly as written, which is fine as a stopgap and wrong the moment an earlier step ran long."
+  - question: "How do I find the days that were filled from plan rather than recorded?"
+    answer: "They carry the Auto-filled badge in the source column of the daily grid. Blank means a person entered it; the badge means the system wrote it from the plan. Editing the value replaces the system's guess and the badge clears, so the badge doubles as a work list: anything still wearing it has never been checked against reality. Reviewing those days is the cleanup that makes a mid-routing import safe rather than merely successful."
+qaQuestions:
+  - question: "We are going live next month and jobs will be partway through their routings. Should we import the labor history from our old system for the steps already done?"
+    answer: "Import it if you have it at the day level, and think carefully if you only have totals. The value of loading real history is that the schedule then plans the remaining steps from what actually happened rather than from what was supposed to happen, and if your first two operations ran long that difference is the whole point of the exercise. The requirement is that the jobs are already scheduled in EDGEBIC, since an actuals row attaches to a scheduled operation, so the sequence at go-live is orders in, schedule, then actuals in, then reschedule. What to avoid is loading a single lump total per job, because actuals are recorded per operation per day and a lump cannot be split back out sensibly. If your old system only has totals, the honest move is usually to load nothing for the completed steps, acknowledge the missing prior actuals so the earlier operations are filled from plan, and treat the resulting dates as an approximation you have deliberately chosen rather than a record you have imported."
+  - question: "Our ERP only reports labor at the inspection and final assembly operations. Every import fires the missing-prior-steps decision. Is there a way to stop being asked?"
+    answer: "There is an option to accept it, and turning it on is reasonable in your case as long as you understand what you are buying. The option accepts that earlier routing steps may have no actuals yet and back-fills them from plan rather than failing. With it on your imports run clean, and the price is that every unreported operation gets planned values written as though they happened exactly as scheduled, each day wearing the Auto-filled badge. For a shop that genuinely does not collect labor at those machines, that is often the right trade, because the alternative is a permanently failing import that nobody reads. Two habits keep it honest. First, treat the badge as a filter rather than decoration: a periodic look at what is still auto-filled tells you which parts of your routing are being assumed rather than measured. Second, be deliberate about which operations you accept assumptions on, because a filled-from-plan setup on a bottleneck machine quietly hides the exact variance you most need to see. Reporting labor at the constraint is worth more than reporting it everywhere else combined."
+---
+
+**An ERP actuals row can only land on an operation that is already scheduled, so a labor file whose history begins at step 30 forces a decision about steps 10 and 20 before anything imports cleanly.** In EDGEBIC by User Solutions you have three responses to that, and only one of them leaves a record you can defend later.
+
+This is a narrower question than which columns a labor import needs and how it behaves on a re-run, which is covered in [importing ERP labor transactions as scheduling actuals](/blog/importing-erp-labor-transactions-as-actuals). What follows assumes that mask already works and deals with the gap at the front of the routing.
+
+## What an actuals row is looking for
+
+Three mandatory columns: the job number, the work center identifier, and the date. Optionally hours, pieces, a completion flag, and an explicit actual start.
+
+Each row finds the matching **scheduled** operation by job number plus work center, then writes the hours or pieces onto the matching day. That word does a lot of work. The row is not creating an operation; it is finding one. If the job has not been scheduled, there is nothing to find, and the row fails with no fault in the file.
+
+Which gives you the first rule of a labor feed, and it is a sequencing rule rather than a mapping one:
+
+1. Import orders
+2. Run the scheduler
+3. Import actuals
+
+Get that order wrong and a perfectly correct labor file produces a screen full of failures.
+
+## Why a labor file starts mid-routing
+
+Three causes, and they need different answers.
+
+**You went live partway through open jobs.** Your first import lands on jobs whose early operations were run under the old system. This is a one-time condition with a defined end.
+
+**Your ERP only collects labor at some operations.** Plenty of shops report at inspection and final assembly and nowhere else. This is permanent, and the answer has to be a standing policy rather than a cleanup.
+
+**Somebody skipped a step.** The floor moved on without reporting. This is a data-collection problem wearing an import problem's clothes, and fixing it in the import is treating the symptom.
+
+## The three responses
+
+### Let the rows fail
+
+The default behavior on a bad row is to mark it Failed and keep going, so a mid-routing file will import the operations it can reach and leave the rest in the log. Nothing is written that is not true.
+
+That is the honest answer and a poor operating position, because a routine that reports failures every night is a routine people stop reading. It is fine as a diagnosis and bad as a steady state.
+
+### Log the missing steps properly
+
+The best answer where it is available. Somebody records what actually happened on the earlier operations, whether from the old system, a paper traveler, or a supervisor's memory of the week.
+
+It costs the most and it is the only option that produces a record rather than an assumption. For a go-live it is usually worth doing once, because the dates that come out of it are the baseline everything afterward is measured against.
+
+### Acknowledge the missing prior actuals
+
+There is a mask option that accepts earlier routing steps having no actuals yet and back-fills them from the plan. Turn it on and the import stops failing.
+
+What gets written is specific: actual start equal to planned start, actual end equal to planned end, and actual hours equal to planned hours per day. Every day the system creates that way carries an **Auto-filled** badge so it stays recognizable afterward.
+
+Read that as what it is. It is not a record of the earlier steps. It is an assertion that they ran exactly as scheduled, which is a reasonable stopgap and is wrong the moment an earlier operation ran long. Since the whole reason to feed actuals into a scheduler is to plan the remaining work from reality, filling the front of the routing with the plan quietly removes the difference you were trying to capture.
+
+## The badge is a work list, not a label
+
+The one property that makes the third option survivable: the badge clears when you edit the value. A day filled from plan wears the badge; the moment a person types a real number over it, the day becomes hand-entered and the badge disappears.
+
+So it doubles as a queue. Anything still wearing the badge has never been checked against reality. A periodic filter on it tells you exactly which parts of your routing are being assumed rather than measured, and that list is more useful than most variance reports because it names the blind spots directly. The badge itself is covered in [the auto-filled actuals badge explained](/blog/the-auto-filled-actuals-badge-explained).
+
+## Choosing, by cause
+
+| Cause | Response |
+|---|---|
+| Go-live with jobs in flight | Log the earlier steps properly, once, from the old system |
+| ERP reports labor at only some operations | Turn the acknowledge option on as standing policy, and review the badge periodically |
+| Somebody skipped reporting | Fix the reporting; do not paper over it in the mask |
+
+The middle row is where most shops end up, and it is defensible as long as the choice is explicit. What is not defensible is arriving there by accident because somebody ticked an option to make the failures stop.
+
+One refinement is worth more than the rest: be deliberate about which operations you allow to be assumed. A filled-from-plan setup on a general-purpose machine costs you very little. The same on your constraint hides the exact variance the schedule most depends on. If you can only collect labor at a few operations, collect it at the bottleneck first.
+
+## The go-live case specifically
+
+Migrations hit this hardest, because every open job is mid-routing by definition on day one. The sequence that works is the same three steps as any night, run once and deliberately: load the open orders, schedule them so the operations exist, load whatever real history you have, then reschedule so the remaining work plans from actual finishes rather than planned ones.
+
+The detail that decides whether it is worth the effort is granularity. Actuals are recorded per operation per day, so day-level history imports cleanly and a single lump total per job does not, because there is no sensible way to split it back out. If your old system only holds totals, choosing to accept the plan-based fill is a legitimate decision, and it is better made openly than discovered later. The wider sequence is in [migrating open jobs and their actuals to EDGEBIC](/blog/migrating-open-jobs-and-actuals-to-edgebic).
+
+## The takeaway
+
+An actuals row attaches to a scheduled operation, so orders and scheduling have to come before labor in every routine, and a labor file that starts mid-routing forces a decision about the steps in front of it. Letting rows fail is honest but unsustainable; logging the earlier steps properly is the only true record; acknowledging the missing prior actuals fills them from plan and tags every day with a badge that clears the moment somebody enters reality. Pick by cause rather than by convenience, treat the badge as a review queue, and make sure your bottleneck is never the operation you assumed. See the engine on the [EDGEBIC product overview](/edgebic), the shared import layer on the [ERP integration architecture](/edgebic-erp-integration), and bring a week of labor transactions to [a working session](/contact-us) to see how far into the routing they actually reach.
+
+<Accordion title="Why do my ERP labor rows fail to find their operation?">
+An actuals row matches on job number plus work center, and it looks for a scheduled operation. If the job has not been scheduled in EDGEBIC yet, there is nothing for the row to attach to and it fails, no matter how correct the file is. That is why the order of a nightly routine matters: import orders, run the scheduler, then import actuals. The other common cause is a work center identifier that does not match, which is a spelling question rather than a sequencing one.
+</Accordion>
+
+<Accordion title="What does acknowledging missing prior actuals actually do?">
+It accepts that earlier routing steps have no recorded work yet and back-fills them from the plan. The system writes actual start equal to planned start, actual end equal to planned end, and actual hours equal to planned hours per day, and tags every day it created with an Auto-filled badge so it stays recognizable. It is an assertion that the earlier steps ran exactly as written, which is fine as a stopgap and wrong the moment an earlier step ran long.
+</Accordion>
+
+<Accordion title="How do I find the days that were filled from plan rather than recorded?">
+They carry the Auto-filled badge in the source column of the daily grid. Blank means a person entered it; the badge means the system wrote it from the plan. Editing the value replaces the system's guess and the badge clears, so the badge doubles as a work list: anything still wearing it has never been checked against reality. Reviewing those days is the cleanup that makes a mid-routing import safe rather than merely successful.
+</Accordion>

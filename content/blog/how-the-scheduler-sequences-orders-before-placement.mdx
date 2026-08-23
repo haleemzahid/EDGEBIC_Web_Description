@@ -1,0 +1,92 @@
+---
+title: "How the Scheduler Sequences Orders Before Placement"
+description: "Before EDGEBIC places a single operation, it decides the order in which whole jobs get first claim on capacity. Here is the global sort, why it is deterministic, and how it differs from dispatch rules at the machine."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - order sequencing
+  - job priority
+  - scheduling order
+  - deterministic scheduling
+  - finite capacity scheduling
+  - dispatch rules
+targetPhrase: "order sequencing before placement"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "In what order does a scheduler place jobs onto capacity?"
+    answer: "Before placing any operation, EDGEBIC sorts the whole set of orders once and processes them in that order. The sort is priority first where a job priority is set, then start date, then due date as the tie-break. Higher-priority jobs claim capacity first; among equal priorities the job that starts earliest goes first; and if those tie, the earlier due date wins. Because the order is fixed before placement begins, capacity is claimed in a defined sequence, not first-come or at random."
+  - question: "Why does the order jobs are placed in matter so much?"
+    answer: "Because capacity is finite. Whichever job is placed first gets first claim on the best slots, and later jobs fit around it. On a lightly loaded shop the order barely shows, but on a constrained one the sequence decides which jobs get the early capacity and which wait. Sorting deliberately, rather than placing jobs in whatever order they happen to be entered, is what makes the schedule reflect your priorities instead of your data-entry sequence."
+  - question: "Is placement order the same as a dispatch rule like earliest due date?"
+    answer: "Not quite. The placement order is a global sort over whole jobs, applied once before any operation is scheduled, deciding who claims capacity first. A dispatch rule such as earliest due date or shortest processing time decides which waiting job a specific machine picks up next during execution. They are related but operate at different levels: one orders the whole run, the other orders a queue at one work center."
+qaQuestions:
+  - question: "We entered two jobs and the second one we typed grabbed the early machine slot instead of the first. Is the scheduler ignoring entry order?"
+    answer: "Yes, and it should. Entry order is not a scheduling input. EDGEBIC sorts every order before it places anything, so the job that claims the early slot is the one that ranks higher on the sort: priority first, then start date, then due date. If the second job you typed has a higher priority, an earlier start, or an earlier due date, it correctly went first regardless of when you keyed it in. If you want the other job first, raise its priority or adjust its dates, which are the levers the sort actually reads."
+  - question: "Will running the schedule twice on the same data ever shuffle which job wins a contested slot?"
+    answer: "No. The sort is fully deterministic: priority, then start date, then due date, with no random tie-breaking. Identical inputs produce the identical order, so the same job wins the same slot every run. If two runs disagree, the data changed between them, a due date moved, a priority was edited, an actual was logged. That reproducibility is what lets you trust the schedule and audit any placement by walking the same sort the engine walked."
+---
+
+**Before EDGEBIC by User Solutions places a single operation, it sorts the entire set of orders once and processes them in that order. The sort is priority first, then start date, then due date, so higher-priority jobs claim capacity first, earlier-starting jobs break priority ties, and earlier due dates break the rest.** This global sequence is decided before any placement happens, which is why capacity is claimed in a defined order rather than in whatever sequence the orders were entered, and why the same data always produces the same schedule.
+
+Placing operations is only half of scheduling. The other half, which happens first, is deciding which job gets to place its operations before the others. On finite capacity, that decision has teeth: the first job to reach a work center claims the best slots, and everyone else fits around it.
+
+## Why order is decided up front
+
+Scheduling one job at a time against finite capacity means order is destiny for contested resources. If two jobs both want the same machine on the same day and there is only room for one, whichever the engine processes first gets the slot and the other waits. So the sequence in which jobs are considered is not a detail, it is a decision that shapes the whole plan.
+
+EDGEBIC makes that decision explicitly and once, before placement begins, by sorting the full order set. Doing it up front, rather than reacting to whatever order the orders arrived in, is what turns "we scheduled the jobs" into "we scheduled the jobs in priority order." Entry sequence, database order, and import order are all irrelevant. Only the sort keys matter.
+
+## The sort keys, in order
+
+The sort applies three keys in sequence, each breaking ties in the one before:
+
+1. **Priority.** A job's priority is the first lever. Higher-priority work is considered first and claims capacity ahead of lower-priority work.
+2. **Start date.** Among jobs of equal priority, the one that can start earliest goes first. A job that is ready sooner should not wait behind one that cannot begin yet.
+3. **Due date.** If priority and start both tie, the earlier due date wins, because the more urgent commitment deserves the earlier capacity.
+
+Each key is a tie-break for the previous one, so the comparison is unambiguous. Two jobs are only truly equal if all three match, and in that case their relative order does not affect a correct outcome. There is no random element anywhere in the chain.
+
+## Deterministic by design
+
+Because the sort has no coin flips, it is fully reproducible. Run the same data twice and the order is identical, so the same job wins the same contested slot every time. This is not a nicety; it is what makes a schedule auditable. When a planner asks "why did that job get the early machine?", the answer is recoverable by comparing the two jobs on priority, then start, then due date. And when two runs disagree, the difference always traces to changed data, a moved due date, an edited priority, a logged actual, never to nondeterminism in the engine.
+
+Reproducibility is also what lets EDGEBIC support "what-if" exploration honestly. The multi-run optimizer, where a site uses it, tries different global orderings through a sanctioned sequencing hook and scores each resulting schedule, keeping the best while guaranteeing it is never worse than the baseline. That only works because a given order deterministically produces a given schedule. The order is the knob; the schedule is the reproducible result of turning it.
+
+## A worked example: three jobs, one tight machine
+
+Take three jobs that all need the same single-machine work center early in the week, which only has room for one of them on Monday.
+
+| Job | Priority | Start date | Due date |
+|---|---|---|---|
+| A | Normal | Mon | Fri |
+| B | High | Tue | Thu |
+| C | Normal | Mon | Wed |
+
+The sort runs priority first: B is High, so B is considered first and claims Monday's slot even though it cannot start until Tuesday, because priority outranks start date. Between A and C, both Normal and both starting Monday, the due date breaks the tie: C is due Wednesday, A is due Friday, so C goes before A. The final processing order is B, C, A.
+
+Now notice what changes if you drop B's priority to Normal. The sort becomes priority-tied across all three, so start date leads: A and C both start Monday and beat B which starts Tuesday, then C's earlier due date beats A. The order becomes C, A, B. Same three jobs, one field changed, and the whole placement sequence shifts, exactly as it should, because you changed a lever the sort reads.
+
+## How this differs from dispatch at the machine
+
+It is easy to confuse this global sort with a dispatch rule, but they operate at different levels. The global sort orders whole jobs, once, before any operation is placed, deciding who claims capacity first across the entire run. A dispatch rule, by contrast, decides which waiting job a specific work center picks up next during execution, and there are several to choose from: [earliest due date versus shortest processing time](/blog/earliest-due-date-vs-shortest-processing-time), [critical ratio](/blog/critical-ratio-scheduling-explained), and [slack-based sequencing](/blog/slack-based-job-sequencing) are all machine-level dispatch policies. The global sort is the strategy for the whole plan; dispatch is the tactic at one queue. Both matter, and they compose: the global order decides who gets first crack, and dispatch behavior at each center handles the local queue.
+
+The practical takeaway is that if a job is landing later than you want, the fix is usually in the sort keys. Raise its priority, or correct its start or due date, and it moves up the global order and claims capacity sooner. Reordering entry, renaming, or reimporting does nothing, because none of those are sort keys.
+
+For where sequencing sits in the wider engine, the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows how the global order feeds the [multi-shift allocator](/blog/how-multi-shift-allocation-fills-capacity) that places each job's operations, and [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) explains why order matters so much once capacity is finite. To see your own priorities drive the placement order, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="In what order does a scheduler place jobs onto capacity?">
+Before placing any operation, EDGEBIC sorts the whole set of orders once and processes them in that order. The sort is priority first where a job priority is set, then start date, then due date as the tie-break. Higher-priority jobs claim capacity first; among equal priorities the job that starts earliest goes first; and if those tie, the earlier due date wins. Because the order is fixed before placement begins, capacity is claimed in a defined sequence, not first-come or at random.
+</Accordion>
+
+<Accordion title="Why does the order jobs are placed in matter so much?">
+Because capacity is finite. Whichever job is placed first gets first claim on the best slots, and later jobs fit around it. On a lightly loaded shop the order barely shows, but on a constrained one the sequence decides which jobs get the early capacity and which wait. Sorting deliberately, rather than placing jobs in whatever order they happen to be entered, is what makes the schedule reflect your priorities instead of your data-entry sequence.
+</Accordion>
+
+<Accordion title="Is placement order the same as a dispatch rule like earliest due date?">
+Not quite. The placement order is a global sort over whole jobs, applied once before any operation is scheduled, deciding who claims capacity first. A dispatch rule such as earliest due date or shortest processing time decides which waiting job a specific machine picks up next during execution. They are related but operate at different levels: one orders the whole run, the other orders a queue at one work center.
+</Accordion>

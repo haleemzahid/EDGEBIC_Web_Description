@@ -1,0 +1,147 @@
+---
+title: "Nine Work Center Configuration Mistakes and What They Look Like"
+description: "Work center configuration mistakes are quiet: wrong instance counts, mixed machine pools, per-machine overrides, stale calendars. The symptom and fix for each."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - work center configuration mistakes
+  - scheduling master data errors
+  - wrong instance count capacity
+  - capacity override mistake
+  - custom shift calendar problem
+  - bottleneck flag misuse
+targetPhrase: "work center configuration mistakes"
+wordCount: 1700
+readingTime: 9
+faqQuestions:
+  - question: "What is the most common work center configuration mistake?"
+    answer: "Putting unequal machines into one instance pool. Instances are assumed identical, so a work center with two fast machines and two slow ones schedules all four at the same speed and produces a plan no individual machine can hold. The symptom is chronic, mild lateness on one subset of jobs with no obvious cause. The fix is separate work centers pooled in a work center group, each keeping its own speed and calendar."
+  - question: "Why does a capacity override produce a third of the capacity I entered?"
+    answer: "Because the per-machine figure was entered instead of the day total. An override is used exactly as typed and is never multiplied by the instance count. On a three-instance work center where every machine will run four hours, the entry is 12. Enter 4 and the day offers four hours across all three machines, which quietly pushes work into the following days."
+  - question: "Why did a global shift change not reach one of my machines?"
+    answer: "That work center runs a custom calendar. Once Use Global Shifts is unticked, the machine follows only its own shift list and stops tracking plant-wide edits, which the amber Custom badge on the grid indicates. Either edit that work center's own Associated Shifts tab, or re-tick Use Global Shifts to rejoin the plant calendar."
+  - question: "What happens if you mark several work centers as bottlenecks?"
+    answer: "Every job whose routing touches any of them gets anchor scheduling, which plans the flagged operation first and works backward to feed it. Applied to a genuine constraint, that is the most valuable setting available. Applied to three or four resources at once, jobs get pulled toward multiple anchors and the plan reads as erratic. Theory of Constraints practice is one drum, deliberately chosen, reviewed when the product mix changes."
+  - question: "Why did nothing change after I fixed a work center setting?"
+    answer: "Saving master data never reschedules. Instance counts, calendars, cost rates, and flags all take effect at the next scheduling run, and the bars on screen keep their existing dates until then. The exception is a per-day capacity override, which saves instantly and appears on the Resource Calendar, but even that only moves work when the schedule is next run."
+qaQuestions:
+  - question: "Our capacity report shows a work center at 140% utilization and the supervisor swears the machines are not running that hard. Is the report broken?"
+    answer: "Check the instance count first. A work center with three physical machines entered as one instance offers a third of the real capacity, so a normal week of work reads as a severe overload, and every job routed through it slides for no reason the floor can see. The same arithmetic runs the other way: three instances entered where two exist produces a plan the shop can never hit and lateness nobody can explain. The instance count is a straight multiplier on both capacity and utilization, so it is always the first number to verify when a percentage looks impossible."
+  - question: "We deleted an old machine from the work center list and now reports are complaining. What is the right way to retire a machine?"
+    answer: "Deactivate rather than delete. Setting a work center unavailable keeps its history intact while excluding it from new scheduling, so existing schedules and reports still resolve the name. Deletion is blocked while any active routing, schedule, or capacity override still references the work center, and that guard exists precisely because bypassing it orphans routing references and breaks scheduling for every product that used the machine. If a machine is coming back after a rebuild, an effective date or a run of zero-hour per-day overrides is cleaner still."
+---
+
+**Most work center configuration mistakes do not throw an error: they produce a plan that looks completely reasonable and is quietly wrong, because capacity is a multiplication chain and a wrong factor scales silently through every date downstream.** The nine below are the ones that come up over and over in real implementations, each with the symptom you would actually notice first.
+
+[EDGEBIC by User Solutions](/edgebic) will tell you loudly when a work center has no instances or no shift. It cannot tell you that your three mills are not actually identical. This article covers the quiet class. For the settings themselves, start with [work centers explained](/blog/edgebic-work-centers-explained) and [the setup guide](/blog/how-to-set-up-work-centers-in-edgebic).
+
+## 1. Unequal Machines in One Instance Pool
+
+**The mistake.** Four mills, two of them ten years older and roughly 30% slower, entered as one work center with **No.Instances** = 4.
+
+**Why it is wrong.** Instances are assumed identical: same speed, same shifts, same tooling. The engine load-balances across them and books every machine at the same rate. The plan is an average that no individual machine can hold.
+
+**The symptom.** Chronic mild lateness on whichever jobs happen to land on the old machines, with no pattern anyone can name. Utilization looks healthy. On-time delivery does not.
+
+**The fix.** Separate work centers, one per speed class, pooled in a [work center group](/blog/what-is-a-work-center-group-machine-pool). The group carries a per-member speed factor, so a 4-hour operation is booked as 4 hours on the new mills and 5.2 hours on the old ones, from one routing step.
+
+## 2. The Instance Count Does Not Match the Floor
+
+**The mistake.** Three physical machines entered as one instance, or one machine entered as three.
+
+**Why it is wrong.** The instance count is a straight multiplier on capacity. Everything downstream (available hours, utilization percentages, promise dates) scales with it.
+
+**The symptom.** Impossible utilization numbers. Under-counted instances show a normal week as a 140% overload with jobs sliding for no visible reason. Over-counted instances show comfortable utilization and a plant that misses dates constantly.
+
+**The fix.** Read the **Instances** column against the machines on the floor. This is the first check whenever a capacity percentage looks physically impossible, and the detail is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## 3. Per-Machine Hours in a Capacity Override
+
+**The mistake.** A three-instance work center has a PM window where each machine loses 4 hours. The planner enters **Capacity (h)** = 4.
+
+**Why it is wrong.** An override is used exactly as typed. The planner is stating the effective total for the day across every machine, so the engine never re-multiplies it by the instance count. The correct entry is 12.
+
+**The symptom.** The day offers a third of the intended hours. Work quietly pushes into the following days, and the Resource Calendar bar looks far too short for a machine that is mostly running.
+
+**The fix.** Always enter machines times hours. The dialog's own footer says the value is honored as-is, and the **Overridden** tick plus the **Reason** field are there so the audit trail can explain the number later.
+
+## 4. A Stale Custom Calendar
+
+**The mistake.** One work center was given its own shifts a year ago for a genuine reason. The plant then changed its day shift, and nobody revisited the exception.
+
+**Why it is wrong.** A work center with **Use Global Shifts** unticked follows only its own shift list. Global edits do not reach it, by design.
+
+**The symptom.** One machine's bars sit in the wrong part of the day, or the plant gains two hours a day everywhere except one station. The amber **Custom** badge in the **Shift Calendar** column is the tell.
+
+**The fix.** Either update that work center's own **Associated Shifts** tab, or re-tick **Use Global Shifts** to rejoin the plant calendar. As a standard, prefer global shifts and keep custom calendars to genuine exceptions: every one is another place to update. The calendar side of this is covered in [shift and calendar mistakes](/blog/shift-and-calendar-mistakes-edgebic).
+
+## 5. Scattering the Bottleneck Flag
+
+**The mistake.** Four work centers marked **Is Bottleneck** because all four are busy.
+
+**Why it is wrong.** The flag does not mean "busy". It switches the scheduler into anchor scheduling for every job whose routing touches that work center: the flagged operation is planned first at its target time, upstream steps are planned backward to feed it just in time, and downstream steps run forward. With several anchors in one routing, jobs get pulled toward competing targets.
+
+**The symptom.** Jobs that look scheduled backward for no apparent reason, and start dates that jump around between runs.
+
+**The fix.** One constraint per plant, or per routing family, chosen deliberately and reviewed when the mix changes. Identify the constraint, exploit it, subordinate everything else to it. If the real drum is unclear, work through [production bottleneck identification](/blog/production-bottleneck-identification) before setting anything.
+
+## 6. One Per Day on the Wrong Resource
+
+**The mistake.** **One Per Day** switched on for a general-purpose machining center because "we like one job at a time".
+
+**Why it is wrong.** The flag deliberately wastes leftover hours. Each instance takes one job per calendar day and holds it even if the job uses two hours of an eight-hour shift. That is correct for a furnace load or a paint color, where the changeover locks the chamber. It is pure loss on a mill.
+
+**The symptom.** Jobs sliding to tomorrow while the day still has clock time free, and a capacity report that shows the machine barely loaded while the queue grows.
+
+**The fix.** Reserve the flag for physics: furnace loads, paint colors, sterile campaigns. And note that it does nothing at all on a single-instance work center. The behavior is walked through in [how EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day).
+
+## 7. Overriding One Shift and Expecting the Whole Day to Change
+
+**The mistake.** A work center runs day and night shifts. The planner overrides Saturday capacity on the day shift only and expects 12 hours of weekend capacity.
+
+**Why it is wrong.** Overrides are keyed to a work center, a shift, and a date. Each shift is a separate cell.
+
+**The symptom.** Half the expected weekend capacity, and a job that runs Saturday morning then stops.
+
+**The fix.** Override each shift you intend to run. Related trap: a zero-hour override on a day the shift does not run is a no-op, because an override adjusts a slot that exists rather than creating one. Making a genuinely non-working day schedulable needs a date-range override or weekend production enabled.
+
+## 8. Fixing the Data and Not Rerunning the Schedule
+
+**The mistake.** Correcting an instance count, a calendar, or a cost rate, then looking at the Gantt and concluding nothing happened.
+
+**Why it is wrong.** Saving master data never reschedules. The plan on screen was computed against the old configuration and keeps its dates until the next run.
+
+**The symptom.** "I fixed it and it did not change." Also its more dangerous cousin: communicating dates from a plan that predates the fix.
+
+**The fix.** Run Drive Schedule and review the result before you promise anything. Completed work is never moved by a reschedule, so rerunning is safe on jobs already in progress, which is the guarantee that makes frequent reruns practical. See [the scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+## 9. Continuous-Process Ticked on a Discrete Machine
+
+**The mistake.** The **Continuous-Process** checkbox switched on for a work center that makes countable parts, usually because somebody read it as "runs continuously" rather than "output is not discrete".
+
+**Why it is wrong.** The checkbox selects which overlap model applies to routing steps on this work center. Discrete work centers overlap by piece-count transfer batches: a downstream step starts once a defined number of pieces exists. Continuous work centers use a time-based start-to-start lag instead, and any transfer batch configured on a step running here is ignored.
+
+**The symptom.** Transfer batch sizes carefully set on the routing and no overlap appearing in the plan, or overlap appearing at times nobody configured. A configuration audit flags the combination of a transfer batch on a continuous-process work center precisely because the two settings contradict each other.
+
+**The fix.** Tick it only where the output genuinely is not discrete pieces: chemical reactors, paint lines, food, pharma. It is one setting per work center with no per-step override, so it applies to every routing step that runs there. The discrete model is explained in [what is a transfer batch](/blog/what-is-a-transfer-batch).
+
+## Two Honorable Mentions
+
+**Cost per Hour left at zero.** Nothing breaks. Quotes simply price the labor at nothing, and margins read beautifully until someone checks. Keep the rate current; new routing steps inherit it at creation, so a late correction does not reach the steps already built.
+
+**Deleting instead of deactivating.** Deletion is blocked while any active routing, schedule, or override references the work center, and that guard is protecting you. Retire machines by setting them unavailable, or by setting an effective date if they are coming back after a rebuild. History stays resolvable and reports keep working.
+
+## The Pattern Behind All Nine
+
+Every mistake here has the same shape: a number or a flag that describes the plant slightly inaccurately, producing a schedule that is internally consistent and externally wrong. That is why the first hour of any implementation goes into master data, and why the plants whose schedules hold are the ones whose work center definitions are honest. GE Railcar moved from 30% to 90% on-time delivery on the same machines with User Solutions software. The equipment did not change. The description of it did.
+
+Two habits catch most of this before it reaches the floor:
+
+1. Read the work center grid against the actual plant once a quarter. Instances, shift calendar badge, and the two flags are four columns and five minutes.
+2. When a number looks impossible, verify the multiplier chain in order (instances, then shift hours, then any override) rather than arguing with the report.
+
+If a machine has gone completely quiet, [the zero-capacity checklist](/blog/capacity-shows-zero-for-a-work-center-edgebic) is the faster path. If one is booked past its ceiling, [work center overload causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers the three ways that happens. Bring your current work center export to a demo and we will read it with you.

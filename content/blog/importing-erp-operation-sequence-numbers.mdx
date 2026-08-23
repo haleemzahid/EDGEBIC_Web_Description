@@ -1,0 +1,121 @@
+---
+title: "Importing Your ERP's Operation Sequence Numbers Into EDGEBIC"
+description: "How EDGEBIC uses ERP operation sequence numbers to wire a routing chain on import, and how to handle duplicates, alphanumeric codes, sub-operations, and renumbered steps."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ERP operation sequence numbers
+  - routing sequence number import
+  - operation sequence mapping scheduling
+  - duplicate sequence numbers routing
+  - EDGEBIC routing chain import
+  - ERP routing step order
+targetPhrase: "ERP operation sequence numbers"
+wordCount: 1580
+readingTime: 8
+faqQuestions:
+  - question: "What does EDGEBIC do with an ERP's operation sequence number?"
+    answer: "The sequence number decides the order of a product's routing steps and therefore how the chain is wired. The routing import runs in two passes: the first reads and validates every row, the second groups the rows by end product, sorts them by sequence number, writes them, and links step 10 to 20, 20 to 30, and the terminal step to the finished product. Without a usable sequence number the sort has nothing to order by."
+  - question: "Do my ERP's sequence numbers have to match EDGEBIC's exactly?"
+    answer: "No. Only the relative order matters, because the import sorts rather than looks up specific values. Sequences of 1, 2, 3 work as well as 10, 20, 30. Gaps of ten are still the better convention, because an engineering change that inserts an operation between 20 and 30 becomes 25 and nothing downstream renumbers, which keeps your traveler numbers and ERP operation numbers aligned."
+  - question: "What happens if two operations share the same sequence number?"
+    answer: "The sort cannot decide which comes first, and the usual symptom is a step that appears disconnected in the graphical routing designer rather than a failed import. Duplicates most often come from two subassemblies exported into one product's rows, or from an ERP that restarts numbering per operation type. Fix the numbering in the export, re-import the routing, and confirm the chain walks end to end."
+qaQuestions:
+  - question: "Our ERP stores operation numbers as text like OP010 and OP020, and our export carries them that way. Will the routing chain still build correctly?"
+    answer: "Sort order is the thing at risk, so map a genuinely numeric column rather than the text code. Most ERPs that display OP010 also hold a numeric operation sequence behind it, and that is the column to drag onto the sequence field. If the export truly only carries the text form, add one derived column in the report or the saved query that strips the prefix and leading zeros, so OP010 becomes 10. Keep the text code too if your travelers show it: map it into the step name so operators still see OP010 on the dispatch list while the scheduler sorts on the number. The two jobs are separate, and one column does not have to do both."
+  - question: "Engineering renumbered every operation on one part from 10, 20, 30 to 100, 200, 300. Do we have to do anything special on the next import?"
+    answer: "No, and this is the case the wipe-and-recreate behavior is built for. A routing import replaces that product's step list once per run, so the new numbering fully replaces the old with no merge and no orphan steps left at the previous numbers. Export the whole product, not just the changed rows, because the wipe is per product per run. After the import, open the part in the routing designer and count the steps, then confirm the terminal step still ends at the finished product. Jobs already scheduled keep the frozen routing snapshot they were planned with, so nothing on the floor moves because of the renumber."
+---
+
+**In an EDGEBIC routing import, the operation sequence number is the field that turns a flat list of rows into a connected routing: the second pass groups a product's rows, sorts them by sequence, writes them, and wires step 10 to 20, 20 to 30, and the terminal step to the finished product.** Get the sequence column right and the chain builds itself. Get it wrong and the import still succeeds, but the routing designer shows steps floating loose or running in an order the shop does not recognize.
+
+EDGEBIC by User Solutions has moved routing data out of ERPs this way since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, sequence numbering is the single most common reason a first routing import looks almost right. This post covers what the field does, the shapes ERP exports arrive in, and how to handle each one.
+
+## Why the sequence number carries so much weight
+
+Routings are the hardest data to move between systems, because operations reference each other. Step 10 feeds step 20, which feeds step 30. A row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+That is why the routing import runs in **two passes**:
+
+| Pass | What it does |
+|---|---|
+| One | Reads and validates every row, auto-creates any work center or product the file names that does not exist, buffers the steps |
+| Two | Groups the buffered rows by end product, sorts them by sequence number, writes them, then wires the chain |
+
+Everything about the shape of the finished routing comes out of that sort. The general concept is covered in [what is a sequence number in a routing](/blog/what-is-a-sequence-number-in-a-routing); this post is the import-side version.
+
+## Only the order matters, not the values
+
+A useful thing to know before you start mapping: the import sorts, it does not look up specific numbers. So 1, 2, 3 builds exactly the same chain as 10, 20, 30 or 100, 200, 300. Your ERP's convention is fine as it stands, whatever it is, as long as it produces an unambiguous ascending order within each product.
+
+Gaps of ten are still worth adopting where you have the choice, for a reason that has nothing to do with the import. When engineering inserts an operation between 20 and 30, it becomes 25 and nothing else renumbers. Renumber every downstream step instead and the change looks far larger than it is, and any cross-reference between an operation number on a traveler and the same number in the ERP quietly breaks. The [engineering change re-import guide](/blog/handling-engineering-changes-via-erp-re-import) covers the wider change workflow.
+
+## Shape 1: a clean numeric sequence per product
+
+The easy case. One column, integers, restarting at 10 for each end product. Drag it onto the sequence field and you are done. The [routing versus operations mapping guide](/blog/mapping-routings-vs-operations-from-your-erp) lists the rest of the columns that travel with it.
+
+Verify once rather than assuming: open one representative product in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour) and confirm every step is connected, the step count matches the ERP, and the last step ends at the finished product rather than at a component.
+
+## Shape 2: an alphanumeric operation code
+
+Plenty of ERPs display operation identifiers as text: `OP010`, `A10`, `010-MILL`. Sorting text and sorting numbers are different operations, so map a numeric column instead of the code.
+
+Two practical routes:
+
+- **Find the numeric column behind the display code.** Most systems that show `OP010` hold a numeric sequence underneath it, and that is the column to map.
+- **Derive one in the export.** Add a column in the saved report or query that strips the prefix and leading zeros, so `OP010` becomes 10.
+
+Keep the text code visible where your shop uses it. Map it into the step name, so the dispatch list still shows `OP010` while the scheduler sorts on the number. One column does not have to do both jobs.
+
+## Shape 3: duplicate sequence numbers
+
+Duplicates do not usually fail the import. They produce a routing that looks nearly right and has one step sitting on its own, because the sort could not decide which of the two came first.
+
+The two common causes:
+
+- **Two products merged into one.** A subassembly's steps exported alongside the parent's rows under the parent's end product, so two different tens land in one list. Importing subassemblies as their own products is covered in [importing subassembly routings from your ERP](/blog/importing-subassembly-routings-from-your-erp).
+- **Numbering that restarts per operation type or per department.** Some ERPs number machining 10, 20, 30 and inspection 10, 20 independently. Concatenate a department rank into the sequence in the export, or renumber the export so the whole product runs one ascending series.
+
+Duplicates are worth catching before the first schedule, which is why walking one routing end to end is on the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+## Shape 4: sub-operations, like 10-1 and 10-2
+
+Some ERPs model a main operation with sub-operations underneath it: `10-1` sets up, `10-2` runs, `10-3` inspects. If those sub-steps genuinely happen on different work centers, they are real routing steps and each needs its own place in the ascending series. Number them 10, 11, 12 or 10, 20, 30 in the export and treat them as ordinary operations. The reasoning for when to split and when to leave a coarse operation alone is in [splitting one ERP operation into multiple steps](/blog/splitting-one-erp-operation-into-edgebic-steps).
+
+If the sub-operations all run on the same machine back to back with no real handoff, collapse them into one step instead. Routing granularity should match where capacity and time actually change, not how the ERP records cost.
+
+## Shape 5: a sequence that does not match reality
+
+Occasionally the ERP's numbering is a costing artifact rather than a description of flow: inspection numbered last because it is charged last, when it physically happens between two machining steps. The scheduler will believe whatever the numbers say, and the resulting plan will look plausible while sequencing the shop wrongly.
+
+The fix is a conversation, not a mask setting. Walk one routing with the person who runs the part and correct the export where the order is genuinely different. This is one of the few import problems that no configuration solves, and it is worth finding in week one rather than month three.
+
+## Keep every step of a product in one file
+
+This rule protects your sequence work. A routing import wipes and recreates a product's steps **once per run**, which is what makes re-imports idempotent. Import five of a product's ten steps in one run and five in another, and the second run's wipe deletes the first run's five. There is no error, because both runs did exactly what they were told.
+
+Filtering an export down to only the changed **products** is fine and often sensible. Filtering down to only the changed **steps** is not.
+
+## What good looks like after the import
+
+Once the sequence column is right, the rest of the model follows: the chain renders as one connected flow, downstream steps queue behind their predecessors, and the finite capacity engine can apply queue time, transfer batches, and sequence-dependent setup at the correct points in the flow. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows where the routing import sits among the other masks.
+
+## Bring one routing export
+
+Export the routing for a part with an awkward numbering scheme and [bring it to a demo](/contact-us). Mapping the sequence column live and watching the chain build in the routing designer takes a few minutes, and it usually settles a numbering question the shop has argued about for years.
+
+<Accordion title="What does EDGEBIC do with an ERP's operation sequence number?">
+The sequence number decides the order of a product's routing steps and therefore how the chain is wired. The routing import runs in two passes: the first reads and validates every row, the second groups the rows by end product, sorts them by sequence number, writes them, and links step 10 to 20, 20 to 30, and the terminal step to the finished product. Without a usable sequence number the sort has nothing to order by.
+</Accordion>
+
+<Accordion title="Do my ERP's sequence numbers have to match EDGEBIC's exactly?">
+No. Only the relative order matters, because the import sorts rather than looks up specific values. Sequences of 1, 2, 3 work as well as 10, 20, 30. Gaps of ten are still the better convention, because an engineering change that inserts an operation between 20 and 30 becomes 25 and nothing downstream renumbers, which keeps your traveler numbers and ERP operation numbers aligned.
+</Accordion>
+
+<Accordion title="What happens if two operations share the same sequence number?">
+The sort cannot decide which comes first, and the usual symptom is a step that appears disconnected in the graphical routing designer rather than a failed import. Duplicates most often come from two subassemblies exported into one product's rows, or from an ERP that restarts numbering per operation type. Fix the numbering in the export, re-import the routing, and confirm the chain walks end to end.
+</Accordion>

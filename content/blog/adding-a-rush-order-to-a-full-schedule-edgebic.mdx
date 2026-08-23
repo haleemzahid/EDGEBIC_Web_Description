@@ -1,0 +1,129 @@
+---
+title: "Adding a Rush Order to a Full Schedule: Watching the Ripple in EDGEBIC"
+description: "A rush order scheduling walkthrough: drop a priority-1 job into a booked week, reschedule the unstarted work, and read exactly which jobs slip and which hold."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - rush order scheduling
+  - reschedule production
+  - priority scheduling example
+  - production ripple effect
+  - hot order insertion
+  - finite capacity reschedule
+targetPhrase: "rush order scheduling"
+wordCount: 2050
+readingTime: 10
+qaQuestions:
+  - question: "A customer just called with a two-day rush. Will inserting it blow up my whole schedule?"
+    answer: "Not the whole schedule, only the unstarted work that competes for the same machines. Give the rush job priority 1, save, and run a reschedule mode that touches existing unstarted jobs. Anything already in progress with logged actuals stays frozen, and jobs on different work centers that the rush never touches do not move at all. In this walkthrough one rush insertion pushed two downstream jobs by about a day each and left three others untouched, and the reschedule showed every new completion date in one run so you can call each affected customer with a real number."
+  - question: "Will the rush order steal capacity from a job that already started this morning?"
+    answer: "No. A job with a logged actual start is classified as in progress and its completed and running hours are immutable, so the rescheduler will not move them to make room. The rush order competes only for genuinely free future capacity behind the work already underway. That is why the ripple in this walkthrough hit the not-yet-started jobs and skipped the one already running on the mill: history is protected, only the future replans."
+faqQuestions:
+  - question: "How do you insert a rush order without rescheduling the entire plant?"
+    answer: "Give the rush job a priority-1 setting and reschedule only the affected scope. EDGEBIC reschedules unstarted jobs that compete for the same capacity while preserving in-progress and completed work exactly where it is. Jobs on unrelated work centers keep their reservations. The rush order is offered capacity first because of its priority, and the engine slots the displaced work into the next genuinely free time, showing you the new completion dates in a single run."
+  - question: "Does adding a rush order ever move completed work?"
+    answer: "No. Completed work is never moved by a reschedule. Operations with logged start and end times are frozen exactly as the operators recorded them, and only unfinished work is replanned. When you insert a rush order, the engine classifies every operation first, protects everything already done, and rearranges only future hours. This is the guarantee that makes hot-order insertion safe to do mid-week instead of only overnight."
+  - question: "How do I know which jobs the rush order pushed and by how much?"
+    answer: "Compare completion dates before and after the reschedule, or read the reschedule history. The single reschedule run recomputes every affected job's finish and shows it immediately, so you can see that, for example, two jobs slipped a day and three did not move. The Work Center Utilization report then confirms whether the week is still feasible or whether the insertion pushed the pacing machine over 100%, which is your cue to authorize overtime or renegotiate a date."
+---
+
+**When a rush order lands in a week that is already booked, EDGEBIC by User Solutions lets you insert it by priority and reschedule only the unstarted work, so in-progress and completed jobs stay frozen and the ripple hits exactly the jobs that share the rush order's machines.** This walkthrough drops a two-day hot order into a full schedule, reschedules, and traces which jobs slip, which hold, and why. It belongs to our [worked examples series](/blog/edgebic-worked-examples), and it is the natural sequel to [scheduling a five-job week with mixed priorities](/blog/scheduling-a-five-job-week-with-mixed-priorities-edgebic).
+
+## The Setup: A Booked Week, Then the Phone Rings
+
+Northwind Fabricating starts Monday with a committed schedule: five jobs already planned across a saw (SAW-1), a mill (MILL-1, one instance), a grinder (GRND-1), and an inspection bench (INSP-1), on a single 8-hour day shift. The numbers are illustrative but the reschedule behavior is documented behavior.
+
+The committed plan, as of Tuesday morning:
+
+| Job | Priority | Status Tuesday AM | Planned finish |
+|---|---|---|---|
+| N-201 | 2 | In progress on the mill (6 h logged) | Tue |
+| N-202 | 2 | Not started | Wed |
+| N-203 | 3 | Not started | Thu |
+| N-204 | 3 | Not started | Thu |
+| N-205 | 4 | Not started (stock build) | Fri |
+
+At 09:00 Tuesday a key customer calls: they need 25 pump housings, due Thursday, a two-day turn. The routing runs saw, mill, inspect, and the mill is the pacing resource for the whole shop. This is a textbook [job shop scheduling challenge](/blog/job-shop-scheduling-challenges): a hot order arriving into finite capacity that is already spoken for.
+
+## Step 1: Create the Rush Order and Set Priority 1
+
+Dana, the planner, creates the new manufacturing order (call it N-206), quantity 25, due Thursday, and sets its **Priority** to 1 in the Orders grid. She clicks **Save Changes**. As always, this only stores the order and its priority; nothing has moved yet. The rush job is now the highest-priority order in the shop, which means the engine will offer it capacity before any priority-2, 3, or 4 job when the next reschedule runs.
+
+## Step 2: Choose a Reschedule Mode That Touches Existing Work
+
+Because the rush order has to compete with jobs already in the plan, IncrementalNew (new jobs only) is not enough on its own; it would schedule N-206 but would not let it displace the already-planned N-202 through N-205. Dana selects a mode that reschedules existing unstarted work. The engine's classification rules do the protective work automatically: any job with a logged actual start is treated as in progress and is not moved, so N-201, already running on the mill with 6 hours logged, is safe regardless of mode.
+
+The **Scheduling Mode Description** label previews the scope. Dana toggles **Show Only Affected Orders** to see which rows are in play: N-206 (the rush) plus the four not-yet-started jobs. N-201 is not in the affected list, exactly as intended.
+
+## Step 3: Run the Reschedule
+
+Dana clicks **Schedule / Re-Schedule**. The engine classifies every operation first:
+
+- **N-201** has a logged start and 6 mill hours recorded. Verdict: in progress, frozen. Its running hours stay put; the rescheduler treats the mill as genuinely occupied for that block, so it cannot double-book the time reality already spent.
+- **N-202 through N-205** have no actuals. Verdict: released. Their old reservations are dropped so they can land wherever the new stack pushes them.
+- **N-206** is the new rush order, priority 1, so it sorts to the front of the unstarted queue.
+
+The engine then rebuilds the mill queue in priority order behind the frozen N-201 block: N-206 first, then the priority-2 job N-202, then the priority-3 pair, then the priority-4 stock build.
+
+## Where the Ripple Lands
+
+Because the mill is shared, the rush order's 25 housings claim the first free mill time after N-201 finishes, and everything below it shifts back by that amount:
+
+| Job | Planned finish (before) | New finish (after) | Change |
+|---|---|---|---|
+| N-201 (in progress) | Tue | Tue | No change (frozen) |
+| N-206 (rush) | (new) | Thu | Meets its Thursday date |
+| N-202 | Wed | Thu | +1 day |
+| N-203 | Thu | Fri | +1 day |
+| N-204 | Thu | Fri | +1 day |
+| N-205 (stock) | Fri | next Mon | +1 weekend |
+
+The rush order made its Thursday date. The cost is visible and bounded: the three customer jobs behind it each slipped about a day, and the dateless stock build absorbed the rest of the shove into the following week. Nothing on an unrelated machine moved, and the in-progress job did not lose a single logged hour.
+
+If N-206's routing had used a different mill or a grinder that the other jobs never touch, the ripple would have been smaller still. The engine moves only what genuinely competes for the same finite capacity. That is the difference between a surgical insertion and the whole-plant churn that makes a printed schedule untrustworthy by Wednesday.
+
+## Step 4: Confirm the Week Is Still Feasible
+
+A rush insertion can quietly push the pacing machine past its limit. Dana runs the **Work Center Utilization** report for the week and checks MILL-1's **Rating**. If it reads HIGH (85 to 100%), the week is tight but feasible. If it reads CRITICAL (over 100%), the mill is now overbooked, and the honest plan does not fit the available hours. The report's **LoadProfile** sentence spells out the overbooked hours, and the **Daily Heatmap** shows which specific days are red.
+
+That signal drives the decision. Overbooked means Dana authorizes overtime, routes a job to an alternate machine if one is configured, or calls the customer whose priority-3 job slipped to Friday. The point is that she is making that call Tuesday at 09:15 with real numbers, not discovering the overload when a job misses its date Thursday afternoon.
+
+## What This Run Proves
+
+1. **A rush order is a priority edit plus a reschedule.** Set priority 1, save, run a mode that touches existing unstarted work.
+2. **In-progress work is protected.** The running job with 6 logged mill hours never moved, because logged actuals are immutable.
+3. **The ripple is bounded to competitors.** Only jobs sharing the rush order's machines shifted; unrelated work stayed put.
+4. **Every new date appears in one run.** The reschedule recomputed all affected finishes at once, so each downstream customer can be told the truth immediately.
+5. **The utilization report is the feasibility check.** A CRITICAL rating on the mill is the cue to add capacity or renegotiate, before the miss instead of after.
+
+## Variations Worth Trying
+
+**The rush job needs an in-progress machine.** If N-206's first step needs the mill that N-201 is running, the rush simply queues behind the frozen block; it cannot preempt work already underway. This is the correct behavior even though it may push the rush's own finish later. The alternative, preempting a running job, would waste the setup already done.
+
+**Give the mill an alternate.** Configure a true-alternative work center on the rush order's mill step, and the engine can route N-206 to the backup machine if it finishes sooner, shrinking the ripple on MILL-1. That fallback behavior has its own [backup-machine walkthrough](/blog/routing-a-job-to-a-backup-machine-when-the-primary-is-full-edgebic).
+
+**Reschedule the whole plant instead.** A FullReschedule clears and recomputes everything from scratch. It gives the cleanest global stack but discards the near-term stability that keeps the floor calm, so reserve it for a true reset rather than a single hot order.
+
+## The Bigger Point: Insertion Is a Solved Problem When Data Lives in One Place
+
+Hand-inserting a rush order means re-sequencing a queue while protecting work already done, and doing it before the customer hangs up. No whiteboard survives that. A [finite capacity engine](/blog/finite-vs-infinite-capacity-scheduling) does it in one run because planned hours, logged actuals, priorities, and calendars all live together: it can classify what is frozen, replan only the future, and show every new date at once.
+
+User Solutions has built that discipline into scheduling tools since 1991, for operations where rush orders are constant and history cannot be rewritten: the US Navy, GE, BAE Systems, and Cummins among them. The USS Nimitz overhaul tracked more than 26,000 tasks through exactly this replan-without-losing-history pressure. [EDGEBIC](/edgebic) carries that lineage into a modern engine.
+
+Bring your own booked week and a hypothetical rush. [Contact us](/contact-us) and we will insert it against your routing data, or read the [machine breakdown walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic) to see the same freeze-history-replan-future logic handle a disruption instead of a new order.
+
+<Accordion title="How do you insert a rush order without rescheduling the entire plant?">
+Give the rush job a priority-1 setting and reschedule only the affected scope. EDGEBIC reschedules unstarted jobs that compete for the same capacity while preserving in-progress and completed work exactly where it is. Jobs on unrelated work centers keep their reservations. The rush order is offered capacity first because of its priority, and the engine slots the displaced work into the next genuinely free time, showing you the new completion dates in a single run.
+</Accordion>
+
+<Accordion title="Does adding a rush order ever move completed work?">
+No. Completed work is never moved by a reschedule. Operations with logged start and end times are frozen exactly as the operators recorded them, and only unfinished work is replanned. When you insert a rush order, the engine classifies every operation first, protects everything already done, and rearranges only future hours. This is the guarantee that makes hot-order insertion safe to do mid-week instead of only overnight.
+</Accordion>
+
+<Accordion title="How do I know which jobs the rush order pushed and by how much?">
+Compare completion dates before and after the reschedule, or read the reschedule history. The single reschedule run recomputes every affected job's finish and shows it immediately, so you can see that, for example, two jobs slipped a day and three did not move. The Work Center Utilization report then confirms whether the week is still feasible or whether the insertion pushed the pacing machine over 100%, which is your cue to authorize overtime or renegotiate a date.
+</Accordion>

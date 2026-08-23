@@ -1,0 +1,138 @@
+---
+title: "Turning Changeover Hours Into Production Hours"
+description: "Reduce changeover time in manufacturing by scheduling the sequence, not just the jobs. A documented 330-to-90-minute worked case, and the honest limits."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Outcomes & ROI
+author: user-solutions
+cluster: edgebic-outcomes
+pillarSlug: edgebic-results-guide
+keywords:
+  - reduce changeover time manufacturing
+  - sequence dependent setup time
+  - setup time reduction scheduling
+  - changeover matrix
+  - setup family scheduling
+  - campaign sequencing production
+targetPhrase: "reduce changeover time manufacturing"
+wordCount: 1720
+readingTime: 9
+faqQuestions:
+  - question: "How does scheduling reduce changeover time without SMED?"
+    answer: "Scheduling reduces changeover by avoiding expensive transitions rather than making each one faster. When a paint booth takes 60 minutes going light to dark and 240 minutes going dark to light, running both light jobs before the dark one skips the 240-minute transition entirely. In EDGEBIC's documented three-job example, that resequencing cut total setup from 330 minutes to 90, a 73% reduction, with no equipment or procedure change."
+  - question: "What is a sequence-dependent setup matrix?"
+    answer: "A sequence-dependent setup matrix is a lookup table of changeover times from one product to another on a specific machine. Instead of one flat setup value per routing step, the schedule asks what the machine last ran and charges the real transition cost. EDGEBIC groups products into setup families so the table stays small: eight families produce 64 cells instead of thousands of product pairs."
+  - question: "Why does an honest setup matrix make my schedule look worse?"
+    answer: "Because the previous schedule was understating changeover. In the documented paint example, a flat 30-minute setup claimed the day finished at 12:45 while the floor would actually live through about 11 hours of work. Loading the true from-to times produced an 8.75-hour day that visibly overflowed the shift. The plan did not get worse: it got accurate, and only an accurate plan can be improved."
+  - question: "Does the setup matrix work with alternate machines?"
+    answer: "Yes, and the resolution respects the specific machine. Changeover physics differ by equipment, so EDGEBIC keys every matrix cell to a work center. When a routing step targets a pool of interchangeable machines, each pool member can also carry its own setup override, because simpler fixturing on one machine is a real difference the schedule should charge for."
+qaQuestions:
+  - question: "We know our worst changeover is the color purge but nobody has written the times down. Where do I start?"
+    answer: "Start with families, not products. Sort your products into the smallest number of groups that share changeover behavior, usually four to eight (light, medium, dark, and a special case or two). Then fill in the family-to-family grid for your one worst machine: that is a handful of numbers, and your setup people already know most of them. Load those, reschedule, and compare the planned day against what actually happens. You will find one transition dominates everything, exactly as the documented paint case does with its 240-minute dark-to-light purge, and clustering around that single transition captures most of the available win before you refine anything."
+  - question: "If we sequence for setup, do we start missing due dates?"
+    answer: "That is the real tension, and it is why the sequencing decision belongs to a planner rather than a rule. Grouping like with like saves changeover hours; running strictly by due date protects promises. EDGEBIC's optimizer lets you pick which goal leads, then reports both sides of the trade in planner currency: late jobs, tardiness hours, makespan, and setup hours, side by side against your current schedule. In the documented paint case there is no tension at all, because the resequenced day finishes in 4.75 hours with three hours to spare while the due-date order overflows the shift. When the two goals do conflict, you see the numbers before anything is committed."
+---
+
+**Changeover hours disappear when you stop making expensive transitions, not when you make each transition faster. On a machine where light-to-dark costs 60 minutes and dark-to-light costs 240, the order of the jobs is worth more than any procedure improvement.** EDGEBIC by User Solutions models changeover as a per-machine, product-pair lookup, so the schedule charges the real cost of each transition and can then be sequenced to avoid the expensive ones.
+
+This post shows the mechanism, walks the documented arithmetic in full, and is clear about what sequencing cannot fix. For the general treatment, see [changeover time reduction](/blog/changeover-time-reduction) and the [SMED quick changeover](/blog/smed-quick-changeover) approach, which attacks the same cost from the opposite direction. This post sits under the [EDGEBIC results guide](/blog/edgebic-results-guide).
+
+## The Problem With One Setup Number
+
+Most scheduling systems store a single setup time per routing step. Paint booth: 30 minutes. Every job, every sequence, every time.
+
+The floor does not work that way. Going from white to cream is a rinse. Going from black to white is a full solvent purge. A furnace switching alloys is 90 minutes; running the same alloy again is zero. One number cannot represent both, so it represents neither, and the schedule is wrong in a direction that always favors optimism.
+
+The documented paint booth case shows how wrong. Three jobs on one booth: MO-2001 white, MO-2002 black, MO-2003 white. With a flat 30-minute setup on each, the schedule claims the day ends at 12:45. The actual changeovers the floor would live through are 30 minutes cold start, then 240 minutes white to black, then 240 minutes black to white, and the real day runs about 11 hours. **The plan overpromised by roughly half a day, on three jobs, on one machine.**
+
+Every downstream decision inherited that error: the promise sales made, the overtime nobody pre-authorized, the truck booked for an afternoon pickup.
+
+## Mechanism: Charge the Real Transition
+
+EDGEBIC's [setup matrix](/blog/edgebic-setup-matrix-explained) replaces the flat number with a lookup keyed on three things: which machine, what it last ran, and what it is about to run.
+
+The data model has three tiers, which is what keeps it maintainable:
+
+| Tier | What it holds | Typical size |
+|---|---|---|
+| Setup families | Products grouped by changeover behavior (Light, Dark, and so on) | 4 to 8 groups |
+| Family matrix | From-family to to-family minutes, per machine | Families squared, per machine |
+| Product matrix | Overrides for specific product pairs that break the family rule | A handful |
+
+Eight families produce 64 cells per machine instead of thousands of product pairs. When one specific pair genuinely differs (red to black needing an extra solvent flush, 90 minutes rather than the family's 60) a product-level override handles it without disturbing the rest of the table. For the definition of the grouping concept, see [what is a setup family](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+At schedule time a five-level chain resolves each step, first hit wins: cold start uses the routing's own setup, the same product back-to-back charges zero, then the product override, then the family cell, then the routing or work center default if no cell exists. Every resolved value is stored with its source, so the Job View can tell you exactly why a step was charged four hours instead of thirty minutes.
+
+## The Arithmetic, Three Ways
+
+Same three jobs, same booth, three configurations. The families are Light (white, cream) and Dark (black, dark grey), and the matrix for this booth reads: Light to Light 0, Light to Dark 60, Dark to Light 240, Dark to Dark 0.
+
+**Scenario A, flat setup (the dishonest plan).** 30 minutes charged per job, 90 minutes total, day ends 12:45 on paper. Floor reality is about 11 hours.
+
+**Scenario B, matrix loaded, same due-date order (white, black, white).** Now the resolution is honest:
+
+| Job | Previous product | Source | Setup charged |
+|---|---|---|---|
+| MO-2001 white | none (cold start) | routing default | 30 min |
+| MO-2002 black | white | family Light to Dark | 60 min |
+| MO-2003 white | black | family Dark to Light | 240 min |
+
+Total setup: 330 minutes. The day runs 08:00 to 16:45, an 8.75-hour day that visibly overflows the shift. This plan looks worse and is worth money immediately, because the planner can now see the overflow before it happens instead of discovering it at 16:00.
+
+**Scenario C, matrix loaded, resequenced light before dark (white, white, black).**
+
+| Job | Previous product | Source | Setup charged |
+|---|---|---|---|
+| MO-2001 white | none (cold start) | routing default | 30 min |
+| MO-2003 white | white | family Light to Light | 0 min |
+| MO-2002 black | white | family Light to Dark | 60 min |
+
+Total setup: 90 minutes. The day runs 08:00 to 12:45 and all three jobs fit in one shift with more than three hours to spare. The Source value on each row is also what makes the saving auditable, because [a matrix can be fully configured and quietly not firing](/blog/how-to-prove-a-changeover-saving-actually-happened).
+
+| Scenario | Setup minutes | Day length | Fits the shift? | Honest? |
+|---|---|---|---|---|
+| A: flat setup | 90 claimed, about 510 real | 4.75 h claimed | Claims yes, actually no | No |
+| B: matrix, due-date order | 330 | 8.75 h | No, overflows | Yes |
+| C: matrix, resequenced | 90 | 4.75 h | Yes, 3 h spare | Yes |
+
+**From 330 minutes to 90 is a 73% reduction, from sequencing alone.** No new equipment, no faster purge, no overtime. The 4.75-hour day that the dishonest plan promised turns out to be genuinely achievable, but only in the right order.
+
+Notice the two-step structure, because it is the shape of the whole outcome. The matrix turns a deceptive plan into an honest one. Sequencing turns an honest plan into an efficient one. You cannot do the second without the first, which is why loading the real numbers comes before any optimization.
+
+## Scaling It Past What You Can Sequence by Eye
+
+Three jobs on one booth is a puzzle you can solve on paper. Forty jobs across twelve work centers, where the best paint order fights the best mill order and both fight the due dates, is not.
+
+EDGEBIC's [optimizer](/blog/edgebic-optimizer-guide) carries a least-setup goal alongside on-time-first, minimum makespan, and balanced presets. Two properties make it usable rather than alarming: the multi-run layer is clamped never worse than the schedule you already have, and nothing is written until a planner reviews the comparison and accepts it. When you choose least-setup, you see what it costs in tardiness before you commit, and when you choose on-time-first, you see what it costs in setup hours.
+
+One more place the same mechanism pays: [work center groups](/blog/edgebic-work-center-groups-explained). Each pool member can carry its own setup override, because an older machine with simpler fixturing genuinely changes over faster. In the documented three-mill example, the 1998 Bridgeport is 50% slower per unit and carries a 0.25-hour setup against the group's 0.5, which is exactly the kind of trade-off a scheduler should evaluate rather than a planner remember.
+
+## What the Software Cannot Do Alone
+
+**It cannot know your changeover times.** Every number above came from a table a human filled in. The 73% exists because the matrix held real minutes. Guessed values produce a confidently wrong plan, which is worse than an obviously wrong one.
+
+**It cannot make a changeover faster.** Sequencing avoids transitions; it does not shorten them. If your dark-to-light purge takes four hours, it still takes four hours whenever you have to do it. SMED work, quick-change tooling, and standardized procedures attack that number, and they compound with sequencing rather than competing with it.
+
+**It cannot override physics or quality rules.** Some transitions are mandatory regardless of cost (an allergen washdown, a validated cleaning step). Model them as high-cost cells and let the schedule route around them where it can, but never let a sequence decision quietly skip a required step.
+
+**It cannot resolve the due-date conflict for you.** Grouping like with like saves hours and can delay a specific customer. The optimizer will show you both numbers. Choosing between them is a business decision.
+
+**It cannot maintain the table.** New products need a family assignment. A changed process changes a cell. A matrix that was true two years ago and has drifted since produces schedules that are precisely wrong.
+
+Want to know your own 330-to-90? [Bring your worst machine's changeover times and a week of orders to a demo](/edgebic), and we will sequence them both ways.
+
+<Accordion title="How does scheduling reduce changeover time without SMED?">
+Scheduling reduces changeover by avoiding expensive transitions rather than making each one faster. When a paint booth takes 60 minutes going light to dark and 240 minutes going dark to light, running both light jobs before the dark one skips the 240-minute transition entirely. In EDGEBIC's documented three-job example, that resequencing cut total setup from 330 minutes to 90, a 73% reduction, with no equipment or procedure change.
+</Accordion>
+
+<Accordion title="What is a sequence-dependent setup matrix?">
+A sequence-dependent setup matrix is a lookup table of changeover times from one product to another on a specific machine. Instead of one flat setup value per routing step, the schedule asks what the machine last ran and charges the real transition cost. EDGEBIC groups products into setup families so the table stays small: eight families produce 64 cells instead of thousands of product pairs.
+</Accordion>
+
+<Accordion title="Why does an honest setup matrix make my schedule look worse?">
+Because the previous schedule was understating changeover. In the documented paint example, a flat 30-minute setup claimed the day finished at 12:45 while the floor would actually live through about 11 hours of work. Loading the true from-to times produced an 8.75-hour day that visibly overflowed the shift. The plan did not get worse: it got accurate, and only an accurate plan can be improved.
+</Accordion>
+
+<Accordion title="Does the setup matrix work with alternate machines?">
+Yes, and the resolution respects the specific machine. Changeover physics differ by equipment, so EDGEBIC keys every matrix cell to a work center. When a routing step targets a pool of interchangeable machines, each pool member can also carry its own setup override, because simpler fixturing on one machine is a real difference the schedule should charge for.
+</Accordion>

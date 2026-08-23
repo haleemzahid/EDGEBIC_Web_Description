@@ -1,0 +1,101 @@
+---
+title: "Two Steps of One Job Overlap When They Should Not"
+description: "When two sequential operations of the same job run at the same time and no overlap was intended, here is how to tell a real dependency violation from configured lot streaming and fix it."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - two steps overlap scheduling
+  - dependency violation production schedule
+  - operation starts before previous finishes
+  - step ordering anomaly
+  - sequential steps overlap
+  - flowstep lot streaming overlap
+targetPhrase: "two steps overlap scheduling"
+wordCount: 1330
+readingTime: 7
+faqQuestions:
+  - question: "Why do two steps of the same job overlap in EDGEBIC?"
+    answer: "Either overlap was configured on purpose through lot streaming, or the two steps were not linked as sequential. When a routing step carries a flow-step overlap or a transfer batch size, the downstream operation is meant to start before the upstream one finishes. When neither is set and the steps still overlap, the sequence link between them is missing or mis-pointed, so the engine treated them as independent and ran them in parallel."
+  - question: "How do I know if an overlap is intended or a bug?"
+    answer: "Run the built-in anomaly report. The dependency-ordering check fires only when a downstream step starts before its upstream step ends AND the routing carries no flow-step and no transfer batch size. If that check reports your job, the overlap was not configured and is a real ordering problem. If the check stays clean, the overlap is deliberate lot streaming and the schedule is correct."
+  - question: "What field links one operation to the next in EDGEBIC?"
+    answer: "Each routing step carries a next-in-sequence pointer to the step that follows it. The engine builds a dependency graph from those pointers and sorts the steps so upstream finishes before downstream starts. A blank or wrong pointer breaks the chain: the engine cannot see that step 3 depends on step 2, so it schedules both from the same earliest start."
+  - question: "Will re-running the scheduler fix an overlap?"
+    answer: "It fixes overlaps caused by transient timing, but not overlaps caused by a broken sequence link. If the next-in-sequence pointers are correct, a fresh schedule run reorders the steps properly. If a pointer is missing or points to the wrong step, the same overlap comes back every run until you repair the routing itself."
+qaQuestions:
+  - question: "The anomaly report says step 30 starts 3 hours before step 20 ends, and there is no overlap setting on the routing. Where do I look first?"
+    answer: "Look at the next-in-sequence pointers on steps 10, 20, and 30. The dependency-ordering check reports the previous-end and next-start times in its detail line, which confirms the two steps really are sequential in your intent but not in the data. The most common cause is that step 20 does not point at step 30 (or points at the wrong step), so the engine never learned step 30 waits on step 20 and scheduled both from the job's earliest start. Repair the pointer, save the routing, and re-run scheduling for the job."
+  - question: "Two milling steps on our routing genuinely can overlap once the first cut clears the fixture. Can I keep the overlap without the anomaly report flagging it?"
+    answer: "Yes. Configure the overlap explicitly with a flow-step lag or a transfer batch size on the downstream step. The dependency-ordering check suppresses itself whenever either is set, because the overlap is now intentional and documented in the routing rather than an accident of a missing link. That is the difference the check is testing for: overlap you configured is fine, overlap that just happened is not."
+---
+
+**When two sequential steps of one job run at the same time and you did not ask for overlap, one of two things is true: overlap was configured through lot streaming, or the steps were never linked as sequential and the engine ran them in parallel.** [EDGEBIC by User Solutions](/edgebic) has a specific anomaly check that separates the two cases, so you do not have to guess which one you are looking at.
+
+This post is part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It covers what a genuine step-ordering violation looks like, how the engine's dependency graph is supposed to prevent it, and the exact repair.
+
+## The Two Reasons Steps Overlap
+
+Overlap on a Gantt is not automatically wrong. A [dependency violation](/blog/what-is-a-dependency-violation-in-scheduling) is a specific shape, and it is worth naming both cases before you touch anything.
+
+**Configured overlap (correct).** A downstream step can be told to start before the upstream step finishes. [Flow-step overlap](/blog/what-is-flowstep-overlap) sets a start-to-start lag in hours, and a transfer batch size lets the downstream machine begin as soon as the first batch of pieces is ready. Both are lot-streaming tools that compress a job on purpose. When either is present, the overlap you see is the feature working.
+
+**Unintended overlap (the bug).** Two steps that should run in strict order run at the same time because the engine does not know they are related. It scheduled both from the same earliest start, so their windows collide. Nothing on the routing explains the overlap, and that is the tell.
+
+## How the Anomaly Report Tells Them Apart
+
+EDGEBIC's built-in Scheduler Anomaly Report carries a dependency-ordering check. It fires only when a downstream step starts before the upstream step ends **and** the downstream step carries no flow-step and no transfer batch size. If lot streaming is configured, the overlap is intentional and the check stays silent.
+
+| Situation | Flow-step or transfer batch set? | Anomaly check |
+|---|---|---|
+| Deliberate lot streaming | Yes | Silent (correct) |
+| Steps not linked, run in parallel | No | Fires with detail |
+| Steps linked, correct order | No | Silent (correct) |
+
+When the check fires, its detail line names the previous step's end time, the next step's start time, and the buffer values on the routing. That is enough to confirm the two steps really are meant to be sequential and to see exactly how far they overlap.
+
+## The Mechanism That Should Prevent It
+
+The engine does not read step numbers to decide order. Each routing step carries a next-in-sequence pointer, and the engine builds a dependency graph from those pointers, then sorts the steps so every upstream operation finishes before its downstream one starts. You can read more about this in [how EDGEBIC orders operations with dependency graphs](/blog/how-edgebic-orders-operations-dependency-graphs).
+
+Two failure modes break the graph:
+
+1. **A missing pointer.** Step 20 has no next-in-sequence value, so the engine never learns that step 30 depends on it. Both schedule from the job's earliest start and overlap.
+2. **A wrong pointer.** Step 20 points at step 40 instead of step 30, so step 30 is orphaned and treated as independent.
+
+There is a third, quieter case: two steps sharing the same sequence number. The check may not fire, but the order is ambiguous. Keep sequence numbers unique per job so the intended order is never in doubt.
+
+## The Repair
+
+Work in this order:
+
+1. **Run the anomaly report for the job.** Confirm the dependency-ordering check fires and read its detail line for the two step numbers and their times.
+2. **Open the routing.** Check the next-in-sequence pointer on the upstream step. Confirm it points at the step that actually follows it, not a blank and not a downstream skip.
+3. **Confirm the overlap was not intended.** If flow-step or transfer batch size is set and you did not mean to stream, that is your answer instead: clear the one you do not want. See [the setup and lot-streaming siblings](/blog/lot-streaming-did-not-overlap-my-operations-edgebic) for the mirror-image case where streaming did not fire.
+4. **Save and re-run scheduling** for that job.
+5. **Re-run the anomaly report.** A clean dependency-ordering check confirms the fix.
+
+A fresh schedule run repairs overlaps caused by transient timing, but a broken pointer survives every run until the routing itself is corrected. That is why step 2 matters most: if the data says the steps are independent, the engine will keep running them in parallel no matter how many times you reschedule.
+
+## Why This Is Worth Getting Right
+
+An unintended overlap is not just cosmetic. Downstream operations that start early consume capacity that upstream work still needs, and the promised finish date is built on an impossible sequence. Fixing the sequence link restores an honest schedule. For the broader picture of how order is enforced, [how to sequence operations with dependencies](/blog/how-to-sequence-operations-with-dependencies-in-edgebic) walks through building the chain from scratch, and the [troubleshooting guide](/blog/edgebic-troubleshooting-guide) collects the neighboring symptoms.
+
+<Accordion title="Why do two steps of the same job overlap in EDGEBIC?">
+Either overlap was configured on purpose through lot streaming, or the two steps were not linked as sequential. When a routing step carries a flow-step overlap or a transfer batch size, the downstream operation is meant to start before the upstream one finishes. When neither is set and the steps still overlap, the sequence link between them is missing or mis-pointed, so the engine treated them as independent and ran them in parallel.
+</Accordion>
+
+<Accordion title="How do I know if an overlap is intended or a bug?">
+Run the built-in anomaly report. The dependency-ordering check fires only when a downstream step starts before its upstream step ends AND the routing carries no flow-step and no transfer batch size. If that check reports your job, the overlap was not configured and is a real ordering problem. If the check stays clean, the overlap is deliberate lot streaming and the schedule is correct.
+</Accordion>
+
+<Accordion title="What field links one operation to the next in EDGEBIC?">
+Each routing step carries a next-in-sequence pointer to the step that follows it. The engine builds a dependency graph from those pointers and sorts the steps so upstream finishes before downstream starts. A blank or wrong pointer breaks the chain: the engine cannot see that step 3 depends on step 2, so it schedules both from the same earliest start.
+</Accordion>
+
+<Accordion title="Will re-running the scheduler fix an overlap?">
+It fixes overlaps caused by transient timing, but not overlaps caused by a broken sequence link. If the next-in-sequence pointers are correct, a fresh schedule run reorders the steps properly. If a pointer is missing or points to the wrong step, the same overlap comes back every run until you repair the routing itself.
+</Accordion>

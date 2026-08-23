@@ -1,0 +1,100 @@
+---
+title: "How to Import a File with No Header Row in EDGEBIC"
+description: "Map a headerless extract in EDGEBIC: untick Header Present, set the delimiter, and type each field's column number into Col # instead of dragging a heading."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - import file no header row
+  - header present option
+  - map by column position
+  - fixed format extract import
+  - delimited text import
+  - text enclosed in quotes
+targetPhrase: "import file with no header row"
+qaQuestions:
+  - question: "Our legacy system writes a comma file with no heading row at all. Where do I even start?"
+    answer: "Start in a text editor, not in the software. Open the file, take the first data line, and count the fields left to right so you know that the part number is field one, the description is field two, and so on. Write that list down, including the columns you do not care about, because positions count every field in the line. Then build the mask, untick Header Present, set the delimiter to comma, and type each number into the Col # cell of the target field it feeds. The counting is the whole job; the mapping afterward takes two minutes and never needs redoing while the extract keeps its shape."
+  - question: "Someone added a column to the middle of our headerless extract and the next import made a mess. Why?"
+    answer: "Because a positional mask has no way to notice. It reads field seven as the setup time because you told it field seven is the setup time, so inserting a column ahead of it shifts every later field by one and the mask happily maps the wrong values into the wrong places. A heading-based mask survives this, which is the strongest argument for asking whoever produces the extract to emit a heading row. If you cannot get one, treat any change to the source as a mask edit: re-count the fields, update every Col # from the insertion point onward, and prove it on ten rows before the full file."
+faqQuestions:
+  - question: "How do I import a file that has no heading row in EDGEBIC?"
+    answer: "Build the mask as normal but untick Header Present, which switches mapping from headings to column positions. Set the delimiter to match your file: comma, semicolon, space, or tab for text files, or Excel for a workbook. Then, on each field you want to load, type the source column number into that row's Col # cell instead of dragging a heading across. Columns are counted from one and every column in the line counts, including ones you are skipping. Save and run as usual."
+  - question: "What does Header Present actually do?"
+    answer: "It tells the mask how to find your data. With it on, the first row of the file is treated as headings, those headings are listed for you to drag onto target fields, and mapping is by name. With it off, no row is consumed as headings, the whole file is data, and mapping is by position through the Col # cell on each row. Getting this wrong in either direction is destructive in a quiet way: leaving it on for a headerless file consumes a real record as a heading row and produces a nonsense mapping."
+  - question: "When do I need Text Enclosed in Quotes?"
+    answer: "When your CSV wraps text values in quotation marks, which many systems do so that a comma inside a description does not break the line. Tick the option and the quotation marks are recognized as enclosure rather than characters, so a value arrives as the text you expect. Leave it unticked for a file that has no quoting. The symptom of getting it wrong is stored values that carry a leading or trailing quotation mark, which then fails to match anything on the next run because the natural key no longer resolves."
+wordCount: 1218
+readingTime: 6
+---
+
+**To import a file with no heading row in EDGEBIC, untick Header Present in the mask editor, set the delimiter to match your file, and type each field's source column number into that mapping row's Col # cell instead of dragging a heading.** Columns are counted from one, and every column in the line counts even if you are not loading it. Everything else about the mask works identically in EDGEBIC by User Solutions: the same eight entity types, the same conversion factors, the same result counts.
+
+This is the narrow case. For the general build, start with [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic); every task in this library is mapped on the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub).
+
+## Before You Start
+
+- You have opened the source file in a text editor and can see a raw data line. This is not optional: positional mapping is only as good as your field count.
+- You know which character separates the fields. Comma, semicolon, space, and tab are the supported delimiters for text files, and a workbook uses the Excel setting.
+- You know which field holds the record's identifier. Every entity type matches on a natural key, so the key field's position is the one that must be right.
+- You have access to the Settings tab, where Import lives.
+
+## The Steps
+
+1. **Count the fields.** Open the file in a text editor, take one data line, and number the fields left to right starting at one. Write the list down including fields you will skip, because a skipped field still occupies a position.
+2. **Open Settings, then the Import tab**, and select the entity type in the Entity Type list.
+3. **Click Define New** and give the mask a name that describes the routine rather than today's file.
+4. **Click Get File** and pick the source. A `.csv`, `.txt`, or `.tsv` file is the usual case here.
+5. **Set the delimiter** to the character your file actually uses: Comma, Semicolon, Space, or Tab.
+6. **Untick Header Present.** This is the step the whole task turns on. Mapping switches from headings to positions, and no row is consumed as a heading row.
+7. **Tick Text Enclosed in Quotes** if the file wraps its text values in quotation marks. Leave it clear if it does not.
+8. **Fill Col # on each mapping row you need.** Type the source column number into the Col # cell of the target field it feeds. Every row ticked as required must get a number, or the run aborts with no rows processed.
+9. **Set the conversion factor** on any row whose units differ. A minutes column needs `0.016667` to land as hours.
+10. **Save**, then click Do It against a ten-row slice of the real file with update existing records left off.
+
+## Where the Numbers Go
+
+Two columns on the mapping grid do the same job by different routes, and only one of them is live at a time.
+
+| Mapping column | Used when | What you put in it |
+|---|---|---|
+| Source Header | Header Present is on | A heading dragged across from the file-headers list |
+| Col # | Header Present is off | The source column's position, counted from one |
+| Conv | Either | A multiplier applied to numeric values before storing |
+
+The file-headers list is populated from the heading row, so on a headerless file there is nothing to drag. That empty list is the confirmation that Header Present is off, not a sign that the file failed to read.
+
+## How to Check It Worked
+
+Read the Key column on the result dialog first. It shows the identifier the mask pulled from each row, so it is the fastest proof that the positions are right. Recognizable part numbers or work center codes mean field one is field one. A Key column full of descriptions, dates, or quantities means you are off by a position, almost always because the first data line was consumed as a heading row or because a skipped column was not counted.
+
+Then read the counts: created, updated, reused, and failed. On a first slice against an empty catalog you want created with zero failed. Open the log file from the result dialog whenever anything failed, because it names the row and the reason.
+
+Last, open the entity's own grid and look at one record end to end. A description sitting in the unit-of-measure field is a positional slip that the counts alone will never show you, because a wrong value in a valid field is a perfectly successful import.
+
+## Common Mistakes
+
+**Leaving Header Present on.** The first data line is then treated as headings, which loses a real record and maps every field by a value that happens to sit in row one. The result looks like a working import with one missing record, which is exactly why it goes unnoticed.
+
+**Counting from zero.** Positions start at one. An off-by-one mask usually still runs, because most cells are the right data type for the neighboring field, and that is what makes it dangerous.
+
+**Counting only the fields you want.** If you load fields one, four, and nine, you still have to know that they are one, four, and nine in the full line, not one, two, and three in your shortlist.
+
+**Choosing the wrong delimiter on a space-delimited file.** Values that contain spaces split into extra fields, so every position after the first offending row is wrong. A tab or comma extract is far safer if you can ask for one.
+
+**Ignoring quoting.** A file that wraps text in quotation marks, imported without Text Enclosed in Quotes, stores the marks as part of the value. The record then fails to match on the next run because its natural key no longer resolves. For the format concepts underneath this, see [what is a delimiter in data import](/blog/what-is-a-delimiter-in-data-import).
+
+**Treating a positional mask as maintenance-free.** Any change upstream shifts your numbers. Re-count and re-map deliberately, the way [handling an ERP export that changed column order](/blog/handling-an-erp-export-that-changed-column-order) describes, and remember that heading-based masks are immune to this.
+
+**Assuming a workbook needs positional mapping.** If the file is an `.xlsx` with headings, keep Header Present on and pick the worksheet in the Sheet box; getting that wrong is its own failure, covered in [my import read the wrong sheet tab](/blog/an-import-read-the-wrong-sheet-tab-edgebic).
+
+## Next Steps
+
+The mask is now reusable, and every later run is select and Do It: see [how to re-run a saved import mask](/blog/how-to-re-run-a-saved-import-mask-in-edgebic). If any rows failed, [the import said failed rows](/blog/the-import-said-failed-rows-edgebic) walks the log. And when the extract changes shape, edit rather than rebuild, using [how to edit or delete a saved import mask](/blog/how-to-edit-or-delete-a-saved-import-mask-in-edgebic).
+
+## The takeaway
+
+A headerless extract imports into EDGEBIC exactly like any other file once you switch the mask from heading mapping to positional mapping: untick Header Present, set the real delimiter, tick the quote option if the file quotes text, and type each field's column number, counted from one, into its Col # cell. The counting is the work, the Key column on the result dialog is the proof, and any upstream column insertion is a mask edit rather than a surprise. See how import fits the platform on the [EDGEBIC overview](/edgebic), read what your current data carries forward on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and continue with [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic) and [how to convert minutes to hours during an import](/blog/how-to-convert-minutes-to-hours-during-an-import-in-edgebic).

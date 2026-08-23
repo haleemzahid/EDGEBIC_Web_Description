@@ -1,0 +1,107 @@
+---
+title: "How to Import a Routing from Excel in EDGEBIC"
+description: "Import a BOR routing from Excel into EDGEBIC: put all of one product's steps in one file, map End_Prod, Sub_Prod, Op_Flag and No_Req, keep auto-chaining on, and run Do It."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - import a routing from Excel EDGEBIC
+  - BOR import mask
+  - Op_Flag operation step
+  - AutoGenerateNextInSeq
+  - routing wipe and recreate
+  - EDGEBIC bill of routing import
+targetPhrase: "import a routing from Excel in EDGEBIC"
+wordCount: 1119
+readingTime: 6
+faqQuestions:
+  - question: "How do you import a routing from Excel into EDGEBIC?"
+    answer: "Put every step for one end product in a single file, each with a Seq_No. In Settings, the Import tab, select BOR, click Define New, and map at least End_Prod, Sub_Prod, Op_Flag, and No_Req, plus Seq_No. Keep AutoGenerateNextInSeq on so steps chain automatically. Save the mask and click Do It. The BOR Designer then shows the steps chained in sequence and connected to the end product."
+  - question: "What do the mandatory BOR columns mean?"
+    answer: "End_Prod is the finished product the routing belongs to. Sub_Prod is the work center for an operation step or the component name for a material step. Op_Flag is true for an operation and false for a material or component. No_Req is the hours per unit for an operation. Together they tell EDGEBIC which product, which resource, what kind of step, and how long it takes per unit. Seq_No orders the steps and lets the auto-chaining link them."
+  - question: "Does re-importing a routing overwrite the old one?"
+    answer: "Yes, and this is intentional. Every BOR import run deletes the end product's existing steps and rebuilds them from the file, so the live routing always reflects the file exactly. This is safe for jobs already scheduled, because each carries its own frozen routing snapshot and runs on that. The rebuilt routing applies only to new jobs, or to an existing job you deliberately reschedule with the current global BOR."
+qaQuestions:
+  - question: "We split a long routing across two spreadsheets and imported them one after the other. Now half the steps are missing. Why?"
+    answer: "Because a BOR import wipes and recreates the whole product's routing on every run. The first file created steps 10 to 30. The second run, for steps 40 and 50, wiped those first steps before adding its own, so you are left with only 40 and 50. The fix is a rule: every step for one end product goes in one file, imported once. Combine the two spreadsheets into a single file and re-import, and all the steps come back together."
+  - question: "Our source system stores operation times in minutes but EDGEBIC wants hours. How do we import without hand-converting the whole column?"
+    answer: "Use the Conv times factor on that mapping row. Set it to 0.016667 for the No_Req or Setup_Time column and the import multiplies each cell before storing, so a 30 in the file lands as 0.5 hours. Leave it empty when the column is already in hours. Non-numeric cells pass through untouched. Skipping this is the classic cause of setup times that come in sixty times too large and blow up the schedule."
+---
+
+**To import a routing from Excel in EDGEBIC by User Solutions you put every step for one end product in a single file, build a BOR mask mapping End_Prod, Sub_Prod, Op_Flag and No_Req, keep auto-chaining on, and run Do It.** The one rule that saves the most grief is single-file-per-product, because each import wipes and recreates that product's whole routing.
+
+This is the task of loading one routing. For the mechanism behind how EDGEBIC reads and chains steps, read [how EDGEBIC imports routings in two passes](/blog/how-edgebic-imports-routings-in-two-passes), and for what a mask is in general, [import masks explained](/blog/edgebic-import-masks-explained).
+
+## Before You Start
+
+- All steps for each end product are in **one** file. Splitting a product's steps across two runs loses the first run's steps to the second run's wipe.
+- The products and work centers named in the file exist, or you leave the auto-create options on so the import creates missing ones.
+- Every step has a `Seq_No`, numbered in tens (10, 20, 30) so you can insert a step later without renumbering.
+- You can see the **Settings** tab.
+
+## Building and Running the BOR Mask
+
+1. Open **Settings → 📥 Import** and select **BOR** in the **Entity Type** list.
+2. Click **➕ Define New…** and name the mask, for example `Routing Load`.
+3. Click **📂 Get File**, pick the file, and choose the worksheet in **Sheet**. The headings list under **File Header Titles**.
+4. Map the columns. The four mandatory fields are ticked in **Req**:
+
+   | Field | Required | Meaning |
+   |---|---|---|
+   | **End_Prod** | Yes | The finished product this routing belongs to |
+   | **Sub_Prod** | Yes | Work center (operation) or component name (material) |
+   | **Op_Flag** | Yes | true = operation step; false = material or component |
+   | **No_Req** | Yes | Hours per unit for the operation |
+   | Seq_No | Recommended | Orders the steps; drives auto-chaining |
+   | Setup_Time, Queue_Time, Flow_Step, Transit_Days | No | Timing detail per step |
+   | Parallel_Op, Alt_Type, Res_Mult | No | Parallel and alternative routing |
+
+5. If your source times are in minutes, set the **Conv ×** cell on the `No_Req` and `Setup_Time` rows to `0.016667` so they convert to hours on import.
+6. Click **Save**.
+7. Select the mask and click **⚙️ Options…**. Keep **AutoGenerateNextInSeq** on so EDGEBIC links step 10 to 20 to 30 for you and connects the final step to the end product. Keep the auto-create options on to create any missing products or work centers.
+8. Click **▶ Do It**. Choose the file if prompted, and watch the progress window.
+
+## What Changes When You Save
+
+The import deletes the end product's existing routing steps and rebuilds them from the file. The result dialog reports what happened row by row.
+
+| Surface | Effect |
+|---|---|
+| BOR grid and Designer | The imported routing replaces the product's previous live routing entirely |
+| Scheduled jobs | Unchanged; each runs on its own frozen routing snapshot |
+| New manufacturing orders | Pick up the rebuilt routing on the next scheduling run |
+| A later reschedule with the global BOR | Picks up the recreated steps and their current timings |
+| The schedule | Not recalculated by the import; run the scheduler afterward |
+
+Because auto-chaining is on, a correctly numbered file needs no `Next_Seq` column: the steps link in `Seq_No` order and the last one connects to the end-product node so the routing renders complete.
+
+## How to Check It Worked
+
+Read the summary line on the **Import Result** dialog: a five-step routing should read `Created 5`. Then open the BOR Designer for that product. The steps should sit chained in sequence (10 to 20 to 30 and so on) with an arrow from the final step into the end-product node. A routing that shows disconnected from the product usually means the final step's link points nowhere and auto-chaining was off. Spot-check one operation's hours in the grid, especially if you used a conversion factor, to confirm the number landed as hours and not minutes.
+
+## A Quick Worked Example
+
+Acme's planner imports a new five-step routing for Bracket-B. The file lists Saw-1 (Seq 10, 0.2 hours a unit), CNC-Mill-1 (Seq 20, 0.5 hours a unit, with a `Setup_Min` of 30 and a `Conv ×` of `0.016667` so it lands as 0.5 setup hours), Weld-1 (Seq 30), Paint-Booth-1 (Seq 40), and Assembly-1 (Seq 50), all with End_Prod set to Bracket-B. After **▶ Do It**, the result reads `Created 5`, and the BOR Designer shows the five steps chained 10 to 20 to 30 to 40 to 50 and connected to the Bracket-B end-product node.
+
+A Bracket-B job scheduled last week, JOB-2026-0107, still shows its original routing in Job View, because it runs on its own frozen snapshot. The new five-step routing applies from the next new Bracket-B job. That split (running jobs untouched, new jobs on the new routing) is what makes it safe to re-import a live product's routing without coordinating around the shop floor.
+
+## Parallel and Alternative Steps
+
+Straight-line routings need only the four mandatory fields plus Seq_No. For steps that run in parallel or offer an alternative machine, two more columns carry the intent. Fill **Parallel_Op** with the parent step's work center name, and **Alt_Type** with `Parallel-Independent` (the default), `Parallel-Dependent`, or `Alternative`. Independent parallel steps run alongside the parent on their own capacity; dependent parallel steps stay in step with the parent; an alternative is a substitute the scheduler may choose. Mapping these on import saves rebuilding the same structure by hand in the Designer afterward.
+
+## Common Mistakes
+
+**Splitting one product's steps across two files.** The wipe happens per run, so the second run erases the first run's steps. Put all of a product's steps in one file, always.
+
+**Forgetting the minutes-to-hours conversion.** Without a `Conv ×` of `0.016667`, a setup time of 30 minutes lands as 30 hours. Set the factor on the time columns. More of these are in [import mask mistakes](/blog/import-mask-mistakes-edgebic).
+
+**Turning AutoGenerateNextInSeq off without filling Next_Seq.** With auto-chaining off, you must point each step's `Next_Seq` at the following step yourself, and the final one at the end product, or the routing renders disconnected.
+
+**Expecting a re-import to touch running jobs.** It will not. Scheduled jobs run on their frozen snapshot, which is exactly why a routing re-import is safe mid-production.
+
+## Next Steps
+
+Routings need products and work centers to exist first, so [how to import products](/blog/how-to-import-products-from-excel-in-edgebic) is the usual prerequisite. When it is one product's steps you want reproduced on another rather than a whole catalog, [how to copy a routing to another product](/blog/how-to-copy-a-routing-to-another-product-in-edgebic) covers the in-app route. Once routings are loaded, [how to import sales orders](/blog/how-to-import-sales-orders-from-excel-in-edgebic) brings in the jobs to schedule. For the full task library, see [the EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and for the wider platform, [EDGEBIC](/edgebic).

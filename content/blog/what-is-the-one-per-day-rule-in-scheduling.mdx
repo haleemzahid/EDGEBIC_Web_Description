@@ -1,0 +1,64 @@
+---
+title: "What Is the One Per Day Rule in Scheduling?"
+description: "The one per day rule limits each machine instance to a single job per day. Learn why furnaces and paint booths need it and how it changes capacity math."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - one per day rule scheduling
+  - one per day flag definition
+  - dedicated instance scheduling
+  - furnace scheduling rule
+  - paint booth scheduling
+  - single job per machine per day
+targetPhrase: "one per day rule in scheduling"
+wordCount: 1120
+readingTime: 6
+faqQuestions:
+  - question: "What is the one per day rule in scheduling?"
+    answer: "The one per day rule limits each machine instance to a single job per calendar day. A work center with three instances and the rule on can run three different jobs at once, one per instance, but no instance takes a second job that day even if it finishes early. It exists for resources like furnaces and paint booths, where a load or a color owns the machine for the day regardless of how few hours it actually uses."
+  - question: "When should I turn on the one per day rule?"
+    answer: "Turn it on for physical resources that cannot share a machine within a day: furnace loads, paint colors, sterile campaigns. In those cases a job occupies the whole machine for the day even if its cycle is short, because the changeover or flush eats the rest of the shift. For general-purpose machining centers, leave it off, because there the rule is pure lost capacity that keeps machines idle for no reason."
+  - question: "Does the one per day rule affect a single-instance work center?"
+    answer: "No. A single-instance work center takes one job at a time either way, so the rule has no effect there. It only changes behavior when a work center has two or more instances, where it switches the engine from pooling the instances' hours to dedicating each instance to one job per day. On a one-machine work center it is simply inert."
+  - question: "Does the one per day rule waste capacity on purpose?"
+    answer: "Yes, and that is the point. When a furnace load occupies a chamber for the day, the leftover clock time genuinely cannot be used, so the rule stops the engine from promising a second job that the floor cannot run. Turning the rule off would let the engine stack jobs into the unused hours on paper, producing a plan that looks efficient but is fiction. Deliberate waste that matches reality beats false capacity every time."
+qaQuestions:
+  - question: "Our four-chamber furnace keeps getting five loads planned on a busy day and the fifth never happens. How do I stop that?"
+    answer: "Turn on the one per day rule for that furnace. Right now the engine pools the four chambers as thirty-two hours of shared capacity, so five six-hour loads fit inside thirty-two on paper even though each load physically holds its chamber all day. With the rule on, the arithmetic changes to one load per chamber per calendar day: four chambers means exactly four loads, the fifth slides to tomorrow, and the leftover clock time is left unused on purpose. The plan then matches what the floor can actually run, which is four loads a day, and you stop chasing a fifth load that was never real."
+  - question: "We turned on the one per day rule for a machining cell and now it schedules fewer jobs than the machines can handle. Was that a mistake?"
+    answer: "Almost certainly, yes. The one per day rule is for resources where a job owns the machine for the whole day regardless of cycle time, like a furnace or a paint booth. A general-purpose machining cell is not that: a machine there can run several short jobs back to back in a shift. With the rule on, each machine is capped at one job per day and the rest of its available hours go unused, so the cell schedules far below what it can do. Turn the rule off for that cell and let the instances pool their hours normally. Reserve the rule strictly for physics, not for ordinary machines."
+---
+
+**The one per day rule limits each machine instance to a single job per calendar day: a work center with three instances and the rule on runs three different jobs at once, one per instance, but no instance takes a second job that day even if it finishes early.** It exists for resources where a load or a setup physically owns the machine for the day, so the pooled capacity arithmetic would otherwise promise work the floor cannot run.
+
+[EDGEBIC by User Solutions](/edgebic) makes this a per-work-center setting. This article defines the rule and when to use it. The full instance selection logic, including load balancing, is in [how EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day).
+
+## How It Works
+
+By default, the instances in a work center pool their hours. Three instances on an eight-hour shift offer twenty-four shared hours, and the engine fills them with whatever fits, including several short jobs on one instance. The one per day rule changes that arithmetic. Each instance is dedicated to a single job per calendar day: the job owns that machine even if it uses two hours of an eight-hour shift.
+
+The rule only matters on a work center with two or more [instances](/blog/what-is-a-machine-instance-in-scheduling). On a single-instance work center a machine takes one job at a time either way, so the rule is inert. On a multi-instance work center it switches the engine from pooled capacity to dedicated instances.
+
+The effect is deliberate waste that matches physics. When a furnace load holds a chamber for the day, the leftover hours genuinely cannot be used, so the rule stops the engine from stacking a second load into them on paper. A plan that reflects what the floor can actually run is worth more than one that looks fully loaded but is fiction.
+
+## A Concrete Example
+
+Picture a heat-treat work center with three chambers, the rule on, running an eight-hour day shift. Three jobs arrive Monday morning needing six, seven, and five hours. The engine assigns each to its own chamber: the first job to Instance 1, the second to Instance 2, the third to Instance 3, all running Monday from 08:00. Three loads run in parallel on the same day, each owning its chamber.
+
+A fourth job that day has no free chamber, because each of the three is dedicated to a job even though none used the full shift. The fourth slides to Tuesday. The leftover clock time in each chamber goes unused, and that is correct: a furnace load holds the chamber whether the cycle is five hours or eight. Contrast that with the rule off, where the engine would pool the twenty-four hours and cheerfully stack the fourth job into the residual capacity, producing a Monday plan the floor could never execute.
+
+## Setup Continuity and Diagnostics
+
+Beyond capacity, the rule buys setup continuity. When a job is assigned to an instance for the day, it keeps that instance for the rest of its run rather than hopping between machines. That matters for the resources the rule is built for: a furnace load or a paint color that had to be moved mid-run would incur a second changeover the plan never accounted for. Dedicating the instance keeps the job on one machine and one setup.
+
+The engine also guards the rule. If two jobs ever land on the same instance on a one-per-day work center, that is flagged as an anomaly rather than left to surface on the floor, so a configuration slip or a manual edit that violates the rule is caught in review. The rule has a companion decision, too: whether the work center has more than one [instance](/blog/what-is-a-machine-instance-in-scheduling). On a single-instance work center the rule is inert, so the two settings only interact when a work center genuinely represents several parallel machines like a bank of chambers or booths.
+
+## How EDGEBIC Uses It
+
+The rule is a setting on the work center. With it on and more than one instance present, the engine assigns each job to the least-loaded free instance for the day and keeps the job on that machine for the rest of its run, which preserves setup continuity. Diagnostics flag two jobs landing on the same instance on a one-per-day work center, so a violation is caught before the floor discovers it.
+
+Reserve the rule for physics: furnace loads, paint colors, sterile campaigns. On a general-purpose machining center it is pure lost capacity. The [manufacturing glossary](/blog/manufacturing-glossary) covers the related terms, [what is a machine instance](/blog/what-is-a-machine-instance-in-scheduling) explains the capacity multiplier the rule modifies, and [how EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day) walks through the selection logic in full.

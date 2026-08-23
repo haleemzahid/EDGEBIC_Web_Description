@@ -1,0 +1,151 @@
+---
+title: "When Machine Pools Meet Parallel Operations"
+description: "Parallel work centers machine pools resolve in order in EDGEBIC: the pool picks one machine first, then parallel partners attach. What composes, what conflicts."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - parallel work centers machine pools
+  - resource group parallel processing
+  - work center group alternate routing
+  - simultaneous capacity scheduling
+  - machine pool selection
+  - synchronized machines scheduling
+targetPhrase: "parallel work centers machine pools"
+wordCount: 2030
+readingTime: 10
+faqQuestions:
+  - question: "Can one routing operation use both a machine pool and a parallel partner machine?"
+    answer: "Not on the same operation. A pool binding and hand-configured alternates are mutually exclusive, because the pool is the alternate list, and a pool-bound operation is restricted to the plain single-machine type. A routing can freely mix them operation by operation: step 20 shops a milling pool, step 30 runs two welders in parallel. What you cannot do is ask one step to both shop a pool and run partners simultaneously."
+  - question: "Which resolves first, the machine pool or the alternate work center resolver?"
+    answer: "The pool resolves first. Immediately before scheduling begins, every pool-bound operation is expanded into a concrete primary machine plus one candidate per remaining member, and only then does the alternate resolver compare candidates and commit the winner. By the time the parallel machinery runs, no pool exists anywhere in the routing: the step names one real machine and carries that machine's hours."
+  - question: "Do parallel machines have to share a shift for the schedule to work?"
+    answer: "Independent parallel machines do, and the match is by shift identity, not by clock times. Two shifts that both run 08:00 to 16:00 but exist as two separate shift records do not count as a common shift, so no simultaneous window will ever be found. Attach every machine in a parallel group to the same shift record. Machine pools have no such requirement, because only one member ends up running the work."
+  - question: "Why did my whole parallel group slide two days instead of starting one machine?"
+    answer: "Independent parallel scheduling is all or nothing. The engine searches for a date, shift, and start time where every machine in the group can start together and pass four validation gates, and if any one machine fails, the whole tuple is rejected and the search moves to the next shift or day. That is the guarantee: either all machines in the group work together or none of them start."
+  - question: "What is the difference between an efficiency factor on a pool member and a factor on a parallel machine?"
+    answer: "A pool member's efficiency factor scales run hours to reflect that machine's speed for that class of work, computed from the routing's base hours every run so it can never compound. A parallel factor scales the hours credited to a mirrored machine without changing its start or end time. They look similar and mean different things, so read the field you actually set rather than assuming a factor is a factor."
+qaQuestions:
+  - question: "We have three mills in a pool. Two of them are also the synchronized pair on a different product's drilling operation. Is that safe?"
+    answer: "It is the one combination worth auditing. A synchronized secondary machine gets its schedule copied from its partner without a capacity check, which is correct for a shared fixture but means the pool can later shop work onto that machine and see capacity that is physically committed. Check the resource load view for any machine showing more than 100 percent, and keep machines that exist mainly as synchronized mirrors out of pools that unrelated work shops from."
+  - question: "How do I get a fallback machine and a parallel partner on the same operation without a pool?"
+    answer: "Configure them as two separate alternate entries on one step. Add Mill-2 with category Parallel and type Independent, and add Mill-3 with category True Alternative and priority 1. The resolver evaluates Mill-3 as a replacement for Mill-1 first, then strips true-alternate entries. If Mill-3 wins, any parallel entries that pointed at Mill-1 are repointed to Mill-3, so the parallel partner follows the new primary rather than dangling."
+---
+
+**In [EDGEBIC by User Solutions](/edgebic), a machine pool and a parallel operation answer two different questions, and they resolve in a fixed order: the pool picks one machine, then parallel partners attach to whatever machine won.** Understanding that order explains almost every surprise planners hit when they configure both on the same routing, including the one combination the system deliberately refuses.
+
+Single-feature explanations already exist for both mechanisms. Read [work center groups explained](/blog/edgebic-work-center-groups-explained) for what a pool is, [parallel work centers explained](/blog/edgebic-parallel-work-centers-explained) for the independent and synchronized modes, and [how EDGEBIC picks the best machine in a pool](/blog/how-edgebic-picks-the-best-machine-in-a-pool) for the selection strategies. This post is about what happens when they meet.
+
+## Three Ways a Step Can Name More Than One Machine
+
+Before the interactions make sense, the three mechanisms have to be separated cleanly. They are easy to confuse because all three put more than one machine name near one routing step.
+
+| Mechanism | Question it answers | How many machines run |
+|---|---|---|
+| Machine pool (work center group) | Which of these interchangeable machines should this job use? | One |
+| True alternate | If the primary is booked out, what is the fallback? | One |
+| Parallel, independent | Which machines split this work so it finishes sooner? | Two or more, capacity checked on each |
+| Parallel, synchronized | Which machines must run in lockstep on the same physical setup? | Two or more, timing copied from the primary |
+
+A pool and a true alternate both end with exactly one machine doing the work. Parallel is the only one where several machines are busy at once. That single distinction is why the pool cannot substitute for parallelism and why parallelism cannot substitute for a pool.
+
+## The Composition Order
+
+Every scheduling run walks the same three stages, and the order is what makes the whole thing coherent.
+
+**Stage one: the pool expands.** Immediately before scheduling, each pool-bound operation is rewritten. The pool's first member by ranking becomes the concrete primary: its name is stamped on the step, its effective run hours are computed as the routing's base hours multiplied by that member's efficiency factor, and its setup override replaces the base setup if one is set. Every remaining active member becomes a candidate carrying its own pre-computed hours. The pool's own selection strategy is stamped on the step so it resolves with its own policy rather than the run-wide default.
+
+**Stage two: the alternate resolver commits a machine.** The resolver now sees an ordinary primary-plus-candidates step. It compares candidates against live capacity, including the tentative reservations already made by steps resolved earlier in the same run, and commits the winner by swapping the machine name, the run hours, and the setup onto the step. Then it strips every candidate entry.
+
+**Stage three: parallel scheduling runs.** By the time the parallel machinery looks at the routing, no pool and no fallback candidate exists anywhere. The step names one real machine with that machine's numbers. Parallel partners are attached to that machine and scheduled either simultaneously with their own capacity checks or mirrored from it.
+
+The practical consequence: nothing downstream of stage two knows a pool was ever involved. Multi-shift allocation, instance selection, capacity consumption, and persistence all behave exactly as if a planner had typed that machine's name into the routing by hand. That is the design goal, and it is why pools added no new scheduling mechanism.
+
+## The Combination the System Refuses
+
+A pool binding and hand-configured true alternates cannot coexist on one operation. The pool *is* the alternate list, and two competing sources of candidates would have undefined selection semantics. The rule is enforced in three places: binding a step to a pool strips any manual alternates you had, the graphical designer blocks the alternate and parallel configuration dialogs on a pool-bound node, and the engine strips defensively at expansion time in case anything slipped through an import.
+
+Version one also restricts a pool-bound operation to the plain single-machine type. You cannot mark one step both "shop the milling pool" and "run independent parallel." Pool plus parallel on a single step is tracked as a later addition.
+
+None of that stops you mixing them across a routing. A perfectly ordinary routing looks like this:
+
+| Step | Configuration |
+|---|---|
+| 10 Saw | Single machine |
+| 20 Mill | Pool: MILLING, three members, earliest completion |
+| 30 Drill | Synchronized parallel: Drill-1 primary, Drill-2 and Drill-3 mirrored |
+| 40 Deburr | Single machine with one true alternate |
+
+Each step uses the mechanism that matches its physics. That is the pattern to aim for.
+
+## Getting a Fallback and a Partner on One Step
+
+If you genuinely need one operation that both splits across machines and has a fallback, do it without a pool, using two alternate entries with different categories.
+
+Add Mill-2 as category Parallel, type Independent. Add Mill-3 as category True Alternative with priority 1. On the next run, the resolver treats Mill-3 as a possible replacement for Mill-1, compares projected completion times, and commits one of them. Then it strips the true-alternate entry.
+
+The detail worth knowing is the rewiring. If Mill-3 wins, every remaining parallel entry that pointed at Mill-1 as its parent is repointed to Mill-3. Mill-2 does not dangle against a machine that is no longer in the plan: it becomes Mill-3's parallel partner. So the outcome is three-way routing from one step. If Mill-1 has room, Mill-1 and Mill-2 run together. If Mill-1 is booked solid, Mill-3 takes the work with Mill-2 alongside it.
+
+## Shifts: Strict for Parallel, Irrelevant for Pools
+
+This is the single most common cause of a parallel group that never schedules, and it does not apply to pools at all.
+
+Independent parallel scheduling searches day by day for a window where every machine in the group can start at the same moment, and it builds the candidate window list by intersecting shifts **by shift identity**. Two shift records that both run Monday to Friday, 08:00 to 16:00, are still two different records. A group whose machines are attached to different records shares no common shift on any date, finds no simultaneous window, and slides forever. The fix is to attach every machine in the group to the same shift record rather than to look-alike copies.
+
+Pools have no equivalent requirement. Each member is evaluated on its own calendar, and only the winning member's calendar matters afterward. A pool made of machines on different shift patterns is fine and is often the point: the second-shift machine wins when the day-shift one is full.
+
+## All or Nothing, Versus One of Several
+
+The two mechanisms behave in opposite ways when a machine is unavailable, and that is worth internalizing before you choose one.
+
+For an **independent parallel group**, availability is an all-or-nothing test. Every candidate combination of date, shift, and start time has to pass four gates: each machine must have capacity available from that start, each must be able to start at that exact moment without an existing conflict, the group must not double-book an instance across machines, and each must have continuous capacity through to the projected end. A failure on any gate rejects the whole tuple and the search advances. If Drill-2 is down Monday and Tuesday, Drill-1 and Drill-3 do not start alone. All three start Wednesday.
+
+For a **pool**, unavailability is a non-event. A member that is out of rotation is deactivated in the membership list and simply drops out of the candidate set on the next run, and the remaining members compete as usual. Work already started on the deactivated machine stays put, because started operations are locked to their machine.
+
+That contrast is the honest guide to picking one. Machines that must physically run together belong in a parallel group and will wait for each other. Machines that are interchangeable belong in a pool and will cover for each other.
+
+## The One Interaction Worth Auditing
+
+Synchronized parallel machines get their schedule mirrored from the primary without a capacity check. That is correct: a three-spindle fixture genuinely occupies all three spindles for the same window, and the mirrors are physical copies of one operation rather than separate operations. But it also means a mirrored machine's allocation is written into the capacity map without asking whether that machine was already committed.
+
+Now add a pool. If a machine exists mainly as a synchronized mirror on one product and is also a member of a pool that other products shop from, the pool can legitimately choose it for unrelated work in a window the mirror already occupies. Neither mechanism is wrong on its own; the combination is what over-commits the machine.
+
+Two practical rules follow. Keep machines whose main role is being a synchronized mirror out of pools that unrelated work shops from. And when you do have overlap, check the resource load view for any machine reading over 100 percent, which is the signature. The [parallel work center mistakes post](/blog/parallel-work-center-mistakes-edgebic) covers the symptom and the checks in more detail, and [work center overloaded: causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes) walks the diagnosis.
+
+## Three Factors That Are Not the Same Number
+
+Both mechanisms have a field called a factor, and a third exists on the machine record. Mixing them up produces schedules that look plausible and are wrong.
+
+| Factor | Where it lives | What it scales |
+|---|---|---|
+| Efficiency factor | Pool membership row | Run hours for that member, always recomputed from the routing's base hours |
+| Setup override | Pool membership row | That member's setup hours, never scaled by the efficiency factor |
+| Factor | Parallel alternate entry | Hours credited to a mirrored machine, with start and end times unchanged |
+| Efficiency factor | Work center record | Pieces per hour on a pieces-based machine |
+
+Two contrasts matter most. A pool member's efficiency factor never touches setup, because a changeover cost is per changeover and does not get faster because the machine runs faster: a machine can run at half the time and still set up slowly. And a parallel factor moves hours, not time: a mirrored machine credited at 1.25 shows more hours in the same wall-clock window.
+
+## A Worked Example
+
+Take a milling pool of three machines: Mill-1 at factor 1.0, Mill-2 at 0.5 (twice as fast), Mill-3 at 1.5 with a setup override of 0.25 hours. The routing step is 0.04 hours per unit with 0.5 hours of setup, and the order is 100 pieces.
+
+Expansion produces three candidates:
+
+| Candidate | Effective run hours | Setup | Total for 100 pieces |
+|---|---|---|---|
+| Mill-1 | 0.04 per unit | 0.5 h | 4.5 h |
+| Mill-2 | 0.02 per unit | 0.5 h | 2.5 h |
+| Mill-3 | 0.06 per unit | 0.25 h | 6.25 h |
+
+With all three free on Monday and earliest-completion selected, Mill-2 wins at 10:30 against Mill-1 at 12:30. If Mill-2 is booked solid until Wednesday, Mill-1 wins with a Monday 12:30 finish. The fastest machine loses to the available one, which is the entire value of capacity-aware pooling.
+
+Now suppose the next step is a synchronized drilling pair. That step never sees the pool at all. It attaches to its own primary drill and mirrors onto its partner, timed from whenever the milling step's output becomes available.
+
+## What to Check After a Run
+
+Every expansion writes a decision line naming the pool, the strategy, the base hours, and each candidate's effective hours, followed by the resolver's own line naming the winner. When a pooled step lands on a machine you did not expect, that pair of lines answers why in one read. When a parallel group did not schedule at all, look for the message about no simultaneous capacity and then check common shifts first, load second.
+
+For configuration-level errors on either side, [work center group mistakes](/blog/work-center-group-mistakes-edgebic) and [the anomaly checks explained](/blog/what-the-edgebic-anomaly-checks-actually-look-for) list the specific symptoms and their fixes. For the wider feature map, start at the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

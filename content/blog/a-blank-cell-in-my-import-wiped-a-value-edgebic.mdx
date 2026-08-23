@@ -1,0 +1,103 @@
+---
+title: "A Blank Cell in My Import Wiped a Value: Why, and How to Prevent It"
+description: "Blank cells are supposed to be preserved on update, so a wiped value usually means the row was a create, not an update, or the entity does not reconcile that way."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - blank cell import wiped value
+  - import update existing records
+  - blank cell preservation import
+  - import overwrote data
+  - import mask update behavior
+  - routing import overwrite
+targetPhrase: "blank cell import wiped a value"
+wordCount: 1234
+readingTime: 6
+faqQuestions:
+  - question: "Does a blank cell in an import overwrite the existing value?"
+    answer: "Not on an update to a reconcilable record. When update existing records is on, a blank source cell falls back to the current stored value, so a blank cost or price leaves the existing number untouched. Blank-cell preservation only runs on the update path, though. If the row is treated as a new record instead of a match, the blank cell takes the create default, which for a number is zero, so the record looks wiped even though a different record was actually created."
+  - question: "Why did my import zero out a field I left blank?"
+    answer: "Almost always because the row did not match an existing record and was created new. On a create, a blank numeric cell defaults to zero rather than falling back to a stored value, because a brand new record has nothing to fall back to. The usual trigger is a natural-key mismatch: a name typo or a different code means the importer does not recognize the row as the existing item, so it inserts a fresh one with the blank field at zero and the original record still sitting there untouched."
+  - question: "Does blank-cell preservation work for routing and actuals imports?"
+    answer: "No. Blank-cell preservation applies to entity types that reconcile against an existing record by natural key, which are products, work centers, customers, and sales orders. Routing and actuals imports reconcile differently. A routing re-import always wipes and recreates each end product's steps from the file, so a blank field on a step imports as its create default. An actuals import always overwrites the dates the file carries. Neither has an update-with-fallback path, so a blank there is not preserved."
+qaQuestions:
+  - question: "We re-imported product costs with update on, left one row's cost blank on purpose, and it still went to zero. What happened?"
+    answer: "The blank cell itself would have been preserved on update, so the row was almost certainly created rather than matched. Check the part name and code in your file against the stored record: an extra space, a different case handling, or a changed code means the importer did not recognize it as the existing product and inserted a new one with cost zero, leaving the original in place. Look at the result counts. If it says created where you expected updated, the natural key did not match, and the fix is to align the key column, not the cost column."
+  - question: "A blank quantity on a routing step imported as zero and broke the schedule. Update was on. Why was it not preserved?"
+    answer: "Because routing imports do not use the update-with-fallback path at all. A routing re-import wipes every step for that end product and recreates them from the file, so whatever the file says is what the step becomes, and a blank hours cell becomes zero. The reconcilable entities, product, work center, customer, and sales order, are the only ones with blank-cell preservation. For routings, put a real value in every field you care about, because the file is the complete definition of the steps after the import, not a patch on top of them."
+---
+
+**A blank cell is supposed to be preserved on an update, so a wiped value almost always means the row was treated as a new record instead of a match, or the entity type does not reconcile that way at all.** Once you know which of those happened, the fix is the natural key or the entity's import model, not the blank cell.
+
+[EDGEBIC by User Solutions](/edgebic) protects planner-set values on an update: when update existing records is on, a blank source cell falls back to the current stored value rather than overwriting it. That guard runs only on the update path for entities that match by natural key, which is where the confusion starts. This post sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic) and [import masks explained](/blog/edgebic-import-masks-explained).
+
+## First, Read the Result Counts
+
+The import result dialog reports created, updated, reused, and failed counts. That single line tells you most of the story. A row you expected to update that shows up in the created count did not match an existing record, and a create is exactly where a blank cell takes a default instead of falling back. Read the counts before you read the data.
+
+## Cause 1: The Row Was a Create, Not an Update
+
+Blank-cell preservation only runs when a row matches an existing record and takes the update path. On a create, a blank numeric cell takes the create default, which is zero, because a new record has no stored value to fall back to. The value was not wiped from the existing record; a new record was inserted with the blank field at zero, and the original still exists.
+
+**How to tell:** the result counts show the row as created, and searching for the item reveals both the original record and a new one with the blank field at zero.
+
+**Fix:** align the natural key so the row matches. Lookups ignore case, but a name typo, an extra space, or a changed code will miss the match and insert a new record. Correct the key column in the source file and re-import. Then remove the accidental zeroed duplicate.
+
+## Cause 2: Update Existing Records Was Off
+
+If update existing records is off, a matching row is reused unchanged rather than updated. That is safe, but it also means an import you intended as an update did nothing, and if the item did not match, it was created with the blank default instead.
+
+**How to tell:** the counts show reused rows where you expected updates, or created rows for items that already existed.
+
+**Fix:** turn on update existing records in the mask options. It is available on the reconcilable entity types only: product, work center, customer, and sales order. With it on and a matching key, blank cells fall back to the stored value.
+
+## Cause 3: The Entity Does Not Reconcile by Natural Key
+
+Routing and actuals imports do not have an update-with-fallback path, so blank-cell preservation does not apply to them at all.
+
+**How to tell:** the wiped field is on a routing step or an actuals record, not on a product, work center, customer, or sales order.
+
+**Fix, routing:** put a real value in every field you care about. A routing re-import wipes each end product's steps and recreates them from the file, so the file is the complete definition of the steps afterward, and a blank hours or setup cell becomes zero. Keep all steps for an end product in one file.
+
+**Fix, actuals:** an actuals import always overwrites the dates the file carries, which makes re-importing a corrected file safe and non-duplicating. The replace-existing option, when on, additionally clears actuals on dates the file does not cover, making the file the complete record. Leave it off if you only mean to add or correct specific days.
+
+## Cause 4: A Create-Path Field on a Reconcilable Entity
+
+Even on a reconcilable entity, the create default applies to fields on a genuinely new record. A new product with a blank cost is created with cost zero, which is intentional: a new record with a blank field is not ambiguous the way an existing one is.
+
+**How to tell:** the record is genuinely new and the blank field defaulted to zero or empty.
+
+**Fix:** fill the field for new records. Preservation is for protecting existing values, not for inventing them.
+
+## The Reconciliation, in Order
+
+1. **Read the result counts.** Created where you expected updated points straight to a key mismatch.
+2. **Check the natural key** for typos, spacing, or a changed code that missed the match.
+3. **Confirm update existing records is on** for product, work center, customer, and sales order imports.
+4. **Remember routing and actuals do not preserve blanks;** the file is authoritative for those.
+5. **Re-import the corrected file** and clean up any accidental zeroed duplicates.
+
+## Prevention
+
+- **Match on a stable key.** Import the natural-key column exactly as stored so updates land as updates, not creates.
+- **Leave a column out entirely** rather than blank when you do not want to touch it on a reconcilable update, which sidesteps the question altogether.
+- **Put every field you care about in routing files,** because a re-import defines the steps completely.
+- **Import one row first and read the counts** before running a large file, so a key mismatch surfaces on one record instead of hundreds.
+
+A run that reported rejected rows is a separate matter covered in [the import said failed rows](/blog/the-import-said-failed-rows-edgebic), and a routing that came in with the wrong step order is covered in [my imported routing came in out of order](/blog/my-imported-routing-came-in-out-of-order-edgebic).
+
+<Accordion title="Does a blank cell in an import overwrite the existing value?">
+Not on an update to a reconcilable record. When update existing records is on, a blank source cell falls back to the current stored value, so a blank cost or price leaves the existing number untouched. Blank-cell preservation only runs on the update path, though. If the row is treated as a new record instead of a match, the blank cell takes the create default, which for a number is zero, so the record looks wiped even though a different record was actually created.
+</Accordion>
+
+<Accordion title="Why did my import zero out a field I left blank?">
+Almost always because the row did not match an existing record and was created new. On a create, a blank numeric cell defaults to zero rather than falling back to a stored value, because a brand new record has nothing to fall back to. The usual trigger is a natural-key mismatch: a name typo or a different code means the importer does not recognize the row as the existing item, so it inserts a fresh one with the blank field at zero and the original record still sitting there untouched.
+</Accordion>
+
+<Accordion title="Does blank-cell preservation work for routing and actuals imports?">
+No. Blank-cell preservation applies to entity types that reconcile against an existing record by natural key, which are products, work centers, customers, and sales orders. Routing and actuals imports reconcile differently. A routing re-import always wipes and recreates each end product's steps from the file, so a blank field on a step imports as its create default. An actuals import always overwrites the dates the file carries. Neither has an update-with-fallback path, so a blank there is not preserved.
+</Accordion>

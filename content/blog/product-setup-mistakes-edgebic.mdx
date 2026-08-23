@@ -1,0 +1,145 @@
+---
+title: "8 Product Master Data Mistakes That Distort Your Schedule"
+description: "Product master data mistakes and their symptoms: legacy multi-routing rows, padded lead times, unstocked stock items, bad yield values, and cascading deletes."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - product master data mistakes
+  - item master data errors manufacturing
+  - lead time padding scheduling
+  - yield configuration error
+  - duplicate routing product
+  - scheduling data quality
+targetPhrase: "product master data mistakes"
+wordCount: 1750
+readingTime: 9
+faqQuestions:
+  - question: "What is the most common product data error in scheduling software?"
+    answer: "Padded lead time is the most common and the most expensive, because it looks like prudence. Adding safety days to a product's lead time pushes every promise later than it needs to be and hides the capacity problem that made the padding feel necessary. The buffer belongs in the schedule where a planner can see and manage it, not buried in a master data field where nobody remembers it exists."
+  - question: "Why does a product show a red multiple-BORs warning?"
+    answer: "It means the product resolves to more than one routing, which is a legacy-data condition rather than a supported configuration. Current practice is one routing per product, and the scheduling and quoting chain assumes it, so which routing drives a job becomes ambiguous. Filter the product list's BOR column to the legacy value to find every offender at once, then keep the correct routing and remove the others."
+  - question: "What happens if yield is entered as a percentage instead of a fraction?"
+    answer: "Entering 92 instead of 0.92 is flagged by the anomaly report as out of range, because yield must sit above zero and at or below one. If such a value reached the calculation, the inflation step divides the required quantity by the yield, so a value above one would reduce the start quantity rather than increase it. That is the exact opposite of the intent and would leave every replenishment short."
+  - question: "Is deleting a product in EDGEBIC safe?"
+    answer: "No, and the confirmation prompt says so. Deleting a product also deletes its entire routing configuration and flushes the production schedule rows tied to it, with no undo. Old product records cost nothing to keep, so the correct retirement move is to untick the active flag: history and reports stay intact while the item disappears from new-order and scheduling dropdowns."
+qaQuestions:
+  - question: "Our make-to-stock buffer has never filled, months after we set the product up. What is wrong?"
+    answer: "Check the stocked flag on the product. Build method and the stocked flag are two separate gates, and a product set to make-to-stock with the stocked flag off can never hold inventory: no receipt posts when a job completes, netting skips the item, and on-hand stays at zero indefinitely. The combination looks fully configured, which is why it survives for months. The anomaly report has a dedicated check that flags exactly this pairing as a warning with a click-through to the product, and the fix is one tickbox."
+  - question: "Two people are quoting the same part and getting different margins. How does that happen?"
+    answer: "Quotes snapshot their cost and price figures at creation time. A new simulation uses whatever rollup cost and sale price are on the product right now, while an existing quote keeps the numbers it was built with, because a quote is a historical document. If someone updated rollup cost between the two quotes, both are internally correct and the margins legitimately differ. The fix is a discipline rather than a setting: keep rollup cost current on anything you quote, and treat a margin comparison across dates as a comparison of two different cost bases."
+---
+
+**Most schedule problems that look like engine problems are product master data mistakes.** A routing that resolves two ways, a lead time padded for comfort, a yield typed as a percentage: none of them throw an error, all of them change what the schedule says, and every one of them surfaces somewhere far from the product form. In EDGEBIC by User Solutions several of these have dedicated anomaly checks precisely because they are silent by nature.
+
+Here are eight that recur, what each one looks like from the outside, and how to fix it. For the fields themselves see [how to set up products](/blog/how-to-set-up-products-in-edgebic); for the mechanism behind the policy fields see [make-to-stock vs make-to-order](/blog/make-to-stock-vs-make-to-order-in-edgebic).
+
+## 1. Leaving a product with more than one routing
+
+**Symptom.** A red warning in the product list's BOR column reading something like "⚠️ 2 BORs (Legacy)". Two jobs for the same part schedule differently for no visible reason, or a quote's hours do not match what the shop actually runs.
+
+**Cause.** Legacy data left the product resolving to more than one routing. Current practice is one routing per product, and the scheduling and quoting chain assumes it, so which routing gets used is ambiguous.
+
+**Fix.** Filter the BOR column to the legacy value to find every offender in one pass, then open the routing module, keep the correct routing, and remove the others. The row returns to Active BOR. Do this before you trust any schedule for the affected parts, and revisit it after every bulk import, because imports are how the condition usually arrives.
+
+## 2. Padding lead time to buy safety
+
+**Symptom.** Every promise date is later than the shop believes it needs to be. Nobody can explain the extra days, and the schedule shows no work in them.
+
+**Cause.** Someone added slack to the product's lead time. Lead time is meant to describe real post-production time (packing, curing, shipping prep), and padding it inflates the delivery-ready tail on every job for that product.
+
+**Fix.** Set lead time to actual post-production duration and nothing more. If the shop needs protection against variability, protect it visibly in the schedule rather than invisibly in master data. A buffer you can see is a buffer you can manage. A buffer buried in a product field is a permanent tax that nobody remembers levying.
+
+Padding also has a second-order effect worth knowing: backward scheduling aims at due date minus lead time, so an inflated value moves the whole backward pass earlier and can push it past what is feasible and into the forward fallback.
+
+## 3. Putting packing time in the last operation's run time
+
+**Symptom.** A work center's utilization is high, but walking the floor shows the machine idle. Other jobs get pushed off a resource that is genuinely free.
+
+**Cause.** Post-production time was added to an operation's run hours instead of to lead time. Run hours book capacity. The machine is now reserved for work it is not doing.
+
+**Fix.** Move it to lead time, which is time rather than work. It draws as a tail after the last operation, books no capacity, and the dashboard still judges lateness against the delivery-ready end. Nothing is lost by moving it, and every load and utilization figure for that work center becomes truthful. If your work center genuinely does look overloaded after the correction, the [overloaded work center guide](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers the real causes.
+
+## 4. Make-to-stock with the stocked flag off
+
+**Symptom.** A buffer that never fills. Jobs complete, on-hand stays at zero, and the consume-from-stock netting never kicks in.
+
+**Cause.** Build method and the stocked flag are separate gates. Build method declares intent. The stocked flag decides whether inventory transactions happen at all. With the flag off, no receipt posts on completion regardless of what the build method says.
+
+**Fix.** Tick the stocked flag. The anomaly report has a check dedicated to this pairing and flags it as a warning with a click-through to the product, so a periodic run of the report catches it in seconds. Only genuine non-inventory items (phantoms, service lines) should carry the flag unticked.
+
+## 5. Entering yield as a percentage
+
+**Symptom.** The anomaly report shows a yield out-of-range row. Replenishment suggestions come back at quantities that do not cover scrap.
+
+**Cause.** Yield is a fraction in the range above zero and up to one. Typing 92 instead of 0.92, or leaving a zero, breaks the inflation math.
+
+**Fix.** Enter 0.92 for 92 percent and 1.0 for no scrap. Understand why the validation is split by severity: a yield at or below zero is critical, because the inflation step divides by it. A yield above one is a warning, because the division would *reduce* the start quantity instead of raising it, which quietly leaves every replenishment short. The correct calculation looks like this:
+
+```
+Required good units: 150
+Yield:               0.90
+Start quantity:      ceil(150 ÷ 0.90) = 167
+```
+
+## 6. Answering "No" to the update-related-references prompt
+
+**Symptom.** A renamed product still shows its old name on the Gantt, in a routing, or on a work center detail view. Two names for one part circulate on the floor.
+
+**Cause.** Renaming a product that routings or scheduled jobs already use raises a prompt asking whether to update related references. Answering No updates only the product record by design and leaves the stored text elsewhere untouched.
+
+**Fix.** Edit the product again, re-save the same name, and answer Yes. Nothing was lost in the meantime, but until you do, the shop is reading a stale label.
+
+## 7. Deleting a product instead of deactivating it
+
+**Symptom.** A product is gone and so are its schedule rows. The confirmation warned about it and somebody clicked through.
+
+**Cause.** Deleting a product cascades. It removes the entire routing configuration and flushes the production schedule rows tied to the product. There is no undo.
+
+**Fix.** Untick the active flag instead. The record stays in the database for historical orders and reporting, and the product disappears from new-order dropdowns and scheduling inputs. Old products left inactive are harmless and cost nothing. Reserve deletion for records created in error that have never been used, and take a database backup before any bulk cleanup.
+
+## 8. Letting quoted costs go stale
+
+**Symptom.** Margins look wrong even though the schedule is accurate. Two quotes for the same part show different margins.
+
+**Cause.** Rollup cost and sale price feed quote cost and margin, and they are the fields most likely to sit at their import defaults. New quote simulations use the current values while existing quotes keep the figures they were created with, because a quote is a historical document. Both quotes are internally correct; they are just built on different cost bases.
+
+**Fix.** Keep rollup cost current on anything you quote, and use a bulk import for a price revision across many products rather than editing them one at a time. Note that the platform warns when sale price is below rollup cost but does not block the save, so the warning is a prompt to check rather than a guarantee that someone did. The [quoting guide](/blog/edgebic-quoting-guide) shows how the two numbers become a margin, and the [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic) shows them carried through to a shipped order.
+
+## Two more worth knowing
+
+**Part numbers can duplicate through imports.** The product form enforces uniqueness on the secondary product name when you edit it there, but data arriving through a bulk load can slip duplicates past. Keep import files clean and spot-check for duplicates after a large load.
+
+**A product with no setup family acts as its own family.** If changeovers to and from that product cost real time and no product-level matrix entry exists, the engine falls back to the flat step setup time, which does not vary by sequence. Assign a family to anything with meaningful sequence-dependent changeover. The [paint shop example](/blog/paint-shop-changeover-sequencing-example-edgebic) shows what the difference is worth in booth hours.
+
+## Finding all of this at once
+
+Rather than auditing 400 products by hand, use the two surfaces built for it:
+
+| Surface | What it catches |
+|---|---|
+| **Product list, grouped by the BOR column** | Products with no routing, and legacy multi-routing rows |
+| **Scheduler anomaly report, inventory config section** | Make-to-stock items that cannot hold stock, and out-of-range yields |
+
+Both are click-through: the anomaly rows open the offending product directly. Running them after every bulk import, and once a quarter otherwise, catches the majority of what is on this list before it reaches a schedule.
+
+For the concepts behind these fields see [product master data and planning attributes explained](/blog/edgebic-products-and-planning-attributes-explained). For the platform overview, read the [complete EDGEBIC guide](/blog/edgebic-complete-guide) or start at the [product hub](/edgebic).
+
+<Accordion title="What is the most common product data error in scheduling software?">
+Padded lead time is the most common and the most expensive, because it looks like prudence. Adding safety days to a product's lead time pushes every promise later than it needs to be and hides the capacity problem that made the padding feel necessary. The buffer belongs in the schedule where a planner can see and manage it, not buried in a master data field where nobody remembers it exists.
+</Accordion>
+
+<Accordion title="Why does a product show a red multiple-BORs warning?">
+It means the product resolves to more than one routing, which is a legacy-data condition rather than a supported configuration. Current practice is one routing per product, and the scheduling and quoting chain assumes it, so which routing drives a job becomes ambiguous. Filter the product list's BOR column to the legacy value to find every offender at once, then keep the correct routing and remove the others.
+</Accordion>
+
+<Accordion title="What happens if yield is entered as a percentage instead of a fraction?">
+Entering 92 instead of 0.92 is flagged by the anomaly report as out of range, because yield must sit above zero and at or below one. If such a value reached the calculation, the inflation step divides the required quantity by the yield, so a value above one would reduce the start quantity rather than increase it. That is the exact opposite of the intent and would leave every replenishment short.
+</Accordion>
+
+<Accordion title="Is deleting a product in EDGEBIC safe?">
+No, and the confirmation prompt says so. Deleting a product also deletes its entire routing configuration and flushes the production schedule rows tied to it, with no undo. Old product records cost nothing to keep, so the correct retirement move is to untick the active flag: history and reports stay intact while the item disappears from new-order and scheduling dropdowns.
+</Accordion>

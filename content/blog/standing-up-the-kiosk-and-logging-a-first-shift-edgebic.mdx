@@ -1,0 +1,119 @@
+---
+title: "Standing Up the Kiosk and Logging a First Shift in EDGEBIC"
+description: "A shop-floor kiosk walkthrough: bring a terminal online, run one operation from setup to complete, count pieces, and hand off the shift with real actuals."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - shop floor kiosk
+  - logging actual hours
+  - operator punch
+  - production data collection
+  - setup and run punch
+  - shift handoff
+targetPhrase: "shop floor kiosk"
+wordCount: 2050
+readingTime: 10
+faqQuestions:
+  - question: "How does an operator log time on a shop-floor kiosk?"
+    answer: "The operator taps through the states of a job: START SETUP to begin the changeover, START RUN when production begins, GOOD and SCRAP to count pieces, and COMPLETE OPERATION to finish. The kiosk stamps every punch with the server's clock, never the terminal's, so the times are consistent even if the terminal restarts. Behind the buttons, each tap opens or closes a production punch, and the first run punch stamps the operation's actual start date."
+  - question: "Does the kiosk timestamp come from the terminal or the server?"
+    answer: "From the shared clock, always. Timestamps are taken when the tap lands, and nobody types a time during normal use, so the terminal never sends a clock value of its own. That means an operator cannot backdate a punch by changing the terminal's time, and two terminals on the same floor cannot disagree about when a shift started. Times are only ever typed in Manual Entry, when tap-as-you-go was not possible."
+  - question: "What happens when the operator marks an operation complete at the kiosk?"
+    answer: "The kiosk closes any open punch, rebuilds the daily hour breakdown from the closed run punches, and stamps the operation's actual end date with the server time. The next scheduler run then classifies that step as completed and preserves it exactly. The terminal returns to its idle screen and fetches the next scheduled job for the machine. In short, one COMPLETE tap turns a running operation into immutable history the reschedule will never move."
+qaQuestions:
+  - question: "We are putting a tablet at each machine for the first time. What does day one actually look like for an operator?"
+    answer: "It is four taps and some counting. The operator walks up to the terminal, which already shows the next scheduled job for that machine. They tap START SETUP for the changeover, then START RUN when they begin cutting, and the actual start date is stamped automatically. During the run they tap GOOD for each good piece and SCRAP with a reason for rejects, with a ten-second UNDO for fat fingers. At the end they tap COMPLETE OPERATION, which closes the punches, sets the actual end, and pulls up the next job. No typing of times, no timesheet, and the planner sees real hours instead of estimates."
+  - question: "The tablet rebooted mid-job during our first shift. Did we lose the hours the operator had logged?"
+    answer: "The taps that already landed are safe. The kiosk reads and writes the shared database live rather than holding anything on the tablet, so every piece counted and every punch opened before the reboot is already recorded, and the timestamps came from the shared clock at the moment of each tap. What the terminal does not have is an offline mode, so anything the operator tried to tap while it was down did not register. After a restart, check the job's state on screen before carrying on, and fill any gap with MANUAL ENTRY at the terminal or from the planner's Log Actuals dialog. If a run punch was left open across the outage, a supervisor can correct it afterwards in the History drawer, where the change is kept alongside the original with a reason."
+---
+
+**Standing up the shop-floor kiosk in EDGEBIC by User Solutions is turning a terminal into a place where operators tap through a job (setup, run, count, complete) and the system records real, server-timestamped actuals that the scheduler treats as immutable history.** This walkthrough brings one terminal online and runs a first operation end to end. It is part of our [worked examples series](/blog/edgebic-worked-examples), and it is the execution half of the [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic), told from the machine's point of view. For the wider picture, the [shop-floor guide](/blog/edgebic-shop-floor-guide) covers the full data-collection story.
+
+## The Setup: One Machine, One Terminal, One Job
+
+Fairbanks Tool puts a tablet at the saw (SAW-1) for the first time. The scheduler has already placed today's work, so the machine has a queue. The operator, Rosa, will run the first job of the morning entirely through the kiosk. Everything below is the documented kiosk workflow.
+
+## Step 1: The Idle Screen Shows What Is Next
+
+Rosa walks up to the terminal. The kiosk is on its **IDLE** screen, and it already shows the **Next Up** job for the saw, fetched from the current schedule. A **Coming Up** panel lists the next few jobs after it, so she can see what follows without walking to the board. If the schedule changed recently and the terminal has not caught up, a Refresh action re-pulls the queue.
+
+Nothing is written yet. The idle screen is read-only: it is the operator's dispatch list, sourced from the last scheduler run.
+
+## Step 2: Start Setup
+
+Rosa taps **START SETUP** to begin the changeover for the first job. The kiosk opens a setup punch, stamped with the server's clock, and the screen switches to the **SETUP** state with a running elapsed-time clock. If her setup has distinct sub-phases (teardown, clean, load fixture, run-off), each further tap closes the current sub-phase and opens the next, so the setup time is captured in real detail rather than as one lump.
+
+The server timestamp matters here: the terminal never sends a time. That single design choice is why the numbers stay honest across restarts, wrong terminal clocks, and time-zone confusion.
+
+## Step 3: Start the Run
+
+Setup done, Rosa taps **START RUN**. The kiosk closes the setup punch, opens a run punch, and, because this is the first run punch for the operation, stamps the operation's **actual start date** on the schedule server-side. The screen now shows a running timer and **GOOD** and **SCRAP** piece counters.
+
+One guard fires here. If an earlier step in this job has no actuals recorded, the kiosk warns that prior work centers have no actuals and asks the operator to acknowledge. If she confirms, the system back-fills the preceding steps' planned dates as actuals, tagged as system-filled, so the sequence stays consistent. This keeps a job from looking like step three ran before step two.
+
+## Step 4: Count Good and Scrap Pieces
+
+As the saw runs, Rosa taps **GOOD +1** for each accepted piece. For a reject she taps **SCRAP +1**, and the first scrap tap opens a quality-reason picker before it increments, so scrap always carries a reason. Each good tap increments the run punch's good-piece count; each scrap tap increments the scrap count and records the reason.
+
+If she fat-fingers a tap, an **UNDO** within ten seconds reverses it and writes an audited adjustment, so the correction is visible rather than silent. After the ten-second window, a supervisor manual-entry dialog overwrites the count. The kiosk supports pausing too: a **PAUSE** closes the run punch and asks for a reason (down, idle, rework), and **RESUME** opens a fresh run punch, so downtime is captured with a cause instead of vanishing into the gap.
+
+## Step 5: Complete the Operation
+
+When the job is done, Rosa taps **COMPLETE OPERATION**. Three things happen: any open punch closes, the daily hour breakdown is rebuilt from the closed run punches per date, and the operation's **actual end date** is stamped with the server time. The terminal returns to the idle screen and fetches the next job for the saw.
+
+That completion is the moment the operation becomes history. The next scheduler run classifies this step as completed and preserves it exactly, byte for byte, no matter what else reschedules. This is the guarantee that makes live scheduling safe on the floor: [completed work is never moved by a reschedule](/blog/machine-breakdown-reschedule-walkthrough-edgebic).
+
+## Step 6: Hand Off the Shift
+
+At the end of the shift, the lead taps the **Shift Handoff** summary and enters a since-time (or accepts the shift start). The kiosk aggregates the closed punches into run, setup, and down hour buckets and surfaces the recent pauses with their reasons. The outgoing shift shows the incoming shift what ran, what paused and why, and what is pending, all from real punches. Nothing is written by the handoff; it is a read.
+
+## Where the Data Lands
+
+After one shift, the planner's desktop shows the difference. Instead of estimated hours, the schedule now carries:
+
+- **Actual start and end dates** on the completed operation, server-stamped.
+- **Daily hour breakdowns** rebuilt from the run punches, split by date.
+- **Good and scrap piece counts** with scrap reasons.
+- **Setup and down time** captured with sub-phases and pause reasons.
+
+The planner opens the grid and sees planned versus actual side by side. Where the saw ran longer or shorter than planned, the variance is real data, not a guess, and it feeds the plan-versus-actual variance on the utilization report and the earned-value KPIs. The same punches are what a week of availability, performance, and quality figures is built from, worked out slowly in [an OEE week on one machine](/blog/an-oee-week-on-one-machine-edgebic).
+
+## What This First Shift Proves
+
+1. **The floor logs by tapping, not typing.** Setup, run, count, complete: four states, no timesheet.
+2. **Every punch is stamped from the shared clock.** The terminal never sends a time of its own, so a wrong clock on the floor cannot distort the record.
+3. **The first run punch sets the actual start; complete sets the actual end.** The dates come from the operator's taps, automatically.
+4. **Scrap carries a reason; corrections are audited.** Quality data and honest counts come for free.
+5. **Complete makes history.** The reschedule preserves the finished operation exactly.
+
+## Variations Worth Trying
+
+**Lose the connection mid-run.** The kiosk reads and writes the shared database live and has no offline mode, so a terminal that drops off cannot punch until it is back. Nothing is buffered locally to sync later. Reconnect and punch normally, and use Manual Entry for any state change the outage forced you to miss. [What the kiosk does when the network drops](/blog/what-the-kiosk-does-when-the-network-drops) covers the fallback in full.
+
+**Enter hours from the desk.** For a machine without a terminal, the planner logs actuals from the desktop Log Actuals dialog, and auto-calc can derive hours from pieces or pieces from hours. The [how-to on logging actual hours and pieces](/blog/how-to-log-actual-hours-and-pieces-in-edgebic) covers that path.
+
+**Meet the routing-changed banner.** Edit a job's routing after it was scheduled, then reload the terminal. A yellow banner warns that the routing changed since the job was planned and lists what moved, such as the work center, the setup, or the cycle time. The operator acknowledges it and tells the planner. See [the BOR drift banner at the kiosk](/blog/the-bor-drift-banner-at-the-kiosk).
+
+## The Bigger Point: A Schedule Is Only As True As Its Actuals
+
+A finite capacity schedule drifts from reality the moment the floor stops feeding it real data. A kiosk closes that loop by making logging the path of least resistance: tapping through a job is faster than filling a timesheet, so operators actually do it, and the [scheduling engine](/blog/edgebic-scheduling-engine-guide) gets the actual start dates, hours, and piece counts it needs to reschedule around reality instead of estimates.
+
+User Solutions has built that discipline into scheduling tools since 1991, for operations where shop-floor truth is non-negotiable: the US Navy, GE, BAE Systems, and Cummins among them. [EDGEBIC](/edgebic) carries that lineage into a modern kiosk, and the [partial-completion walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic) shows what those logged hours do when a job stops mid-operation.
+
+Put a terminal at one machine and run a shift. [Contact us](/contact-us) and we will stand up a kiosk against your own schedule, or read the [complete guide](/blog/edgebic-complete-guide) for how actuals thread through the whole system.
+
+<Accordion title="How does an operator log time on a shop-floor kiosk?">
+The operator taps through the states of a job: START SETUP to begin the changeover, START RUN when production begins, GOOD and SCRAP to count pieces, and COMPLETE OPERATION to finish. The kiosk stamps every punch with the server's clock, never the terminal's, so the times are consistent even if the terminal restarts. Behind the buttons, each tap opens or closes a production punch, and the first run punch stamps the operation's actual start date.
+</Accordion>
+
+<Accordion title="Does the kiosk timestamp come from the terminal or the server?">
+From the shared clock, always. Timestamps are taken when the tap lands, and nobody types a time during normal use, so the terminal never sends a clock value of its own. That means an operator cannot backdate a punch by changing the terminal's time, and two terminals on the same floor cannot disagree about when a shift started. Times are only ever typed in Manual Entry, when tap-as-you-go was not possible.
+</Accordion>
+
+<Accordion title="What happens when the operator marks an operation complete at the kiosk?">
+The kiosk closes any open punch, rebuilds the daily hour breakdown from the closed run punches, and stamps the operation's actual end date with the server time. The next scheduler run then classifies that step as completed and preserves it exactly. The terminal returns to its idle screen and fetches the next scheduled job for the machine. In short, one COMPLETE tap turns a running operation into immutable history the reschedule will never move.
+</Accordion>

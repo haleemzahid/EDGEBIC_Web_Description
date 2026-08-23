@@ -1,0 +1,104 @@
+---
+title: "Which ERP Fields EDGEBIC Needs to Build a Finite Capacity Schedule"
+description: "The minimum ERP fields for finite capacity scheduling: the mandatory columns EDGEBIC needs to import, the ones it needs for accurate dates, and what has no export column."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ERP fields for finite capacity scheduling
+  - minimum ERP data for scheduling
+  - production scheduling data requirements
+  - EDGEBIC import fields
+  - work center instance count
+  - routing export fields
+targetPhrase: "ERP fields for finite capacity scheduling"
+wordCount: 1780
+readingTime: 9
+faqQuestions:
+  - question: "What is the absolute minimum a shop must export from its ERP to get a schedule?"
+    answer: "A product identifier, a work center identifier, a routing with end product plus step name plus an operation flag plus hours per unit, and open work orders with a product, a quantity, and a date. That set alone produces a valid finite capacity schedule. Everything else improves accuracy rather than enabling the schedule, and the calendar of shifts and holidays is written in EDGEBIC rather than imported."
+  - question: "Which single ERP field matters most to schedule accuracy?"
+    answer: "The number of identical machines in a work center, mapped to the instances field. Most ERPs model a work center as one resource with a capacity figure, so a cell of four identical mills imports as one machine and the plan comes out roughly four times too long. It fails quietly, with no error and simply pessimistic dates, which makes it the highest-value column to fill deliberately for every multi-machine center."
+  - question: "Does EDGEBIC need setup times, queue times, and efficiencies to run?"
+    answer: "No, it runs without them, but they change the dates. Setup time, queue time, efficiency, and per-step overlap are all optional to import: a routing with only hours per unit will schedule. Each field you add makes the schedule match reality more closely, which is why the practical approach is to import what the ERP holds today, schedule it, and add the missing fields where the dates disagree with what the planner knows."
+qaQuestions:
+  - question: "Our ERP export has 40 columns per entity. Do we really need to map all of them, or is most of it noise for scheduling?"
+    answer: "Most of it is noise for scheduling, and you map only what earns its place. On the product export, the identifier is mandatory and the rest (description, unit of measure, cost, lead time) is optional context. On the work center export, the identifier is mandatory and the number of instances is the field that actually changes dates, with setup, efficiency, and rate as useful extras. On the routing, four fields carry the weight: end product, step name, the operation flag, and hours per unit. Unmapped columns are simply ignored, so a 40-column export is fine as a source; you drag the six or eight columns that matter onto EDGEBIC fields and leave the rest alone. A leaner export is easier to eyeball, but a wide one costs nothing to import."
+  - question: "We do not have setup times in the ERP at all. Can we still schedule, and what do we lose?"
+    answer: "You can schedule, and what you lose is changeover realism. With no setup times, every operation appears to start the instant the machine is free, so a center that really loses two hours to a changeover looks like it changes over for free, and its dates run optimistic. The fix is not to block the project on collecting setup data first: import without it, schedule, and the machines whose real changeovers matter will show up as jobs finishing implausibly early. Add setup times for those centers, either in the work center default or per routing step, and re-import. Sequence-dependent setup, where the changeover depends on what ran before, is configured inside EDGEBIC rather than imported, because no ERP export carries a from-product-to-product matrix."
+---
+
+**A finite capacity schedule needs surprisingly little from an ERP: a product identifier, a work center identifier, a routing with an operation flag and hours per unit, and open work orders with a quantity and a date.** That minimum set produces a valid schedule. A second tier of fields, led by the number of identical machines in each work center, makes the dates accurate. A third tier of scheduling intelligence has no export column at all and is configured once inside EDGEBIC. This post maps all three tiers so you know what to pull from any ERP.
+
+EDGEBIC by User Solutions reads whatever your ERP already exports through reusable import masks, so this is a mapping question rather than a development one. The [ERP integration architecture](/edgebic-erp-integration) is identical for every platform, which is why one field list serves them all.
+
+## Tier 1: the fields that make a schedule possible
+
+These are mandatory. An unmapped mandatory field aborts the run before a single row is read, which is deliberate: a half-built mask fails loudly rather than importing garbage.
+
+| Entity | Mandatory fields | Why it is required |
+|---|---|---|
+| Product | Product identifier | The natural key everything else references |
+| Work center | Work center identifier | Routing steps and labor match on it |
+| Routing | End product, step name, operation flag, hours per unit | Defines what runs where and for how long |
+| Work order | Product, quantity, job date | The demand to be scheduled |
+
+The [operation flag](/blog/what-is-an-operation-flag-in-a-routing-import) is the field first-time users most often set wrong. True means the row is an operation running on a work center. False means the row is a component or subassembly consumed at that point in the routing. Getting it backwards turns components into work centers, and the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour) shows it immediately.
+
+Two entities on this tier have no ERP origin at all, because no ERP models your plant calendar the way a scheduler needs it: **shifts** (one row per shift with start and end times per weekday) and **plant holidays** (closures by date). You write these as a short spreadsheet once. They are ten minutes of work with the widest effect in the whole load, because every scheduled date is computed against them. The general idea is in [what production scheduling is](/blog/what-is-production-scheduling).
+
+## Tier 2: the fields that make the dates accurate
+
+None of these are required to run, and all of them change the answer. Import what your ERP holds, then add these where the schedule disagrees with reality.
+
+| Field | What it changes | Symptom when missing |
+|---|---|---|
+| Number of machine instances | Parallel capacity in a work center | Plan runs several times too long |
+| Setup time | Changeover cost per operation | Machines appear to change over for free |
+| Efficiency | Rated versus real throughput | Dates run optimistic on slow centers |
+| Queue time | Buffer before a step may start | Jobs stack with no realistic wait |
+| Per-step overlap (flow) | Downstream starting before upstream ends | Sequential steps never overlap |
+| Hourly rate | Cost rollups on the schedule | Schedule is right, cost columns are blank |
+| Bottleneck flag | Anchoring the plan around the constraint | Constraint is scheduled like any other center |
+| Due date and priority | Ranking and backward scheduling | Everything schedules forward from the job date |
+
+The number of machine instances is the single highest-value field on this tier and the one most ERPs do not export, because they model a work center as one resource with a capacity figure. A four-machine cell imported as one instance produces a plan roughly four times too long, and it fails quietly: nothing errors, the dates are simply wrong. Fill it deliberately for every multi-machine center. The arithmetic is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity), and the finite versus infinite distinction is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+The bottleneck flag connects to [production bottleneck identification](/blog/production-bottleneck-identification): mark the constraint and the engine anchors the plan around it rather than treating it as an ordinary center.
+
+## Tier 3: the intelligence with no export column
+
+The settings that most differentiate one shop's schedule from another have no column in any ERP export. They are not imported at all; they are configured once inside EDGEBIC and then apply to every imported work order afterwards.
+
+- **Sequence-dependent setup matrix.** The changeover cost that depends on what ran before, white to black costing four hours where black to white costs one. No ERP carries a from-product-to-product matrix. It is configured in the [setup matrix](/blog/edgebic-setup-matrix-explained).
+- **Work center groups.** A named pool of interchangeable machines re-shopped on every reschedule, with a per-member efficiency factor. Import the members as ordinary work centers, then build the group. The path is [how to create work center groups](/blog/how-to-create-work-center-groups-in-edgebic).
+- **Operator skills and rosters.** Which operators are certified on which centers, and who is on shift. Configured in EDGEBIC, because no routing export models a certification.
+- **Lot streaming with transfer batches.** Moving a partial batch downstream before the whole lot finishes, which no ERP routing expresses.
+- **Bottleneck anchoring behavior.** How the plan is built around the constraint once it is flagged.
+
+The distinction matters for planning a project: do not wait to collect this tier before starting. Import tiers one and two, get a schedule, then layer tier three on top. The [EDGEBIC product overview](/edgebic) maps the whole engine.
+
+## A practical rule for a first export
+
+You do not need a perfect ERP to start, and trying to clean it first usually costs a month you do not have. Export what the ERP holds today, map the tier-one fields plus whatever tier-two fields already exist, and run a schedule. The disagreements between EDGEBIC's dates and your planner's expectations are your defect list, and they arrive specific: a wrong hours-per-unit shows up as a job finishing implausibly early, a missing instance count shows up as a plan four times too long, a missing setup shows up as free changeovers. Each corrected file re-imports cleanly, because master data comes back Reused when it matches and a routing re-import wipes and recreates one product's steps at a time.
+
+That loop, import then compare then correct, is faster than any up-front cleanse, and it is the same loop whether the ERP is [SAP](/blog/edgebic-sap-integration-guide), [Katana](/blog/edgebic-katana-integration-guide), or a spreadsheet. The mechanics of the recurring version are in [keeping your ERP and EDGEBIC in sync](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine).
+
+## See it with your own fields
+
+The quickest way to know which of your ERP's columns matter is to map them live. Export a product list, a routing, and this week's open work orders, then [bring them to a demo](/contact-us). Mapping takes minutes, and you leave knowing exactly which fields your shop already has and which few are worth adding.
+
+<Accordion title="What is the absolute minimum a shop must export from its ERP to get a schedule?">
+A product identifier, a work center identifier, a routing with end product plus step name plus an operation flag plus hours per unit, and open work orders with a product, a quantity, and a date. That set alone produces a valid finite capacity schedule. Everything else improves accuracy rather than enabling the schedule, and the calendar of shifts and holidays is written in EDGEBIC rather than imported.
+</Accordion>
+
+<Accordion title="Which single ERP field matters most to schedule accuracy?">
+The number of identical machines in a work center, mapped to the instances field. Most ERPs model a work center as one resource with a capacity figure, so a cell of four identical mills imports as one machine and the plan comes out roughly four times too long. It fails quietly, with no error and simply pessimistic dates, which makes it the highest-value column to fill deliberately for every multi-machine center.
+</Accordion>
+
+<Accordion title="Does EDGEBIC need setup times, queue times, and efficiencies to run?">
+No, it runs without them, but they change the dates. Setup time, queue time, efficiency, and per-step overlap are all optional to import: a routing with only hours per unit will schedule. Each field you add makes the schedule match reality more closely, which is why the practical approach is to import what the ERP holds today, schedule it, and add the missing fields where the dates disagree with what the planner knows.
+</Accordion>

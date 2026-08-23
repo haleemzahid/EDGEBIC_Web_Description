@@ -1,0 +1,95 @@
+---
+title: "What Does Finite Capacity Mean in EDGEBIC?"
+description: "Finite capacity means the scheduler refuses to book more hours on a machine than that machine actually has. See exactly how EDGEBIC enforces it, day by day and shift by shift."
+published: 2026-08-16T12:00:00.000Z
+modified: 2026-08-16T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - what does finite capacity mean
+  - finite capacity scheduling software
+  - finite capacity planning definition
+  - finite vs infinite capacity
+  - real machine capacity scheduling
+  - shift hours capacity booking
+targetPhrase: "what does finite capacity mean"
+wordCount: 1290
+readingTime: 6
+faqQuestions:
+  - question: "What does finite capacity mean in scheduling software?"
+    answer: "Finite capacity means the scheduler treats each machine's available hours as a hard ceiling and never plans past it. If a mill has eight working hours on Monday, only eight hours of work are placed there and the remainder flows into Tuesday. The opposite approach, infinite capacity, calculates what needs to happen by a date without asking whether any machine has room, which is why classic material planning output so often cannot be executed as printed."
+  - question: "How does EDGEBIC enforce finite capacity?"
+    answer: "Every routing step is placed by searching forward day by day and shift by shift for the earliest slot with genuinely free hours on that step's work center. The hours available on a given day come from the shift pattern, minus plant and work-center holidays, minus downtime, adjusted by the work center's utilization percentage and instance count, and replaced outright by a capacity override if a planner entered one. Work already booked by other jobs is subtracted before the new job is offered anything."
+  - question: "Does finite capacity make schedules longer?"
+    answer: "It makes them honest, which often means longer than an infinite-capacity plan and shorter than what the floor actually experiences. An infinite-capacity plan looks fast on paper and then decays as reality intervenes, because the overload was never visible. A finite plan shows the overload as a later finish date up front, while there is still time to add a shift, use an alternate machine, or renegotiate a promise."
+qaQuestions:
+  - question: "Our old system said a job would finish Friday and it finished the following Wednesday, every time. Will finite capacity really fix that, or will it just move the disappointment earlier?"
+    answer: "It moves the disappointment earlier, and that is the entire value. The Friday date was never real: it was arithmetic on work content that assumed your machines were idle and waiting, which they were not. A finite engine subtracts the hours already claimed by every other job before it offers your new job a slot, so the date it returns is the date the plan can actually support. You will see fewer pleasant Friday promises and more accurate Wednesday ones. The gain is not that jobs suddenly run faster; it is that you learn about the Wednesday on the day you quote rather than on the day you ship, when overtime, an alternate machine, or an honest phone call to the customer all still cost far less than a surprise."
+  - question: "If capacity is finite, what happens when there simply is not enough of it? Does the job fail to schedule?"
+    answer: "No. The engine keeps searching forward through the calendar for the earliest genuinely free slot, so the job lands late rather than not at all, and the lateness shows on the grid as a Days Late figure and on the dashboard as a late job. That is a deliberate design choice: a job pushed out where you can see it is far more useful than a job silently dropped or silently overbooked. The search does have a horizon, and if nothing opens up inside it the run reports the failure with the job and work center named rather than inventing a date. Practically, a job that lands months out is telling you something structural about load, and the fix is a capacity decision, not a scheduling one."
+---
+
+**Finite capacity means the scheduler refuses to book more hours on a work center than that work center genuinely has, so the plan it produces is one the plant can actually execute. In EDGEBIC by User Solutions this is not a mode you switch on but the foundation of every schedule run: each routing step is placed into real shift hours on a real machine, and when Monday's eight hours are gone, the rest of the work flows into Tuesday rather than being stacked on top of a day that has already sold out.**
+
+This entry is part of the EDGEBIC glossary series; for the broader vocabulary of production planning, see the [manufacturing glossary](/blog/manufacturing-glossary) and the generic industry definition of [finite capacity](/blog/glossary/finite-capacity).
+
+## How Finite Capacity Works
+
+The distinction only makes sense against its opposite. Classic material requirements planning works backward from a due date through lead time offsets and produces a list of what should start when. It never asks whether the machine that must do the work has an hour free. That is [infinite capacity planning](/blog/what-is-infinite-capacity-planning), and it is genuinely useful for answering "what materials do we need" while being close to useless for answering "when will this actually ship."
+
+A finite engine inverts the question. It does not compute a start date from an offset; it goes shopping for hours. For each step, it walks forward from the earliest moment the step is allowed to begin and asks a specific question of each day in turn: after everything already committed here, how many hours are genuinely left on this work center today? A single routing step can opt out of that question through its [finite capacity flag](/blog/what-is-the-finite-capacity-flag-on-a-routing-step), which is on by default.
+
+That number is not the shift length. It is assembled from several layers:
+
+- **The shift pattern** for that weekday supplies the base working hours.
+- **Plant holidays, work-center holidays, and downtime** remove hours, whole days or partial ones.
+- **The instance count** multiplies capacity, because a work center holding three identical machines offers three times the hours of one.
+- **Efficiency and the utilization percentage** scale it down, so a work center you only want loaded to eighty percent offers eight tenths of its nominal hours to the planner.
+- **A capacity override** replaces the calculated figure outright for one work center on one date, which is how a planner zeroes out a machine for a Tuesday inventory count.
+- **Hours already claimed by other jobs** are subtracted last.
+
+Whatever survives all of that is what the step may take. If it needs more, it takes what is there, and the engine moves to the next day and asks again. A single step routinely spreads across several shifts and several days, which is exactly what happens on a real floor.
+
+## A Worked Example
+
+Take the sample plant from the documentation. **Day Shift** runs 08:00 to 16:00, and **CNC-Mill-1** holds one machine. JOB-2026-0102 needs two hours on **Saw-1** and eight hours on the mill, starting Monday July 20.
+
+The saw work runs Monday 08:00 to 10:00. The mill work then wants eight hours starting at 10:00. Monday only has six hours left after 10:00, so six hours land Monday 10:00 to 16:00 and the remaining two hours flow into Tuesday 08:00 to 10:00. Item Start comes back as Tuesday July 21 at 10:00.
+
+Now add JOB-2026-0124 behind it. Its saw work takes Monday 10:00 to 16:00, right after the bracket's cut. Its two mill hours cannot begin Tuesday at 08:00, because the mill is still finishing the first job until 10:00. They land Tuesday 10:00 to 12:00.
+
+Nothing here required a rule about queuing. The second job started later purely because the first job had already taken those specific hours, and a finite engine cannot hand the same hour to two jobs. Swap the priorities and re-run, and the numbers move, because the order in which jobs go shopping decides who gets the good slots. This is why priority matters so much on a loaded plant, and it is the honest cost of a plan that adds up.
+
+## How EDGEBIC Uses Finite Capacity
+
+Finite capacity is the reason several other behaviors in the product exist, and seeing the connections makes the whole model easier to hold:
+
+- **Days Late can turn red before the due date.** Because the engine already knows the plan cannot fit the promise, it says so while there is still time to act rather than waiting for the calendar to catch up.
+- **The utilization percentage is a real planning knob.** Setting a work center to eighty percent leaves genuine headroom for the unplanned, and the schedule respects it instead of quietly consuming it.
+- **The optimizer exists because greedy booking is fast, not perfect.** Each job claims capacity completely before the next is planned, which always respects every constraint but can leave a better interleaving on the table. The optimizer searches for that better ordering against the same finite capacity model.
+- **Quoting runs the same engine.** A quote simulation schedules a temporary job against your current real load, so the promised date already accounts for every hour the floor has committed elsewhere. Nothing is saved, and the live plan is untouched.
+- **Rescheduling preserves recorded work.** Completed operations are frozen at the hours they really consumed, and only the remaining work goes back into the capacity search.
+
+The practical discipline finite capacity demands is calendar hygiene. The engine plans against the shifts, holidays, downtime, and overrides as they stand at the moment you press the button. A calendar that still shows last year's holidays will produce a confident, precise, and wrong plan. The [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) walks the full placement sequence, and [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) sets out the trade-off in more depth. For the vocabulary of what the engine is actually doing while it searches, see [available capacity in scheduling](/blog/what-is-available-capacity-in-scheduling) and [the schedule-at-utilization setting](/blog/what-is-the-schedule-at-utilization-setting).
+
+<Accordion title="What does finite capacity mean in scheduling software?">
+Finite capacity means the scheduler treats each machine's available hours as a hard ceiling and never plans past it. If a mill has eight working hours on Monday, only eight hours of work are placed there and the remainder flows into Tuesday. The opposite approach, infinite capacity, calculates what needs to happen by a date without asking whether any machine has room, which is why classic material planning output so often cannot be executed as printed.
+</Accordion>
+
+<Accordion title="How does EDGEBIC enforce finite capacity?">
+Every routing step is placed by searching forward day by day and shift by shift for the earliest slot with genuinely free hours on that step's work center. The hours available on a given day come from the shift pattern, minus plant and work-center holidays, minus downtime, adjusted by the work center's utilization percentage and instance count, and replaced outright by a capacity override if a planner entered one. Work already booked by other jobs is subtracted before the new job is offered anything.
+</Accordion>
+
+<Accordion title="Does finite capacity make schedules longer?">
+It makes them honest, which often means longer than an infinite-capacity plan and shorter than what the floor actually experiences. An infinite-capacity plan looks fast on paper and then decays as reality intervenes, because the overload was never visible. A finite plan shows the overload as a later finish date up front, while there is still time to add a shift, use an alternate machine, or renegotiate a promise.
+</Accordion>
+
+<Accordion title="Our old system said a job would finish Friday and it finished the following Wednesday, every time. Will finite capacity really fix that, or will it just move the disappointment earlier?">
+It moves the disappointment earlier, and that is the entire value. The Friday date was never real: it was arithmetic on work content that assumed your machines were idle and waiting, which they were not. A finite engine subtracts the hours already claimed by every other job before it offers your new job a slot, so the date it returns is the date the plan can actually support. You will see fewer pleasant Friday promises and more accurate Wednesday ones. The gain is not that jobs suddenly run faster; it is that you learn about the Wednesday on the day you quote rather than on the day you ship, when overtime, an alternate machine, or an honest phone call to the customer all still cost far less than a surprise.
+</Accordion>
+
+<Accordion title="If capacity is finite, what happens when there simply is not enough of it? Does the job fail to schedule?">
+No. The engine keeps searching forward through the calendar for the earliest genuinely free slot, so the job lands late rather than not at all, and the lateness shows on the grid as a Days Late figure and on the dashboard as a late job. That is a deliberate design choice: a job pushed out where you can see it is far more useful than a job silently dropped or silently overbooked. The search does have a horizon, and if nothing opens up inside it the run reports the failure with the job and work center named rather than inventing a date. Practically, a job that lands months out is telling you something structural about load, and the fix is a capacity decision, not a scheduling one.
+</Accordion>

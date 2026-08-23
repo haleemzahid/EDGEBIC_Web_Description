@@ -1,0 +1,127 @@
+---
+title: "How Sequence-Dependent Setup Shapes a Schedule"
+description: "How EDGEBIC uses a per-machine setup matrix to price changeovers by what ran before, turning a deceptive plan into an honest one and an honest one into an efficient one."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - sequence-dependent setup
+  - setup time matrix
+  - changeover scheduling
+  - production sequencing
+  - setup family
+  - finite capacity scheduling
+targetPhrase: "sequence-dependent setup scheduling"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "What is sequence-dependent setup in production scheduling?"
+    answer: "Sequence-dependent setup is a changeover whose duration depends on both what the machine ran last and what it runs next, not on a single fixed number. On a paint booth, White to Cream might take 5 minutes while Black to White takes 240 minutes. EDGEBIC models this with a per-machine matrix that the scheduling engine consults for every operation, so the plan reflects the real cost of each transition."
+  - question: "How does a setup matrix differ from a flat setup time?"
+    answer: "A flat setup time charges the same minutes for every changeover regardless of order, so it cannot see that Black to White costs far more than White to Cream. A setup matrix stores a value for each from-product and to-product pair on each machine. EDGEBIC resolves the correct value at schedule time by checking what the machine last ran, so the same operation can cost 0 minutes after a like job and hours after an unlike one."
+  - question: "What is a setup family and why does it matter?"
+    answer: "A setup family is a named group of products that share the same changeover behavior on a machine, such as all light colors or one alloy group. Families collapse a huge product-by-product grid into a small one: eight families covering a hundred products replace a 10,000 cell matrix with 64 cells. EDGEBIC checks the family matrix when no exact product pair is entered, so most transitions resolve from a handful of rows."
+  - question: "Does sequence-dependent setup change how fast a schedule can finish?"
+    answer: "Yes, indirectly. The matrix does not add or remove work, but it makes the true cost of each ordering visible. Once the engine knows the real changeover cost, sequencing like jobs together (all light colors before dark) can cut total setup dramatically. In the worked paint-booth example, ordering light before dark drops setup from 330 minutes to 90 minutes, a 73 percent reduction on the same three jobs."
+qaQuestions:
+  - question: "Our paint booth schedule always looks fine on paper but the floor runs hours behind by mid-shift. What is happening?"
+    answer: "That gap is almost always uncounted changeover. If your booth uses one flat setup time, the schedule charges the same 30 minutes whether you go White to Cream or Black to White, so it finishes three jobs by 12:45 while the floor is really spending 240 minutes on the dark-to-light flush alone. Configure a setup matrix in EDGEBIC and the plan reflects reality: the same three jobs honestly run to 16:45 instead of pretending they end at 12:45. The schedule stops overpromising, and you can decide to resequence or add overtime before the shift starts, not after it falls apart."
+  - question: "We have 120 products across four machines. Do we really have to enter every product-to-product setup?"
+    answer: "No, and you should not try. Group products into setup families first (light colors, dark colors, one alloy group, and so on) and enter the family matrix, which is where roughly 95 percent of the values live. For 120 products in eight families that is 64 cells per machine instead of over 14,000. Add a product-level override only for the rare special pair that breaks its family rule, like a Red-to-Black transition that needs an extra solvent flush. The override always wins over the family value for exactly that pair, so you keep the small matrix and still handle the exceptions."
+---
+
+**Sequence-dependent setup means the time a machine needs to change over depends on what it ran last, not just on a fixed number stored in the routing. EDGEBIC by User Solutions models this with a per-machine setup matrix, and its scheduling engine resolves the right changeover for every operation by checking what that machine actually ran before it.** The result is the difference between a plan that looks feasible and a plan that is feasible: the matrix turns a deceptive schedule into an honest one, and sequencing on top of it turns an honest schedule into an efficient one.
+
+Most scheduling tools treat setup as one number per operation. That works for a CNC mill where preparation is roughly constant. It fails badly for a paint booth, a chemical line, a heat-treat furnace, or any work center where the changeover cost is dominated by the pairing of the outgoing and incoming job. This post explains how EDGEBIC prices those changeovers and why getting it right changes the schedule you can trust.
+
+## Why one setup number is not enough
+
+Consider a single paint booth with a color-change matrix. Going from White to Cream is a quick wipe-down: 5 minutes. Going from White to Black needs masking and an extra coat: 60 minutes. Going from Black to White means a full solvent flush and color match: 240 minutes. A flat setup time cannot represent any of that. It charges the same figure for all three, so the schedule is wrong the moment two unlike colors sit next to each other.
+
+The damage is not cosmetic. If your booth schedule charges a flat 30 minutes per job and the floor is really spending four hours on a dark-to-light flush, the plan promises a completion time it cannot hit. Operators lose trust, due dates slip without warning, and the planner finds out at the end of the shift instead of the start. Sequence-dependent scheduling exists to close that gap between the plan and the physics. It also changes what is worth improving, because [on a setup-heavy line the running order beats raw machine speed](/blog/why-sequence-matters-more-than-speed-on-a-setup-heavy-line).
+
+## How EDGEBIC prices a changeover
+
+EDGEBIC stores changeover times in a three-tier model, all scoped per machine because the physics is per machine (a worn seal or an older paint system makes two "identical" booths behave differently):
+
+- A **setup family** groups products that change over the same way, such as "Light Colors" or "SS304 alloy group."
+- The **family matrix** holds a value for each from-family and to-family pair on a work center. This is the workhorse: roughly 95 percent of your values live here.
+- The **product matrix** is the escape hatch for specific product pairs that break their family rule. It always wins over the family value for exactly that pair.
+
+At schedule time, for every operation the engine runs a short resolution chain and takes the first hit:
+
+1. **Cold start.** Nothing has run on this machine yet, so there is no changeover. The engine uses the routing's own setup time (the initial preparation still has to happen).
+2. **Same product back to back.** Zero changeover.
+3. **Product matrix.** An exact from-product-to-product cell exists for this machine, so use it.
+4. **Family matrix.** Both products belong to families and a family cell exists, so use it.
+5. **Fallback.** No matrix cell matched, so use the routing's setup time.
+
+The one input this chain needs that a flat setup does not is "what did this machine run last?" EDGEBIC answers that by looking at the most recent operation already placed on the work center. During a reschedule it goes further and reads the last product that was actually completed on each machine from the recorded actuals, so a partially finished job never gets the wrong changeover charged against it.
+
+Every operation also records why it got its setup time (cold start, same product, product matrix, family matrix, or fallback), and the Job View shows matrix-driven values at full brightness so a planner can see at a glance whether sequence logic actually fired.
+
+## A worked example: three jobs, one booth
+
+Take one paint booth on a single day shift, 08:00 to 16:00, and three jobs sorted by due date: White (1.0 hour of paint), Black (1.5 hours), White (0.75 hours). Assume families Light (White, Cream) and Dark (Black), with a family matrix of Light to Dark = 60 minutes and Dark to Light = 240 minutes, and a cold-start setup of 30 minutes.
+
+**Scenario A: no matrix, flat 30-minute setup.** The engine charges 30 minutes to every job and the plan reads:
+
+| Job | Setup charged | Paint | Runs |
+|---|---|---|---|
+| White | 30 min | 1.0 h | 08:00 to 09:30 |
+| Black | 30 min | 1.5 h | 09:30 to 11:30 |
+| White | 30 min | 0.75 h | 11:30 to 12:45 |
+
+The schedule says all three finish by 12:45. The floor knows better: the real changeovers are 30 + 240 + 240 minutes, so the day actually runs to roughly 16:00. The plan overpromised by half a shift.
+
+**Scenario B: matrix on, same due-date order.** Now the engine prices the real transitions:
+
+| Job | Previous | Setup source | Setup | Total |
+|---|---|---|---|---|
+| White | cold start | routing default | 30 min | 1.5 h |
+| Black | White | family Light to Dark | 60 min | 2.5 h |
+| White | Black | family Dark to Light | 240 min | 4.75 h |
+
+The three jobs now honestly run 08:00 to 16:45, spilling into the next shift. Nothing got slower. The plan simply stopped lying, and the planner can now make a real decision.
+
+**Scenario C: matrix on, sequenced light before dark.** Reorder to White, White, Black:
+
+| Job | Previous | Setup source | Setup | Total |
+|---|---|---|---|---|
+| White | cold start | routing default | 30 min | 1.5 h |
+| White | White | family Light to Light | 0 min | 0.75 h |
+| Black | White | family Light to Dark | 60 min | 2.5 h |
+
+Total setup drops from 330 minutes to 90 minutes, a 73 percent reduction, and all three jobs finish by 12:45 with hours to spare. That is real capacity created from nothing but sequence, and it is only reachable because the matrix made the cost of each ordering visible.
+
+The pattern is worth naming: the matrix makes a deceptive plan honest, and sequencing makes an honest plan efficient. You need the first before the second means anything.
+
+## Where this fits with the rest of the engine
+
+The resolved setup is not a display-only figure. It is folded into the operation's total hours before EDGEBIC searches for capacity, so it consumes real machine time exactly like run hours do. That connects sequence-dependent setup to two other mechanisms:
+
+- The [multi-shift allocator that fills capacity](/blog/how-multi-shift-allocation-fills-capacity) places the setup plus run hours across shifts and instances just like any other work, so a longer changeover pushes the operation later or across a shift boundary.
+- The optimizer, when your site runs the mathematical solver, can model these changeovers natively and search for the sequence that minimizes total setup. That is how the [least-setup goal](/blog/how-mathematical-optimization-improves-a-schedule) earns real savings the greedy engine cannot see on its own.
+
+For the mechanics of building and importing a matrix step by step, the [setup matrix explainer](/blog/edgebic-setup-matrix-explained) walks the screens, and the [setup family definition](/blog/what-is-a-setup-family-sequence-dependent-changeover) covers the grouping idea in depth. If you are still deciding whether your shop even needs this, the honest test is simple: if changing the order of two jobs changes how long the changeover takes, you have sequence-dependent setup, and a flat number is quietly costing you. This is a common wall in [job shop scheduling](/blog/job-shop-scheduling-challenges), and it is one EDGEBIC is built to model rather than paper over.
+
+To see your own changeover matrix drive a real schedule against your routings, [bring your data to a demo](/contact-us) or start with the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide). Watching a plan go from "looks fine" to "actually fits" in one run is the fastest way to understand why the matrix matters.
+
+<Accordion title="What is sequence-dependent setup in production scheduling?">
+Sequence-dependent setup is a changeover whose duration depends on both what the machine ran last and what it runs next, not on a single fixed number. On a paint booth, White to Cream might take 5 minutes while Black to White takes 240 minutes. EDGEBIC models this with a per-machine matrix that the scheduling engine consults for every operation, so the plan reflects the real cost of each transition.
+</Accordion>
+
+<Accordion title="How does a setup matrix differ from a flat setup time?">
+A flat setup time charges the same minutes for every changeover regardless of order, so it cannot see that Black to White costs far more than White to Cream. A setup matrix stores a value for each from-product and to-product pair on each machine. EDGEBIC resolves the correct value at schedule time by checking what the machine last ran, so the same operation can cost 0 minutes after a like job and hours after an unlike one.
+</Accordion>
+
+<Accordion title="What is a setup family and why does it matter?">
+A setup family is a named group of products that share the same changeover behavior on a machine, such as all light colors or one alloy group. Families collapse a huge product-by-product grid into a small one: eight families covering a hundred products replace a 10,000 cell matrix with 64 cells. EDGEBIC checks the family matrix when no exact product pair is entered, so most transitions resolve from a handful of rows.
+</Accordion>
+
+<Accordion title="Does sequence-dependent setup change how fast a schedule can finish?">
+Yes, indirectly. The matrix does not add or remove work, but it makes the true cost of each ordering visible. Once the engine knows the real changeover cost, sequencing like jobs together (all light colors before dark) can cut total setup dramatically. In the worked paint-booth example, ordering light before dark drops setup from 330 minutes to 90 minutes, a 73 percent reduction on the same three jobs.
+</Accordion>

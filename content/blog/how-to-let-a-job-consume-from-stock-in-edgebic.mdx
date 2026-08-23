@@ -1,0 +1,89 @@
+---
+title: "How to Let a Job Consume From Stock in EDGEBIC"
+description: "Let a job consume from stock in EDGEBIC: when on-hand covers an order, the scheduler nets it, posts a consume issue, and skips building, marking it satisfied from stock."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - let a job consume from stock
+  - consume from stock netting
+  - satisfied from stock status
+  - schedule transaction issue
+  - net demand against on-hand
+  - stock consumption edgebic
+targetPhrase: "let a job consume from stock"
+wordCount: 1100
+readingTime: 6
+faqQuestions:
+  - question: "How do you let a job consume from stock in EDGEBIC?"
+    answer: "Make sure the part has enough on-hand to cover the order, then run scheduling. When on-hand meets or exceeds the order quantity, the engine nets the order against stock instead of building it, posts a consume issue with the comment Schedule Transaction, and marks the order satisfied from stock. No work-center capacity is used. The consume issue posts at the persist step, so it only lands if the run commits."
+  - question: "What does the satisfied-from-stock status mean?"
+    answer: "Satisfied from stock means the scheduler found enough on-hand to cover the order without building anything. The order is not placed on any work center; instead the engine emits a material-shaped schedule row and posts an issue that draws the quantity from stock. On-hand drops by the order quantity, and the order is excluded from future projection demand because it has already been met."
+  - question: "Will a satisfied-from-stock order double-count if I mark it complete?"
+    answer: "No. An order satisfied from stock is guarded so that marking it complete does not post an additional receipt. If it did, the stock would be both consumed and re-added, which would be wrong. The guard checks the status before posting any completion receipt, so a satisfied-from-stock order changes no quantities when completed beyond the consume issue that already happened during scheduling."
+qaQuestions:
+  - question: "We have 500 finished units on hand and an order for 400. How do I get the order to draw from stock instead of scheduling a build?"
+    answer: "Confirm the 500 on-hand is posted and current, then run scheduling for the order. Because on-hand exceeds the 400 ordered, the engine nets it: it posts a consume issue of 400 with the comment Schedule Transaction pegged to the order, drops on-hand to 100, marks the order satisfied from stock, and uses no work-center time. You do not toggle anything per order; the netting is automatic when stock covers the quantity. Verify by opening Transaction History and finding the Schedule Transaction issue against the order."
+  - question: "Two orders in the same run both want to draw from the same 300 units, and only the first should. What happens?"
+    answer: "The engine reserves on-hand as it schedules, so the first order consumes what it needs and the second sees only what is left. If the first order takes 300, the second finds nothing to net against and is scheduled as a normal build. A build order completing earlier in the same run can feed a later consumer only when within-run forward netting is enabled, which is a configurable behavior; with it off, both orders see only the opening on-hand and the producer's output is available on the next run."
+---
+
+**To let a job consume from stock in EDGEBIC, you ensure on-hand covers the order and run scheduling, and the engine nets it instead of building.** In [EDGEBIC by User Solutions](/edgebic) netting is automatic: when a part has enough on-hand to satisfy an order, the scheduler draws stock down with a consume issue, marks the order satisfied from stock, and uses no work-center capacity. This post covers what triggers it, what it posts, and how to verify the draw.
+
+Netting is the whole reason on-hand and scheduling talk to each other. For the full mechanism, read [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock). This post is the narrow task of getting one job to draw from stock. Availability varies by installation, so check which inventory features your build exposes.
+
+## Before You Start
+
+- The part is flagged as a stocked item and has current on-hand posted. If a receipt is missing, the engine will not see the stock.
+- The on-hand quantity meets or exceeds the order quantity. Partial coverage schedules a build for the remainder rather than a clean consume.
+- You are running scheduling, either for the single order or as part of a full run. Netting happens during scheduling, not before.
+
+## Let the Scheduler Net the Order
+
+1. Confirm on-hand for the part with a quick look at the Inventory calendar KPI strip.
+2. Open **Manufacturing Orders**, or the scheduling entry point you normally use.
+3. Run scheduling for the order, on its own or in the next full run.
+
+When on-hand covers the order, the engine nets it: it reserves the stock, emits a material-shaped schedule row, posts a consume issue, and marks the order satisfied from stock. There is no per-order switch to flip. The decision is driven entirely by whether stock covers the quantity.
+
+## What the Engine Posts
+
+The consume issue carries the comment "Schedule Transaction" and is pegged to the order, which is how you tell an engine consume apart from a hand-posted issue. On-hand drops by the order quantity. The order lands in a satisfied-from-stock status and drops out of future projection demand, because it has already been met. Because no work center is touched, the order consumes no capacity in the plan.
+
+One timing detail matters: the consume issue posts at the persist step of the run, not inside the engine. If the run does not commit, no issue is posted, so the draw is transactional with the schedule.
+
+## Reservations Within a Run
+
+The engine reserves on-hand as it schedules, so two orders in the same run cannot both claim the same units. The first order to net takes what it needs; the next sees only the remainder. A build order completing earlier in the same run can feed a later consumer only when within-run forward netting is enabled, which is a configurable behavior. With it off, both orders see only the opening on-hand, and a producer's output becomes available to consumers on the next run.
+
+## When Stock Only Partly Covers the Order
+
+Netting is all-or-nothing at the order level in the simple case: the engine consumes from stock when on-hand covers the full order quantity. When stock covers only part of the order, do not expect a clean split into a small consume and a small build from a single run without planning for it. The reliable pattern is to size on-hand and orders so that a consume either fully satisfies an order or leaves it to build normally. If you want a producing order to feed a consuming order inside the same run, that is the within-run forward-netting behavior, which is configurable rather than on by default. With it off, only the opening on-hand is visible to consumers, so plan runs with that in mind.
+
+## Re-Netting When You Reschedule
+
+A satisfied-from-stock decision is made against the on-hand at the time of the run. If you reschedule the order later, you usually want the engine to reconsider that decision against current stock. The way to do that cleanly is to release the consume issue the earlier run posted, which restores the on-hand, before the engine re-nets. That release reverses only the consume issues pegged to the order and leaves any unrelated receipts alone, so the engine starts the new run seeing the stock it actually has. This is why a consume issue is tied to its order: it can be found and released precisely when the order's plan changes.
+
+## The Anomaly That Catches a Missed Consume
+
+There is a guard for the case where an order is marked satisfied from stock but no consume issue was ever posted, which would mean the stock was never actually drawn down. The plant-wide anomaly checks find any satisfied-from-stock order that lacks a matching issue and flag it, so a silent miss, for instance if inventory posting was unavailable at run time, does not quietly overstate on-hand. If you see this flag, re-running scheduling for the order lets the engine re-issue, or you confirm the consume and post it by hand.
+
+## How to Check It Worked
+
+1. Open **Manufacturing Orders** and confirm the order now shows the satisfied-from-stock status.
+2. Open the **Transaction History** pane for the part and find an issue with the comment "Schedule Transaction" pegged to the order, with a negative quantity equal to what was consumed.
+3. Confirm the KPI **Current On-Hand** fell by the order quantity.
+
+If the order scheduled a build instead of netting, on-hand did not cover the quantity, or the stock was not posted before the run.
+
+## Common Mistakes
+
+- **Expecting netting with stale on-hand.** The engine reads posted on-hand. A receipt entered after the run, or not entered at all, is invisible to netting.
+- **Posting a manual issue as well.** The engine already drew the stock with its own consume issue. Adding a manual issue for the same job double-counts. Reserve manual issues for draws the scheduler does not know about, covered in the sibling task.
+- **Marking a satisfied-from-stock order complete expecting a receipt.** It is guarded against posting a completion receipt, because the stock was consumed, not built. Completing it changes no quantities. For the opposite case, a single order whose finished output should raise on-hand, see [how to build one job to inventory](/blog/how-to-build-one-job-to-inventory-in-edgebic).
+- **Assuming within-run producer output is available downstream.** Unless forward netting is enabled, a build finishing earlier in the same run does not feed a later consumer until the next run.
+
+For the hand-posted counterpart, read [how to issue material to a job](/blog/how-to-issue-material-to-a-job-in-edgebic). To confirm the stock is really there before a run, use [how to check projected stock for a part](/blog/how-to-check-projected-stock-for-a-part-in-edgebic), and browse every task in the [EDGEBIC how-to library](/blog/edgebic-how-to-hub).

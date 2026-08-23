@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Script from 'next/script';
 
+import { EdgebicSuccessorCallout } from '@/components/marketing/sections/edgebic-successor-callout';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { RMDBTabsClient } from '@/components/marketing/sections/rmdb-tabs-client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -351,6 +352,7 @@ export default function ResourceManagerDBPage() {
             liveDemoContent={<LiveDemoContent />}
           />
         </Suspense>
+        <EdgebicSuccessorCallout variant="rmdb" />
         <RelatedSuccessStories productKey="rmdb" />
       </main>
     </>

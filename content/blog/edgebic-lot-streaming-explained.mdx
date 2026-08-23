@@ -1,0 +1,127 @@
+---
+title: "Lot Streaming in EDGEBIC: The Three Overlap Models Explained"
+description: "Lot streaming in manufacturing scheduling: how piece-count transfer batches, start-to-start lag, and one-piece flow overlap operations in EDGEBIC."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - lot streaming manufacturing scheduling
+  - operation overlap scheduling
+  - transfer batch scheduling software
+  - piece count lot streaming
+  - one piece flow scheduling
+  - start to start lag scheduling
+  - reduce manufacturing lead time
+targetPhrase: "lot streaming manufacturing scheduling"
+wordCount: 2050
+readingTime: 10
+faqQuestions:
+  - question: "What is lot streaming in manufacturing scheduling?"
+    answer: "Lot streaming is the practice of letting a downstream operation start before the upstream operation has finished the entire order quantity. Instead of 1,000 pieces waiting at the mill until the last one is cut, the first sublot moves to drilling while milling continues. The technique cuts total elapsed time without adding a machine, an operator, or an hour of capacity."
+  - question: "What are the three lot streaming models in EDGEBIC?"
+    answer: "EDGEBIC supports a piece-count transfer batch, a start-to-start lag in hours, and one-piece flow. The piece-count model waits for a set number of finished pieces. The start-to-start lag lets the next step begin a fixed number of hours after the upstream step starts, which suits continuous processes. One-piece flow is the piece-count model with a batch size of one."
+  - question: "Does lot streaming change how much capacity a job consumes?"
+    answer: "No. Lot streaming changes when work is allowed to start, not how many hours it takes. The mill still books its full run time and the drill still books its full run time. What changes is that the two now overlap on the calendar, so the job clears the shop sooner while every work center stays inside its finite capacity."
+  - question: "Which operations are worth streaming?"
+    answer: "Stream where the upstream operation is long, the piece cycle is short, and the downstream work center is otherwise idle waiting. A 26-hour machining run feeding a deburring bench is an ideal candidate. Streaming a 20-minute operation saves nothing worth configuring, and streaming into an already-overloaded work center just moves the queue rather than shortening it."
+  - question: "Is lot streaming turned on by default?"
+    answer: "No. Every routing step ships with a transfer batch size of zero, which means no streaming and the downstream step waits for full upstream completion. Streaming is opt-in per routing step, so an existing schedule cannot change behavior until a planner deliberately sets a value. That makes it safe to pilot on one routing before rolling it out."
+qaQuestions:
+  - question: "We machine 500 pieces at 3 minutes each, then deburr. Machining takes over a day. How much can streaming actually buy us?"
+    answer: "Run the numbers with a 50-piece transfer batch. Setup is 1 hour, the piece cycle is 0.05 hours, so the first 50 pieces are ready 1 + 50 x 0.05 = 3.5 hours after machining starts. Add a half-hour trolley move and deburring can begin 4 hours in. The full 500-piece machining run takes 1 + 500 x 0.05 = 26 hours, so instead of waiting the whole 26 hours the downstream step overlaps by 22 of them. That is a full day off the job, on the same two machines you already own."
+  - question: "Our paint line does not really have discrete pieces. Can we still overlap the curing oven behind the booth?"
+    answer: "Yes, and that is exactly what the start-to-start lag model is for. Mark the booth as a continuous-process work center and set the lag in hours on the routing step. With a 1-hour lag on a booth running 08:00 to 12:00, the oven is cleared to start at 09:00 instead of noon. Three hours of compression, no piece counting required. The piece-count model is deliberately ignored on continuous-process work centers so nobody accidentally configures pieces on a process that has none."
+---
+
+**Lot streaming lets a downstream operation start before the upstream operation has finished the entire order.** Instead of 1,000 pieces sitting at the mill until the last one is cut, the first sublot moves to drilling while milling keeps running. EDGEBIC by User Solutions carries three ways to express that overlap: a piece-count transfer batch, a start-to-start lag measured in hours, and one-piece flow. Choosing between them is a work center question, not a matter of taste, and this post is the map.
+
+If you want the term itself defined first, start with [what is a transfer batch](/blog/what-is-a-transfer-batch). If you want the arithmetic run end to end on a real order, read the [lot streaming overlap walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic). This post sits above both: what the three models are, why the platform carries all three, and how you decide which one belongs on a given routing step.
+
+## The Cost of the Serial Handoff
+
+Most scheduling systems treat a routing as a relay race. Operation 20 cannot begin until operation 10 reports complete, because that is the simplest rule to code and the easiest one to explain. It is also wrong on the shop floor, where the first finished pieces have been sitting in a tote for hours.
+
+The waste is easy to see once you look for it. A 26-hour machining run feeding a 4-hour deburring bench occupies 30 hours of calendar under a serial rule. Physically it needs closer to 27. That extra day is not a capacity problem, a staffing problem, or a routing problem. It is a permission problem: nothing in the schedule ever told deburring it was allowed to start.
+
+Lot streaming grants that permission with a rule instead of a phone call. The lean and constraint-management literature has argued the point for decades, splitting the **process batch** (what the machine runs in one go) from the **transfer batch** (what actually moves between operations). Trietsch and Baker formalized the scheduling math in *Operations Research* in 1993, and Goldratt made the same distinction the centerpiece of constraint-based flow. The terminology carried into standard planning vocabulary maintained by bodies such as [ASCM](https://www.ascm.org). What is new is having it expressed as a field on a routing step instead of a policy in a binder.
+
+## The Three Models at a Glance
+
+| Model | What triggers it | What the successor waits for | Best fit |
+|---|---|---|---|
+| **Piece-count transfer batch** | A transfer batch size greater than zero on a routing step, on a discrete work center | Setup plus batch size times hours per piece | Discrete parts: machining, fabrication, assembly |
+| **Start-to-start lag** | A flow value in hours on the routing step, with transfer batch left at zero | A fixed number of hours after the upstream step **starts** | Continuous processes: paint, chemicals, extrusion |
+| **One-piece flow** | Transfer batch size of exactly one | Setup plus a single piece cycle | Lean cells, short cycles, high-value parts |
+| **No streaming** | Both fields zero (the default) | Full upstream completion | Everything you have not deliberately configured |
+
+The three are not interchangeable. Each answers a different question about what "ready to move" physically means at that station.
+
+## Model 1: The Piece-Count Transfer Batch
+
+This is the industry-standard model and the one most job shops want. You state a number of pieces. The engine computes when that many pieces will exist, and clears the next operation to start at that moment.
+
+The formula is deliberately plain:
+
+> **flow time = setup + min(transfer batch, order quantity) x hours per piece**
+
+Take a 100-piece shaft order. Turning runs at 0.5 hours per piece with a 2-hour setup, and the transfer batch is 20 pieces with a half-hour move time. Twenty pieces exist at 2 + 20 x 0.5 = 12 hours after the lathe starts, plus 0.5 hours of handling, so drilling is cleared at hour 12.5. The full turning run is 52 hours. Under a serial rule drilling waits all 52. The overlap pulls the job's elapsed time down to roughly 37 hours on exactly the same two machines.
+
+Two details in that formula matter more than they look:
+
+- **Setup is included.** Pieces do not start accumulating until the machine is actually set up, so the clock starts after setup, not at the top of the operation.
+- **The batch is capped at the order quantity.** If a routing step says 100 pieces and the order is only 30, the engine uses 30. Without the cap the schedule would wait for a piece that will never be cut and the downstream step would never start.
+
+That cap is a safety net, not a strategy. When the transfer batch equals or exceeds the order quantity, streaming quietly behaves exactly like a serial handoff, and EDGEBIC raises a configuration warning so you can lower the number.
+
+## Model 2: The Start-to-Start Lag in Hours
+
+Some work centers have no pieces to count. A paint booth produces a wet stream, a reactor produces a batch that is either running or not, an extruder produces continuous stock. Asking "how many pieces are done" is the wrong question at those stations.
+
+The lag model answers a different one: how far into the upstream run is it safe for the next step to begin? You express the answer in hours, and the engine reads it as a start-to-start offset:
+
+> **successor may start = upstream start + lag hours**
+
+A booth running 08:00 to 12:00 with a 1-hour lag clears the curing oven at 09:00. Not noon. That is three hours of compression from one field, and the value is independent of order quantity, hours per piece, and setup. Double the order and the lag stays one hour, because the physical question ("when is there enough product on the line to feed the oven?") has not changed.
+
+Mark the work center as a continuous process and the engine will always use this model there, even if somebody also typed a transfer batch size on the routing step. That is intentional: piece counting on a paint booth is a configuration error, and the platform would rather ignore it loudly than honor it quietly.
+
+## Model 3: One-Piece Flow
+
+One-piece flow is not a separate mechanism. It is the piece-count model with the batch set to one, and it is worth naming because the schedule it produces looks so different.
+
+A lean cell soldering 50 sub-assemblies at 0.25 hours each with a 30-minute setup finishes its first unit at 0.5 + 1 x 0.25 = 0.75 hours. Functional test starts at 08:45 while soldering continues through unit 50. Serially the pair takes 18 hours. Streamed one piece at a time it takes about 13.75, a makespan reduction of roughly 24% with no new equipment.
+
+The catch is physical, not mathematical. One-piece flow only works where material handling is genuinely continuous: a conveyor, an adjacent bench, a cell laid out for it. If a forklift has to make the trip, the handling time swamps the gain. That is what the separate handling-delay field is for, and it is why [one-piece flow scheduling](/blog/one-piece-flow-scheduling) is a cell design decision before it is a scheduling decision.
+
+## Choosing a Model for a Given Step
+
+Work through it in this order:
+
+1. **Is the upstream work center a continuous process?** If yes, use the hours-based lag. Stop here.
+2. **Is the upstream operation long relative to the downstream one?** If the upstream run is under an hour, streaming saves less than the configuration costs. Leave it serial.
+3. **Is the downstream work center free during that window?** Overlap only pays when the successor has capacity to accept it. Streaming into a work center that is already the bottleneck moves the queue rather than shortening it. Identify the constraint first: see [production bottleneck identification](/blog/production-bottleneck-identification).
+4. **How does material physically move?** Set the transfer batch to the size of the actual container, rack, or trolley. A 50-piece bin means a 50-piece transfer batch, not a round number somebody liked.
+5. **Is there a lag after the batch is ready?** Cooling, drying, inspection, or a long forklift run go in the handling-delay field, on top of the streaming time.
+
+## What Lot Streaming Does Not Do
+
+Streaming changes permission, not physics. Three things stay exactly as they were:
+
+- **Capacity is still finite.** Every hour the mill needs is still booked on the mill. The overlap does not create capacity, and the schedule still respects the same shift calendars and machine instances. That distinction is the whole point of [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+- **Total work content is unchanged.** The job takes the same number of labor hours. It just clears the shop sooner.
+- **Downstream still has to have a slot.** The streaming calculation produces an earliest start. The capacity allocator then finds the first real shift opening at or after that time. If the drill is loaded, the gain shrinks, and you can see exactly where in the [idle gap diagnosis guide](/blog/schedule-has-idle-gaps-edgebic).
+
+## Where the Overlap Shows Up
+
+On the Gantt, streamed operations visibly sit under one another rather than end to end. That is the fastest confirmation that a configuration took effect. The scheduling engine also exempts streamed steps from its overlap warnings, because overlap is the intended result rather than an anomaly.
+
+The measurable payoff shows up in the metrics you already track: shorter job lead times, less work-in-process sitting in totes, and better flow through non-bottleneck stations. The [EDGEBIC results guide](/blog/edgebic-results-guide) covers how to baseline those numbers before you change anything, which matters because "we streamed it and it felt faster" is not a business case.
+
+## Where to Go Next
+
+Three companion posts complete this chapter. [Setting up operation overlap](/blog/how-to-overlap-operations-in-edgebic) walks the fields and the dialogs step by step. [Piece-count versus time-lag overlap](/blog/piece-count-vs-time-lag-overlap-in-edgebic) runs the two models against the same order so you can see the difference in hours. [Lot streaming mistakes](/blog/lot-streaming-mistakes-edgebic) covers the configuration traps that make streaming look broken when it is actually doing what you told it.
+
+For the wider picture of where streaming sits among the platform's scheduling mechanisms, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide), or bring a routing and an order quantity to a demo of [EDGEBIC](/edgebic) and we will run your numbers with you.

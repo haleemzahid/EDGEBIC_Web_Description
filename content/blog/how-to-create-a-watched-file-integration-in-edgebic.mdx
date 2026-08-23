@@ -1,0 +1,116 @@
+---
+title: "How to Create a Watched-File Integration in EDGEBIC"
+description: "Create a watched-file integration in EDGEBIC: point it at the file your ERP drops, pick the target entity and import mask, set the debounce, and let a new file trigger the run."
+published: 2026-08-22T12:00:00.000Z
+modified: 2026-08-22T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - watched file integration
+  - automatic file import scheduling
+  - import when the file changes
+  - ERP file drop import
+  - debounce file import
+  - scheduled import mask
+targetPhrase: "watched file integration"
+wordCount: 1250
+readingTime: 6
+faqQuestions:
+  - question: "How do you create a watched-file integration in EDGEBIC?"
+    answer: "Open the Integration tab, click New Integration, type a Name, and leave Source on File (watched). Set File path to the file your ERP writes, tick Import automatically when the file changes, and set Debounce (s) so a half-written file is never read. In the Import Mask section pick the Target entity and then the Mask, set the Schedule and Limits panel on the right, and Save. In EDGEBIC by User Solutions the definition is saved at that moment, but nothing is imported until the first run fires."
+  - question: "What does Debounce (s) actually do?"
+    answer: "It is how long the file has to sit quiet before EDGEBIC starts the run, and it accepts 1 to 300 seconds. The problem it solves is real: a large export is written progressively, so a watcher that fires the instant the file is touched can read a file that is still half written. A few seconds of debounce means the run starts only after the writer has stopped, which is the difference between importing a complete export and importing whatever had landed so far."
+  - question: "Does the folder have to exist before I save the integration?"
+    answer: "The Browse button does not require the file to exist yet, so you can point at tomorrow's drop before your ERP has ever written it. The folder is different. EDGEBIC builds the file watcher against the folder, so if the folder is missing when the host starts, no watching happens for that integration. It will not error loudly, it simply never fires, which is why a missing or unreachable folder is the first thing to check when a watched integration is silent."
+qaQuestions:
+  - question: "Our ERP writes the same file every night. Should we use a watched file or an interval, or both?"
+    answer: "Both is a legitimate and often better answer, because they cover different failure modes. The watched file gives you promptness: the moment a fresh export lands, the run starts, and you are not waiting out an interval for data that is already there. The interval gives you a floor: if the watcher missed an event, or the file was replaced in a way the watcher did not see, the timer still picks it up.\n\nA definition that has both a file trigger and an interval summarizes on its card as running on file change and on the interval, and that is usually the shape you want for a nightly ERP drop. Use file-only when the drop is irregular and you want zero polling, and interval-only when the source is a database query rather than a file."
+  - question: "We saved the integration and nothing imported. Is it broken?"
+    answer: "Almost certainly not. Saving the Configuration form saves the definition only, and nothing is imported at that moment. The card appears in the left rail right away with its schedule summary, and the impact begins the first time a run actually fires.\n\nIf you do not want to wait, click Run Now to force one, then read the Run History tab. That single step separates the two things people conflate: a definition that was never triggered, which is normal after a save, and a definition that triggered and failed, which will have a row in the history with a status and a message telling you why."
+---
+
+**To create a watched-file integration in EDGEBIC by User Solutions, open the Integration tab, click New Integration, leave Source on File (watched), set the File path to the file your ERP drops, choose the Target entity and its Import Mask, then Save.** This is the common case: another system writes a file to a share on a schedule of its own, and EDGEBIC picks it up without anyone clicking anything.
+
+An integration does not replace an import mask. It runs one. Everything about how your columns map to EDGEBIC fields is already decided by the mask, and the integration only supplies the trigger.
+
+## Before You Start
+
+| Prerequisite | Why |
+|---|---|
+| An import mask already exists for this data | An integration runs a mask, it does not define one. You can create the mask from inside the form, but there has to be one |
+| You know the exact path the file lands at | The watcher is built against that path, and a guess produces an integration that never fires |
+| The folder holding the file exists | The watcher is built against the folder. A folder missing when the host starts means no watching for that integration |
+| Access to the Integration tab | The tab is permission-controlled. If you cannot see it, ask your administrator |
+
+## Step 1: Open the Integration Tab and Start a New Definition
+
+Open the **Integration** tab from the main navigation, then click **+ New Integration** in the header strip. An empty **Configuration** form opens on the right, and the footer tells you plainly that this is a new integration to fill in and save.
+
+## Step 2: Name It After the Routine, Not the File
+
+Type a **Name**. Name it for the job it does, not for the file it happens to read right now, because file names change and routines do not. `ERP Products - nightly sync` survives a rename of the export; `products.csv` does not.
+
+## Step 3: Leave Source on File (watched) and Fill In the File Details
+
+**Source** offers **File (watched)** and **External SQL Server**. Leave it on the first.
+
+| Field | Required | What it does |
+|---|---|---|
+| **File path** | Yes | The exact file EDGEBIC watches and imports. Type it or click **Browse...** |
+| **Sheet** | Only for Excel | Which worksheet to read. Appears only when the path ends in an Excel extension |
+| **Import automatically when the file changes** | No | On: a new or changed file triggers a run by itself |
+| **Debounce (s)** | No | How long the file must sit quiet before the run starts, from 1 to 300 seconds |
+
+**Browse...** does not require the file to exist yet, so you can point at tomorrow's drop today.
+
+## Step 4: Pick the Target Entity and the Mask
+
+In the **Import Mask** section, pick the **Target entity** first, then the **Mask** beside it. Only masks belonging to that entity are offered, which is a guard rather than a limitation: it makes it impossible to point a product mask at a sales-order feed.
+
+If no mask exists yet, click **New...**. For a file source EDGEBIC reads the file's heading row first and opens the mask editor with those columns already loaded, so you only drag them onto the fields.
+
+## Step 5: Set the Schedule and the Safety Limits
+
+The right-hand **Schedule and Limits** panel carries three controls. Tick **Run every** and set the minutes if you want an interval on top of the file trigger. Leave the two safety limits at their defaults unless you have a reason: **Max rows/run** defaults to unlimited, and **Max minutes/run** defaults to a wall-clock cap that stops a run still going at that point.
+
+Hitting the row cap ends the run as CompletedWithErrors, never as a success, and the rows past the cap are simply not read. Hitting the time cap ends the run as Failed, and rows already written before the cut stay written.
+
+## Step 6: Save
+
+Click **Save**. The card appears in the left rail immediately with its schedule summary and, once enabled and scheduled, a countdown chip. Saving the form saves the definition only. Nothing is imported at that moment.
+
+## How to Check It Worked
+
+Click **Run Now** on the card rather than waiting for the first natural trigger, then open the **Run History** tab. One row should appear with its trigger, its counts of created, updated, reused, skipped and failed rows, its duration and any message. A run that succeeded with sensible counts is your proof that the path, the mask and the permissions all line up.
+
+Then check the data itself. The records the mask's target entity covers should have changed by exactly the same rules a manual import follows.
+
+## Common Mistakes
+
+**Expecting the schedule to update.** A run changes data, not the plan. Jobs already scheduled carry their own frozen routing snapshot and are unchanged. Run the scheduler afterward if you want the new data reflected in dates. See [how to run the scheduler](/blog/how-to-run-the-scheduler-in-edgebic).
+
+**Debounce left at zero on a large export.** The bigger the file, the longer the writer holds it open, and the more likely a zero-debounce watcher reads a partial file.
+
+**Pointing at a mapped drive the host cannot see.** The watcher is built by whatever account runs the host, not by your desktop session. A path that works in your Explorer window is not evidence.
+
+**Assuming a silent integration is a failed one.** Silence usually means it never triggered. [Checking whether anything is actually hosting your syncs](/blog/how-to-tell-whether-anything-is-actually-hosting-your-syncs) separates the two cases.
+
+## Next Steps
+
+For the database-query equivalent of this task, see [connecting EDGEBIC to your ERP database with a SQL source](/blog/connecting-edgebic-to-your-erp-database-with-a-sql-source). To read what the runs are telling you afterward, see [reading EDGEBIC run logs and run history](/blog/reading-edgebic-run-logs-and-run-history). For the wider picture of what automated masks are and are not, see [EDGEBIC scheduled integration runs explained](/blog/edgebic-scheduled-integration-runs-explained).
+
+Every task in this library is indexed on the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub). To see a nightly ERP drop turn into a live plan, book a walkthrough of [EDGEBIC](/edgebic).
+
+<Accordion title="How do you create a watched-file integration in EDGEBIC?">
+Open the Integration tab, click New Integration, type a Name, and leave Source on File (watched). Set File path to the file your ERP writes, tick Import automatically when the file changes, and set Debounce (s) so a half-written file is never read. In the Import Mask section pick the Target entity and then the Mask, set the Schedule and Limits panel on the right, and Save. In EDGEBIC by User Solutions the definition is saved at that moment, but nothing is imported until the first run fires.
+</Accordion>
+
+<Accordion title="What does Debounce (s) actually do?">
+It is how long the file has to sit quiet before EDGEBIC starts the run, and it accepts 1 to 300 seconds. The problem it solves is real: a large export is written progressively, so a watcher that fires the instant the file is touched can read a file that is still half written. A few seconds of debounce means the run starts only after the writer has stopped, which is the difference between importing a complete export and importing whatever had landed so far.
+</Accordion>
+
+<Accordion title="Does the folder have to exist before I save the integration?">
+The Browse button does not require the file to exist yet, so you can point at tomorrow's drop before your ERP has ever written it. The folder is different. EDGEBIC builds the file watcher against the folder, so if the folder is missing when the host starts, no watching happens for that integration. It will not error loudly, it simply never fires, which is why a missing or unreachable folder is the first thing to check when a watched integration is silent.
+</Accordion>

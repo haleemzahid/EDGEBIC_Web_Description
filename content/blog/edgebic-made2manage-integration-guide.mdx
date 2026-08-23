@@ -1,0 +1,148 @@
+---
+title: "EDGEBIC + Made2Manage: The Complete Scheduling Integration Guide"
+description: "Made2Manage production scheduling integration with EDGEBIC: export items, work centers, routings and jobs to a file, map columns once, schedule at finite capacity."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Made2Manage production scheduling integration
+  - Made2Manage finite capacity scheduling
+  - Made2Manage scheduling add-on
+  - EDGEBIC Made2Manage integration
+  - Made2Manage export scheduling
+  - job shop ERP scheduling integration
+targetPhrase: "Made2Manage production scheduling integration"
+wordCount: 2010
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC connect to Made2Manage through a native connector?"
+    answer: "No. EDGEBIC integrates with Made2Manage through reusable import masks fed by the Excel, CSV, or database exports Made2Manage already produces. There is no certified connector to license, no add-on installed inside the ERP, and no API sync to version-match. You map an export's columns onto EDGEBIC fields once, and every later run is two clicks with a per-run log recording each row."
+  - question: "What Made2Manage data does EDGEBIC need to build a schedule?"
+    answer: "Four exports carry a complete scheduling model: items, work centers with capacity detail, routings with operation sequence and run and setup times, and open jobs with quantities and dates. A fifth optional export carries labor hours from the floor. Each file goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed."
+  - question: "Do imported Made2Manage jobs schedule themselves on import?"
+    answer: "No, and the separation is deliberate. An import changes data; the scheduler changes the plan. Imported jobs appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor."
+qaQuestions:
+  - question: "We run make-to-order work and our routings change per job. Does EDGEBIC force us to standardize routings before we can schedule?"
+    answer: "No. You import the routing exactly as Made2Manage holds it for each job, per-job variations included, and the two-pass routing import wires the steps in the order your sequence numbers give. If a job carries a one-off operation, it rides along as one more row with its own hours and work center. The discipline that actually matters is that all of one end item's steps travel in a single file, because a routing run wipes and recreates that item's steps on first reference, so a split file means the second run's wipe deletes the first run's work. Standardizing routings is a good long-term project, but it is not a precondition for a first schedule."
+  - question: "Made2Manage already has a scheduling screen. Why would we export to a separate tool?"
+    answer: "Because the two answer different questions. The ERP screen is excellent at recording the job, its router, its due date, and its cost. What it does not model well is finite capacity: how sixty open jobs actually fit across two machines that each hold four identical spindles, which changeovers the sequence forces, and which promise dates move when a hot job jumps the queue. EDGEBIC takes the same job and router data and sequences it against real shift hours and real machine counts, then hands executable dates back as Excel. The ERP stays the system of record; EDGEBIC answers the capacity question the screen cannot."
+---
+
+**Integrating Made2Manage with EDGEBIC means exporting the items, work centers, routings, and open jobs Made2Manage already holds to Excel, CSV, or a database view, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no certified connector to license, no add-on to install inside the ERP, and no API sync to maintain when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the Made2Manage case: what to export, how the masks work, what the engine does with the result, and what a realistic first week looks like.
+
+## Why a job-shop ERP still needs a finite capacity scheduler
+
+Made2Manage handles the make-to-order business well: quotes, jobs, routers, purchasing, and the costing that hangs off them. What most Made2Manage shops report is that the daily sequencing decision still lands in a spreadsheet, because the morning questions a planner asks are finite capacity questions:
+
+- Which of these open jobs actually fit on the two machining cells this week?
+- If this rush job jumps the queue, whose promise date moves and by how much?
+- Is the weld booth loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open job at once. It is a different computation from recording a job, which is why a dedicated finite capacity layer beside the ERP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling); the wider category view is on the [EDGEBIC ERP integration hub](/edgebic-erp-integration).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, Made2Manage included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Made2Manage to EDGEBIC | Items | Excel or CSV export to Product import mask |
+| Made2Manage to EDGEBIC | Work centers | Export to Workcenter import mask |
+| Made2Manage to EDGEBIC | Routings / operations | Export to BOR (bill of routing) import mask, two-pass |
+| Made2Manage to EDGEBIC | Open jobs | Export to SalesOrder import mask |
+| Made2Manage to EDGEBIC | Labor hours (optional) | Export to Actuals import mask |
+| EDGEBIC to Made2Manage | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row is headings, whether text values are quoted, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks.
+
+Every row produces exactly one outcome: **Created**, **Updated**, **Reused** (matched and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row individually.
+
+## The file is the interface, and that is the advantage
+
+A native connector is a dependency: it has a version, a credential, and a failure mode that follows the vendor's release schedule rather than yours. A file-based interface has a much smaller failure surface. The only thing that can break is a column heading, and the fix is re-mapping one row in a mask.
+
+Three practical consequences follow for a Made2Manage site:
+
+- **Nothing is installed in the ERP.** No add-on, no stored procedure you have to support through an upgrade, no schema change.
+- **No integration credential exists.** The scheduler never authenticates against Made2Manage, so there is no permission surface to review or rotate.
+- **Scheduling keeps working offline.** The plan is computed locally, so a database or network problem stops the export, not the shop's dispatch list.
+
+## Step 1: the four exports
+
+Four exports carry a complete scheduling model. Made2Manage produces these as report or query extracts to Excel or CSV; the exact column headings depend on your version and configuration, which is fine, because you map headings to fields once.
+
+1. **Items.** The item identifier, description, unit of measure, and any cost or lead-time columns worth having visible. The identifier is the natural key, matched case-insensitively, so `BRK-200` in a file finds `brk-200` in the database.
+2. **Work centers.** Identifier, how many identical machines the center really holds, default setup hours, efficiency, and an hourly rate for cost rollups. Bottleneck and shift-assignment flags ride in the same file.
+3. **Routings.** One row per operation: end product, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open jobs.** Product, quantity, order reference, and dates.
+
+Any Made2Manage list or report that saves to Excel or CSV is a valid source. A database view against the ERP tables works equally well, since a mask can read a database source directly.
+
+## Step 2: map the columns once
+
+Build one mask per file and name it after the routine rather than the file: `Weekly M2M Open Jobs` outlives `jobs-week31.xlsx`. Mandatory fields are flagged, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row.
+
+Two mask features carry most of the weight:
+
+**Unit conversion.** Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`, seconds to hours `0.000278`, and a standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in the same file can carry different factors, which matters when a Made2Manage router quotes setup in minutes and run in hours.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value rather than wiping it, so a partial refresh file is safe. Watch the matching rule: a zero is a value, not a blank. Leave a column out of the export rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move between systems, because operations reference each other: step 10 feeds step 20 feeds step 30. A row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product, so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Conventions that pay off immediately:
+
+- **Number sequences in gaps of 10** so a later insert becomes 25 and nothing renumbers.
+- **Keep all of one job's or item's steps in one file.** A routing import wipes and recreates that item's steps once per run, which is what makes re-imports idempotent; splitting one item across two runs means the second run's wipe deletes the first.
+- **Re-importing is safe for running jobs.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: jobs in, then run the scheduler
+
+The order import maps product, quantity, reference, and dates. When your export carries a job or sales order reference, rows sharing that reference group under one order and their jobs auto-number as `{Ref}-{line}`, keeping a multi-line order together.
+
+**Imports never schedule anything.** Imported jobs sit as unscheduled demand until you run the scheduler, which states its scope in plain numbers before it plans. Data movement and planning stay separate on purpose. The choices are covered in [EDGEBIC scheduling modes explained](/blog/edgebic-scheduling-modes-explained).
+
+Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, the work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved. Revised dates then go back into Made2Manage through the job date-maintenance path your process already uses. There is no automated write-back, which keeps your ERP data under your team's control.
+
+## A realistic first week
+
+The method has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. A mid-size Made2Manage shop usually follows the same shape.
+
+| Day | Work |
+|---|---|
+| 1 | Export items and work centers; build and run those two masks; verify counts |
+| 2 | Export routings; build the routing mask with unit conversions; review the routing designer |
+| 3 | Export open jobs; import; run the first full finite capacity schedule |
+| 4 | Compare EDGEBIC dates to current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 5 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+The [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the from-empty sequence, and the [Made2Manage to EDGEBIC data mapping reference](/blog/made2manage-to-edgebic-data-mapping-reference) is the field-level lookup to keep open while building masks.
+
+## Test it with your own export
+
+Export this week's open jobs and a routing file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity. If you are evaluating more than one ERP, the [Acumatica](/blog/edgebic-acumatica-integration-guide), [SYSPRO](/blog/edgebic-syspro-integration-guide), and [Genius ERP](/blog/edgebic-genius-erp-integration-guide) versions of this guide follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to Made2Manage through a native connector?">
+No. EDGEBIC integrates with Made2Manage through reusable import masks fed by the Excel, CSV, or database exports Made2Manage already produces. There is no certified connector to license, no add-on installed inside the ERP, and no API sync to version-match. You map an export's columns onto EDGEBIC fields once, and every later run is two clicks with a per-run log recording each row.
+</Accordion>
+
+<Accordion title="What Made2Manage data does EDGEBIC need to build a schedule?">
+Four exports carry a complete scheduling model: items, work centers with capacity detail, routings with operation sequence and run and setup times, and open jobs with quantities and dates. A fifth optional export carries labor hours from the floor. Each file goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="Do imported Made2Manage jobs schedule themselves on import?">
+No, and the separation is deliberate. An import changes data; the scheduler changes the plan. Imported jobs appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor.
+</Accordion>

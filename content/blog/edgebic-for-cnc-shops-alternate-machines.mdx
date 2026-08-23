@@ -1,0 +1,145 @@
+---
+title: "Routing CNC Work to the Next Available Machine"
+description: "CNC alternate machine routing: how a fallback machine gets chosen before allocation using projected finish times, its own cycle time, and its own setup."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - CNC alternate machine routing
+  - alternate work center scheduling
+  - fallback machine routing
+  - machine substitution scheduling
+  - CNC capacity balancing
+  - routing flexibility manufacturing
+  - job shop machine selection
+targetPhrase: "CNC alternate machine routing"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "When does the scheduler decide which machine an operation runs on?"
+    answer: "Before any capacity is allocated. The alternate resolver runs as a pre-scheduling pass, compares each candidate machine's projected completion using live shift allocations, and swaps the operation onto the winner. Everything downstream then schedules as though that machine had always been named on the routing, so allocation, capacity checks, and reporting all see one machine."
+  - question: "Does an alternate machine use the same cycle time as the primary?"
+    answer: "No. A true alternate carries its own cycle time and its own setup time on its own candidate entry, and those values are used directly. The multiplier field that appears on parallel entries is deliberately ignored for true alternates, so entering a factor there and expecting the hours to scale is the most common configuration mistake with this feature."
+  - question: "What is the difference between an alternate machine and a parallel machine?"
+    answer: "An alternate replaces the primary: one machine runs the operation and the others are candidates that lost. A parallel machine runs alongside the primary on the same operation, either splitting the work with its own capacity consumed or mirroring the primary's timing exactly. Alternates make a job faster by finding a free machine; parallels make a job faster by using more machines at once."
+  - question: "Will a reschedule move an operation that already started to a different machine?"
+    answer: "No. A machine carrying recorded actuals for that operation is locked, and the resolver matches it among the candidates and keeps it there. Only operations that have not started re-evaluate their candidate list against current capacity. When a not-yet-started operation does move, the change surfaces as a replacement indicator naming both machines rather than moving silently."
+qaQuestions:
+  - question: "We have three machining centers with overlapping capability, but the routing names one and the schedule queues four days deep on it. What does the resolver actually compare?"
+    answer: "Projected completion for each candidate against live shift allocations, including the tentative reservations made by operations already resolved earlier in the same run. Take a case where the primary is queued behind existing work and projects a Wednesday 10:00 finish, a second machine with its own six-hour cycle projects Monday 16:00, and a third with an eight-hour cycle projects Tuesday 16:00. The second machine wins and the operation is scheduled Monday 08:00 to 14:00, two days earlier than the routing would have produced. The comparison is on finish time, not on availability alone, so a machine that frees up sooner but runs the part slower can still lose."
+  - question: "How do we choose between per-step alternates and a machine pool?"
+    answer: "Count the routing steps. Per-step alternates are right for a one-off fallback on a single special operation, or where each operation needs its own cycle times and setups for the alternate machines. A pool is right when the same list of interchangeable machines keeps appearing across many routings, because the pool is defined once centrally and every bound step follows it, so adding a fourth machine is one edit instead of dozens. The two are mutually exclusive on a single step by design: binding a step to a pool clears its manual alternates, because the pool is the alternate list and two competing sources would have no defined meaning."
+---
+
+**A routing that names one machining center is a decision made once, usually by whoever proved the program, and then enforced forever by software that has no opinion about it.** EDGEBIC by User Solutions lets a routing step carry true alternate machines, each with its own cycle time and setup, and resolves the choice before any capacity is allocated by comparing projected finish times against the live load. For a CNC shop with three centers of overlapping capability and a four-day queue on one of them, that is the fastest lead-time improvement available without buying anything.
+
+The full mechanism, including parallel work centers and the mirroring model, is documented in [parallel work centers explained](/blog/edgebic-parallel-work-centers-explained), with the configuration steps in [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic). This post is about the alternate case on a CNC floor.
+
+## Two Things Called "Another Machine"
+
+The word "alternate" gets used for two genuinely different behaviors, and picking the wrong one is the most common configuration error in this area.
+
+| Category | What it means | When you want it |
+|---|---|---|
+| **True alternative** | This machine **replaces** the primary. One machine runs the operation; the rest are candidates that lost. | The part can run on any of several centers and you want the earliest finish |
+| **Parallel** | This machine runs **alongside** the primary on the same operation, either sharing the work with its own capacity consumed, or mirroring the primary exactly. | The operation physically uses more than one machine at once |
+
+This post is about the first. If you need two spindles running the same weldment together, that is parallel and it works differently: see [running fabrication operations in parallel](/blog/edgebic-for-metal-fabrication-parallel-work-centers).
+
+## The Decision Happens Before Allocation
+
+This ordering matters more than it looks. The alternate resolver is a **pre-scheduling pass**. It runs before any capacity is consumed, compares candidates, picks a winner, and swaps the operation onto that machine.
+
+After the swap, the operation is indistinguishable from one that always named that machine. The multi-shift allocator, the capacity checks, the Gantt, and every report see one machine. There is no "maybe" state carried downstream, which is why nothing else in the pipeline needs to know alternates exist.
+
+The candidate list is evaluated against **live shift allocations**, including the tentative reservations made by operations already resolved earlier in the same run. Two jobs competing for the same second machine do not both win.
+
+## The Worked Comparison
+
+Three machining centers. The routing names CNC-1 as primary, with CNC-2 and CNC-3 listed as true alternatives, each carrying its own cycle time. CNC-1 is queued behind existing work.
+
+| Candidate | Own cycle for this operation | Projected completion |
+|---|---|---|
+| CNC-1 (primary) | 8 h | Wednesday 10:00 (queued behind existing jobs) |
+| CNC-2 | 6 h | **Monday 16:00** |
+| CNC-3 | 8 h | Tuesday 16:00 |
+
+CNC-2 wins. The operation's machine assignment is updated, the true alternate entries are removed from the step, and normal scheduling proceeds on CNC-2 exactly as if CNC-2 had always been the primary. The result is Monday 08:00 to 14:00 using CNC-2's own six-hour cycle, finishing **two days earlier** than the routing alone would have produced.
+
+Notice what the comparison is: projected **finish**, not availability. A machine that frees up sooner but runs the part slower can still lose, which is the right answer when the downstream operation is waiting on this one.
+
+## Why Resolution Order Matters
+
+When several operations in a run all carry alternates, the order they resolve in changes the outcome, because each one that resolves consumes capacity the next one can see. The resolver works through them by critical-path weight, so the operation with the most work depending on it chooses first and the operations with slack choose from what remains.
+
+That is the right priority for a CNC shop. A final operation feeding a shipping date should get the earliest-finishing machine; a first operation with three days of float can take the slower one without costing anybody anything. It also means the answer is deterministic rather than order-of-entry dependent: reschedule the same shop twice with the same data and the same operations win the same machines.
+
+## The Factor Trap
+
+One configuration detail causes more confusion than the rest of the feature combined, so it is worth stating flatly.
+
+The multiplier field that appears on an alternate entry is used for **parallel** entries, where it scales the mirrored hours. It is **ignored for true alternatives**. A true alternate's hours come from its own cycle time and its own setup, carried on its own candidate entry.
+
+So if you configure a true alternate and set a factor of 0.5 expecting the part to take half as long, nothing happens. Enter the alternate machine's real cycle time instead. This is the right model anyway: a different machining center does not run at a neat multiple of the primary, it runs at whatever its own time study says.
+
+Setup follows the same rule. Each candidate carries its own setup, because a machine with dedicated fixturing sets up differently from one that needs a full changeover, and that difference is often the reason the "faster" machine loses on total time.
+
+## What Happens on the Next Reschedule
+
+Three rules keep the floor's trust.
+
+**Started operations stay put.** A machine carrying recorded actuals for the operation is locked. The resolver matches it among the candidates and keeps the operation there, whatever the projections say. Completed work is never moved by a reschedule.
+
+**Not-yet-started operations re-evaluate.** Capacity changed overnight, so the comparison runs again against the new picture. An operation can legitimately move to a different candidate.
+
+**Movement is visible.** When an operation moves, the change surfaces as a replacement indicator naming both machines, the same indicator you already read elsewhere. A supervisor who printed a dispatch list yesterday sees that the machine changed and why, rather than discovering it at the machine.
+
+A planner can also pin one specific job's operation to one specific machine. That pin beats the comparison unconditionally and survives every later reschedule, which is the mechanism for "this customer's parts run on the validated center, no exceptions."
+
+## When Alternates Are Not the Right Tool
+
+Three cases where something else fits better.
+
+**The same machine list appears on many routings.** That is a machine pool. Alternates are maintained per step, so a shop with the same three centers listed on forty steps has forty places to edit when a fourth center arrives, and those lists drift the first time somebody misses one. A pool is defined once and every bound step follows it. See [machine pool scheduling for machine shops](/blog/edgebic-for-machine-shops-machine-pools). A step bound to a pool has its manual alternates cleared, because the pool **is** the alternate list and two competing sources would have no defined meaning.
+
+**Two machines must run the operation together.** That is parallel, not alternate.
+
+**Only one machine is genuinely qualified.** Then pin the step and do not model alternates at all. Software cannot decide qualification for you, and a schedule that routes a validated part to an unvalidated machine is worse than a queue.
+
+## Configuration in Practice
+
+Adding an alternate to a step takes four decisions:
+
+1. **Which machine.** The candidate work center.
+2. **Its own cycle time and setup.** From that machine's time study, not from a multiplier on the primary's.
+3. **Priority.** Lower numbers rank higher, used as a deterministic tie-break when projections are close.
+4. **Active or not.** An inactive entry is skipped entirely, which is how you take a machine out of consideration during a retrofit without deleting configuration.
+
+Then reschedule and read which candidate won. The most instructive first run is usually the one where the primary keeps winning: that tells you the primary is not actually the constraint you thought it was, and the queue you were worried about is somewhere else. [Production bottleneck identification](/blog/production-bottleneck-identification) is the right next read when that happens.
+
+## The Wider Point
+
+Routing flexibility is capacity you already own. Most CNC shops have more capability overlap than their routings admit, because routings record where a part was first proved rather than where it can run today. Making the alternate list explicit does two useful things at once: it puts real spare capacity into the schedule, and it forces a conversation about which machines are genuinely qualified, which is usually overdue.
+
+For the category background, [CNC machine scheduling](/blog/cnc-machine-scheduling) covers the fundamentals, [job shop scheduling challenges](/blog/job-shop-scheduling-challenges) covers why routing rigidity hurts, and the [CNC shop scheduling software](/cnc-shop-scheduling-software) page is the shorter evaluation read. If your constraint is people rather than machines, [lights-out CNC scheduling](/blog/edgebic-for-cnc-shops-lights-out-scheduling) covers the labor model, and if it is changeover order, [cutting CNC setup time by sequencing](/blog/edgebic-for-cnc-shops-setup-sequencing) covers that. High-volume turned-parts floors combine all three, which is the subject of [scheduling screw machine and Swiss turning shops](/blog/edgebic-for-screw-machine-shops-swiss-turning). The [industry fit guide](/blog/edgebic-by-industry) maps the rest, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to see where your spare capacity actually is? [Contact US for a demo](/contact-us) and bring the routing with the four-day queue.
+
+<Accordion title="When does the scheduler decide which machine an operation runs on?">
+Before any capacity is allocated. The alternate resolver runs as a pre-scheduling pass, compares each candidate machine's projected completion using live shift allocations, and swaps the operation onto the winner. Everything downstream then schedules as though that machine had always been named on the routing, so allocation, capacity checks, and reporting all see one machine.
+</Accordion>
+
+<Accordion title="Does an alternate machine use the same cycle time as the primary?">
+No. A true alternate carries its own cycle time and its own setup time on its own candidate entry, and those values are used directly. The multiplier field that appears on parallel entries is deliberately ignored for true alternates, so entering a factor there and expecting the hours to scale is the most common configuration mistake with this feature.
+</Accordion>
+
+<Accordion title="What is the difference between an alternate machine and a parallel machine?">
+An alternate replaces the primary: one machine runs the operation and the others are candidates that lost. A parallel machine runs alongside the primary on the same operation, either splitting the work with its own capacity consumed or mirroring the primary's timing exactly. Alternates make a job faster by finding a free machine; parallels make a job faster by using more machines at once.
+</Accordion>
+
+<Accordion title="Will a reschedule move an operation that already started to a different machine?">
+No. A machine carrying recorded actuals for that operation is locked, and the resolver matches it among the candidates and keeps it there. Only operations that have not started re-evaluate their candidate list against current capacity. When a not-yet-started operation does move, the change surfaces as a replacement indicator naming both machines rather than moving silently.
+</Accordion>

@@ -1,0 +1,108 @@
+---
+title: "How an Open EDGEBIC Screen Notices Someone Else's Edit"
+description: "On a shared database, a change made on one workstation reaches every other open screen within a few seconds, without anybody pressing anything. How the change signal works and why your selection survives it."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - live data sync scheduling
+  - cross workstation updates
+  - shared scheduling database
+  - stale data production scheduling
+  - multi user scheduling software
+  - automatic screen refresh
+targetPhrase: "live data sync scheduling"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "How quickly does a change made on one workstation appear on another?"
+    answer: "Within a few seconds. Every write leaves a change marker for the family of data it touched, and every workstation reads those markers on a short cycle of about five seconds, then re-reads whatever moved. So a work center renamed on one PC typically appears correctly in a colleague's dropdown within one cycle. Workstations deliberately start their cycles at slightly different moments so a room full of them does not all query the server on the same tick."
+  - question: "Will an automatic update lose my place in a grid or deselect my dropdown?"
+    answer: "No, and that was a deliberate design decision. The refreshed data is merged into the list you are already looking at rather than the list being cleared and rebuilt. Your selection, your scroll position and an open dropdown's current choice all survive. This matters far more on a shared database than it did before, because the refresh is now triggered by somebody else's work rather than by your own click, and a planner should never be interrupted mid-task by an edit they did not make."
+  - question: "Does this automatic updating work on the single-file local database?"
+    answer: "No, and it does not need to. The single-file database is single-machine by design, so there is no other workstation whose changes could need to reach you. Everything your own application does updates its own screens immediately through the normal in-application path. The cross-workstation checking only runs when EDGEBIC is pointed at SQL Server, because that is the only case where another machine could be writing to your data."
+qaQuestions:
+  - question: "Our planner says his work center list updated by itself while he was looking at it. Is that expected, or should we be worried?"
+    answer: "Entirely expected, and it is one of the better reasons to be on a shared database. Somebody on another workstation changed a work center, the change left a marker, and his workstation noticed it on its next check and re-read that family of data. The list corrected itself in place, so his selection and scroll position stayed where they were. If it had not happened, he would have gone on planning against a machine name or an instance count that no longer existed, which is the failure mode this exists to prevent. The one thing to teach is that this is normal, so nobody reports it as a glitch."
+  - question: "Why do a few things not update by themselves even on a shared database?"
+    answer: "Because the automatic path covers the families of data that have a live list somewhere in the application, and a few surfaces genuinely have nothing to refresh. Routing screens load their content when you navigate to them, so they read current data by construction and there is nothing to signal. Capacity override edits made elsewhere arrive as a general schedule refresh rather than as a precisely targeted one, because the fine-grained detail cannot be reconstructed from a change marker alone. And any screen that reads from a file rather than the database is outside this path entirely. Where automatic updating does not reach, the manual refresh button is the deliberate backup."
+---
+
+**On a shared database, a change made on one workstation reaches every other open EDGEBIC screen within a few seconds, and nobody has to press anything for it to happen.** [EDGEBIC by User Solutions](/edgebic) does this with a small change marker written alongside every save and a short polling cycle on each workstation, which is a plainer mechanism than it sounds and a much more reliable one than the obvious alternatives.
+
+This post is about that mechanism: how a change is announced, how quickly it lands, and why the refresh does not disturb what you were doing. For the wider picture of what changes on a shared database, read [what changes when EDGEBIC moves to a shared database](/blog/what-changes-when-edgebic-moves-to-a-shared-database).
+
+## The Problem Being Solved
+
+On one workstation this was never a question. If you renamed a work center, the same running application updated its own lists, because there was only one copy of anything.
+
+With five workstations there are five copies of the lists in memory, and four of them are now wrong. The specific failure this causes is quiet and nasty: a planner builds a routing against a machine somebody deleted an hour ago, or promises a date against an order quantity that was changed at lunchtime. Nothing looks broken. Stale data looks exactly like current data.
+
+## How a Change Announces Itself
+
+Every write in EDGEBIC stamps a small change marker for the family of data it touched, and it does so inside the same transaction as the change itself.
+
+The families are coarse on purpose: work centers, products, customers, departments, shifts, holidays, routings, schedules, manufacturing orders, sales orders, quotes, capacity overrides, security, integration definitions, scheduling policy. Renaming one work center marks the work center family as having moved. Nothing about the marker says which record changed or how, and it does not need to.
+
+Two details in that sentence carry weight. The marker rides the same transaction as the data, so it can never become visible before the change it announces. And it is a fresh, meaningless stamp rather than a counter that ticks upward, which is what makes it safe when two people write at nearly the same moment: a counter can collide and lose a change permanently, whereas two different stamps cannot be mistaken for the one a workstation already saw.
+
+## How a Workstation Notices
+
+Each workstation reads the markers on a short cycle, roughly every five seconds, and compares them against what it last saw. Anything that differs gets re-read.
+
+That is one small query per cycle regardless of how busy the plant is, which is why a room full of workstations does not put meaningful load on the server. Each one also starts its cycle at a slightly random offset so they do not all tick in lockstep.
+
+One behavior at startup is worth knowing: the first read after the application launches only establishes a baseline and refreshes nothing. Without that, every application start would trigger a full refresh of everything, which is expensive and pointless. So the first cycle is quiet and the second one onward does the work.
+
+If a refresh fails, that family keeps its old marker rather than being written off, so the next cycle tries it again. A transient network blip costs you a few seconds, not a stale list until the next time somebody happens to edit that family.
+
+## Why Your Selection Survives
+
+This is the part that decides whether the feature is pleasant or infuriating.
+
+When a family is re-read, the new data is merged into the list you are already bound to rather than the list being emptied and rebuilt. Rows that changed update in place, rows that vanished are removed, rows that appeared are added, and everything else is left exactly as it was.
+
+The consequence is that your grid selection stays selected, your scroll position stays put, and a dropdown you have open does not deselect itself under your cursor.
+
+That is not a nicety. Before the shared database, a refresh only ever followed something you did, so a reset was tolerable. Now a refresh can fire because a colleague two rooms away saved a customer, and a planner being reset mid-task by work they did not initiate would be unacceptable. The merge is what makes automatic updating safe to leave on.
+
+## What Arrives, and How Precisely
+
+The families are coarse, so what arrives is sometimes broader than the change that caused it.
+
+| Change made elsewhere | What your workstation does |
+|---|---|
+| A work center, product, customer, department or shift edited | That family's lists re-read and merge in place |
+| A holiday added or removed | The holiday list re-reads |
+| A schedule change or a capacity override edited | A general schedule refresh |
+| An order or quote changed | That family's refresh |
+| A user, role or permission changed | A broad security refresh |
+| An integration definition edited | Hosts reload their definitions without a restart |
+| A routing edited | Nothing, deliberately: routing screens read current data when you navigate to them |
+
+The capacity override row is the honest one. A remote override edit arrives as a general schedule refresh rather than as a precisely targeted update, because the fine detail of which day and which work center cannot be reconstructed from a coarse marker. The result is correct, just broader than strictly necessary.
+
+## It Covers Bulk Operations Too
+
+The heaviest operations in the product are the ones most worth propagating: clearing a schedule, deleting a customer along with everything that referenced it, wiping a data table. These write in bulk rather than record by record, and they stamp their change markers explicitly so that other workstations learn about them the same way.
+
+That matters because a deletion is exactly the case where a stale list is dangerous. Without the marker, every other workstation would keep offering a customer that no longer exists, with no error and no clue, until somebody restarted the application.
+
+## Where the Backup Sits
+
+Automatic updating is the primary path and it is cheap. It is not, and is not meant to be, a guarantee that covers every surface in the product.
+
+A screen reading from a local file rather than the database is outside it. A surface whose data is loaded when you open it does not need it. And any path that somehow fails to signal leaves you looking at something old with nothing to tell you so.
+
+That is precisely why the manual refresh button exists as a deliberate backup, and why it does something a reopened tab does not. [What the refresh button actually does](/blog/what-the-edgebic-refresh-button-actually-does) covers that difference, which is less obvious than it sounds.
+
+## The Practical Upshot
+
+Two things to tell a planning team on the day they move to a shared server.
+
+Lists updating themselves is normal and is the system working, not a glitch to report. And if a screen looks like it has not moved in a while and you are about to make a decision from it, press refresh first. That habit costs a second and removes the single most common cause of two people disagreeing about what the plant is doing.
+
+For the save side of the same story, read [why EDGEBIC refuses a stale save](/blog/why-edgebic-refuses-a-stale-save). The [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps how the pieces connect.

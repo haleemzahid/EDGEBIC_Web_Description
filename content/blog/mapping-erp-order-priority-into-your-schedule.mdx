@@ -1,0 +1,129 @@
+---
+title: "Mapping ERP Order Priority Into Your Schedule"
+description: "How to translate an ERP's priority codes, customer classes, and rank numbers into EDGEBIC job priority, and why priority ranks the queue rather than overriding finite capacity."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - ERP order priority mapping
+  - job priority scheduling import
+  - priority versus due date scheduling
+  - customer class priority manufacturing
+  - EDGEBIC job priority import
+  - rush order scheduling ERP
+targetPhrase: "ERP order priority mapping"
+wordCount: 1570
+readingTime: 8
+faqQuestions:
+  - question: "How does EDGEBIC use an imported job priority?"
+    answer: "Priority helps rank orders before they are placed, so higher priority jobs are considered earlier and claim capacity first. It does not create capacity or eject work already placed, and it never moves completed work. That distinction matters: a rush job scheduled ahead of everything else still has to fit on real machines in real shift hours, so the honest result is sometimes that it starts first and still finishes later than the customer wants."
+  - question: "Should I import priority from the ERP or set it in EDGEBIC?"
+    answer: "Import it when your ERP carries a priority that somebody genuinely maintains, such as a customer class or an expedite flag that changes as orders move. Keep it local when priority is really a conversation the planner has each morning, because an imported value would overwrite the planner's judgment on every run. Whichever you choose, decide once and leave the field out of the mask if EDGEBIC owns it."
+  - question: "Our ERP priority scale runs 1 to 99. How do I map that?"
+    answer: "Band it in the export rather than importing the raw number. Decide the thresholds with the people who set the codes, then emit a banded value: perhaps 1 to 10 critical, 11 to 30 high, 31 to 70 medium, and the rest low. Banding forces a useful conversation about what the numbers mean, and it survives the common situation where half the scale has never been used and a third of orders sit at the same value."
+qaQuestions:
+  - question: "We imported our ERP priority and now 70 percent of open orders are marked critical. The schedule looks the same as before. Is the field doing anything?"
+    answer: "It is doing exactly what you told it, and what you told it carries no information. When most orders share the top rank, priority cannot separate them, so the ranking falls back to the other signals such as dates and the order in which work arrived. That is why the plan looks unchanged. The fix is upstream of the software: sit down with whoever assigns the codes and agree what each level actually means in terms of consequence, then re-band the export. A useful rule of thumb is that critical should be rare enough to name every job on the list from memory. If it is not, the level is a label rather than a decision, and no scheduler can rescue it."
+  - question: "A high priority job scheduled behind a lower priority one on our tightest machine. Was the priority ignored?"
+    answer: "Almost certainly not. Priority ranks jobs for placement; it does not preempt work already placed or create hours that do not exist. Three ordinary causes cover most cases. The lower priority job may have been placed first in the same run and already claimed the slot. The high priority job may be waiting on a predecessor operation that has not finished, since a step cannot start before the step feeding it. Or the high priority job may be routed through a work center that is genuinely full for that window, in which case starting it earlier is physically impossible. Open the job and read the operation that is holding it, because the constraint is usually visible in one row rather than in the ranking."
+---
+
+**An ERP priority code is a ranking input, not an instruction: EDGEBIC uses it to decide which jobs are considered first when capacity is handed out, and a job that is considered first still has to fit on real machines during real shift hours.** Map it when your ERP carries a priority somebody genuinely maintains, band it into meaningful levels rather than importing a raw scale, and keep it separate from the due date rather than expressing urgency by faking an early deadline.
+
+EDGEBIC by User Solutions has imported priority fields since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the same lesson repeats: a priority field only works when the levels mean something to the people who set them.
+
+## Priority and due date do different jobs
+
+They are easy to blur and worth separating before you map either.
+
+| | Due date | Priority |
+|---|---|---|
+| Answers | When must this be finished | Which job goes first when both want the same machine |
+| Source | The customer commitment | Business judgment about consequence |
+| Used for | Backward scheduling and lateness | Ranking before placement |
+| Failure when misused | Derived dates double-buffer the plan | Everything marked urgent, so nothing is |
+
+The most common mistake is expressing urgency by pulling a due date forward. It works once, then it spreads, and within a quarter the date field carries no information at all. Keep the commitment in the date field and the urgency in the priority field. The date side of this is covered in [importing customer due dates versus internal need dates](/blog/importing-customer-due-dates-vs-internal-need-dates).
+
+## What ranking actually does
+
+Before any job is placed, the scheduler puts the orders in a considered sequence. Jobs earlier in that sequence reach the capacity search first, so they claim the slots they need while those slots are still open. The mechanics are in [how the scheduler sequences orders before placement](/blog/how-the-scheduler-sequences-orders-before-placement).
+
+Three things ranking does **not** do, and each accounts for a support question:
+
+- It does not create capacity. A high priority job on a full machine waits like everything else.
+- It does not eject work that has already been placed in the same run.
+- It never moves completed work, because completed work is never moved by a reschedule.
+
+That is why a high priority job can legitimately appear behind a lower one, and why the useful next step is opening the job to see which operation is holding it. The symptom-first version is in [my high priority job scheduled behind a lower one](/blog/my-high-priority-job-scheduled-behind-a-lower-one-edgebic).
+
+## Shape 1: the ERP carries a numeric rank
+
+A 1 to 99 or 0 to 999 scale is common, and importing it raw is rarely useful, because most shops use six of the values and cluster half their orders on one of them.
+
+Band it in the export instead:
+
+| ERP rank | Banded level | What it should mean |
+|---|---|---|
+| 1 to 10 | Critical | A named, exceptional commitment |
+| 11 to 30 | High | Expedite, agreed with production |
+| 31 to 70 | Medium | Normal commercial work |
+| 71 and above | Low | Stock build, fill-in work |
+
+Agree the thresholds with the people who set the codes, not alone. That conversation is most of the value, because it forces someone to say out loud what each number obliges the shop to do.
+
+## Shape 2: the ERP carries a customer class
+
+Gold, silver, bronze, or a key-account flag. These translate cleanly, with one caution: a customer class describes a relationship, not the urgency of a specific order. A gold customer's stock replenishment does not need to jump ahead of a bronze customer's line-down emergency.
+
+Where you have both a class and an order-level flag, band on the order-level flag and use the class only to break ties.
+
+## Shape 3: the ERP carries an expedite flag
+
+A yes or no column maps to two levels and stops there, which is often enough. Map true to high or critical and false to medium, leave low unused, and revisit only if the flag becomes as crowded as everything else.
+
+## Shape 4: the ERP has nothing worth importing
+
+Plenty of shops discover their priority field was populated at implementation and never touched since. In that case, leave the column out of the mask and set priority inside EDGEBIC, which makes it an EDGEBIC-owned field: no import can overwrite the planner's judgment, because an import writes only the fields you mapped. Setting it manually is covered in [how to set a job priority](/blog/how-to-set-a-job-priority-in-edgebic), and the wider ownership question is in [choosing the system of record for each scheduling field](/blog/choosing-the-system-of-record-for-each-scheduling-field).
+
+## The crowded-top problem
+
+If most of your open orders arrive at the top level, priority carries no signal and the plan will look unchanged after you map it. That is not a software problem and no configuration solves it.
+
+A practical test: **critical should be rare enough that a planner can name every job on the list from memory.** When it is not, the level has become a label. Re-band, then hold the line, because the top level regains meaning only if someone defends it.
+
+A second test worth running monthly: count how many orders changed priority since last month. A field that never changes is a field nobody is maintaining, and it belongs in EDGEBIC rather than in the import. The [monthly data audit](/blog/a-monthly-erp-to-edgebic-data-audit) has the wider drift checks.
+
+## What to do when priority is not enough
+
+Ranking is one lever among several, and it is the weakest one when a machine is genuinely full. When a job has to move and the queue cannot deliver it, the real options are physical:
+
+- **Add capacity** for the window: a second shift, a Saturday, or overtime on the constraint.
+- **Use another machine**, through alternate work centers or a work center group that re-shops the machine pool on every reschedule.
+- **Split the order** so a partial quantity ships on time.
+- **Change the sequence at the constraint**, especially where a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained) means grouping compatible work frees hours outright.
+
+Those are the levers a finite capacity plan exists to reveal. The strategy view is in [job priority and sequencing strategy](/blog/job-priority-and-sequencing-strategy-edgebic), and the engine behind it is mapped on the [EDGEBIC product overview](/edgebic).
+
+## Fold it into the routine
+
+Priority rides in the same work order import as product, quantity, reference, and dates, so it costs nothing extra once mapped. The recurring rhythm is unchanged: export, pick the mask, run, read the counts, then schedule. Imported orders sit as unscheduled demand until a planner runs the scheduler, so a priority change never rearranges the floor on its own. The cadence is in the [weekly ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine), and the import layer every ERP shares sits under the [ERP integration architecture](/edgebic-erp-integration).
+
+## Bring your priority column
+
+Export a week of open orders with whatever priority, class, or expedite columns your ERP holds and [bring them to a demo](/contact-us). Banding them live takes minutes, and the distribution alone usually tells you whether the field is a decision or a habit.
+
+<Accordion title="How does EDGEBIC use an imported job priority?">
+Priority helps rank orders before they are placed, so higher priority jobs are considered earlier and claim capacity first. It does not create capacity or eject work already placed, and it never moves completed work. That distinction matters: a rush job scheduled ahead of everything else still has to fit on real machines in real shift hours, so the honest result is sometimes that it starts first and still finishes later than the customer wants.
+</Accordion>
+
+<Accordion title="Should I import priority from the ERP or set it in EDGEBIC?">
+Import it when your ERP carries a priority that somebody genuinely maintains, such as a customer class or an expedite flag that changes as orders move. Keep it local when priority is really a conversation the planner has each morning, because an imported value would overwrite the planner's judgment on every run. Whichever you choose, decide once and leave the field out of the mask if EDGEBIC owns it.
+</Accordion>
+
+<Accordion title="Our ERP priority scale runs 1 to 99. How do I map that?">
+Band it in the export rather than importing the raw number. Decide the thresholds with the people who set the codes, then emit a banded value: perhaps 1 to 10 critical, 11 to 30 high, 31 to 70 medium, and the rest low. Banding forces a useful conversation about what the numbers mean, and it survives the common situation where half the scale has never been used and a third of orders sit at the same value.
+</Accordion>

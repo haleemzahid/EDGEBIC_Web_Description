@@ -1,0 +1,58 @@
+---
+title: "What Is a Dependency Graph in Scheduling?"
+description: "A dependency graph maps each routing step as a node and each predecessor link as an edge, so steps schedule in the right order. Here is the dependency graph explained."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - dependency graph
+  - routing dependencies
+  - predecessor step
+  - topological sort
+  - job scheduling
+  - directed graph
+targetPhrase: "dependency graph in scheduling"
+wordCount: 1100
+readingTime: 6
+faqQuestions:
+  - question: "What is a dependency graph in scheduling?"
+    answer: "A dependency graph is a directed graph where each node is a routing step and each edge is a predecessor relationship, meaning one step must finish before another can start. It captures the must-follow order of operations in a job: you cannot bake before you mix, or assemble before the components exist. The scheduler uses the graph to place steps in a valid sequence and to time each step from the completion of the steps that feed it, so no operation is scheduled before its prerequisites."
+  - question: "How is a dependency graph used to schedule a job?"
+    answer: "The scheduler builds the graph from the routing's predecessor links, then orders the steps so every predecessor comes before its dependents, a process called topological sorting. It walks the steps in that order, timing each one to start no earlier than the latest finish of the steps feeding it. Independent branches overlap in time, while a joining step waits for all of its inputs. The graph is what lets the engine respect real precedence instead of scheduling operations in an arbitrary or purely numeric order."
+  - question: "What happens if a dependency graph has a cycle?"
+    answer: "A cycle means a step depends, directly or through a chain, on itself, which is impossible to schedule: there is no valid order in which every predecessor comes first. A well-formed routing is acyclic, a directed graph with no loops. If the links accidentally form a cycle, a topological sort cannot complete, and the scheduler flags it rather than producing a nonsensical plan. Detecting the cycle points a planner straight at the misconfigured predecessor link that created the impossible loop."
+qaQuestions:
+  - question: "Our sub-assemblies feed into a final assembly step and some share the same work center. Why does step order matter beyond just the sequence numbers?"
+    answer: "Because sequence numbers alone do not capture which step feeds which. Two sub-assemblies might both be numbered before final assembly, but the real constraint is that final assembly waits for both to finish, and if they share a work center they also compete for its capacity. A dependency graph encodes the true feeds-into relationships, so the engine schedules the sub-assemblies in a valid order, overlaps them where the machine allows, and starts final assembly only when the last feeder is done, not just when a sequence number says so."
+  - question: "A step scheduled before its predecessor finished, and the plan was wrong. Could a dependency issue cause that?"
+    answer: "Yes. If a step's predecessor link is missing or points at the wrong step, the graph does not know that step must wait, so the engine is free to place it too early. The fix is in the routing's dependency links, not the schedule itself: make sure each step names its real predecessor so the graph connects them. Once the edge exists, the topological order forces the dependent step after its predecessor, and its start time is pulled to the predecessor's finish rather than floating loose."
+---
+
+**A dependency graph is a directed graph where each node is a routing step and each edge is a predecessor relationship, so the steps schedule in a valid order.** It encodes the must-follow structure of a job: which operations have to finish before others can begin. The scheduler reads the graph to place steps in a sequence that never violates precedence, and to time each step from the completion of the steps that feed it. Without it, operations could be scheduled in an arbitrary order that the floor cannot actually run.
+
+This entry defines the dependency graph and shows how it behaves inside [EDGEBIC by User Solutions](/edgebic). For the wider index of planning terms, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the ordering method built on it, read [what is a topological sort in job scheduling](/blog/what-is-a-topological-sort-in-job-scheduling).
+
+## How it works
+
+The everyday version is a flowchart of recipe steps. You cannot frost the cake until it is baked, and you cannot bake until the batter is mixed. Draw an arrow from each step to the one it enables and you have a dependency graph: mix points to bake, bake points to frost. The arrows carry the meaning; the order falls out of following them.
+
+In a routing, each step is a node and each predecessor link is a directed edge. Some edges form a straight chain, one step feeding the next. Others branch, where one step feeds two parallel operations, and rejoin, where a later step waits on several feeders. The graph captures all of it. Because a valid routing has no loops, it is a directed acyclic graph, which guarantees a valid ordering exists.
+
+The scheduler uses the graph in two ways. First, it orders the steps so every predecessor is placed before its dependents, respecting the arrows. Second, it times each step to start no earlier than the latest finish among the steps feeding it, which lets independent branches overlap while forcing joining steps to wait for all their inputs. That combination is what turns a set of loosely numbered operations into a correctly sequenced, correctly timed plan.
+
+## A concrete example
+
+A job has five steps. Step 10, cut, feeds both step 20, machine part A, and step 30, machine part B. Both of those feed step 40, assemble, which feeds step 50, quality check. Drawn as a graph, step 10 has two outgoing edges, steps 20 and 30 each point to step 40, and step 40 points to step 50.
+
+From that graph the scheduler derives a valid order, for example 10, 20, 30, 40, 50, in which every step comes after its predecessors. It then times them: steps 20 and 30 both start after cutting and run in parallel on their machines, assembly waits for the later of the two to finish, and quality check follows assembly. If step 30's edge to assembly were missing, the graph would not know assembly had to wait for part B, and the engine might start assembly too early. The correctness of the plan rests on the correctness of the edges.
+
+## How EDGEBIC uses it
+
+EDGEBIC builds a dependency graph from each routing's predecessor links every time it schedules a job. The engine reads the links between steps, constructs the directed graph, and orders the steps with a topological sort so that every predecessor is scheduled before its dependents. It then times each step from the completion of the steps that feed it, allowing parallel branches to overlap and forcing joining steps, such as a final assembly fed by several sub-assemblies, to wait for their last input.
+
+Because the ordering comes from the real feeds-into structure rather than from sequence numbers alone, the engine handles cases where steps share work centers, where sub-assemblies converge, and where branches run in parallel, all without scheduling an operation before its prerequisites. If the links ever form an impossible loop, the sort cannot complete and the problem is surfaced rather than producing an invalid plan, pointing the planner at the misconfigured link.
+
+For the four ways a single edge can relate two operations in time, finish to start, start to start, finish to finish, and start to finish, read [what is a dependency type in scheduling](/blog/what-is-a-dependency-type-in-scheduling). To follow the ordering algorithm the graph enables, continue with [what is a topological sort in job scheduling](/blog/what-is-a-topological-sort-in-job-scheduling). For the longest chain through the graph that sets the finish date, read [what is the critical path in manufacturing](/blog/what-is-critical-path-in-manufacturing). And for the engine that schedules the ordered steps into finite capacity, see [what is advanced planning and scheduling](/blog/what-is-advanced-planning-and-scheduling).

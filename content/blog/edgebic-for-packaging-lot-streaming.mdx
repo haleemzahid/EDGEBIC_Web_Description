@@ -1,0 +1,159 @@
+---
+title: "Overlapping Print, Cut and Pack with Transfer Batches"
+description: "Packaging lot streaming scheduling in practice: set a transfer batch of one pallet and the die cutter starts hours before the press finishes the order."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - packaging lot streaming scheduling
+  - transfer batch scheduling
+  - overlapping operations scheduling
+  - converting line makespan reduction
+  - sublot scheduling packaging
+  - die cutting scheduling software
+  - one piece flow scheduling
+targetPhrase: "packaging lot streaming scheduling"
+wordCount: 1735
+readingTime: 9
+faqQuestions:
+  - question: "What is packaging lot streaming scheduling?"
+    answer: "Lot streaming is letting a downstream station start on part of an order while the upstream station is still running the rest. In packaging that usually means the die cutter starting on the first pallet of printed sheets instead of waiting for the whole run. You set a transfer batch in pieces on the upstream routing step, and the schedule computes when that many pieces will exist rather than when the order will finish."
+  - question: "How does the engine calculate when downstream can start?"
+    answer: "It adds setup time to the batch quantity multiplied by the per-piece run time, then adds any transfer delay. For a 500-sheet order at 0.05 hours per sheet with one hour of setup and a transfer batch of 50, the first batch is ready 3.5 hours into the run. A half-hour trolley move puts the downstream start at four hours in, against a 26-hour full run. That is a 14-hour overlap on one handoff."
+  - question: "What happens if the transfer batch is larger than the order?"
+    answer: "The engine caps the batch at the order quantity, so it never waits for pieces that will not exist. A transfer batch of 100 on a 30-piece order becomes 30, which means the step behaves exactly as if there were no streaming at all. An anomaly check flags that case so a planner can lower the batch for small orders rather than silently losing the overlap."
+  - question: "Does lot streaming still work once a job has started?"
+    answer: "Yes, and it switches from projection to measurement. While the upstream step is in progress the engine sums the actual piece counts logged against it. If the logged pieces have already crossed the transfer threshold, the downstream start is set from the day the crossing happened rather than from the original estimate. The formula is used only as a projection until real counts exist."
+qaQuestions:
+  - question: "Our press runs 500 sheets and the die cutter currently waits for all of them. What do we actually gain from a pallet-sized transfer batch?"
+    answer: "In the documented example the numbers are stark. A 500-piece run at 0.05 hours each plus one hour of setup takes 26 hours, so serial scheduling parks the die cutter until the following morning. With a transfer batch of 50 and a half-hour move, the first batch is ready at 3.5 hours and the die cutter is gated at four hours into the press run. That is a 14-hour overlap on a single handoff, and the same logic repeats at the next handoff. The press did not run faster. The plan simply stopped inventing a wait the process never required."
+  - question: "We are worried about a mountain of work-in-process sitting between machines. Does overlapping make that worse?"
+    answer: "It makes it better, which is the counterintuitive part. Waiting for a full lot means the entire order sits finished at the upstream machine before anything moves, which is the largest possible pile. Moving in pallet-sized batches means only one batch waits at a time. The lean end of this is a transfer batch of one, where each piece moves as soon as it is done: the documented example cuts a serial 18 hours to about 13.75, roughly 24 percent, while holding the smallest possible amount of material between stations. Smaller transfer batches shorten the schedule and shrink the queue at the same time."
+---
+
+**Packaging lot streaming scheduling means telling the schedule that the die cutter can start on the first pallet rather than waiting for the last sheet.** Converting is a chain of fast machines separated by full-lot waits that nobody actually observes on the floor, where a forklift moves a skid the moment it is wrapped. [EDGEBIC by User Solutions](/edgebic) models that with a transfer batch on the routing step, computes when that many pieces will exist, and gates the downstream operation on that moment instead of on order completion.
+
+For the mechanism without the packaging framing, read [lot streaming explained](/blog/edgebic-lot-streaming-explained), and for the concept alone, [what a transfer batch is](/blog/what-is-a-transfer-batch). For the sector's wider constraint picture, see [packaging manufacturing scheduling](/blog/packaging-manufacturing-scheduling), and for the cross-industry map, [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## Process batch and transfer batch are different numbers
+
+The distinction is old and it is the whole feature.
+
+The **process batch** is the full order quantity the machine is running: 500 sheets, 20,000 labels, 4,000 cartons. The **transfer batch** is the amount that has to accumulate before material physically moves downstream: one pallet, one skid, one bundle, one roll.
+
+Every converting plant already works this way. Nobody keeps 20,000 printed labels at the press until the run finishes and then walks the whole order to the die cutter. Skids move as they fill. The gap is that most scheduling systems have no field for the second number, so their plans assume the largest possible wait at every handoff.
+
+## The formula
+
+For a station that produces countable pieces, the engine computes:
+
+```
+flow time = setup + min(transfer batch, order quantity) x per-piece hours
+downstream start = upstream start + flow time + transfer delay
+```
+
+Three details make this behave sensibly in practice.
+
+**Setup is included**, because the first piece cannot exist before the machine is ready. And if a sequence-dependent changeover was resolved for that operation, the flow calculation uses that resolved figure rather than a flat routing default, so a long changeover correctly delays the first transfer.
+
+**The batch is capped at the order quantity.** A transfer batch of 100 on a 30-piece order becomes 30. Without the cap the plan would wait for a hundredth piece that never exists and the downstream step would never start.
+
+**Transfer delay is separate.** It is a flat hour offset for the physical move: forklift travel, wrapping, a cooling hold. It is applied on top of the streaming time rather than replacing it, which makes it the right field for a handling wait.
+
+## Worked numbers on a converting handoff
+
+A press-to-die-cut handoff, using the documented figures.
+
+**Setup.** 500 sheets. Per-piece time 0.05 hours (three minutes). Setup one hour. Transfer batch 50 sheets, which is one pallet. Transfer delay half an hour for the trolley move. Press starts Monday 08:00.
+
+```
+effective batch = min(50, 500) = 50
+flow time       = 1.0 + 50 x 0.05 = 3.5 h
+first batch ready = Mon 08:00 + 3.5 h = Mon 11:30
+downstream gate   = Mon 11:30 + 0.5 h = Mon 12:00
+```
+
+The full press run takes one hour of setup plus 500 times 0.05, which is 26 hours, ending Tuesday morning. The die cutter is gated at **Monday 12:00**, four hours into the press run. That is a 14-hour overlap on one handoff, and the die cutter is not idle for a shift and a half waiting for material that was physically available before lunch.
+
+Run the same arithmetic on the next handoff and the compression compounds down the chain.
+
+## Choosing the transfer batch
+
+The value should be a real physical unit, and there are four sensible ways to pick it.
+
+| Basis | Example | When it fits |
+|---|---|---|
+| Pallet or skid quantity | 50 sheets, 500 cartons | The default answer for most converting |
+| Sublot count | Order of 200 in four sublots gives 50 | When you want a set number of handoffs |
+| One piece | 1 | Lean cells with continuous material handling |
+| Downstream minimum | The die cutter's minimum feed quantity | When the next machine cannot run on less |
+
+The sublot approach is worth knowing because it is easy to reason about with sales. Dividing the order into four equal sublots means the downstream station starts after roughly a quarter of the upstream run, and the two stations then run concurrently for the rest.
+
+One-piece flow is the extreme and the documented example shows it is not theoretical. Fifty units at 0.25 hours each with half an hour of setup and a transfer batch of one: the first piece is ready 0.75 hours in, so the test station starts at 08:45 while the first station continues through piece 50. The serial total of 18 hours becomes about 13.75, roughly a 24 percent reduction in elapsed time, with the smallest possible amount of material sitting between stations.
+
+## Sublot arithmetic, worked
+
+Sublots are the easiest version to explain to a customer service team, because the answer comes out as a fraction of the run.
+
+An order of 200 cartons at 0.1 hours each with half an hour of setup takes 20.5 hours as a single lot. Split it into four sublots by setting the transfer batch to 50:
+
+```
+effective batch = 50
+flow time       = 0.5 + 50 x 0.1 = 5.5 h
+downstream gate = upstream start + 5.5 h
+```
+
+The downstream station starts 5.5 hours into a 20.5-hour run and then runs concurrently with the remaining 150 cartons. Change to eight sublots by setting the batch to 25 and the gate moves to three hours in. Each halving of the transfer batch roughly halves the head start, with diminishing returns once the downstream station becomes the slower one.
+
+That last point is the practical limit. Once the downstream gate is early enough that the second station becomes the constraint, shrinking the batch further buys nothing except more handling. Find the batch size where the two stations finish close together and stop there.
+
+## Transfer delay is for the physical move
+
+Packaging plants nearly always need this second field, and it is worth being precise about which delay belongs where.
+
+Use **transfer delay** for a flat wait after the batch is ready: wrapping and banding, a forklift trip across the plant, a cooling hold before a coated sheet can be stacked. In the documented castings example, a two-hour cooling requirement pushes the downstream start from 21 hours to 23 hours after the upstream start, and the pieces genuinely were not movable before that.
+
+Use **queue time** for a shift-aware in-house wait when no streaming applies. Use **transit days** for a trip out of the building. Those two are covered in [keeping packaging lines fed and sequenced](/blog/edgebic-for-packaging-line-scheduling).
+
+The one combination to avoid is a streaming rule plus a queue time on the same step, because the streaming result replaces the queue-adjusted end rather than adding to it. The anomaly report flags that pair by name so you find it in a report row rather than by inspection.
+
+## Once the job starts running
+
+Projection gives way to measurement, which matters on a converting floor where the press rarely hits the standard exactly.
+
+While the upstream step is in progress, the engine sums the actual piece counts logged against it. If those logged pieces have already crossed the transfer threshold, the downstream start is set from the day the crossing happened rather than from the original estimate. If the press is running behind, the downstream gate moves out with it. If it is running ahead, the gate pulls in.
+
+That behavior depends on piece counts actually being logged, which is a shop-floor discipline question rather than a configuration one. It is covered from the tracking side in [actuals tracking explained](/blog/edgebic-actuals-tracking-explained).
+
+## Where streaming does not apply
+
+Two cases, and both fail visibly rather than quietly.
+
+**Continuous stations.** A coater or a laminating line does not produce countable pieces in a way a transfer batch can describe. Flag those work centers as continuous process and the engine uses a start-to-start lag in hours instead. If a transfer batch is left on a step routed there, the piece count is ignored and an anomaly check flags the mismatch.
+
+**Small orders.** A transfer batch equal to or larger than the order quantity behaves exactly like no streaming. That is arithmetically correct and often unintended, so it also gets a check. The fix is to lower the batch for that order rather than to change the routing default.
+
+## Rolling it out
+
+1. **Pick one high-volume routing** with a clear pallet quantity and a downstream station that visibly waits.
+2. **Set the transfer batch** on the upstream step to the real pallet or skid quantity. It defaults to zero, which means no existing routing changes behavior until you set a value.
+3. **Set the transfer delay** to the observed move time, including wrapping if that is part of it.
+4. **Re-run the schedule** and compare the downstream start before and after. The gap is the overlap you just recovered.
+5. **Check the anomaly report** for the batch-too-large and continuous-process cases.
+6. **Repeat down the chain.** The second and third handoffs usually give as much again, because each one was hiding the same full-lot assumption.
+
+Nothing here requires a global setting or a rebuild. The default of zero is the zero-regression path, so a plant can enable streaming on one routing, measure it, and expand from there.
+
+## What it is worth
+
+Lot streaming is one of the few scheduling changes that shortens lead time without buying capacity, changing the process or asking anyone to work faster. The machines run exactly as they did. The plan simply stops inserting a wait that the forklift driver was already ignoring.
+
+Two things follow. Promised dates get shorter, which is the customer-facing win. And work in process goes down, because material moves in pallet-sized pieces instead of accumulating as a finished pile at each machine. Those usually trade against each other. Here they move together.
+
+The companion mechanisms for this sector are covered in [keeping packaging lines fed and sequenced](/blog/edgebic-for-packaging-line-scheduling) and [quick changeover scheduling for packaging runs](/blog/edgebic-for-packaging-quick-changeover).
+
+Bring one high-volume converting routing and its real pallet quantity to a demo of [packaging manufacturing software](/packaging-manufacturing-software), and we will show you the overlap in your own numbers.

@@ -1,0 +1,88 @@
+---
+title: "One Big Machine vs Several Small Ones: A Scheduling View"
+description: "One big machine vs several small ones: the same total capacity behaves differently under load, because parallel instances cut queue time and survive a breakdown, with numbers."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - one big machine vs several small
+  - parallel instances scheduling
+  - capacity concentration
+  - machine redundancy
+  - queue time reduction
+  - work center instances
+targetPhrase: "one big machine vs several small ones"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "Is one big machine or several small machines better for scheduling?"
+    answer: "For raw throughput they can be equal, but for flow they are not. Several small machines run as parallel instances, so several jobs can process at once and short jobs do not wait behind a long one. That cuts queue time and keeps the schedule flexible. One big machine serializes everything through a single instance, so it has longer queues and no redundancy. The big machine wins on unit cost and setups; the small machines win on flow time and resilience."
+  - question: "How does a scheduler treat parallel machines?"
+    answer: "A scheduler models several identical machines as multiple instances of one work center. It can then place different jobs on different instances at the same time and load-balance work across them, choosing the least-busy instance for the next operation. With one big machine there is a single instance, so every job queues through it in sequence. The instance count is the dial that decides how much parallelism the engine has to work with."
+  - question: "Does buying a second machine cut lead time in half?"
+    answer: "Not in half, but it cuts queue time substantially. A second identical machine doubles the instances, so two jobs can run at once and the average wait for a machine drops sharply. The run time of any single job is unchanged; what shrinks is the time jobs spend queuing for the resource. On a busy work center where queue time dominates lead time, adding an instance can be the single largest lead-time reduction available."
+qaQuestions:
+  - question: "We can buy one 40-piece-per-hour machine or four 10-piece-per-hour machines for the same money. Which schedules better?"
+    answer: "The four small machines almost always schedule better even though the aggregate rate is identical. With four instances the engine runs four jobs in parallel, so a quick job never waits behind a long one and the average queue time collapses. You also survive a breakdown: lose one of four and you keep 75 percent capacity, versus losing one of one and dropping to zero. The single big machine wins only where a job needs the full 40-per-hour rate in one pass, or where four setups would cost far more than one."
+  - question: "Our one large press keeps everything queued behind it. Is splitting the work the answer?"
+    answer: "If the press is a real bottleneck and jobs pile up in front of it, then yes, more parallel capacity there is exactly the move. Modeling it as more instances, whether a second press or offloading some jobs to an alternate, lets the engine run jobs side by side instead of single file. Before you buy, confirm the press is the constraint and not just busy; if queue time in front of it dominates the lead time, splitting the load is the highest-impact change you can make."
+---
+
+**One big machine and several small machines can offer the same total capacity, but they behave very differently under load: parallel small machines run several jobs at once and cut queue time, while one big machine serializes everything through a single instance.** Throughput per hour may be identical on paper. Flow time, flexibility, and resilience are not. EDGEBIC by User Solutions models identical machines as parallel instances of a work center, so the number of instances directly sets how much work the engine can run side by side. Choosing between concentration and distribution is really a choice about how your capacity queues.
+
+## Same rate, different flow
+
+Suppose two options cost the same money. Option A is a single machine that processes 40 pieces per hour. Option B is four machines that each process 10 pieces per hour. Aggregate rate is 40 pieces per hour either way. If all you cared about was total hourly output over a full day, they would tie.
+
+But a schedule is not one job, it is many jobs contending for a resource. With Option A, every job runs through one instance in sequence, so a two-hour job released just after a six-hour job waits the full six hours before it can start. With Option B, four jobs run at once, so that same two-hour job grabs a free instance immediately. The difference is queue time, and queue time is usually the largest slice of real lead time on a busy floor.
+
+## A worked example: four jobs arrive together
+
+Four jobs, each needing 4 run hours, all released Monday 08:00 to a work center planned at a full 8-hour day.
+
+**One big instance.** The jobs run single file: 08:00 to 12:00, 12:00 to 16:00, then the next day 08:00 to 12:00, and 12:00 to 16:00. The last job finishes late Tuesday afternoon. Total time on the floor for the set is about two days, and the average job waited a long time before starting.
+
+**Four instances.** All four jobs start at 08:00 on separate instances and all finish by 12:00 Monday. The set clears in half a day. No job waited for a machine at all, because there was one free for each.
+
+| Metric | One big instance | Four instances |
+|---|---|---|
+| Last job finishes | Tue ~16:00 | Mon 12:00 |
+| Average queue time | high | near zero |
+| Jobs running at once | 1 | 4 |
+
+The run time of each job (4 hours) never changed. Everything that changed was queuing, and that is precisely what parallel instances remove.
+
+## Load balancing needs instances to balance across
+
+With more than one instance, the engine can spread work by choosing the least-busy instance for each new operation, keeping the machines evenly loaded rather than pounding one while others idle. That load-balancing behavior only exists when there is more than one instance to balance across, and the trade-off between balancing across instances and dedicating one instance to a job is covered in [load balancing vs dedicated instance scheduling](/blog/load-balancing-vs-dedicated-instance-scheduling). A single big machine has nothing to balance; every job goes through the one lane.
+
+## Resilience: the breakdown math
+
+The other place several small machines win is a breakdown. Lose the one big machine and capacity at that work center goes to zero until it is repaired, and every job routed through it stops. Lose one of four small machines and you keep three, or 75 percent of capacity, and the engine simply reschedules the affected jobs onto the remaining instances. Distributed capacity degrades gracefully; concentrated capacity fails all at once. On a constraint resource, that resilience can matter more than any efficiency number, because [an hour lost at the bottleneck is lost forever](/blog/why-the-bottleneck-sets-the-pace).
+
+## When the big machine actually wins
+
+Concentration is not always the wrong call. One big machine wins in three real cases. First, when a single job genuinely needs the full rate or size in one pass, such as a part too large to split across four smaller machines. Second, on setups: running a job once on one machine may beat four separate setups on four machines, especially with long changeovers. Third, on unit cost, where a single large asset is often cheaper per piece of capacity than four small ones plus the floor space, tooling, and maintenance to match.
+
+The scheduling lens does not overrule those economics; it just adds the flow-time and resilience side of the ledger that a pure cost-per-piece comparison misses. Where jobs are many and small and arrive in bursts, distribution usually pays. Where jobs are few, large, and setup-heavy, concentration often wins.
+
+## Modeling either choice
+
+In EDGEBIC you represent identical parallel machines as the instance count on a work center, and the finite engine treats each instance as its own lane the jobs can run in. If you have machines that are similar but not identical, or that live in different work centers, the [machine pool versus alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center) choice covers how to give the engine a set of options to schedule across. Either way, the instance count is the dial that decides how much of your capacity can run in parallel, and it does not have to be a whole number: [a fractional machine count](/blog/how-a-fractional-machine-count-schedules-a-half-speed-unit) is how a half-size or slower backup unit is modeled without over-counting its capacity.
+
+This is the same reasoning User Solutions has applied across 35-plus years of shop schedules, from small job shops to Cummins across 33 locations: total capacity is only half the story, and how that capacity is divided decides how work flows through it. The full engine pipeline is in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and you can model instances against your own jobs in [EDGEBIC](/edgebic).
+
+<Accordion title="Is one big machine or several small machines better for scheduling?">
+For raw throughput they can be equal, but for flow they are not. Several small machines run as parallel instances, so several jobs can process at once and short jobs do not wait behind a long one. That cuts queue time and keeps the schedule flexible. One big machine serializes everything through a single instance, so it has longer queues and no redundancy. The big machine wins on unit cost and setups; the small machines win on flow time and resilience.
+</Accordion>
+
+<Accordion title="How does a scheduler treat parallel machines?">
+A scheduler models several identical machines as multiple instances of one work center. It can then place different jobs on different instances at the same time and load-balance work across them, choosing the least-busy instance for the next operation. With one big machine there is a single instance, so every job queues through it in sequence. The instance count is the dial that decides how much parallelism the engine has to work with.
+</Accordion>
+
+<Accordion title="Does buying a second machine cut lead time in half?">
+Not in half, but it cuts queue time substantially. A second identical machine doubles the instances, so two jobs can run at once and the average wait for a machine drops sharply. The run time of any single job is unchanged; what shrinks is the time jobs spend queuing for the resource. On a busy work center where queue time dominates lead time, adding an instance can be the single largest lead-time reduction available.
+</Accordion>

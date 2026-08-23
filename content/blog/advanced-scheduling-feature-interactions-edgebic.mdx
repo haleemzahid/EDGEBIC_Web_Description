@@ -1,0 +1,190 @@
+---
+title: "The Feature Interactions That Surprise People"
+description: "Scheduling feature conflicts manufacturing planners hit in EDGEBIC: fourteen documented interactions across overlap, changeovers, pools, direction, operators."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - scheduling feature conflicts manufacturing
+  - scheduling configuration interactions
+  - overlap replaces queue time
+  - parallel capacity double booking
+  - anchor overrides direction
+  - anomaly checks scheduling
+targetPhrase: "scheduling feature conflicts manufacturing"
+wordCount: 2035
+readingTime: 10
+faqQuestions:
+  - question: "What is the most common scheduling feature conflict in EDGEBIC?"
+    answer: "Queue time set on an operation that also carries an overlap. Whenever an overlap model fires, its result becomes the successor's gate and replaces whatever the queue calculation produced, so the queue hours are silently discarded. It is common because both settings are individually reasonable and the combination looks like it should add. The anomaly report carries a dedicated check for the pairing."
+  - question: "Why does marking a work center as a bottleneck not change anything?"
+    answer: "Because the flag alone is not the trigger. Anchored scheduling activates when an existing schedule row for the job carries a target start date and that row's machine matches a routing operation. The bottleneck flag affects how buffers are sized once anchoring is active, and it feeds reporting, but on its own it changes no dates. Both the flag and a target date are needed."
+  - question: "Can a mirrored machine in a synchronized pair be over-committed?"
+    answer: "Yes, and it is the one interaction worth auditing deliberately. A synchronized secondary machine has its schedule copied from its partner without a capacity check, which is correct for a shared fixture. If that same machine is also used by unrelated single-machine work, the two commitments can overlap. Watch the resource load view for any machine reading over 100 percent."
+  - question: "Why did a pooled operation lose the alternate machine I added by hand?"
+    answer: "Because a pool binding and hand-configured alternates are mutually exclusive: the pool is the alternate list. Binding an operation to a pool strips manual alternates, the designer blocks the alternate dialogs on pool-bound operations, and the engine strips any that survived an import. Bind an operation to a pool or give it a manual alternate list, never both."
+  - question: "How do I find these conflicts before they affect a plan?"
+    answer: "Run the anomaly report after any master-data change. It carries specific checks for the ambiguous combinations: both overlap models set on one operation, a transfer batch on a continuous-process machine, a transfer batch at or above the order quantity, an overlap alongside queue time, and a backward job whose plan ends past its due date. Each names the operation and the reason."
+qaQuestions:
+  - question: "We turned on three advanced features in one week and the plan looks wrong. Where do we start?"
+    answer: "Run the anomaly report first, because five of the fourteen interactions in this post have a named check that will point straight at the operation. Then check the run log's decision lines for the affected jobs, which record which scheduling direction won and why, which pool member was chosen, and which changeover source was used. Between those two, most conflicts resolve in minutes rather than by reading Gantt bars."
+  - question: "Our welder is certified for one alloy and the schedule ignores that entirely. Did we model it wrong?"
+    answer: "Probably as a machine pool, which is the most common modeling error here. A pool answers which interchangeable machine, and an operator skill answers which qualified person. They are separate dimensions that compose, and a pool named after a certification will schedule machines with no reference to who can stand at them. Model the certification as a skill on the operation and roster the qualified people."
+---
+
+**Every scheduling feature in [EDGEBIC by User Solutions](/edgebic) behaves predictably on its own. The surprises come from combinations, and almost all of them are documented, checkable, and fixable in one field.** This is the catalog: fourteen interactions between overlap, changeovers, machine pools, parallel machines, scheduling direction, transit and operators, with the symptom, the reason, and the fix.
+
+Five of them have a dedicated check in the anomaly report. Start there when a plan looks wrong, then work down this list.
+
+## Overlap and Waiting Times
+
+### 1. An overlap discards queue time
+
+**Symptom.** You set a cooling queue and an overlap on the same operation. The cooling appears to have vanished.
+
+**Why.** Handoff timing is composed in a fixed order: the operation ends, queue time is added, then an overlap model (if configured) **replaces** everything computed so far, then transit days are added on top. Both overlap models return their result as the successor's gate rather than as an adjustment, because pulling the successor earlier than the upstream end is the whole point of overlapping.
+
+**Fix.** Move the wait into the transfer delay, which is added on top of the overlap window, or put the queue time on the downstream operation where it applies after that operation's own work. The anomaly report flags the pairing so the intent gets confirmed rather than guessed.
+
+### 2. A transfer batch on a continuous-process machine is ignored
+
+**Symptom.** You set a transfer batch on a paint or coating operation and nothing overlaps.
+
+**Why.** The continuous-process flag on the machine disables piece-count overlap for every operation routed there and falls back to the hour-lag model. That is deliberate: counting discrete pieces on a stream is meaningless.
+
+**Fix.** Clear the flag if the equipment genuinely produces countable pieces, or keep the flag and express the overlap as an hour lag. [Scheduling ovens, baths and other continuous-process equipment](/blog/continuous-process-work-centers-edgebic) covers which equipment qualifies. The report has a check for this exact pairing.
+
+### 3. Both overlap models set on one operation
+
+**Symptom.** An overlap fires, but not the one you configured.
+
+**Why.** With both a transfer batch and an hour lag set, the piece-count model wins on a discrete machine and the lag is ignored. Nothing is wrong with the resulting schedule; the configuration simply states two intentions.
+
+**Fix.** Clear whichever one you did not mean. The report flags the ambiguity.
+
+### 4. A transfer batch at or above the order quantity behaves as no overlap
+
+**Symptom.** Overlap is configured and the downstream operation still waits for the whole upstream run.
+
+**Why.** The batch is capped at the order quantity, because waiting for a piece that will never exist would stall the plan forever. Capped at the full quantity, the overlap window equals a serial wait.
+
+**Fix.** Set the batch to a genuine sublot the floor will actually move. A 200-piece batch on a 30-piece order is not an overlap. The report flags it.
+
+### 5. Transfer delay is not shift-aware; queue time is
+
+**Symptom.** A two-hour handling delay applied at 15:00 on Friday resolves to 17:00 Friday, past the shift end.
+
+**Why.** Transfer delay is flat elapsed hours, including nights and weekends. Queue time only ticks during working shifts.
+
+**Fix.** Use transfer delay for a conveyor or robot cycle where the clock genuinely runs. Use queue time when the wait needs a working shift to elapse. [Queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained) covers all three waits.
+
+## Changeovers and Overlap
+
+### 6. The changeover value feeds the overlap window
+
+**Symptom.** Reordering jobs on a machine moved every downstream start, not just the changeover hours.
+
+**Why.** The piece-count overlap formula includes the resolved changeover in front of the batch's run time. A changeover resolving to four hours instead of thirty minutes pushes the downstream start three and a half hours later on that job. The hour-lag model, by contrast, ignores setup entirely.
+
+**Fix.** Nothing to fix; know that sequencing changes two things at once. [Overlapping operations when changeovers are sequence-dependent](/blog/combining-lot-streaming-and-setup-matrix-edgebic) covers the arithmetic.
+
+### 7. A family lookup needs both products in a family
+
+**Symptom.** A changeover matrix is populated and operations still show routing-default setup.
+
+**Why.** The family-level lookup requires both the previous and the next product to have a family assigned. With only one side assigned, the lookup skips silently to the fallback.
+
+**Fix.** Assign both, or add a product-level cell for the specific pair. Check the setup source column: a machine reading routing-default everywhere is the signature. [Setup matrix mistakes](/blog/setup-matrix-mistakes-edgebic) covers the rest.
+
+### 8. Cold start is not a zero changeover
+
+**Symptom.** The first job on a machine each run carries a changeover even though nothing preceded it.
+
+**Why.** A cold start means no prior product is known, so there is no changeover, but the machine still needs its initial preparation. The routing's own setup is used. Only a genuine same-product repeat returns zero.
+
+**Fix.** Nothing. If two different products in one family should also change over for free, enter that family-to-itself cell as zero explicitly; leaving it blank falls through to the routing default.
+
+## Machines That Run Together
+
+### 9. Synchronized mirrors bypass the capacity check
+
+**Symptom.** A machine shows over 100 percent load, or a job that looked scheduled cannot physically run.
+
+**Why.** A synchronized secondary machine has its schedule copied from its partner without a capacity check. That is correct for a shared fixture: the machines genuinely are occupied together by one operation. But it means unrelated work scheduled to that machine can see capacity the mirror has physically taken.
+
+**Fix.** Keep machines whose main role is being a synchronized mirror out of the routings and pools that unrelated work uses. Audit the resource load view for machines over 100 percent. [Parallel work center mistakes](/blog/parallel-work-center-mistakes-edgebic) and [work center overloaded: causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes) cover the diagnosis.
+
+### 10. Independent parallel matches shifts by identity, not by clock
+
+**Symptom.** A parallel group never finds a window and slides indefinitely.
+
+**Why.** The search intersects the group's shifts by shift record identity. Two records that both run Monday to Friday, 08:00 to 16:00, are two different records, so the machines share no common shift on any date.
+
+**Fix.** Attach every machine in a parallel group to the same shift record rather than to look-alike copies. Machine pools have no equivalent requirement, because only one member ends up running the work.
+
+### 11. A pool supersedes manual alternates
+
+**Symptom.** An alternate machine you added by hand disappeared from a pooled operation.
+
+**Why.** A pool binding and manual alternates cannot coexist: the pool is the alternate list. The rule is enforced three times, at binding, in the designer, and defensively at schedule time in case an import slipped one through.
+
+**Fix.** Choose one. Bind the operation to a pool, or give it a manual alternate list. [When machine pools meet parallel operations](/blog/combining-parallel-work-centers-and-machine-pools-edgebic) covers the composition order and how to get a fallback and a partner on one operation without a pool.
+
+## Direction and Pinning
+
+### 12. A target start date converts a job to a pinned mode
+
+**Symptom.** A job marked for backward scheduling stopped behaving like one.
+
+**Why.** A target start date on any schedule row promotes that job to an anchored job on the next run, and anchoring outranks the direction setting. The full order is: anchor, then actuals, then planner-placed start pins, then backward, then forward.
+
+**Fix.** Use the job's earliest-start floor to say "not before this," and reserve target dates for genuine constraint pins. The prompt that appears when a backward job does not fit deliberately writes the floor rather than a target date for exactly this reason. [Bottleneck scheduling and due-date scheduling in the same plan](/blog/combining-toc-anchor-and-backward-scheduling-edgebic) covers the interaction.
+
+### 13. The bottleneck flag alone changes nothing
+
+**Symptom.** A work center is marked as the constraint and nothing anchors.
+
+**Why.** Anchoring triggers on an existing schedule row carrying a target start date whose machine matches a routing operation. The flag affects buffer sizing once anchoring is active, and it feeds reporting, but it is not the trigger.
+
+**Fix.** Schedule the job once, then set the target start date on the constraint operation's schedule row, then reschedule. [Bottleneck scheduling mistakes](/blog/bottleneck-scheduling-mistakes-edgebic) covers the remaining causes.
+
+### 14. Anchored and backward jobs fail differently
+
+**Symptom.** A backward job silently forward-scheduled; an anchored job produced a plan whose feeder finishes after the constraint starts.
+
+**Why.** Two different philosophies. A backward attempt that cannot fit is rolled back entirely and forward-scheduled from the floor, with the event recorded, because an unachievable promise must not be quietly produced. An anchored pass that cannot feed the constraint on time still starts the constraint at its pin and lets the feeder run late, because an idle bottleneck is the worse outcome.
+
+**Fix.** Watch different signals for each. Fallback events and the backward-lateness check for backward jobs; the gap between the last feeder's finish and the constraint's pin for anchored ones.
+
+## Two More Worth Knowing
+
+**Material steps absorb their own transit.** A material operation builds transit into its own dates, and the engine deliberately skips the transit calculation for it. Setting transit on a material step and again on the operation that receives the parts counts the move twice. [Scheduling work that moves between plants](/blog/multi-plant-scheduling-with-transit-times-edgebic) covers the composition.
+
+**Operator availability stacks on top of the machine calendar, and does not replace it.** A window must first survive the machine's holidays, downtime and capacity overrides. Only then does the operator check ask whether anyone qualified can stand there. Two consequences follow. A work-center-local shift derived from a global shift inherits that shift's roster automatically, while a custom shift with no parent has no roster at all and skill-bearing operations routed to it fail loudly rather than silently passing. And the attend fraction is deliberately separate from the skill: setup always books one person, while run time books at the fraction, so an untouched fraction gates on setup only and under-books visibly instead of quietly overselling people. [Operator and skill scheduling explained](/blog/edgebic-operator-and-skill-scheduling-explained) covers the ledger.
+
+The related modeling error is worth naming on its own. A machine pool answers "which interchangeable machine," and an operator skill answers "which qualified person." They are separate dimensions that compose. A pool named after a certification will schedule machines with no reference to who can operate them.
+
+## The Order to Check Things In
+
+When a plan looks wrong after several features were enabled together:
+
+1. **Run the anomaly report.** Five of these interactions have a named check that points straight at the operation.
+2. **Read the run's decision lines** for the affected jobs. They record which direction won and why, which pool member was chosen against which candidates, and which changeover source was used.
+3. **Check the setup source column** in the job view. Matrix hits show at full brightness and fallbacks show muted, so a machine that should be on matrix data and is not is visible at a glance.
+4. **Check the resource load view** for anything over 100 percent, which is the synchronized-mirror signature.
+5. **Only then read Gantt bars.** They show the outcome, not the reason, and every step above gives the reason directly.
+
+[What the anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for) covers the full catalog, and [the troubleshooting guide](/blog/edgebic-troubleshooting-guide) organizes the symptom-first paths.
+
+## Why These Exist at All
+
+Every interaction on this list comes from a feature that is correct in isolation making a decision that another feature also has an opinion about. That is unavoidable in a scheduler with this much surface, and the alternative would be worse: features that refuse to compose, so the shop that needs pooled machines and sequence-dependent changeovers on the same routing simply cannot have both.
+
+The design answer has two halves. Where one behavior must win, it wins predictably and the decision is recorded. Where the combination is legal but the intent is ambiguous, a check names it instead of leaving it to be discovered on the floor.
+
+That is why the anomaly report is the first stop rather than the last. It exists precisely because these combinations are the ones a plan will not tell you about on its own.
+
+For the whole feature map, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide) and the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).

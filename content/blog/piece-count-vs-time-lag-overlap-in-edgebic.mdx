@@ -1,0 +1,147 @@
+---
+title: "Transfer Batch vs Flow Overlap: How EDGEBIC Decides and What Each Costs"
+description: "Transfer batch vs flow overlap compared with worked numbers: how EDGEBIC picks a lot streaming model, what each gate computes, and the 24% makespan case."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - transfer batch vs flow overlap
+  - piece count lot streaming
+  - start to start lag scheduling
+  - lot streaming makespan reduction
+  - operation overlap calculation
+  - lot streaming with actuals
+  - scheduling engine overlap logic
+targetPhrase: "transfer batch vs flow overlap"
+wordCount: 2050
+readingTime: 10
+faqQuestions:
+  - question: "What is the difference between a transfer batch and a flow lag?"
+    answer: "A transfer batch counts pieces and a flow lag counts hours. The transfer batch gate moves when your process rate or setup changes, because it is computed as setup plus batch size times hours per piece. The flow lag is a fixed number of hours after the upstream step starts, unaffected by quantity, cycle time, and setup. One tracks the process, the other states a policy."
+  - question: "How does EDGEBIC choose which lot streaming model to use?"
+    answer: "The engine uses the piece-count model when three conditions all hold: the routing step has a transfer batch size above zero, the work center exists, and that work center is not flagged as a continuous process. If any one fails, it falls through to the flow lag. If the flow lag is also zero, there is no streaming and the next step waits for full upstream completion."
+  - question: "Does the overlap gate replace queue time or add to it?"
+    answer: "It replaces it. When either streaming model fires, the resulting time becomes the successor's gate and any queue time on that same routing step is discarded. This is deliberate: the point of streaming is that the downstream step may start earlier than the upstream end, so a later queue-adjusted time cannot be allowed to win. Use transfer delay for a lag on top of the gate."
+  - question: "How much makespan can lot streaming actually remove?"
+    answer: "It depends on how long the upstream operation runs relative to the gate. A lean cell soldering 50 sub-assemblies at 0.25 hours each with a 30-minute setup, then testing at 0.1 hours each, takes 18 hours serially and about 13.75 hours with one-piece flow, roughly a 24% reduction. A 100-piece turning job feeding drilling compresses from 52 hours to about 37 on the same two machines."
+  - question: "What happens to streaming when a job is already in progress?"
+    answer: "The engine switches from projection to fact. If the upstream step is complete, the downstream gate is the actual end plus transfer delay. If it is still running and logged piece counts have already crossed the batch threshold, the gate is the end of shift on the crossing day. If it is running below the threshold, the engine projects the formula forward from the real start time rather than the original plan."
+qaQuestions:
+  - question: "Our cycle time improved from 0.1 to 0.05 hours per piece. Do we need to change our overlap settings?"
+    answer: "If you use a transfer batch, no. The gate is setup plus batch size times hours per piece, so with a 50-piece batch and a 1-hour setup it recomputes from 6 hours down to 3.5 automatically the next time you reschedule. If you use a flow lag, yes: the lag is a fixed number of hours and it will keep holding the successor at the old figure even though the pieces are ready sooner. That self-updating behavior is the main reason to prefer piece counts wherever pieces exist."
+  - question: "We set a 100-piece transfer batch, but our orders average 80 pieces. Why does nothing overlap?"
+    answer: "The engine caps the effective batch at the order quantity, so on an 80-piece order it waits for 80, which is the entire run. That is identical to no streaming at all. The cap exists so a schedule can never stall waiting for a piece that will not be cut, but the side effect is silent serial behavior. Size the transfer batch below your smallest common order, for example 20 against an 80-piece norm, and the configuration audit will stop flagging the step."
+---
+
+**EDGEBIC by User Solutions picks between two lot streaming models with a single three-part test, and the choice changes what the downstream gate actually tracks.** The piece-count transfer batch computes a gate from setup, batch size, and hours per piece, so it moves whenever the process changes. The flow lag states a fixed number of hours after the upstream start and never moves at all. Both compress the schedule. They compress it differently, and this post shows the arithmetic side by side.
+
+For the concepts, start with [lot streaming explained](/blog/edgebic-lot-streaming-explained). For the fields and the dialogs, see [how to overlap operations](/blog/how-to-overlap-operations-in-edgebic). This is the mechanism.
+
+## The Selection Rule
+
+Every time the engine finishes an operation that carries an overlap setting, it runs one test before doing anything else:
+
+> Use the **piece-count** model when the routing step's transfer batch size is above zero **and** the work center exists **and** that work center is not flagged as a continuous process.
+
+All three have to hold. Fail any one and the engine falls through to the flow lag. If the flow lag is also zero, there is no streaming and the successor waits for full upstream completion, which is the behavior every routing step ships with.
+
+That third condition is the one planners forget. A paint booth flagged as continuous process will ignore a transfer batch size no matter how carefully it was entered, because counting pieces at a paint booth is a category error. The engine would rather refuse the setting and flag it than honor a number that does not describe anything physical.
+
+| Condition | Model used |
+|---|---|
+| Transfer batch above zero, discrete work center | Piece-count |
+| Transfer batch zero, flow lag above zero | Start-to-start lag in hours |
+| Transfer batch above zero, continuous-process work center | Start-to-start lag in hours |
+| Both zero | No streaming |
+
+## What the Piece-Count Gate Computes
+
+The formula has three inputs and one guard rail:
+
+> **gate = setup + min(transfer batch, order quantity) x hours per piece**, measured from the upstream operation's start
+
+The `min` is the guard rail. If a routing step says 100 pieces and the order is 30, the engine uses 30, because waiting for piece 100 on a 30-piece order means waiting forever. The cap keeps the schedule feasible, but it also means the step behaves exactly like a serial handoff, which is why the configuration audit flags any routing whose transfer batch equals or exceeds the order quantity.
+
+The setup term matters more than it looks. Pieces do not accumulate while the machine is being set up, so the clock starts after setup rather than at the top of the operation. And when a sequence-dependent setup matrix is in play, the gate uses the resolved changeover time for that specific transition, not a flat routing default. A White-to-Black changeover that resolves to 60 minutes puts 60 minutes into the streaming math, not the 30-minute average sitting on the routing step. That interlock is covered in [how EDGEBIC resolves setup time](/blog/how-edgebic-resolves-setup-time-the-five-level-chain).
+
+**Worked case.** A 100-piece shaft order, turning at 0.5 hours per piece with a 2-hour setup, transfer batch 20, transfer delay 0.5 hours:
+
+| Input | Value |
+|---|---|
+| Setup | 2 h |
+| Effective batch | min(20, 100) = 20 pieces |
+| Hours per piece | 0.5 h |
+| Gate before handling | 2 + 20 x 0.5 = 12 h |
+| Transfer delay | 0.5 h |
+| Drilling cleared at | upstream start + 12.5 h |
+
+Turning's full run is 52 hours. Serially, drilling waits all 52. Streamed, it starts at hour 12.5 and the job's elapsed time falls to roughly 37 hours. Same machines, same hours of work, 15 hours off the calendar.
+
+## What the Flow Lag Computes
+
+The flow lag is not a percentage, a fraction, or a ratio. It is hours:
+
+> **gate = upstream operation's start + flow lag hours**
+
+Order quantity plays no role. Hours per piece plays no role. Setup plays no role. A booth running 08:00 to 12:00 with a flow lag of 1 clears the curing oven at 09:00 rather than noon: three hours of compression from one field. Set the lag to 6 on a step that starts at 08:00 and the successor is gated at 14:00, whether the order is 50 units or 5,000.
+
+That fixity is the point on a continuous process. The question at a paint line is "how much product has to be on the line before the next stage can run?", and the answer does not scale with order size. It is also the model's main weakness on discrete parts, which the comparison below makes obvious.
+
+## Head to Head on the Same Operation
+
+Take one machining operation, 1-hour setup, and vary the piece cycle. Compare a 50-piece transfer batch against a flow lag fixed at 3.5 hours:
+
+| Hours per piece | Piece-count gate | Flow lag gate | Which is right |
+|---|---|---|---|
+| 0.05 | 1 + 50 x 0.05 = 3.5 h | 3.5 h | Identical today |
+| 0.10 | 1 + 50 x 0.10 = 6.0 h | 3.5 h | Piece-count. The lag releases downstream before 50 pieces exist |
+| 0.02 | 1 + 50 x 0.02 = 2.0 h | 3.5 h | Piece-count. The lag holds downstream 1.5 hours longer than needed |
+
+Tune the two to agree on Monday and they disagree by Friday, because one of them recalculates and the other does not. When a cycle time improves, a setup gets shortened, or a routing gets re-timed, the piece-count gate follows automatically on the next reschedule. The flow lag keeps quoting the old number until somebody edits it.
+
+That is the practical rule: **use piece counts wherever pieces exist, and use the flow lag only where they do not.**
+
+## The Shared Tail: Delay, and Why the Gate Wins
+
+Whichever model fires, two things happen next.
+
+**Transfer delay is added.** A 25-piece batch at 0.8 hours per piece with an hour of setup is ready 21 hours into the run. Add a 2-hour cooling delay and the machining step is gated at hour 23. Transfer delay is flat elapsed hours: it does not pause overnight, which makes it right for a conveyor run or a cooling period and wrong for anything that should respect the shop calendar.
+
+**The result is returned as the successor's gate, full stop.** It is not compared against the queue-adjusted end and it is not clamped to the upstream finish. That is what makes the successor able to start *before* its predecessor ends, which is the entire purpose of the exercise. The side effect is that queue time on the same routing step is discarded whenever streaming fires, and the configuration audit flags that pairing so intent stays explicit. The full ordering of queue, streaming, and transit is in [how EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing).
+
+From that gate onward, normal finite capacity rules resume. The gate is an earliest start, not a booking. The allocator still has to find a real shift opening at or after it, which is why streaming into a saturated work center returns less than the arithmetic promises. The distinction between an earliest start and an actual slot is the heart of [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## The One-Piece Flow Case: Roughly 24%
+
+Set the transfer batch to 1 and the same formula produces the lean ideal.
+
+A cell solders 50 sub-assemblies at 0.25 hours each with a 30-minute setup, then tests each at 0.1 hours:
+
+- **First unit ready:** 0.5 + 1 x 0.25 = 0.75 hours. Testing is cleared at 08:45.
+- **Soldering finishes:** 0.5 + 50 x 0.25 = 13 hours, so 21:00.
+- **Testing finishes:** 08:45 plus 50 x 0.1 = 5 hours, so 13:45.
+- **Serial total:** 13 hours of soldering plus 5 hours of testing = 18 hours.
+- **Streamed total:** about 13.75 hours, a makespan reduction of roughly **24%**.
+
+No new equipment, no extra shift, no faster cycle. The gain comes entirely from removing a wait that was never physically necessary. [One-piece flow scheduling](/blog/one-piece-flow-scheduling) covers when a cell can actually sustain that handling rate, which is the real constraint on the number.
+
+## When the Job Is Already Running
+
+Streaming does not go stale the moment a job reaches the floor. On a reschedule the engine reads actuals and handles three states:
+
+1. **Upstream complete.** The gate is the recorded actual end plus transfer delay. The threshold is irrelevant because every piece exists.
+2. **Upstream running, threshold already crossed.** Logged piece counts are summed day by day. Once the cumulative count reaches the batch size, the gate is the **end of shift on the crossing day** plus transfer delay. That end-of-shift choice is deliberately conservative: pieces trickle in through the day, and picking a mid-day timestamp would promise a move that had not physically happened yet.
+3. **Upstream running, threshold not yet crossed.** The formula is projected forward from the real start time rather than the original planned start, so a job that started three hours late hands off three hours late.
+
+Completed operations are never moved by any of this. Recorded work is historical fact and the reschedule re-plans only what remains, a rule that holds across the whole engine and not just for streaming. The mechanics are in the [partial completion reschedule walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic).
+
+## Reading the Result
+
+Streamed operations sit under one another on the Gantt rather than end to end. The engine also exempts streamed steps from its overlap warnings, because overlap is the intended output and flagging it would train planners to ignore a useful check.
+
+If the bars still run in series after a correct configuration, work down the short list: transit days on the upstream step, a transfer batch at or above the order quantity, a continuous-process flag on the upstream work center, or a downstream work center with no free capacity in the window. Each of those is covered with its symptom in [lot streaming mistakes](/blog/lot-streaming-mistakes-edgebic).
+
+For where streaming sits among the platform's other timing mechanisms, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide), or bring one long routing to a demo of [EDGEBIC](/edgebic) and we will compute both gates against your real numbers.

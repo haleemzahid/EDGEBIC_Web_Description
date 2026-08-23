@@ -1,0 +1,78 @@
+---
+title: "What Is Sales Order Reference Grouping in an Import?"
+description: "Sales order reference grouping gathers file rows sharing one order reference under a single sales order and auto-numbers their jobs. Learn how it works and when to leave it blank."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - sales order reference grouping
+  - import sales orders
+  - job auto-numbering
+  - multi-line purchase order
+  - order reference column
+  - demand import
+targetPhrase: "sales order reference grouping"
+wordCount: 1101
+readingTime: 6
+faqQuestions:
+  - question: "What is sales order reference grouping in an import?"
+    answer: "It is the behavior that gathers every row in a demand file sharing the same order reference under a single sales order, and numbers their jobs from that reference plus a line number. Fill the optional reference column and a three-line purchase order arrives as one order with three numbered jobs beneath it. Leave the column blank and each row becomes a standalone job with no parent order. The choice is per row rather than per file, so one import can carry both grouped orders and loose jobs."
+  - question: "What columns does a sales order import require?"
+    answer: "Three are mandatory: the product being ordered, the quantity, and the job date. Everything else is optional, including the order reference used for grouping, an explicit job number, the customer name, a due date, an order date, a priority, a unit price and free-text notes. Because the product and customer columns can create records that do not yet exist, a demand file from a customer portal can often be imported without any preparation of the master data, though checking what got created afterwards is wise."
+  - question: "Does importing sales orders schedule the work?"
+    answer: "No. An import writes data and never recalculates the plan. Imported orders appear as jobs ready to be scheduled, and nothing lands on a timeline until you run the scheduler yourself. That separation is deliberate: it lets you import forty orders, review what arrived, correct anything odd, and only then decide how to place them against everything already on the floor. It also means an import that needs re-running is a data cleanup rather than a disturbance to a live schedule."
+qaQuestions:
+  - question: "A customer sends one purchase order covering five different parts. How should the file look?"
+    answer: "One row per part, all five carrying the same order reference in the reference column. The import then creates a single sales order for the purchase order and five jobs beneath it, numbered from the reference plus a line number, so the relationship survives into the schedule and into reporting. Keep the quantities and dates per row, since each line may have its own quantity and its own promised date. If one of the five parts genuinely belongs to a different commercial document, give it its own reference rather than forcing it into the group."
+  - question: "We import from a spreadsheet where every row is unrelated. Do we need a reference at all?"
+    answer: "No, and inventing one would be worse than leaving it out. A blank reference means the row becomes a standalone job, which is exactly right for a file of unrelated demand such as a stock replenishment list or an internal build request. The reference exists to preserve a real commercial grouping, not to satisfy the importer. Filling it with a made-up value would create sales orders that correspond to nothing, and anyone later looking for the customer document behind an order would find a placeholder."
+---
+
+**Sales order reference grouping is the import behavior that gathers every file row sharing one order reference under a single sales order and auto-numbers their jobs from that reference plus a line number.** It is how a multi-line customer purchase order arrives in the plant as one commercial document with several jobs beneath it, rather than as a handful of unrelated work orders that happen to share a due date. In EDGEBIC by User Solutions the reference column is optional, and its presence or absence per row decides which of the two shapes you get.
+
+## How it works
+
+A demand import loads jobs, and each file row becomes work the plant may perform. Three columns are mandatory: the product being ordered, the quantity, and the job date. Everything else is optional, and one of those optional columns is the order reference.
+
+| Reference column | What the import produces | Job numbering |
+|---|---|---|
+| Filled, shared across several rows | One sales order covering all those rows | Reference plus a line number, assigned automatically |
+| Filled, unique to one row | One sales order with a single line | Reference plus line number one |
+| Blank | No parent order; the row stands alone | An explicit job number from the file, or a generated one |
+
+The grouping is decided per row, not per file, so a single import can carry three genuine purchase orders and a dozen loose internal builds without any special handling. That is the right default because real demand files are usually mixed.
+
+Around those columns sit the optional ones that make an imported order useful downstream: the customer name, a due date, an order date, a priority, a unit price and free-text notes. Two mask options are worth knowing about. Products and customers named in the file that do not yet exist are created on the fly by default, which is what allows a portal export to be imported without preparing master data first. And a pair of options controls how the job date and due date relate when the file carries only one of them, so a file that gives you promised dates and nothing else still produces sensible jobs.
+
+Priority deserves a note because it is easy to misread. Priority is a plain positive number where lower comes first, so a job at priority 1 is ahead of a job at priority 5. A file that leaves the column out simply produces jobs at whatever default applies.
+
+The relationship the reference creates is not decoration. It is what lets someone later ask what happened to a customer's purchase order and get a single answer covering all its lines, rather than reconstructing the set from dates and part numbers. The order and line vocabulary, including the states an order moves through, is defined in [what is a sales order line](/blog/what-is-a-sales-order-line).
+
+## A concrete example
+
+Acme Industries sends purchase order ACME-PO-4471 covering three parts. The file the planner receives has three rows, each with the product, the quantity, the date, and the same reference value in the reference column.
+
+After the run, the plant has one sales order for ACME-PO-4471 and three jobs beneath it, numbered from the reference with a line suffix: line one, line two, line three. Anyone looking at any one of those jobs can see the order it belongs to, and anyone looking at the order sees all three jobs.
+
+Now take the same three rows with the reference column left blank. The import creates three standalone jobs with no parent order. Nothing is broken and the work is identical, but the commercial grouping is gone, and reconciling against the customer's paperwork later becomes a manual exercise.
+
+The scale version of this shows why the import path exists at all. At eight in the morning the planner imports forty sales orders for Acme. At one minute past eight, the scheduling tab shows forty new jobs and the timeline shows none of them, because imports never schedule. At five past eight the planner runs the scheduler in new-jobs-only mode: the forty jobs are planned around everything already committed on the floor, and only then do they appear on the plan. Forty orders keyed by hand would have taken the morning; this took five minutes, and the review step in the middle is where a planner catches the row that arrived with the wrong quantity.
+
+## How EDGEBIC uses it
+
+Demand loads run through the same mask mechanism as every other data type: pick the entity type, map your file's columns onto the target fields once, save the recipe, and every later run is two clicks. The eight importable types and their mandatory columns are listed in [what is an import entity type](/blog/what-is-an-import-entity-type).
+
+Three habits make a demand routine dependable:
+
+- **Carry the customer's real reference, or nothing.** A genuine purchase order number is worth preserving; an invented placeholder creates orders that correspond to no document.
+- **Check what was auto-created after the first run of a new file.** Products and customers are created on the fly by default, and a misspelled part number creates a new product rather than failing, so the first run of a new feed deserves a look at the product grid.
+- **Read the results, then schedule.** Row outcomes are created, updated, reused or failed, as described in [what is an import row status](/blog/what-is-an-import-row-status), and the per-run log names the row behind any failure. Scheduling is a separate deliberate step afterwards.
+
+One boundary is worth stating plainly. An imported order is created, not planned. Its dates on the file are demand information; the dates the plant will actually work to come from a scheduling run against real capacity. That is the same rule that applies to an order created by hand or converted from a quote, described in [what is a manufacturing order](/blog/what-is-a-manufacturing-order).
+
+## The takeaway
+
+Sales order reference grouping is a one-column decision that preserves a real commercial relationship through a bulk load: fill the reference to keep a multi-line purchase order together with numbered jobs, leave it blank for genuinely unrelated demand. Combined with the mandatory product, quantity and date columns, it turns a customer's spreadsheet into schedulable work in minutes without losing the paper trail. To see demand imports and the jobs they produce in a working plan, explore [EDGEBIC](/edgebic), and if you are arriving from the older Resource Manager lineage, [the move from RMDB to EDGEBIC](/rmdb-to-edgebic) maps the equivalents. For neighboring terms, read [what is an upsert in data import](/blog/what-is-an-upsert-in-data-import) and [what is an import run log](/blog/what-is-an-import-run-log).

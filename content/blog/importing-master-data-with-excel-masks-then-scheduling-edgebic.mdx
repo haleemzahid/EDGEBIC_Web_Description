@@ -1,0 +1,176 @@
+---
+title: "Importing Master Data With Excel Masks, Then Scheduling It in EDGEBIC"
+description: "Import work centers, products, and routings from Excel with reusable import masks, then generate a finite capacity schedule, with every column mapping and number shown."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - import master data scheduling
+  - excel import mask
+  - bulk import work centers
+  - routing import walkthrough
+  - conversion factor import
+  - two-pass BOR import
+targetPhrase: "import master data scheduling"
+wordCount: 1850
+readingTime: 9
+faqQuestions:
+  - question: "Can I load work centers, products, and routings into EDGEBIC from Excel instead of typing them?"
+    answer: "Yes. EDGEBIC's Import Data subsystem loads Product, Work Center, Customer, Sales Order, BOR routing, and Actuals records from .xlsx workbooks or delimited text files. You build a reusable import mask once, mapping each source column to a target field, then click Do It to run it. In this walkthrough eight work centers, forty products, and a five-step routing load in three mask runs before a single job is typed by hand."
+  - question: "How does an EDGEBIC import mask convert setup time from minutes to hours?"
+    answer: "Each mask field has an optional Conversion Factor, a decimal multiplier applied to the cell before the value reaches EDGEBIC. A source file that stores setup time in minutes maps to the Setup Time field with a Conversion Factor of 0.016667, so a 15-minute cell becomes 0.25 hours. The factor applies to every numeric cell in that column, including zeros, and is skipped silently for non-numeric cells."
+  - question: "How does EDGEBIC wire routing steps together on import?"
+    answer: "The BOR import is a two-pass strategy. Pass one buffers every step and resolves or creates the products and work centers it references. Pass two, after all steps have database IDs, sorts each product's steps by sequence number and links step N to step N+1, then points the final step at the end product so the routing connects. With Auto Generate Next In Sequence on, you leave the Next Seq column blank and let EDGEBIC draw the arrows."
+qaQuestions:
+  - question: "We have a legacy system export with 40 products, 8 machines, and routings all in one folder of spreadsheets. What is the fastest correct order to load them so nothing references a missing record?"
+    answer: "Load in dependency order: Work Centers first, then Products, then the BOR routings that reference both. Work centers and products are single-pass masks that create or reuse by name, so a routing import can auto-create anything still missing, but loading them first keeps the log clean. In this walkthrough that order produced 8 created work centers, 40 created products, and one Shaft-100 routing of 5 linked steps with zero failed rows. Then you enter or import the orders and run Drive Schedule."
+  - question: "If I re-import the same routing file next week after fixing a setup time, will EDGEBIC append a second copy of every step?"
+    answer: "No. A BOR re-import always wipes each end product's existing steps once, on first reference within the run, then recreates them from the file. Re-running the same file is idempotent, so the Shaft-100 routing stays at 5 steps, not 10. This is safe even when Shaft-100 has scheduled jobs, because those jobs run off their preserved routing snapshot, not the live steps. The one rule: put all of a product's steps in a single file, since the wipe happens per run."
+---
+
+**Importing master data for scheduling in [EDGEBIC by User Solutions](/edgebic) means loading your work centers, products, and routings from Excel or CSV through reusable import masks, then running the finite capacity engine against them, without typing a record by hand.** This walkthrough takes a plant from three spreadsheets to a committed schedule, showing every column mapping, every conversion factor, and the two-pass routing wiring that turns a flat file into a connected routing. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so you can judge the import path by its arithmetic, not its adjectives.
+
+If you would rather hand-enter your first plant, the [greenfield setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the manual path. This one is for the far more common case: your data already lives in a legacy system, and you have exported it.
+
+## The Cast: One Legacy Export, Three Masks
+
+Delta Machining is migrating off an aging system. Their export produced three files:
+
+| File | Rows | Target |
+|---|---|---|
+| `workcenters.xlsx` | 8 | Work Center master |
+| `products.xlsx` | 40 | Product master |
+| `shaft-100-routing.csv` | 5 | One BOR routing |
+
+An import mask is a saved, named configuration that remembers three things: which entity type it loads, which file format it reads, and how each source column maps to an EDGEBIC field. You build it once and reuse it every week. Masks exist for eight entity types, of which six are visible to planners: Product, Work Center, Customer, Sales Order, BOR (routing), and Actuals.
+
+## Step 1: Import the Work Centers
+
+Open Settings, then the Import screen. Select the Work Center entity type, click Define, and name the mask "Legacy Work Centers." Click Get File and pick `workcenters.xlsx`. EDGEBIC reads the header row so you can drag each source heading onto its target field.
+
+The source columns map like this:
+
+| Source Header | Target Field | Notes |
+|---|---|---|
+| Machine Name | Name | Mandatory, the natural key |
+| Instances | Number_Of_Instances | Defaults to 1 when blank |
+| Utilization | Efficiency | Percent |
+| Setup Hours | Setup_Time_Hours | |
+| Bottleneck | Is_Bottleneck | Yes/No accepted |
+
+Only Name is mandatory. Click Save, then Do It. The orchestrator streams each row into the Work Center strategy, which creates a new record or reuses an existing one by name. The result dialog reads Created 8, Failed 0. Behind it, the per-run import log records one line per row, so you have an audit trail of exactly what landed.
+
+A tip worth taking: if a work center imports but shows zero capacity later, the cause is almost always a missing shift link, not a bad import. The fix is covered in [an imported work center has no capacity](/blog/an-imported-work-center-has-no-capacity-edgebic).
+
+## Step 2: Import the Products
+
+Repeat the pattern with the Product entity type. Name the mask "Legacy Products," pick `products.xlsx`, and map:
+
+| Source Header | Target Field | Conversion Factor |
+|---|---|---|
+| Part Number | Product_Name | (none) |
+| Description | Description | (none) |
+| Std Cost | Unit_Cost | (none) |
+| List Price | Unit_Price | (none) |
+| Active | Is_Active | (none) |
+
+Product_Name is the only mandatory field, and it is the case-insensitive natural key. Leave Update Existing Records off, so a re-run reuses rather than overwrites. Run it: Created 40, Failed 0. Any product created without a unit number gets an auto-generated one.
+
+One guardrail to know before your second run: on an update, a blank source cell keeps the existing value rather than zeroing it, so a half-populated correction file cannot wipe planner-set fields. The mechanism, and the one case where it surprises people, is documented in [a blank cell in my import wiped a value](/blog/a-blank-cell-in-my-import-wiped-a-value-edgebic). For a broader treatment of the mapping model, see [import masks explained](/blog/edgebic-import-masks-explained).
+
+## Step 3: Import the Routing (the Two-Pass Trick)
+
+Routings are different. A routing step links to the next step, but that link cannot be written until every step has a database ID. EDGEBIC solves this with a two-pass BOR strategy, and it is the most interesting part of the whole import story.
+
+Here is the source CSV. Note the legacy system stored setup time in minutes:
+
+```
+End_Product,Step_Name,Is_Operation,Seq,Hours,Setup_Min,Queue
+Shaft-100,Saw-Cut,true,10,0.5,15,0
+Shaft-100,Lathe-1,true,20,2.0,30,0.5
+Shaft-100,Mill-1,true,30,1.5,20,0.5
+Shaft-100,Grind-1,true,40,1.0,10,0.25
+Shaft-100,QC-Inspect,true,50,0.25,0,0
+```
+
+The mask maps the columns, and the setup column carries a conversion factor to turn minutes into hours:
+
+| Source Header | Target Field | Conversion Factor |
+|---|---|---|
+| End_Product | End_Prod | (none) |
+| Step_Name | Sub_Prod | (none) |
+| Is_Operation | Op_Flag | (none) |
+| Seq | Seq_No | (none) |
+| Hours | No_Req | (none) |
+| Setup_Min | Setup_Time | 0.016667 |
+| Queue | Queue_Time | (none) |
+
+Turn on two options: Auto Generate Next In Sequence and Auto Create Missing Work Centers.
+
+**Pass one** buffers all five rows. Each names a work center in the Sub_Prod column (because Op_Flag is true), and EDGEBIC creates any that do not exist. In this run, all five work centers already exist from Step 1, so they are reused, and the product Shaft-100 is created.
+
+**Pass two** runs after the buffer is complete. It groups the rows by end product, sorts by Seq_No (10, 20, 30, 40, 50), inserts the steps, then wires the links:
+
+```
+Saw-Cut    -> Lathe-1
+Lathe-1    -> Mill-1
+Mill-1     -> Grind-1
+Grind-1    -> QC-Inspect
+QC-Inspect -> End Product (Shaft-100)
+```
+
+The conversion factor does its work along the way. Setup times land as hours: Saw-Cut 15 x 0.016667 = 0.25 h, Lathe-1 0.50 h, Mill-1 0.33 h, Grind-1 0.17 h, QC 0.00 h. The result dialog reads Created 5, and the routing appears in the graphical editor as a connected line from Saw-Cut all the way to the Shaft-100 node.
+
+## Step 4: Schedule It
+
+Master data is now in place, all of it from spreadsheets. Create one order (or import a batch through the Sales Order mask): 20 pieces of Shaft-100, due next Friday, earliest start Monday 08:00. Open Drive Schedule and run it.
+
+The engine reads the imported routing, computes each step's workload as setup plus run time per piece times quantity, and places the hours into real shift capacity:
+
+| Step | Work center | Formula | Hours |
+|---|---|---|---|
+| Saw-Cut | Saw-Cut | 0.25 + 0.5 x 20 | 10.25 h |
+| Lathe-1 | Lathe-1 | 0.50 + 2.0 x 20 | 40.50 h |
+| Mill-1 | Mill-1 | 0.33 + 1.5 x 20 | 30.33 h |
+| Grind-1 | Grind-1 | 0.17 + 1.0 x 20 | 20.17 h |
+| QC-Inspect | QC-Inspect | 0.00 + 0.25 x 20 | 5.00 h |
+
+The 0.5 h queue after Lathe-1 and Mill-1 pushes each downstream step's earliest start back by 30 minutes, exactly as the queue column in the file specified. The schedule commits, the order flips to Scheduled, and the Job Gantt shows five bars in dependency order. Nothing about this schedule was typed; it all came from the three files.
+
+## Re-Running Next Week
+
+The value of a mask is the second run. When Delta corrects Lathe-1's setup time and re-imports the routing, the BOR strategy wipes Shaft-100's existing five steps once, then recreates them from the corrected file. The routing stays at five steps, never ten. This is safe even if Shaft-100 already has scheduled jobs, because scheduled jobs run off their preserved routing snapshot rather than the live steps. The single discipline is to keep all of a product's steps in one file, since the wipe fires per run on first reference to each end product.
+
+For product and work center masks, re-running with Update Existing Records on is the update path, and blank cells preserve existing values. Turn the option off and the run reuses matched records without touching them, which is the safe default when you only want to add new rows.
+
+## What This Walkthrough Proves
+
+Six behaviors you can verify on your own export:
+
+1. **Masks are reusable.** Each mask remembers its entity type, format, and column mapping, so the weekly sync is one click, not one rebuild.
+2. **Conversion factors normalize units on the way in.** Minutes become hours before the value ever reaches a routing step.
+3. **Routing links are wired in a second pass.** You leave the Next Seq column blank and let the engine draw the arrows, including the final link to the end product.
+4. **Auto-create keeps a run from failing on a missing reference.** A routing import can conjure the work centers and products it names.
+5. **Re-imports are idempotent.** Routing steps are wiped and recreated, so they never accumulate.
+6. **Imported data schedules identically to hand-entered data.** The engine cannot tell the difference, and neither can the Gantt.
+
+## From Import to a Living Plant
+
+Importing is how most plants populate EDGEBIC, and it is the same door your ERP data walks through: the [import and export masks](/edgebic-erp-integration) are the integration layer, not a native connector. Once the data is in, the rest of the [worked examples](/blog/edgebic-worked-examples) apply directly. The natural next step is the full order lifecycle in [quote to ship](/blog/quote-to-ship-in-edgebic), and when a routing needs cleaning before it loads, [cleaning your data before importing](/blog/cleaning-your-data-before-importing-to-edgebic) saves a failed run.
+
+User Solutions has been moving manufacturers off legacy systems since 1991, including the documented Plastilite implementation that went from Fourth Shift data to a working schedule in five days. Bring one export file and [contact us for a demo](/contact-us): we will build your first mask with you.
+
+<Accordion title="Can I load work centers, products, and routings into EDGEBIC from Excel instead of typing them?">
+Yes. EDGEBIC's Import Data subsystem loads Product, Work Center, Customer, Sales Order, BOR routing, and Actuals records from .xlsx workbooks or delimited text files. You build a reusable import mask once, mapping each source column to a target field, then click Do It to run it. In this walkthrough eight work centers, forty products, and a five-step routing load in three mask runs before a single job is typed by hand.
+</Accordion>
+
+<Accordion title="How does an EDGEBIC import mask convert setup time from minutes to hours?">
+Each mask field has an optional Conversion Factor, a decimal multiplier applied to the cell before the value reaches EDGEBIC. A source file that stores setup time in minutes maps to the Setup Time field with a Conversion Factor of 0.016667, so a 15-minute cell becomes 0.25 hours. The factor applies to every numeric cell in that column, including zeros, and is skipped silently for non-numeric cells.
+</Accordion>
+
+<Accordion title="How does EDGEBIC wire routing steps together on import?">
+The BOR import is a two-pass strategy. Pass one buffers every step and resolves or creates the products and work centers it references. Pass two, after all steps have database IDs, sorts each product's steps by sequence number and links step N to step N+1, then points the final step at the end product so the routing connects. With Auto Generate Next In Sequence on, you leave the Next Seq column blank and let EDGEBIC draw the arrows.
+</Accordion>

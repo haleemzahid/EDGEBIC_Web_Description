@@ -1,0 +1,102 @@
+---
+title: "Steps Scheduled Out of Sequence: Diagnosing Dependency Problems"
+description: "Operations scheduled out of order have four causes: display sorting, intentional overlap, broken step links, or a real violation. How to tell them apart fast."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - operations scheduled out of order
+  - routing steps wrong sequence
+  - dependency violation production schedule
+  - downstream step starts before upstream ends
+  - circular dependency routing
+  - gantt steps out of sequence
+targetPhrase: "operations scheduled out of order"
+wordCount: 1310
+readingTime: 7
+faqQuestions:
+  - question: "Why do my routing steps appear out of order on the schedule?"
+    answer: "Steps that look out of order have four possible causes, in descending likelihood: the Gantt is sorting rows by work center rather than by step sequence (a display artifact), lot streaming is deliberately overlapping the steps, the step-to-step links in the routing are mis-wired so the engine treats sequential steps as independent, or a genuine dependency violation occurred, which the built-in anomaly report flags."
+  - question: "Is it wrong for a downstream operation to start before the upstream one finishes?"
+    answer: "Not when overlap is configured. Lot streaming exists precisely so a downstream step can begin as soon as the first transfer batch of pieces arrives, or after a fixed head-start in hours, instead of waiting for the full lot. The dependency check knows this: it only flags a downstream-starts-early pair when no overlap setting exists on the step."
+  - question: "What is a circular dependency in a routing and how do I fix it?"
+    answer: "A circular dependency is a loop in the step chain: following each step's next-step link eventually returns to a step already visited, so no valid order exists and scheduling fails with a clear error. The most common form is a step pointing to itself. Fix it by opening the routing, tracing each step's next-step link until you find the loop, and clearing or redirecting one link to break it."
+  - question: "Two steps have the same sequence number. Does that break the schedule?"
+    answer: "It creates ambiguity worth removing. The engine orders steps by their explicit step links, not by the numeric sequence value, so duplicated numbers do not directly break dependencies. But displays and checks that read sequence numbers can render the steps confusingly, and a human reading the routing cannot tell the intended order. Renumber so every step in a routing has a unique sequence value."
+qaQuestions:
+  - question: "The Gantt shows step 30 above step 20, and step 30's bar starts first. The floor is asking which to run. What do I tell them?"
+    answer: "Tell them to read start times, not row order. The Gantt groups rows by work center, so a job's steps appear in machine order, not step order; step 30 can sit above step 20 without meaning anything. Then check the start times: if step 30 genuinely starts first, look at the routing. If steps 20 and 30 are parallel branches (both fed by step 10, neither feeding the other), simultaneous or reversed starts are correct. If they are supposed to be sequential and carry no overlap settings, run the anomaly report on that job; a real dependency violation will be flagged with the exact hours of overlap."
+  - question: "After we added a step in the middle of a routing, the new step schedules at the very start of the job. Why?"
+    answer: "The new step almost certainly is not linked into the chain. The engine orders steps by explicit next-step links; a step nobody points to and that points to nothing is treated as independent, and an independent step with no predecessor is free to start at the job's release. Open the routing, set the upstream step's next-step link to the new step, and set the new step's link to the old downstream step. Reschedule and it will fall into place. This is worth checking after any manual routing edit or import."
+---
+
+**When operations schedule out of order, the cause is one of four things, and three of them are not errors: a display sort that groups by machine rather than step order, deliberate overlap from lot streaming, mis-wired step links in the routing, or (rarest) a genuine dependency violation the system flags itself.** The diagnosis takes minutes once you check them in the right order, because each cause leaves different evidence.
+
+[EDGEBIC by User Solutions](/edgebic) schedules steps in the order defined by the routing's explicit step-to-step links, resolved through a dependency graph, and then audits the result after every run. Here is how to walk a "steps are out of sequence" report back to its real cause, as part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## Cause 1: You Are Looking at a Display Sort
+
+The most common report, and the quickest to close. The Gantt groups bars by work center, not by step sequence. A job whose step 20 runs on Mill-1 and step 30 on Saw-2 shows those bars in whatever order the machines are listed, so step 30 can appear above step 20 on screen while scheduling perfectly after it in time.
+
+**How to confirm:** ignore row order and read the actual start and end times in the Job View grid. If the times respect the sequence, nothing is wrong.
+
+**One more display wrinkle:** two steps can be genuinely parallel. A routing can branch (cut feeds both drilling and milling, which later join at assembly), and parallel branches carry no ordering between each other. Chronologically interleaved bars from parallel branches look "out of order" and are not.
+
+## Cause 2: The Overlap Is Intentional (Lot Streaming)
+
+A downstream step starting before its upstream step finishes is the entire point of lot streaming. Two mechanisms produce it:
+
+- **Transfer batches:** the downstream step starts as soon as a set number of pieces has accumulated upstream. With a 20-piece transfer batch on a 100-piece order at 0.5 hours per piece and 2 hours of setup, drilling starts 12 hours into a 52-hour turning run, saving hours of elapsed time.
+- **A fixed head start:** the downstream step may begin a set number of hours after the upstream step starts, useful for continuous processes like paint lines feeding curing ovens.
+
+**How to confirm:** open the routing step and look for a transfer batch quantity or an overlap-hours value. EDGEBIC's dependency check is aware of both: it only flags a downstream-early pair when neither setting exists, so an intentional overlap never appears as a violation. The full mechanics, with worked timelines, are in the [lot streaming walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic).
+
+## Cause 3: The Step Links Are Mis-Wired
+
+The engine does not order steps by their sequence numbers. It orders them by each step's explicit next-step link, building a dependency graph and sorting it so every step waits for its true predecessors. That design supports branching and joining routings, but it means the links are the truth, and links can be wrong:
+
+- **A missing link** leaves a step disconnected. The engine treats it as independent, and an independent step with no predecessor can schedule at the very start of the job, regardless of its number.
+- **A link pointing at the wrong step** makes two sequential steps look independent (they can overlap freely) or creates an ordering nobody intended.
+- **A loop** (a step whose chain eventually returns to itself, most often a step pointing directly at itself) makes ordering impossible. This one fails loudly: scheduling stops with a circular-dependency error naming the job.
+
+**How to confirm:** open the routing and trace each step's next-step link from the first step to the last. The chain should visit every step exactly once, with branches rejoining cleanly. For a circular dependency, follow the chain until you revisit a step; that is your loop.
+
+**The fix:** repair the links. Break a loop by clearing or redirecting one link; connect a stray step by pointing its predecessor at it and it at its successor. Then reschedule. The graphical routing editor makes this visual, which is the fastest way to spot a chain that doubled back.
+
+**Prevention:** after any manual routing edit, and after any [routing import from your ERP](/edgebic-erp-integration), give the chain a ten-second trace before scheduling. Imports that carry sequence numbers but not links are the classic source of disconnected steps.
+
+## Cause 4: A Genuine Dependency Violation
+
+Rare, and self-announcing. EDGEBIC's built-in anomaly report checks every job after every run: within a job, a later step starting before its predecessor ends, with no lot-streaming setting to justify it, is flagged with the step numbers and the exact hours of overlap.
+
+**How to confirm:** run the anomaly report for the job. If the dependency finding is empty, causes 1 through 3 explain everything you are seeing. For the two-step version of this symptom, [two steps of one job overlapping when they should not](/blog/two-steps-of-one-job-overlap-in-the-schedule-edgebic) separates a real violation from configured lot streaming.
+
+**The fix:** re-run scheduling for the job first; a clean re-plan resolves violations that came from an interrupted or stale run. If the finding survives a clean reschedule, inspect the step links (cause 3 is the usual root: a mis-wired chain makes the engine believe two sequential steps are independent, and the violation is the visible symptom). A finding that persists after both is support-ticket material, and the report's detail line contains everything support needs.
+
+## The Two-Minute Triage, In Order
+
+1. **Grid times, not Gantt rows.** Display sort explains most reports immediately.
+2. **Check the routing step for overlap settings.** Transfer batch or head-start hours mean the overlap is a feature.
+3. **Trace the step links.** Missing, misdirected, or looping links are the deepest common cause.
+4. **Run the anomaly report.** Whatever it flags is real; whatever it clears was one of the above.
+
+Step ordering is one corner of how a finite capacity engine builds a plan; the wider machinery (dependency graphs, capacity allocation, and the rules that bind them) is laid out in our [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the general challenge of sequencing work in a job shop has its own primer in [job shop scheduling challenges](/blog/job-shop-scheduling-challenges).
+
+<Accordion title="Why do my routing steps appear out of order on the schedule?">
+Steps that look out of order have four possible causes, in descending likelihood: the Gantt is sorting rows by work center rather than by step sequence (a display artifact), lot streaming is deliberately overlapping the steps, the step-to-step links in the routing are mis-wired so the engine treats sequential steps as independent, or a genuine dependency violation occurred, which the built-in anomaly report flags.
+</Accordion>
+
+<Accordion title="Is it wrong for a downstream operation to start before the upstream one finishes?">
+Not when overlap is configured. Lot streaming exists precisely so a downstream step can begin as soon as the first transfer batch of pieces arrives, or after a fixed head-start in hours, instead of waiting for the full lot. The dependency check knows this: it only flags a downstream-starts-early pair when no overlap setting exists on the step.
+</Accordion>
+
+<Accordion title="What is a circular dependency in a routing and how do I fix it?">
+A circular dependency is a loop in the step chain: following each step's next-step link eventually returns to a step already visited, so no valid order exists and scheduling fails with a clear error. The most common form is a step pointing to itself. Fix it by opening the routing, tracing each step's next-step link until you find the loop, and clearing or redirecting one link to break it.
+</Accordion>
+
+<Accordion title="Two steps have the same sequence number. Does that break the schedule?">
+It creates ambiguity worth removing. The engine orders steps by their explicit step links, not by the numeric sequence value, so duplicated numbers do not directly break dependencies. But displays and checks that read sequence numbers can render the steps confusingly, and a human reading the routing cannot tell the intended order. Renumber so every step in a routing has a unique sequence value.
+</Accordion>

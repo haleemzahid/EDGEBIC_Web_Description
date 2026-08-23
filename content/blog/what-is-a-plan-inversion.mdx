@@ -1,0 +1,70 @@
+---
+title: "What Is a Plan Inversion in Scheduling?"
+description: "A plan inversion is a schedule or booking that ends at or before it starts. Definition, the usual cause in actual-time reporting, and how EDGEBIC flags it."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - what is a plan inversion
+  - plan inversion scheduling
+  - end date before start date
+  - negative duration schedule
+  - inverted actual dates
+  - zero duration operation
+targetPhrase: "what is a plan inversion"
+wordCount: 960
+readingTime: 5
+faqQuestions:
+  - question: "What is a plan inversion?"
+    answer: "A plan inversion is a schedule row or a resource booking whose end time is at or before its start time, giving it a zero or negative duration. Time only runs forward, so an inversion is physically impossible and always a critical anomaly. It shows up as either a scheduled operation that ends before it begins or an actual booking, recorded from the shop floor, whose logged end predates its logged start."
+  - question: "What usually causes a plan inversion?"
+    answer: "The most common cause is actual-time reporting. When an operator marks a step complete on the same day it started but logs no run hours, a naive end stamp can land before the recorded start, inverting the pair. A correct system snaps the end to the end of the day so a same-day partial cannot invert. When the inversion appears anyway, it means a write path bypassed that safeguard or a direct database edit set the dates."
+  - question: "Is a zero-duration operation the same as an inversion?"
+    answer: "It is treated the same way, because a step that ends at exactly the moment it starts has done no work in elapsed time and is almost always a symptom of the same reporting or data fault. The plan-inversion check flags both cases, end at or before start, as critical. The distinction rarely matters in practice: either way the row needs its dates corrected before you trust the schedule."
+qaQuestions:
+  - question: "The Job View shows a step with a negative duration and the operator swears they finished it. What happened?"
+    answer: "The operator did finish it; the timestamps are wrong. This happens when a step is marked complete the same day it started with no run hours logged, so the recorded end time falls before the start. The correct behavior snaps the actual end to the end of that day, which keeps the pair in order. The inversion means that snap did not fire, usually because the latest actual date was missing at the moment of the close-out. Correct the end stamp and the negative duration disappears."
+  - question: "We migrated data and now several jobs show end-before-start errors. Is the whole plan corrupt?"
+    answer: "No, only those specific rows. A migration that writes actual start and end dates directly, without going through the validation that rejects an end at or before a start, can produce inversions that the live application would never allow. Run the anomaly report, list every inverted row, and correct each pair so the end follows the start. The rest of the schedule, which was not touched by the bad write path, is fine."
+---
+
+**A plan inversion is a schedule row or a resource booking whose end time is at or before its start time, giving it a zero or negative duration: since time runs only forward, an inversion is physically impossible and always a critical anomaly.** It appears either as a scheduled operation that ends before it begins or, far more often, as an actual booking recorded from the shop floor whose logged end predates its logged start.
+
+This entry is part of the EDGEBIC glossary; see the [manufacturing glossary](/blog/manufacturing-glossary) for the wider vocabulary and the [scheduling anomaly](/blog/what-is-a-scheduling-anomaly) definition for the family it belongs to.
+
+## How a Plan Inversion Works
+
+Every operation in a schedule has a start and an end, and every booking of hours to a machine has the same pair. The one rule that can never break is that the end comes after the start. When it does not, the row has negative elapsed time, which no real work can have.
+
+The inversion check reads the plan and looks for two shapes of the same fault. The first is a **scheduled operation** whose planned end is at or before its planned start. The second is an **actual booking**, the record of hours a machine really spent, whose logged end predates its logged start. Both are reported as critical, because both describe something time does not allow.
+
+On a Gantt chart an inversion is easy to miss. A negative-duration bar renders as a sliver or nothing at all, so a planner scanning the timeline sees no problem. The check finds it by comparing the two timestamps directly, which is why running the anomaly report catches faults the visual plan hides.
+
+The two shapes are worth keeping distinct because they point at different places. A scheduled-operation inversion is unusual and suggests something wrong in how the plan was generated or edited. An actual-booking inversion is far more common and points at the shop-floor reporting path, where a real start and end were captured from a kiosk or a data entry. In practice, almost every inversion you will ever see is the second kind, which is why the fix is usually correcting a stamp rather than regenerating a plan.
+
+## Why Inversions Happen: Actual-Time Reporting
+
+Freshly generated schedules almost never invert, because the scheduling engine builds every operation forward in time. The inversions that appear in practice come from **actual-time reporting**, when the shop floor stamps real start and end times onto a job.
+
+The classic case is a same-day short completion. An operator starts a step at 8 a.m., works on it, and marks it complete later that day without logging run hours. A naive close-out can set the end time to a value that lands before 8 a.m., inverting the pair. The correct safeguard snaps the actual end to the end of that day (the last instant before midnight), so a same-day partial can never invert. When an inversion appears anyway, that snap did not fire, usually because the system had no later actual date to anchor to, or a direct database edit set the timestamps outside the normal write path that would have rejected them.
+
+## A Concrete Example
+
+A planner reviewing the Job View notices JOB-200, step 3, shows a negative duration. The operator insists the step is finished, and it is.
+
+Running the anomaly report confirms an inversion: the step's actual start is 8:00 a.m. and its actual end is 7:45 a.m. the same day, fifteen minutes earlier. The step was marked complete on the day it began with no hours logged, and the end-of-day snap that should have set the end to just before midnight did not run. The planner corrects the actual end stamp, the negative duration resolves, and the critical row clears. Nothing else in the plan needed regenerating: the check pointed at the single bad pair of timestamps.
+
+## How EDGEBIC Flags Plan Inversions
+
+In EDGEBIC, inversion detection lives in the Scheduler Anomalies report under the Reports menu, in the plan-inversion category. It runs per job or plant-wide. The summary strip shows the inversion chips: green when every start precedes its end, red when a row is inverted. Clicking a flagged row opens the schedule so you can correct the offending dates.
+
+The product also guards against inversions at the moment of writing. When actual dates are saved, either from the Gantt or from the shop-floor kiosk, a validator rejects any write where the end is at or before the start, and the same-day close-out snaps the end to end-of-day. Those guards mean inversions should not arise from normal use. An inversion that reaches the report almost always signals a bulk edit or a data migration that wrote timestamps directly, and the flagged rows are the exact list to reconcile.
+
+For the neighboring critical checks, see the [instance collision](/blog/what-is-an-instance-collision) and [over-utilization](/blog/what-is-an-over-utilization-check) definitions. For the full validation catalog and how to read the report, see [what the EDGEBIC anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for) and the [schedule diagnostics overview](/blog/edgebic-schedule-diagnostics-explained).
+
+One practical habit prevents most inversions from ever reaching the report: log the run hours when closing a step, not just the end time. When hours accompany the close-out, the system has a real duration to anchor the end against, and the same-day snap has the information it needs. A bare "mark complete" with no hours is the pattern most likely to produce a reversed pair, so the small discipline of entering hours at close-out pays off directly in cleaner actual dates.
+
+A plan with no inversions is a plan where every recorded minute runs the right direction. It is the most basic promise a schedule can make, and the inversion check is how you confirm the shop floor's real timestamps kept it.

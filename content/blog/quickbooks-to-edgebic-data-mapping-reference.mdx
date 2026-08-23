@@ -1,0 +1,177 @@
+---
+title: "QuickBooks to EDGEBIC: The Data Mapping Reference"
+description: "QuickBooks data export scheduling field by field: map items and open orders into EDGEBIC masks, build the routing model once, with conversions and upsert rules."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - QuickBooks data export scheduling
+  - QuickBooks field mapping scheduling
+  - QuickBooks item export
+  - import mask field reference
+  - QuickBooks order export
+  - ERP data mapping scheduling
+targetPhrase: "QuickBooks data export scheduling"
+wordCount: 1930
+readingTime: 10
+faqQuestions:
+  - question: "Which columns must a QuickBooks export contain before EDGEBIC will import it?"
+    answer: "Each entity type has a short mandatory list and everything else is optional. Products need a product id. Orders need product, quantity, and a job date. If you also build routings from a spreadsheet, they need end product, step name, an operation flag, and hours required. Work centers need a work center id. If a mandatory field is unmapped in the mask, the run aborts before reading a single row."
+  - question: "QuickBooks has no work centers or routings. Where does that data come from?"
+    answer: "You build it once inside EDGEBIC, because QuickBooks is an accounting system rather than a manufacturing one. Work centers are typed in or loaded from a small spreadsheet, and routings are drawn in the graphical designer or imported from a routing spreadsheet you write. After that one-time build, every QuickBooks order for that item reuses its routing automatically, so the effort does not repeat."
+  - question: "In what order should QuickBooks data be loaded?"
+    answer: "Dependency order: work centers first, then routings, then items, then open orders, then optional confirmations. Routings reference both items and work centers, and orders reference items, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but a record created that way carries only the name it was given."
+  - question: "Do my QuickBooks item costs and prices need to match anything in EDGEBIC?"
+    answer: "No. Cost and price columns are optional and carried only for visibility and cost rollups. EDGEBIC schedules on time and capacity, not money, so a missing price never blocks a schedule. If you do map unit price, blank cells preserve the existing value on an update run, so a narrow refresh file can update prices without touching anything else."
+qaQuestions:
+  - question: "We keep our bill of materials on assembly items inside QuickBooks Enterprise. Can EDGEBIC use that as the routing?"
+    answer: "Not directly, because a QuickBooks bill of materials lists the components an assembly consumes, while a routing describes the operations that build it: which work center, in what sequence, for how many hours per unit, with how much setup. Those are different questions. You can still use the QuickBooks bill of materials as a checklist while you build the routing, and you can carry the component items into EDGEBIC as material rows on the routing (an operation flag of false marks a row as a component rather than an operation). But the operation sequence and the times are new data you enter once. The upside is that once entered, the routing is richer than anything QuickBooks held, and it drives finite capacity dates the accounting system could never produce."
+  - question: "Our open sales order report exports one date per line. Is that the due date or the start date to EDGEBIC?"
+    answer: "You decide, once, on the mask. The order import has two options for a single-date export: one treats the imported date as the job date (release or start), the other derives the job date backward from the due date. Pick the one that matches how your QuickBooks report is built and save it with the mask, and every future order file reads the same way. If you can add a second date column to the report, map both (job date and due date) and the ambiguity disappears entirely. Backward date logic is the same mechanism described in [forward versus backward scheduling](/blog/forward-vs-backward-scheduling)."
+---
+
+**Mapping QuickBooks data into EDGEBIC is a column-mapping exercise rather than a development project: you export items and open orders to Excel or CSV, drag each source column heading onto the matching EDGEBIC field once, and save it as a reusable import mask.** Because QuickBooks holds no work centers or routings, that manufacturing layer is built once inside EDGEBIC. This reference lists what maps to what, which columns are mandatory, how unit conversion and blank cells behave, and what every row outcome means when a run finishes.
+
+EDGEBIC by User Solutions integrates with QuickBooks through those masks rather than a certified connector, so nothing is installed inside the company file. If you have not read the end-to-end version, start with the [complete QuickBooks integration guide](/blog/edgebic-quickbooks-integration-guide). This post is the lookup table you keep open while building masks.
+
+## The load order
+
+Import in dependency order. Later files reference records that earlier files created. For QuickBooks the twist is that the first two entities are built in EDGEBIC rather than exported.
+
+| # | Source | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Built in EDGEBIC | Workcenter | Nothing |
+| 2 | Built in EDGEBIC | BOR (bill of routing) | Items and work centers |
+| 3 | QuickBooks items | Product | Nothing |
+| 4 | QuickBooks open orders | SalesOrder | Items |
+| 5 | Floor confirmations (optional) | Actuals | Scheduled jobs |
+
+Two more entity types have no QuickBooks origin and are built from a spreadsheet you write: **Shift** (one row per shift with a start and end pair per weekday, a blank pair meaning the day is off) and **PlantHoliday** (closures by name and date). These define the calendar every date is computed against, so they deserve ten careful minutes.
+
+Auto-create is on by default, so a routing spreadsheet naming a work center that does not exist yet creates it on the fly. That is a useful safety net and a poor strategy: an auto-created work center has a name and nothing else, meaning one machine, no shift assignment, and no efficiency. Build the work centers properly first.
+
+## Items to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id` | Yes | The QuickBooks item name or number. Natural key, matched case-insensitively |
+| `Product_Name`, `Description` | | Descriptive text |
+| `UOM` | | Unit of measure |
+| `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Only the identifier is required. Everything else can arrive later through a second, narrower refresh file, because blank cells preserve existing values on an update run. Watch identifier formatting across exports: matching ignores case but not a size or revision suffix, so make every export render the identifier the same way.
+
+## Work centers to Workcenter
+
+QuickBooks has no work-center concept, so this file is one you write or type in. It carries capacity, which is where scheduling accuracy is won or lost.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. Routing steps match on it |
+| `Workcenter Name` | | Label on the Gantt and in reports |
+| `Number_Of_Instances` | | How many identical machines the center holds. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per routing step where present |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint so the engine can anchor around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts`, `Shift_Names` | | Calendar assignment |
+| `Pieces_Per_Hour` | | Rate-based capacity where the center is measured in output |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+`Number_Of_Instances` is the highest-value column on the page. A cell of four identical machines imported with one instance produces a plan roughly four times too long, and it fails quietly: nothing errors, the dates are simply wrong. Fill it deliberately for every multi-machine center. The arithmetic is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## Machine pools
+
+Planners think in pools of interchangeable machines, and EDGEBIC models that as a **work center group**. A routing step bound to a group re-evaluates every member on each reschedule, picks by strategy (earliest completion, primary first, or earliest start), and applies a per-member efficiency factor so a slower machine is chosen only when it still finishes first. Operations already started keep the machine they started on, because recorded work is never moved. Build the members as ordinary work centers, then create the group inside EDGEBIC and add them: see [how to create work center groups](/blog/how-to-create-work-center-groups-in-edgebic).
+
+## Routings to BOR
+
+You build this data once, either drawn in the designer or written as a spreadsheet with these columns.
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Item identifier this routing builds |
+| `Sub_Prod` | Yes | Work center id (operation row) or component item (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; chaining happens automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and transport time |
+| `Parallel_Op` | | Parent step's work center name for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent`, `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Applicable machine instances for this step |
+| `Fam_Dept` | | Department for auto-created work centers |
+
+`Op_Flag` is the field people get wrong first. True means "this row is an operation running on a work center". False means "this row is a component consumed at this point in the routing". If you carry your QuickBooks bill of materials in as component rows, they all take an operation flag of false.
+
+### Why the import takes two passes
+
+A routing cannot be written row by row, because step 10 must point at step 20 and step 20 does not exist yet. So the import runs in two passes. Pass one validates each row, resolves or creates the items and work centers it names, and buffers the row. Pass two groups the buffer by end product, sorts by sequence number, writes the steps, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished item. Check that visually after the first import: a routing missing its final link draws as a chain floating free of the item it builds.
+
+All of one item's steps must travel in one file, because a run wipes and recreates that item's steps on first reference. And re-importing is safe for running orders, because every scheduled job carries a frozen snapshot of the routing it was planned with.
+
+## Orders to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Item being built |
+| `Qty` | Yes | Order quantity |
+| `Job_Date` | Yes | Release or start date |
+| `Sales_Order(Ref#)` | | Order reference: shared references group into one sales order, jobs auto-number `{Ref}-{line}` |
+| `Job_Number` | | Your QuickBooks order number carried across |
+| `Due_Date`, `Order_Date`, `Priority` | | Promise, entry, and ranking |
+| `Customer_Name` | | Auto-created when missing |
+| `Unit_Price`, `User_Notes` | | Optional |
+
+Two mask options control the date logic when the export carries only one date: one treats the job date as the due date, the other derives the job date backward from the due date. Choose the one matching how your QuickBooks report is built, once, on the mask.
+
+## Confirmations to Actuals
+
+Job number, work center id, and actual date are mandatory. Hours and pieces are both optional, and either can be derived from the other using the operation's rate. A `Complete` column marks the operation finished, and an explicit start column overrides the default of using the earliest imported date. The import always overwrites the days a file carries, so re-running a corrected extract fixes the numbers rather than doubling them.
+
+## Conversions, blanks, and zeros
+
+| Situation | Behavior |
+|---|---|
+| Minutes in the source | Conversion factor `0.016667` on that mask column |
+| Seconds in the source | Conversion factor `0.000278` |
+| Hours quoted per 100 pieces | Conversion factor `0.01` |
+| Blank cell on an update | Existing value preserved |
+| Zero in a cell on an update | Zero is written: it is a value, not a blank |
+| Unmapped column | Ignored entirely |
+| Mandatory field unmapped | Run aborts before reading any row |
+| One bad row | Fails alone and the run continues, unless you choose strict mode |
+
+## Reading the outcomes
+
+Every row resolves to **Created**, **Updated**, **Reused**, or **Failed**. Reused is the default for a record that already exists, so a weekly item file of 3,000 rows reporting Created 8, Reused 2,992 is the desired result rather than a failure. When counts look wrong, the per-run log file carries one line per row with the exact reason for every failure.
+
+## What import cannot bring, and why it matters
+
+The settings that most differentiate a schedule have no source in QuickBooks at all: the sequence-dependent setup matrix, operator skills and certifications, work center group strategies, bottleneck anchoring, and lot streaming transfer batches. Those are configured once in EDGEBIC and then apply to every imported order afterwards. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) explains why one mask design serves every system.
+
+For the questions that come up before a project starts, see the [QuickBooks integration FAQ](/blog/edgebic-quickbooks-integration-faq). The [Fishbowl](/blog/fishbowl-to-edgebic-data-mapping-reference) and [Odoo](/blog/odoo-to-edgebic-data-mapping-reference) references show how the method changes when the ERP does carry routings, and the [ERP scheduling add-on page](/erp-scheduling-add-on) frames the category.
+
+<Accordion title="Which columns must a QuickBooks export contain before EDGEBIC will import it?">
+Each entity type has a short mandatory list and everything else is optional. Products need a product id. Orders need product, quantity, and a job date. If you also build routings from a spreadsheet, they need end product, step name, an operation flag, and hours required. Work centers need a work center id. If a mandatory field is unmapped in the mask, the run aborts before reading a single row.
+</Accordion>
+
+<Accordion title="QuickBooks has no work centers or routings. Where does that data come from?">
+You build it once inside EDGEBIC, because QuickBooks is an accounting system rather than a manufacturing one. Work centers are typed in or loaded from a small spreadsheet, and routings are drawn in the graphical designer or imported from a routing spreadsheet you write. After that one-time build, every QuickBooks order for that item reuses its routing automatically, so the effort does not repeat.
+</Accordion>
+
+<Accordion title="In what order should QuickBooks data be loaded?">
+Dependency order: work centers first, then routings, then items, then open orders, then optional confirmations. Routings reference both items and work centers, and orders reference items, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but a record created that way carries only the name it was given.
+</Accordion>
+
+<Accordion title="Do my QuickBooks item costs and prices need to match anything in EDGEBIC?">
+No. Cost and price columns are optional and carried only for visibility and cost rollups. EDGEBIC schedules on time and capacity, not money, so a missing price never blocks a schedule. If you do map unit price, blank cells preserve the existing value on an update run, so a narrow refresh file can update prices without touching anything else.
+</Accordion>

@@ -1,0 +1,89 @@
+---
+title: "A Job Shows Fewer Hours Than Its Routing Requires"
+description: "When a job's scheduled hours fall short of its routing math, the cause is usually partial-completion accounting or an alternate work center with a speed factor. How to read it."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job shows fewer hours than routing
+  - engine under-emit hours
+  - scheduled hours short of BOR
+  - partial completion hours
+  - alternate work center speed factor
+  - lost hours anomaly
+targetPhrase: "job shows fewer hours than routing"
+wordCount: 1350
+readingTime: 7
+faqQuestions:
+  - question: "Why does a job show fewer scheduled hours than its routing requires?"
+    answer: "The two common causes are partial completion and an alternate work center. On a partly finished job, logged actual hours are credited against the routing, so the remaining scheduled hours are the balance, not the full amount. On an alternate work center, a speed factor below one means the operation genuinely takes fewer hours there. Both are correct behavior; the shortfall reflects real accounting, not lost work."
+  - question: "What does the lost-hours check flag?"
+    answer: "The lost-hours check flags a schedule whose total allocated hours, plus any logged actuals, fall short of the routing's expected hours by more than half an hour. It is informational rather than a hard error, and it has built-in guards: completed operations are excluded because shop-floor actuals legitimately diverge, and the alternate work center's speed factor is applied so a faster machine is not falsely flagged."
+  - question: "Is an under-emit of hours a real problem or expected?"
+    answer: "Usually expected. A partially completed job carries the logged actuals as credit, so the remaining scheduled hours are the balance. An alternate work center with a speed factor below one takes fewer hours by design. The shortfall becomes worth investigating only when neither applies: the operation is fresh, ran on its primary machine, and still shows short. Then re-run scheduling and check the routing's per-unit hours and setup."
+qaQuestions:
+  - question: "A job that should take 40 hours only shows 25 scheduled. It is half done. Is something wrong?"
+    answer: "Almost certainly not. The operators have logged around 15 hours of actual work, and those actuals are credited against the routing, so the engine only schedules the remaining balance, which is the 25 you see. Add the logged actuals to the scheduled hours and you should land back near the routing's 40. This is how partial completion is meant to work: the plan shows what is left to do, not the original total. If the actuals plus scheduled hours do not add back up to the routing figure, then investigate."
+  - question: "One operation shows 20 hours where the routing says 40, and it is a fresh job. What would halve it?"
+    answer: "Check whether the operation ran on an alternate work center rather than its primary. Alternates carry a speed factor, and a factor of 0.5 means the machine does the work in half the time by design, which produces exactly this. Read the schedule row's work center: if it is an alternate with a sub-one factor, the 20 hours is correct. If it ran on the primary machine and still shows half, re-run scheduling and confirm the routing's per-unit hours and quantity, since a data slip there is the next suspect."
+---
+
+**A job whose scheduled hours fall short of its routing math is usually showing correct accounting, not lost work: on a partly finished job the logged actuals are credited against the routing, and on an alternate work center a speed factor below one genuinely reduces the hours.** The lost-hours check flags the shortfall as informational, with guards that exclude completed work and apply the alternate's factor. Real trouble only shows when neither cause applies.
+
+[EDGEBIC by User Solutions](/edgebic) compares each schedule's total allocated hours, plus any logged actuals, against the routing's expected hours (setup plus per-unit hours times quantity). When the allocation falls short by more than half an hour, the lost-hours check notes it. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), explains why the shortfall is usually expected and when it is worth a second look.
+
+## What "Fewer Hours Than the Routing" Means
+
+The routing says how long a job should take: setup time plus per-unit hours multiplied by the quantity. The lost-hours check adds up the hours actually scheduled for an operation, credits any actuals logged against it, and compares the total to that expected figure. A shortfall greater than half an hour is flagged. It is a warning-level, informational check, not a hard gate, because most shortfalls are legitimate.
+
+This is distinct from [hours that do not add up on a job](/blog/hours-do-not-add-up-on-a-job-edgebic), where two internal stores of the same number disagree. Here the total scheduled hours are simply less than the routing expects, and the question is why.
+
+## Cause 1: Partial Completion Credits Actuals
+
+When a job is partly finished, operators log actual hours as work happens. Those actuals are credited against the routing, so the engine only schedules the remaining balance. A 40-hour operation with 15 hours logged shows 25 scheduled, because 25 is what is left to do. The plan reflects remaining work, not the original total.
+
+**How to tell:** the operation has logged actuals, and the scheduled hours plus the actuals add back up to the routing figure.
+
+**Fix:** none needed; this is correct. To confirm, add the logged actuals to the scheduled hours and check the total against the routing. If they reconcile, the shortfall is just the balance remaining. See [how a scheduler preserves completed work](/blog/how-a-scheduler-preserves-completed-work) for how actuals and remaining work fit together.
+
+## Cause 2: An Alternate Work Center With a Speed Factor
+
+When an operation runs on an alternate work center rather than its primary, the alternate carries a speed factor. A factor below one means the machine does the work faster, so the operation genuinely takes fewer hours there. A factor of 0.5 halves the hours by design. The lost-hours check applies the alternate's factor precisely so a faster machine is not falsely flagged.
+
+**How to tell:** the schedule row's work center is an alternate, not the primary, and it carries a speed factor below one.
+
+**Fix:** none needed; the reduced hours are correct. If the alternate's factor is wrong, correct it in the routing's alternate configuration. See [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic).
+
+## Cause 3: A Genuine Shortfall Worth Investigating
+
+The shortfall is only worth chasing when neither guard applies: the operation is fresh (no actuals), ran on its primary machine (no factor), and still shows fewer hours than the routing. The most common source is a partial-completion accounting edge where a partly done day's planned hours were snapped down to the actuals and the remaining forward portion did not fully materialize.
+
+**How to tell:** the operation has no actuals, ran on its primary machine, and the total is still short of the routing.
+
+**Fix:** re-run scheduling for the job, which rebuilds the allocation from the routing. Then confirm the routing's per-unit hours, setup, and quantity are what you expect, since a data slip in those directly reduces the scheduled hours. If the shortfall persists on a clean, fresh job, capture the schedule from the anomaly report's Detail and raise it with support.
+
+## Confirming the Reconciliation
+
+Whichever cause applies, the reconciliation is the same arithmetic: scheduled hours plus logged actuals, adjusted for any alternate speed factor, should land within half an hour of the routing's expected hours. When they do, the shortfall is accounted for and there is nothing to fix.
+
+## Prevention
+
+- **Read actuals before alarm.** On any partly done job, add the logged actuals to the scheduled hours before concluding hours are missing. The plan is meant to show remaining work.
+- **Keep alternate factors honest.** A speed factor is a real productivity claim about a machine. Set it deliberately, because it directly scales the hours the engine books there.
+- **Re-run after routing edits.** If per-unit hours, setup, or quantity change, reschedule so the allocation reflects the new figures rather than the old plan.
+- **Treat the check as a signal, not a verdict.** The lost-hours check is informational. Use it to prompt the reconciliation above, not to assume every flagged job has lost work.
+
+<Accordion title="Why does a job show fewer scheduled hours than its routing requires?">
+The two common causes are partial completion and an alternate work center. On a partly finished job, logged actual hours are credited against the routing, so the remaining scheduled hours are the balance, not the full amount. On an alternate work center, a speed factor below one means the operation genuinely takes fewer hours there. Both are correct behavior; the shortfall reflects real accounting, not lost work.
+</Accordion>
+
+<Accordion title="What does the lost-hours check flag?">
+The lost-hours check flags a schedule whose total allocated hours, plus any logged actuals, fall short of the routing's expected hours by more than half an hour. It is informational rather than a hard error, and it has built-in guards: completed operations are excluded because shop-floor actuals legitimately diverge, and the alternate work center's speed factor is applied so a faster machine is not falsely flagged.
+</Accordion>
+
+<Accordion title="Is an under-emit of hours a real problem or expected?">
+Usually expected. A partially completed job carries the logged actuals as credit, so the remaining scheduled hours are the balance. An alternate work center with a speed factor below one takes fewer hours by design. The shortfall becomes worth investigating only when neither applies: the operation is fresh, ran on its primary machine, and still shows short. Then re-run scheduling and check the routing's per-unit hours and setup.
+</Accordion>

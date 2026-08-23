@@ -1,0 +1,139 @@
+---
+title: "From Empty Database to Shipped Order: EDGEBIC Worked Examples"
+description: "A production scheduling software walkthrough library: ten EDGEBIC scenarios from greenfield setup to breakdown recovery, each with real numbers."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - production scheduling software walkthrough
+  - EDGEBIC examples
+  - scheduling software tutorial scenarios
+  - finite capacity scheduling examples
+  - machine breakdown reschedule example
+  - lot streaming example
+  - TOC scheduling example
+targetPhrase: "production scheduling software walkthrough"
+wordCount: 3200
+readingTime: 16
+faqQuestions:
+  - question: "What is the best way to learn production scheduling software?"
+    answer: "Work through complete scenarios with real numbers rather than reading feature lists. A good production scheduling software walkthrough starts from concrete master data (shifts, work centers, routings), creates an order, runs the scheduler, and verifies every resulting date and hour by hand. The EDGEBIC worked examples follow exactly that pattern across ten scenarios, from empty database to breakdown recovery."
+  - question: "What scenarios do the EDGEBIC worked examples cover?"
+    answer: "Ten end-to-end scenarios: greenfield plant setup, quote-to-ship order lifecycle, make-to-stock replenishment, machine breakdown rescheduling, synchronized multi-spindle scheduling, Theory of Constraints anchor scheduling, paint shop changeover sequencing, consume-from-stock inventory netting, partial completion rescheduling, and lot streaming overlap. A capstone then runs two orders through everything at once."
+  - question: "Do I need to follow the worked examples in order?"
+    answer: "No, each walkthrough is self-contained with its own master data, but the order helps. Start with greenfield setup if you are new, then quote-to-ship for the daily lifecycle. The disruption pair (breakdown and partial completion) matters most for shops with work in progress, and the advanced four (parallel, anchor, setup matrix, lot streaming) can be read as your plant needs each capability."
+  - question: "Are the numbers in the walkthroughs real scheduling engine output?"
+    answer: "Yes. Every walkthrough is grounded in EDGEBIC's documented engine behavior: the capacity formulas, the dependency rules, and the reschedule logic. Each scenario states its master data (shift hours, instances, utilization, hours per unit, setup times), then traces the engine's placements so you can verify each date with arithmetic. Nothing is illustrative hand-waving."
+qaQuestions:
+  - question: "My shop is 6 machines and 2 people in the office. Which two walkthroughs should we actually sit down and replicate?"
+    answer: "Replicate greenfield setup first, with your own data instead of the example's: your shifts, your 6 machines, one real product with a 3-step routing, one real order. That gets you a first schedule you can sanity-check against your own expectations in under a day. Then replicate the partial completion reschedule, because it teaches the habit that keeps a small shop's schedule trustworthy: log actuals, reschedule the one job, watch completed work stay put while the remainder moves. Everything else can wait until the plant needs the specific capability."
+  - question: "We quoted 20 custom brackets at a 30% markup. How do I know the promised date will not fall apart after we win the order?"
+    answer: "Because the quote simulation and the live scheduler are the same engine against the same committed capacity. In the quote-to-ship walkthrough, 20 units run through a 3-step routing: 5.5 hours of sawing, 31 hours of milling split across 2 machines, 4 hours of inspection, and the simulation prices labor per step from each work center's hourly rate. When the customer accepts and the quote converts to an order, the schedule reproduces the simulated dates because nothing about the calculation changed. The date only moves if your capacity picture moved first."
+---
+
+**The fastest way to evaluate or learn a production scheduling system is a walkthrough: concrete master data in, every engine decision traced, every resulting date verified by hand.** This page is the index to ten such walkthroughs for EDGEBIC by User Solutions, each one a complete scenario from setup to result, each grounded in the engine's real documented behavior. Together they cover the whole operational life of a plant: the first schedule ever run, the daily quote-to-ship lifecycle, inventory replenishment, breakdowns, partial completions, and the four advanced capabilities that separate a scheduler from a to-do list.
+
+Read this page to pick your starting point; read the linked walkthroughs to do the work. If you want the conceptual foundation first, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) and the [scheduling engine deep dive](/blog/edgebic-scheduling-engine-guide) are the companion pieces, and for the generic discipline behind all of it, see [what production scheduling is](/blog/what-is-production-scheduling).
+
+## How to Read These Walkthroughs
+
+Every scenario follows the same discipline. It starts with a full cast of master data: shift hours, work center instances, utilization percentages, routing steps with hours per unit and setup times. It then introduces demand (an order, a quote, a reorder-point breach), walks the engine's decisions one at a time, and shows the persisted result: real start dates, real end dates, real hour allocations you can recompute with a calculator. Where a scenario has variations (a different mode, a different configuration), it runs them side by side.
+
+That verifiability is the point. A schedule you cannot check is a schedule you cannot trust, and the walkthroughs are built so you can check everything. It also makes them double as acceptance tests: treat the scenarios as implementation milestones by replicating each one against your own database and signing off when your numbers reconcile the same way the example's do. When your greenfield replica schedules correctly and your breakdown replica preserves actuals correctly, you have not just learned the software; you have validated your configuration of it.
+
+## Foundations: Your First Schedule
+
+### 1. Greenfield Plant Setup
+
+**[The greenfield setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough)** starts where every implementation starts: a completely empty database. Acme Bracket Co. builds its world from nothing: a unit of measure, a customer, a finished good (Widget A) and its raw material, three work centers (Cutting, Milling, Quality Control), one plant-wide day shift, and a holiday. The details are chosen to teach the capacity arithmetic that everything else rests on. The day shift runs 08:00 to 16:00 with a one-hour break, netting 7 working hours. Milling has 2 instances and runs at 80% utilization, so its effective capacity is 2 × 7 × 0.80 per shift, and you watch that number govern where the first order's hours land. By the end there is a committed schedule on the Gantt, and, more importantly, you can explain every bar on it: why milling split across two machines, why nothing was booked on the holiday, and why quality control started when it did. The scenario also slips in two lessons that pay off later: a plant holiday sitting mid-week shows you how the calendar interrupts a bar without corrupting its hours, and the raw-material step shows how a purchased component's lead time shifts its bar backward so material is ordered before the machines need it. If you only ever do one walkthrough, do this one with your own plant's numbers substituted in.
+
+### 2. Quote to Ship
+
+**[The quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic)** follows a single custom order through its entire life: request for quote, simulation, customer acceptance, conversion to a manufacturing order, scheduling, shop-floor actuals through the kiosk, completion, and the on-time delivery report at the end. Hartmann Precision asks for 20 custom titanium brackets. The three-step routing prices itself from the master data: 5.5 hours of sawing at $45 per hour, 31 hours of milling at $85 (split across 2 machines, so roughly 15.5 hours of wall-clock time), and 4 hours of inspection at $35. A 30% markup produces the quote; the simulation, which runs the identical engine against real committed capacity without writing anything, produces the promise date. The satisfying part is the second half: the accepted quote converts to an order, the live schedule reproduces the simulated dates (because simulation and live scheduling are the same engine reading the same committed capacity), operators punch actuals at the kiosk as the work runs, and the delivery report closes the loop against the original promise. Along the way you see the small mechanics that make the lifecycle trustworthy: the 2-hour queue time on the milling step consumed shift-aware, the two mill instances finishing together under load balancing, and the pricing rollup traceable to each work center's hourly rate. This is the daily lifecycle of a make-to-order shop, compressed into one traceable story.
+
+## Planning and Inventory
+
+### 3. Make-to-Stock Replenishment
+
+**[The replenishment walkthrough](/blog/make-to-stock-replenishment-walkthrough-edgebic)** covers the other half of manufacturing: products you build for the shelf, not the order. A standard bracket sits at 60 on hand with a safety stock of 50, a reorder point of 80, and a reorder quantity of 200. Weekly forecasts of 40 and 55 units project the balance below the reorder point, EDGEBIC suggests a replenishment, and the planner firms it into a build-to-stock manufacturing order. The build itself is almost an anticlimax, which is the lesson: 200 pieces at 0.02 hours each plus half an hour of setup is 4.5 hours, comfortably inside one shift on a two-instance press. The walkthrough's real subject is the bookkeeping around the build: how the projected balance walks week by week as forecast demand consumes it, the exact moment it crosses the reorder point and triggers the suggestion, how firming converts a suggestion into a real order the scheduler will place, and how completion posts a +200 receipt to the inventory ledger, the auditable trail from which the on-hand balance is always derived. If you carry stocked products, this cycle (project, breach, suggest, firm, build, receive) is the loop you will run weekly, and seeing it once with clean numbers makes the screens self-explanatory afterward.
+
+### 4. Consume-from-Stock Netting
+
+**[The consume-from-stock walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic)** answers a deceptively simple question: if you have 80 sealed kits on the shelf and orders arrive for 60 and 30, how much do you actually build? Three manufacturing orders for the same product share the run: one build-to-stock producer of 50 units and two consumers needing 60 and 30. You watch the engine net each order against availability, decide which consumer's demand is satisfied from the shelf and which triggers real machine time, and sequence the producer ahead of consumers in the same run so the stock it will create is visible to the orders that want it. The scenario runs the netting under two policies (a point-in-time snapshot of on-hand, and a time-phased view where the producer's receipt lands on the timeline and consumers draw down what genuinely remains) and shows exactly where the two give different answers, including the case where the second consumer would get a free ride under the simpler policy. It also shows the ledger side: every satisfied-from-stock decision corresponds to a real inventory issue, so the shelf and the schedule agree afterward. If your shop mixes stocked and custom work, this is the walkthrough that explains why EDGEBIC does not blindly build what a spreadsheet would.
+
+## Disruptions: When the Plan Meets Monday
+
+### 5. Machine Breakdown Reschedule
+
+**[The breakdown walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic)** is the trust-builder. A bearing-housing job runs four sequential steps: 5.5 hours of sawing, 31 hours of milling, 10.5 hours of grinding, 2 hours of inspection. Two steps are complete, with operator actuals logged, when a machine goes down mid-job. The response is procedural, not heroic: the breakdown is recorded as a work-center holiday that zeroes the affected machine's capacity for the outage window, and the job is rescheduled. The two completed steps do not move; their actuals are immutable history. The remaining steps cascade forward to the first available capacity after the outage, and the walkthrough verifies the result down to the byte: nothing about the operator's logged hours changed. This is the scenario to show a skeptical supervisor, because it demonstrates the promise that makes live scheduling adoptable: the system never rewrites what the floor already did.
+
+### 6. Partial Completion Reschedule
+
+**[The partial completion walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic)** handles the subtler everyday disruption: work that stopped in the middle. An operator logs 4 hours against an operation planned for 19.2 hours (100 pieces at 0.192 hours each) and presses Done for the day. The planner reschedules. The engine locks the 4 logged hours as history, computes the remaining 15.2 hours, and forward-schedules only that remainder from the resume point, with downstream steps cascading behind it. The walkthrough also shows the housekeeping that keeps the database clean while this happens: the split between historical and forward work collapses back into a single tidy schedule row, and the built-in integrity checks that guard against duplicated hours all stay green. Small scenario, big habit: this is the log-actuals-then-reschedule rhythm that keeps a schedule true all week long.
+
+## Advanced Engine Capabilities
+
+### 7. Synchronized Multi-Spindle (Dependent Parallel)
+
+**[The multi-spindle walkthrough](/blog/synchronized-multi-spindle-scheduling-example-edgebic)** models machines that physically cannot work independently: three drill heads ganged on one gantry, drilling 300 precision holes through a structural frame in lockstep. All three must start at the same instant and finish together. The engine schedules the parent head by finding real finite capacity, then mirrors that schedule verbatim onto the two dependent heads: same start, same end, hours scaled by each head's factor, no separate capacity search for the mirrors. The walkthrough explains why the mirrors deliberately bypass capacity checking (they are the same physical event as the parent, so a second search would be double-counting reality), how each mirror's hours are scaled by its own factor so a head doing lighter duty is costed honestly, and what all of it means for reading the Gantt, where one operation legitimately appears on three machines at once. It also covers the prerequisite that trips people in setup: dependent machines need a common shift, because an event that must happen simultaneously cannot span calendars that never overlap. If your plant has ganged spindles, synchronized welding cells, or any all-or-nothing multi-machine operation, this is its chapter.
+
+### 8. TOC Bottleneck Anchor Scheduling
+
+**[The anchor scheduling walkthrough](/blog/toc-bottleneck-anchor-scheduling-example-edgebic)** applies the Theory of Constraints to a four-step turbine-blade bracket routing whose middle step runs on the plant's 5-axis CNC: one instance, slower and more expensive than everything around it. The planner pins the CNC step to a target start date. The engine validates the pin by computing a load factor for every work center in the routing (demand hours divided by daily capacity) and confirming the CNC is genuinely the tightest resource, then splits the routing around the anchor. Upstream steps are scheduled backward from the pin so cut material arrives just in time; the anchor itself is scheduled at maximum priority so no other job can steal its slot; downstream steps run forward from the anchor's end. You see the three Theory of Constraints buffer zones laid out in concrete date arithmetic: a constraint buffer protecting the anchor from upstream variation, a feeding buffer on the step that directly feeds it, and a shipping buffer protecting the due date downstream, each sized from the routing's actual work content when buffer calculation is enabled. The walkthrough also shows the tight, unbuffered variant, so you can judge the protection-versus-lead-time trade for your own plant. Pair it with the general primer on [finding your bottleneck](/blog/production-bottleneck-identification).
+
+### 9. Paint Shop Changeover Sequencing
+
+**[The paint shop walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic)** runs the same six-job queue (white, black, white, red, black, white) through one paint booth three times. Scenario A uses a flat 30-minute setup for every job, the way most systems model changeover, and produces a schedule that claims the day fits while the floor's real changeovers (an hour light-to-dark, four hours dark-to-light) blow it apart. Scenario B loads the sequence-dependent setup matrix and keeps the due-date order: the plan becomes honest, and the honest plan does not fit the shift. Scenario C re-sequences the queue like-to-like, lights before darks, and the same six jobs collapse back into the day with room to spare. The three-scenario structure teaches the two distinct wins of a setup matrix: first honesty, then efficiency. The [results guide](/blog/edgebic-results-guide) turns this scenario's arithmetic into the business case.
+
+### 10. Lot Streaming Overlap
+
+**[The lot streaming walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic)** takes a 1,000-piece cut-then-drill order and runs it twice. Without streaming, drilling waits for all 1,000 pieces to be cut: 10.5 hours of cutting, then 20.5 hours of drilling, strictly in series. With streaming, the drill starts once the first transfer batch of pieces is ready, and the two operations overlap for most of their lives. The walkthrough runs both of EDGEBIC's models side by side: the piece-count transfer batch (start downstream when N pieces have accumulated, the industry-standard model) and the start-to-start lag in hours (downstream starts a fixed time after upstream starts, the right model for continuous processes where pieces are meaningless). You watch the makespan compress and learn precisely when each model applies, including the selection rule the engine uses on its own: a transfer batch on a step routed to a continuous-process work center is ignored in favor of the time lag, because pieces do not exist on a paint line. The walkthrough also covers the supporting cast: the transfer delay that models the forklift trip after a batch is ready, and what happens to streaming timing when actuals arrive mid-lot. The companion concept post, [what is a transfer batch](/blog/what-is-a-transfer-batch), covers the theory.
+
+## The Capstone: Everything at Once
+
+The library closes with a capstone that is deliberately excessive: two orders (one custom make-to-order welded frame, one make-to-stock bracket replenishment) travel through every layer in a single continuous story. The frame's routing crosses a laser cell, a press brake, a bottleneck heat-treat furnace running day and night shifts, a synchronized pair of weld cells, and finishing, with a setup matrix on the laser, a transfer batch on the press brake, an anchor on the furnace, and a plant holiday in the middle of the week. The bracket replenishment shares the laser, so the two orders compete for real capacity. Then a machine breaks down mid-execution, actuals arrive from the kiosk, a partial-completion reschedule fires, the orders complete, inventory receipts post, and the closing reports reconcile every number back to the first table. The capstone exists to prove one thing: the capabilities are not demos that work in isolation; they compose. The frame order alone exercises a setup family transition on the shared laser (light steel to heavy fabrication and back, with the matrix charging each direction differently), a 50-piece transfer batch feeding the brake while the laser still cuts, and a furnace anchor that the weld cells subordinate to. If you are building an internal training curriculum, the capstone is the final exam: a planner who can narrate it, decision by decision, is ready to run the real plant's schedule.
+
+## What the Walkthroughs Deliberately Teach
+
+Beneath the individual scenarios, the library is built to instill four habits that separate shops that trust their schedule from shops that print it and ignore it.
+
+**Verify with arithmetic, not vibes.** Every scenario's dates can be recomputed from the capacity formula (shift hours times instances times utilization) and the dependency rule (a step starts at its latest predecessor's finish). Planners who have done that recomputation once stop treating the Gantt as an oracle and start treating it as a ledger, which is what makes symptom triage fast when something ever does look off. The [troubleshooting guide](/blog/edgebic-troubleshooting-guide) leans on exactly this skill.
+
+**Respect the boundary between history and plan.** Three of the ten scenarios (breakdown, partial completion, and the capstone's disruption act) hammer the same invariant from different angles: logged actuals are immutable, and only future work moves. Internalizing that boundary is what makes daily rescheduling safe instead of scary.
+
+**Configure the constraint you actually have.** The advanced four (parallel, anchor, setup matrix, lot streaming) are deliberately separate scenarios rather than one mega-example, because most plants need one or two of them, not all four. The walkthroughs teach you to recognize which one your floor is quietly demanding.
+
+**Let simulation carry the risk.** Quote-to-ship and consume-from-stock both showcase decisions rehearsed in memory before anything touches the live schedule. The habit generalizes: when in doubt, simulate, read, then commit.
+
+## Choosing Your Path
+
+| If you are... | Start with | Then |
+|---|---|---|
+| Evaluating EDGEBIC | Greenfield setup | Quote to ship |
+| A make-to-order shop | Quote to ship | Partial completion, paint shop |
+| Carrying stocked products | Replenishment | Consume-from-stock |
+| Living with a known bottleneck | TOC anchor | Lot streaming |
+| Recovering from chaos weekly | Breakdown | Partial completion |
+
+Every walkthrough is self-contained, so there is no wrong door. A reasonable full curriculum for a new planner is two scenarios a week for five weeks, in the table's order for your shop type, with the capstone as week six; a reasonable evaluation pass for a decision-maker is greenfield plus your industry's one advanced scenario, which takes an afternoon. And when a walkthrough shows you a capability your plant needs, the [how-to library](/blog/edgebic-how-to-hub) has the corresponding setup tasks, step by step.
+
+The best walkthrough, though, is the one that uses your data. [Bring an export of your products, work centers, and routings to a demo](/edgebic), and run the greenfield scenario against your own plant. The first honest schedule of your own shop beats all ten of these.
+
+<Accordion title="What is the best way to learn production scheduling software?">
+Work through complete scenarios with real numbers rather than reading feature lists. A good production scheduling software walkthrough starts from concrete master data (shifts, work centers, routings), creates an order, runs the scheduler, and verifies every resulting date and hour by hand. The EDGEBIC worked examples follow exactly that pattern across ten scenarios, from empty database to breakdown recovery.
+</Accordion>
+
+<Accordion title="What scenarios do the EDGEBIC worked examples cover?">
+Ten end-to-end scenarios: greenfield plant setup, quote-to-ship order lifecycle, make-to-stock replenishment, machine breakdown rescheduling, synchronized multi-spindle scheduling, Theory of Constraints anchor scheduling, paint shop changeover sequencing, consume-from-stock inventory netting, partial completion rescheduling, and lot streaming overlap. A capstone then runs two orders through everything at once.
+</Accordion>
+
+<Accordion title="Do I need to follow the worked examples in order?">
+No, each walkthrough is self-contained with its own master data, but the order helps. Start with greenfield setup if you are new, then quote-to-ship for the daily lifecycle. The disruption pair (breakdown and partial completion) matters most for shops with work in progress, and the advanced four (parallel, anchor, setup matrix, lot streaming) can be read as your plant needs each capability.
+</Accordion>
+
+<Accordion title="Are the numbers in the walkthroughs real scheduling engine output?">
+Yes. Every walkthrough is grounded in EDGEBIC's documented engine behavior: the capacity formulas, the dependency rules, and the reschedule logic. Each scenario states its master data (shift hours, instances, utilization, hours per unit, setup times), then traces the engine's placements so you can verify each date with arithmetic. Nothing is illustrative hand-waving.
+</Accordion>

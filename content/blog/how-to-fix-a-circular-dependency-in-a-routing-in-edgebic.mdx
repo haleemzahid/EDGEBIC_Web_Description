@@ -1,0 +1,91 @@
+---
+title: "How to Fix a Circular Dependency in a Routing in EDGEBIC"
+description: "A circular dependency stops a routing from scheduling at all. How to find the loop in your step links in EDGEBIC, break it safely, and confirm the fix."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - circular dependency routing
+  - routing loop error
+  - bill of routing dependency
+  - scheduling failure routing
+  - fix routing step links
+  - step sequence error
+targetPhrase: "circular dependency in a routing"
+wordCount: 1225
+readingTime: 6
+faqQuestions:
+  - question: "What causes a circular dependency error in a routing?"
+    answer: "A circular dependency happens when the next-step links in a routing form a loop, so following them never reaches an end. Step 10 points to 20, 20 points to 30, and 30 points back to 10. The scheduler orders operations by walking those links, and a loop means no operation can ever be first. The single most common form is a step whose next-step link points at itself after a copy or a drag in the designer."
+  - question: "Why does the whole job fail instead of just one step?"
+    answer: "Because the scheduler orders the entire routing as one graph before it schedules any operation. It cannot decide which step runs first while a loop exists, so no step is placed and the job produces nothing rather than a partial plan. This is deliberate: a half-ordered routing would put operations in the wrong sequence on the shop floor, which is worse than a clear failure message."
+  - question: "Will breaking the loop change the order my operations run in?"
+    answer: "It changes only the link you edit. Clearing a next-step link on the step that closes the loop removes that one arrow and leaves every other link untouched, so the rest of the sequence is preserved. If the step genuinely needs a successor, point it at the correct downstream step instead of clearing it. Re-run the schedule and read the operation order on the Gantt to confirm."
+qaQuestions:
+  - question: "I copied a routing to a new product and now every job on that product fails. Where do I look first?"
+    answer: "Look at the copied step links before anything else. Copying a routing carries the link structure with it, and if the source routing already had a loop that nobody had noticed, you have now duplicated it onto a second product. Open the new routing, list the steps with their sequence numbers and their next-step values, and walk the chain from the lowest sequence number. The loop is usually one step that still points at a step number from the original product's routing rather than its own equivalent. Fix it on the copy, then go back and check the source, because if the source scheduled successfully the loop may have been introduced by the copy itself."
+  - question: "The failure names a self-referencing step. Is that different from a longer loop?"
+    answer: "Only in how fast you find it. A self-reference is a loop of length one: the step points at itself, so the scheduler can never place it after anything. It is the most common form because it happens with a single mis-click when linking two nodes in the designer, and it is also the easiest to spot because you do not need to trace a chain at all. Compare each step's own identifier with its next-step value and the offending row is obvious. Longer loops of three or four steps take a real trace, but the fix is identical: clear or repoint one link in the cycle."
+---
+
+**A circular dependency in EDGEBIC by User Solutions means the next-step links in a routing form a closed loop, so the scheduler cannot decide which operation runs first and the job fails to schedule at all.** The fix is always the same: find the loop, break exactly one link in it, and re-run. This walks through the trace.
+
+Every task in this library is mapped on the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub). For background on why operation order matters so much in a job shop, see [job shop scheduling challenges](/blog/job-shop-scheduling-challenges).
+
+## Before You Start
+
+- You have the failure message in front of you, showing the job number and product name of the routing that looped.
+- You have edit rights on routings, since the fix is a routing change and not a job change.
+- Nobody else is editing the same routing. Two people repointing links at once produces a second loop.
+
+## Step 1: Note the Product, Not the Job
+
+The failure names a job because that is what you tried to schedule, but the loop lives in the routing that job uses. Every other job on the same product will fail identically until you fix the routing once.
+
+Write down the product name from the failure detail and close the dialog.
+
+## Step 2: Open the Routing and List the Links
+
+Open the routing for that product. What you need is one flat list with two columns per step: the step's sequence number and its next-step link. Both are visible in the routing grid, and the routing designer shows the same information as arrows between nodes.
+
+The designer view is faster for a small routing because a loop is visually obvious: arrows that curl back on themselves rather than flowing left to right. For a routing with twenty steps, the grid is faster because you can read the links as a table.
+
+## Step 3: Walk the Chain
+
+Start at the lowest sequence number and follow its next-step link. Then follow that step's link. Keep going and one of two things happens.
+
+- **You reach a step with no next-step link.** That branch ends correctly. Go back and start from any step you have not yet visited.
+- **You reach a step you have already visited.** You have found the loop. Every step between the first and second visit is part of the cycle.
+
+The shortest and most common cycle is a step whose next-step link points at itself. Scanning for that single case first often ends the search in seconds.
+
+## Step 4: Break Exactly One Link
+
+Pick one step inside the cycle and change its next-step link. There are two valid moves.
+
+1. **Clear it.** If that step is genuinely the last operation on its branch, clearing the link is correct and finishes the routing properly.
+2. **Repoint it.** If the step really does feed a later operation, point it at that operation instead of at the earlier one. This is the right move when the loop was created by linking backward by mistake.
+
+Change one link only. Clearing several at once removes real sequence information and leaves you with operations the scheduler is free to run in any order, which produces a plan that looks fine and cannot be built.
+
+## Step 5: Save and Re-Run
+
+Save the routing, then schedule the job again. Detail on how routing steps get linked in the first place is in [how to connect two steps in the routing designer](/blog/how-to-connect-two-steps-in-the-routing-designer-in-edgebic), and the sequence rules are covered in [how to reorder routing steps](/blog/how-to-reorder-routing-steps-in-edgebic).
+
+## How to Check It Worked
+
+- **The job schedules.** No failure dialog appears and the job lands on the plan.
+- **The operation order is right.** Open the job on the Gantt and read the operations left to right. They should match the order the shop actually works them. A job that schedules but runs the deburr before the mill means you broke the wrong link.
+- **Sibling jobs schedule too.** Every job on that product used the same routing, so they should all clear together. If one still fails, it is using a different routing version and needs its own trace.
+
+## Common Mistakes
+
+- **Fixing the job instead of the routing.** Changing dates, quantity, or priority on the order has no effect. The loop is structural.
+- **Clearing every next-step link to make the error go away.** This does clear the error, and it also throws away the sequence. Operations that must follow each other are now free to run in parallel.
+- **Assuming the newest step caused it.** A loop needs two links to exist. The step you just added may be innocent and the one you linked it to may be the problem.
+- **Not re-checking the source routing after a copy.** If the loop arrived by copy, the original may carry it too and will fail the next time anyone schedules it.
+
+See how EDGEBIC orders and schedules complete routings on the [EDGEBIC product page](/edgebic).

@@ -1,0 +1,156 @@
+---
+title: "Why a Stable Schedule Beats a Perfect One"
+description: "Production schedule stability in EDGEBIC comes from six mechanisms: immutable actuals, frozen routings, mode blast radius, machine locks and a stability goal."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - production schedule stability
+  - schedule nervousness control
+  - reschedule blast radius
+  - stability optimization goal
+  - frozen routing protection
+  - moved operation count
+targetPhrase: "production schedule stability"
+wordCount: 1925
+readingTime: 10
+faqQuestions:
+  - question: "What actually keeps an EDGEBIC schedule stable between runs?"
+    answer: "Six mechanisms working together. Completed work is never moved. Each job carries the routing it was scheduled with. The scheduling mode limits which jobs a run may touch at all. A machine carrying in-progress actuals is locked against reassignment. The optimizer carries a goal that ranks fewest changes first. And optimizer proposals write nothing until a planner accepts them."
+  - question: "Does rescheduling move work that has already been done?"
+    answer: "No. Completed operations are preserved with their actual dates and re-emitted unchanged, and only remaining work is re-placed. That holds on every reschedule path and at every level of a multi-level routing. An operation with both an actual start and an actual end is historical fact as far as the engine is concerned, and it is never recomputed."
+  - question: "Which scheduling mode changes the least?"
+    answer: "Incremental new, which touches only jobs that have no schedule at all and leaves everything else exactly as it was. Then incremental all, which re-places unstarted jobs but skips anything with shop-floor activity. The smart incremental mode additionally preserves any job whose earliest operation starts within a near-term window. Full reschedule changes the most, because it clears every reservation and rebuilds from scratch."
+  - question: "What does the fewest-changes optimizer goal measure?"
+    answer: "Three numbers against the committed plan: the sum of absolute start-time differences across matched operations, how many operations moved at all, and how many were matched. A move under one minute is treated as no move. The goal ranks those figures ahead of tardiness and makespan, so it will prefer a plan that keeps the floor's week intact even when a more disruptive plan would finish sooner."
+  - question: "Can an optimizer run damage the current schedule?"
+    answer: "It cannot write anything without an explicit accept. The run computes a complete alternative plan in memory, shows the comparison, and holds the result under a token. Accepting re-checks a fingerprint of the current data first, so if a colleague rescheduled or actuals landed while you were reading the comparison, the accept is refused rather than silently overwriting newer work."
+qaQuestions:
+  - question: "Our planners stopped trusting the live schedule and print a PDF each morning. Where do we start?"
+    answer: "Start with mode discipline, because it is the cheapest change. Move the daily run to the mode that only picks up new jobs, and reserve a full reschedule for a scheduled weekly slot everybody knows about. Then check whether target start dates have been set casually, since each one converts a job to a pinned mode with different behavior. Those two changes remove most day-to-day churn before you touch a single optimizer setting."
+  - question: "We ran the optimizer mid-week and it moved forty operations. How do we get the benefit without the disruption?"
+    answer: "Switch the goal to fewest changes and run it again. That goal ranks stability ahead of finish dates, so it looks for the least disruptive improvement rather than the fastest plan, and the comparison screen shows exactly how many operations move and by how much on average before you accept anything. If the resulting improvement is too small to be worth any disruption, discard it and the database is untouched."
+---
+
+**Schedule stability in [EDGEBIC by User Solutions](/edgebic) is not a setting: it is the product of six mechanisms, and you get to choose how hard each one works.** Completed work is immutable, routings are frozen per job, the scheduling mode caps what a run may touch, in-progress machines are locked, one optimizer goal ranks fewest changes first, and proposals write nothing until accepted.
+
+The general case for stability over optimality, including time fences and the behavioral side, is covered in [schedule nervousness](/blog/schedule-nervousness-manufacturing). This post is about the levers.
+
+## Mechanism One: Completed Work Never Moves
+
+An operation carrying both an actual start and an actual end is historical fact. Every reschedule preserves those rows with their real dates and re-places only what remains. That holds on every path, at every level of a multi-level routing, and regardless of what changed in the master data since.
+
+An in-progress operation, with a start but no end, is semi-immutable: it keeps its machine, its instance, and where applicable its operator, while its remaining hours can be re-placed as the gap between what was planned and what has been logged.
+
+This is the foundation the other five mechanisms sit on. A planner who has watched finished work get replanned once will never trust the system again, and no amount of stability tuning further up recovers that. [How EDGEBIC preserves completed work](/blog/how-edgebic-preserves-completed-work-on-reschedule) covers the mechanics.
+
+## Mechanism Two: Every Job Carries Its Own Routing
+
+When a job is scheduled, a copy of the routing it was scheduled with is frozen onto it. Reschedules read that copy by default.
+
+The consequence is that improving a standard routing does not restructure jobs already on the floor. Add an inspection step to the standard, and new orders and new quote simulations pick it up while in-flight jobs keep building to what they started with, until you deliberately opt one in.
+
+That is the single largest source of unexplained churn in systems that lack it. A routing edit intended to help next month silently rewrites this week. [Why frozen routings protect in-flight jobs](/blog/why-frozen-routings-protect-in-flight-jobs-edgebic) covers how to opt a job in when you actually want the change.
+
+## Mechanism Three: Mode Is Blast Radius
+
+The scheduling mode is the bluntest and most useful stability control, because it decides which jobs a run is allowed to touch at all.
+
+| Mode | Touches | Typical use |
+|---|---|---|
+| Incremental new | Only jobs with no schedule at all | The daily intake run |
+| Incremental all | Unstarted jobs plus new ones; skips anything with shop-floor activity | A mid-week re-optimization of future work |
+| Smart incremental | As above, but also preserves jobs whose earliest operation starts inside a near-term window | Overnight runs that must not disturb the imminent plan |
+| Reschedule | Existing scheduled jobs; ignores unscheduled ones | After a routing or capacity change |
+| Full reschedule | Everything, from scratch | A deliberate weekly reset |
+
+Most shops that complain about nervousness are running a full reschedule daily. Moving the daily run to the intake mode and putting a full reschedule on a known weekly slot removes most of the churn before any other setting is touched.
+
+One honest limitation: the smart incremental mode's near-term window is a fixed four hours in the current build, with no interface control to widen it. If your shop needs a full-day freeze, the practical equivalent is mode discipline plus a fixed run schedule rather than a configurable fence. [Scheduling modes explained](/blog/edgebic-scheduling-modes-explained) covers each mode in detail and [how to reschedule safely](/blog/how-to-reschedule-safely-in-edgebic) covers the routine.
+
+## Mechanism Four: In-Progress Machines Are Locked
+
+When a job has recorded actuals on a machine, that machine is locked for that job on the next run. The alternate resolver will not swap the job to a faster machine, and a pooled operation will not re-shop to a different pool member.
+
+That guard is why a job that started on Mill-2 stays on Mill-2 even when Mill-1 would now finish sooner. It is also why re-routing mid-job is a deliberate act rather than something a reschedule can do to you.
+
+The same guard applies across features. A pooled operation that has started keeps its resolved member; only not-yet-started pooled operations re-shop the pool against current capacity. [Locked jobs and the never-worse guarantee](/blog/locked-jobs-and-the-never-worse-guarantee-in-edgebic) covers the wider set of locks.
+
+## Mechanism Five: A Goal That Ranks Stability First
+
+The optimizer carries several goals, and each is an ordered list of measures compared in sequence. The fewest-changes goal ranks stability ahead of everything else.
+
+Stability is measured against the committed plan with three figures:
+
+| Figure | Meaning |
+|---|---|
+| Instability hours | The sum of absolute start-time differences across every matched operation |
+| Moved operation count | How many operations moved at all, with a one-minute tolerance treated as no move |
+| Matched operation count | How many operations could be compared between the two plans |
+
+Those numbers appear in the comparison screen as deltas before you accept anything, so "this plan finishes six hours sooner and moves forty-one operations" is a decision you make with both halves visible.
+
+Two behaviors keep the goal honest. When no committed plan exists, because this is a first schedule, the stability measures are stripped from the goal rather than scored against a plan the floor never saw. And if stripping empties the goal entirely, it falls back to protecting due dates.
+
+The trade-off deserves stating plainly. Under the fewest-changes goal, a candidate that is more stable wins even when a more disruptive candidate would finish sooner. That is what you asked for. Mid-week, when the floor is committed, it is usually the right answer. When dates are genuinely at risk, switch to the on-time goal and accept the disruption. [Optimizer goals and presets](/blog/edgebic-optimizer-goals-and-presets-explained) covers each goal's ranking.
+
+## Mechanism Six: Nothing Is Written Until You Accept
+
+Optimizer runs are propose-then-accept. The full alternative plan is computed in memory, held under a token, and shown as a comparison. Discard and the database is byte-identical to before. Accept and it goes through the same persist path a normal run uses, with an audit entry recording the goal, the numbers, and the seed.
+
+Accept also re-checks a fingerprint taken before the solve. If a colleague rescheduled or actuals landed while you were reading the comparison, the accept is refused rather than silently overwriting newer work. That is a stability mechanism in its own right: it prevents a stale proposal from undoing something real.
+
+The same deferred-persist pattern backs the prompt that appears when a backward job cannot fit its due date. The run is held, the affected jobs are shown with their reasons and their fallback windows, and the planner accepts, edits and re-runs, or cancels with nothing written.
+
+## A Weekly Rhythm That Works
+
+The mechanisms compose into a routine rather than a configuration.
+
+**Daily, morning.** Run the intake mode to place overnight orders. Nothing existing moves. Print or publish once.
+
+**Daily, as actuals arrive.** Log actuals from the floor. Reschedule single jobs where a real deviation happened rather than running the whole plant. Completed work stays put, remaining work re-places from the resume point.
+
+**Mid-week, if needed.** Run the optimizer with the fewest-changes goal. Read the moved-operation count first, then the improvement. Accept only when the improvement clearly exceeds the disruption.
+
+**Weekly, on a known slot.** Run a full reschedule so the plan absorbs routing changes, capacity changes, and accumulated drift. Everybody expects it because it is on the calendar.
+
+The calendar point is doing real work there. A full reschedule that people know is coming is a reset. The same run at an unannounced moment is churn, even though the output is identical.
+
+## What Stability Does Not Mean
+
+Three things are worth ruling out, because each gets confused with stability and each would be worse.
+
+**It does not mean freezing bad news.** A job that will miss its date should show as late on every surface as soon as the plan says so, not on the due date. The late calculation classifies against the delivery-ready end, which includes the end item's lead-time tail, so a projected miss surfaces before the date physically passes. Hiding that would be stability bought with dishonesty.
+
+**It does not mean refusing to reschedule after actuals.** When the floor reports a genuine deviation, the plan should absorb it. Rescheduling a single job whose upstream operation ran four hours long is the system working: completed work stays put, remaining work re-places from the resume point, and everything downstream in that job shifts with it. Stability is about not disturbing work that has no reason to move, not about ignoring work that does.
+
+**It does not mean the plan is optimal.** A stable plan and a fast plan are frequently different plans, and the fewest-changes goal will say so plainly by showing both sets of numbers side by side. If a mid-week comparison offers six hours of makespan for forty-one moved operations, that is a decision with a defensible answer in either direction depending on the week you are having. What the comparison removes is having to guess.
+
+## Three Habits That Quietly Destabilize a Plan
+
+**Running a full reschedule out of habit.** It is the mode that touches everything, and it is the right tool exactly once a week. Using it as the default guarantees that every unrelated master-data edit reaches every job.
+
+**Setting target start dates casually.** A target start date on any schedule row promotes that job to a pinned mode with different behavior on the next run, including different material timing. Use the job's earliest-start floor to say "not before this," and reserve target dates for genuine constraint pins. [Bottleneck and due-date scheduling in the same plan](/blog/combining-toc-anchor-and-backward-scheduling-edgebic) covers the promotion.
+
+**Editing standard routings mid-week without checking who inherits.** The frozen-routing mechanism protects in-flight jobs, which is exactly what you want, but it also means the change you made is not in this week's plan and will appear later. Knowing which is happening beats being surprised by either.
+
+## What to Measure
+
+Two numbers tell you whether stability is improving.
+
+**Moved operations per run.** Available directly in the optimizer comparison, and inferable elsewhere by comparing successive plans. A downward trend across weeks is the signal that mode discipline is working.
+
+**Time between a plan being published and being contradicted.** Not a system metric, but the one planners actually feel. If the morning plan survives to lunchtime, the floor uses it. If it does not, they print a PDF and stop looking, and every improvement after that point is invisible to them.
+
+The second is the reason all six mechanisms exist. A schedule that is 5 percent better and changes every two hours is worth less than a schedule that is merely good and holds all day, because only one of them is actually followed.
+
+## When a Job Moves and You Do Not Know Why
+
+Every run records its decisions. For a job that jumped, the questions in order are: did the mode include it, did the routing snapshot change, did actuals shift its resume point, was its machine locked or free to re-shop, and did somebody set a target date on it.
+
+[Why did my job jump after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic) walks that diagnosis end to end, and [rescheduling mistakes](/blog/rescheduling-mistakes-edgebic) covers the configuration errors that produce avoidable movement.
+
+For the wider reschedule behavior, see [rescheduling explained](/blog/edgebic-rescheduling-explained). For the full feature map, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

@@ -1,0 +1,76 @@
+---
+title: "What Is Re-Shopping in Work Center Group Scheduling?"
+description: "Re-shopping is when a not-yet-started group step picks a machine again on reschedule against current capacity, while started work keeps its machine. Here is how it works."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - re-shopping work center group
+  - reschedule machine pool
+  - group step reschedule
+  - machine reselection scheduling
+  - work center group reschedule
+  - re-shop the pool
+targetPhrase: "re-shopping work center group"
+wordCount: 1090
+readingTime: 5
+faqQuestions:
+  - question: "What is re-shopping in work center group scheduling?"
+    answer: "Re-shopping is the behavior where a routing step bound to a machine pool picks its machine again on every reschedule, choosing from the pool against the current capacity picture, as long as the step has not started yet. Monday's plan may put a part on Mill-1; by Wednesday, if Mill-1 is jammed, the still-unstarted step re-shops and moves to Mill-2. Started and completed steps do not re-shop; they keep the machine they were resolved to."
+  - question: "Why does a group-bound step keep re-choosing its machine?"
+    answer: "Because the value of a machine pool is choosing the best available member at scheduling time, and the best member changes as load changes. If the assignment were frozen after the first run, the pool would collapse into a fixed pin and lose its whole purpose. Re-shopping keeps the step matched to the freshest capacity picture, so a jam on one mill routes the work to a free one instead of leaving it stuck behind the queue."
+  - question: "What stops re-shopping from moving a job that has already started?"
+    answer: "A guard that treats actuals as immutable. Once a step has an actual start, it keeps its resolved machine no matter what the pool's selection strategy would otherwise choose. Only steps that have not started can re-shop. This means the pool stays flexible for future work while work already on a machine is never yanked off it, which matches how a real shop floor behaves."
+qaQuestions:
+  - question: "If a group step can move machines every reschedule, how do we avoid churn where jobs bounce between mills for no reason?"
+    answer: "Two things prevent pointless churn. First, only not-yet-started steps re-shop; anything running or done is fixed, so the moving parts are limited to future work. Second, if you want predictable routing you can set the group's selection strategy to primary-first, which books the designated primary machine whenever it has capacity and only spills to others when it is full. Re-shopping then moves a step only when the preferred machine genuinely cannot take it, and every move is surfaced as a replacement indicator so nobody has to guess why an assignment changed."
+  - question: "A part was planned on Mill-1, but after a reschedule it shows Mill-2. How do we confirm that was intentional and not a bug?"
+    answer: "EDGEBIC surfaces the move as a replacement indicator reading 'Replaced: Mill-1 to Mill-2,' so the change is visible rather than silent. That is re-shopping working as designed: the step had not started, Mill-1 lost capacity to a higher-priority job, and the pool re-chose Mill-2 against the current load. If the step had already started on Mill-1, it would have stayed there. The group binding survives every reschedule precisely so the engine can re-shop the pool run after run."
+---
+
+**Re-shopping is the behavior in machine-pool scheduling where a routing step that has not started yet chooses its machine again on every reschedule, picking the best member of the pool against the current capacity picture, while any step that has started or finished keeps the machine it was already resolved to.** It is the reason a pooled part planned on Mill-1 on Monday can legitimately move to Mill-2 by Wednesday: the still-unstarted step re-shopped the pool, and Mill-1 was jammed.
+
+This entry is part of the [EDGEBIC by User Solutions](/edgebic) glossary; the broader dictionary lives in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## Why Pools Re-Shop
+
+The entire value of a [work center group](/blog/what-is-a-work-center-group-machine-pool) is that the scheduler picks the best available machine at planning time rather than pinning the routing to one machine forever. But "best available" is not a one-time answer. A machine that was free on Monday can be buried under higher-priority work by Wednesday, and a machine that was jammed can open up.
+
+If the pool's choice were frozen after the first run, the group would degrade into a fixed pin the moment anything changed, and the flexibility you bought it for would evaporate on the first reschedule. Re-shopping keeps the choice alive: each reschedule re-asks the question against the freshest load.
+
+## How It Works
+
+For a step to re-shop, two conditions hold. First, the step has not started: no actual start has been recorded. Second, the step is still bound to the group, which it always is, because the group binding is designed to survive saving, snapshots, and every reschedule.
+
+When those hold, the reschedule re-expands the group into its members and lets the selection strategy pick again against current capacity. If a different member now finishes soonest, or the primary is now free, the step moves to it, and the change is shown as a replacement indicator so it is never a mystery.
+
+The counterpart rule is just as important: a step that has started, or is complete, keeps its resolved machine. Actuals are immutable, and started work never migrates. So re-shopping only ever reshuffles future work, exactly as a real shop would.
+
+## A Concrete Example
+
+Group MILLING has three members. On Monday's run, a routing step's earliest-completion projection favors Mill-1, so the part is planned there. On Tuesday, a rush order lands and consumes most of Mill-1's week.
+
+Wednesday's reschedule fires. The milling step has not started, so it re-shops. Mill-1 now projects a late finish because it is buried, while Mill-2 can start and finish the step sooner. The pool re-chooses Mill-2, and the Gantt shows "Replaced: Mill-1 to Mill-2." The work found the open machine instead of waiting behind the rush order.
+
+Now suppose the operator had already started the step on Mill-1 Tuesday afternoon. Wednesday's reschedule would leave it on Mill-1, because started work keeps its machine. Only genuinely unstarted steps re-shop.
+
+## How EDGEBIC Uses It
+
+In EDGEBIC, re-shopping is why a group binding is preserved through every converter, snapshot, and reschedule instead of being overwritten with the resolved machine. On each run, a not-yet-started group step is re-exploded via [group explosion](/blog/what-is-group-explosion-in-scheduling) and the resolver picks a member again against live capacity. Started or completed operations are held by the locked-machine guard.
+
+Any resulting move is surfaced through the standard replacement indicator ("Replaced: from to"), so a planner never has to hunt for why an assignment changed. If you prefer routing that changes only when it truly must, the group's primary-first [selection strategy](/blog/what-is-a-selection-strategy-in-scheduling) keeps a step on the designated primary whenever it has capacity and re-shops only on genuine overflow. For the wider picture, see the [work center groups overview](/blog/edgebic-work-center-groups-explained) and, for how reschedules preserve started work, [actuals preservation on reschedule](/blog/what-is-actuals-preservation-on-reschedule).
+
+<Accordion title="What is re-shopping in work center group scheduling?">
+Re-shopping is the behavior where a routing step bound to a machine pool picks its machine again on every reschedule, choosing from the pool against the current capacity picture, as long as the step has not started yet. Monday's plan may put a part on Mill-1; by Wednesday, if Mill-1 is jammed, the still-unstarted step re-shops and moves to Mill-2. Started and completed steps do not re-shop; they keep the machine they were resolved to.
+</Accordion>
+
+<Accordion title="Why does a group-bound step keep re-choosing its machine?">
+Because the value of a machine pool is choosing the best available member at scheduling time, and the best member changes as load changes. If the assignment were frozen after the first run, the pool would collapse into a fixed pin and lose its whole purpose. Re-shopping keeps the step matched to the freshest capacity picture, so a jam on one mill routes the work to a free one instead of leaving it stuck behind the queue.
+</Accordion>
+
+<Accordion title="What stops re-shopping from moving a job that has already started?">
+A guard that treats actuals as immutable. Once a step has an actual start, it keeps its resolved machine no matter what the pool's selection strategy would otherwise choose. Only steps that have not started can re-shop. This means the pool stays flexible for future work while work already on a machine is never yanked off it, which matches how a real shop floor behaves.
+</Accordion>

@@ -1,0 +1,95 @@
+---
+title: "What Is a Transfer Batch? Definition, Example, and Setup"
+description: "What is a transfer batch? The number of pieces moved downstream at one time, letting the next operation start early. Definition, worked math, and setup guide."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - what is a transfer batch
+  - transfer batch definition manufacturing
+  - transfer batch vs process batch
+  - lot streaming transfer batch
+  - one piece flow scheduling
+  - transfer batch size setup
+targetPhrase: "what is a transfer batch"
+wordCount: 1080
+readingTime: 5
+faqQuestions:
+  - question: "What is a transfer batch in manufacturing?"
+    answer: "A transfer batch is the number of pieces physically moved from one operation to the next at one time. Instead of the entire order waiting at each station until every piece is finished, work moves downstream in smaller quantities, so the next operation starts while the current one is still running. Moving a tray of 25 machined parts to deburring rather than waiting for all 200 is a transfer batch of 25."
+  - question: "What is the difference between a transfer batch and a process batch?"
+    answer: "The process batch is the full order quantity a station processes in one run; the transfer batch is the subset that moves downstream at one time. A lathe can be turning a process batch of 200 while trays of 25, the transfer batch, flow to the next station. Making the transfer batch smaller than the process batch is the whole mechanism of lot streaming."
+  - question: "What is the ideal transfer batch size?"
+    answer: "Smaller batches compress the schedule more but demand more material handling. A transfer batch of 1 (one-piece flow) is the lean ideal and gives the maximum overlap; batches of 10-25% of the typical order quantity capture most of the benefit with far fewer moves. A batch equal to or larger than the order quantity gives zero benefit, since everything then moves at once."
+  - question: "When should transfer batches not be used?"
+    answer: "On continuous processes. A chemical reactor, extruder, or paint line produces a continuous stream where counting pieces is meaningless, so piece-count streaming does not apply; a time-based overlap (a fixed head start in hours) fits those stations instead. EDGEBIC marks such work centers as continuous-process and automatically uses the time-based model there."
+qaQuestions:
+  - question: "We run 200-piece orders through turning then drilling. Turning takes 0.5 hours per piece. What would a transfer batch of 25 actually save?"
+    answer: "Without streaming, drilling waits for all 200 pieces: 100 hours of turning (plus setup) before drilling touches the first part. With a transfer batch of 25, drilling starts once 25 pieces exist, which is 12.5 hours of turning after setup. Drilling then runs in parallel with the rest of the turning run. The first operation's head start shrinks from 100 hours to 12.5, and the whole job's elapsed time compresses by most of that difference, subject to drilling keeping up with the arrival rate of trays."
+  - question: "Our transfer batch is set to 100 but we quoted a rush order of 30 pieces. Does the job stall waiting for 100 pieces that will never exist?"
+    answer: "No. The engine caps the effective batch at the order quantity: min(100, 30) = 30, so the downstream step waits for the full 30 and no longer. The job behaves serially, which is safe but earns no overlap. EDGEBIC's built-in configuration audit flags any routing whose transfer batch equals or exceeds typical order quantities, since that setting silently disables streaming; for a mixed order book, size the batch below your smallest common order."
+---
+
+**A transfer batch is the number of pieces physically moved from one manufacturing operation to the next at one time, and it is the mechanism behind lot streaming: by moving a tray of 25 finished pieces downstream instead of waiting for all 200, the next operation starts hours or days earlier and the two stations run in parallel.** The concept comes from Theory of Constraints and lean practice, where separating the transfer batch from the process batch is one of the highest-return scheduling decisions a planner can make.
+
+This entry is part of the EDGEBIC glossary series; for the broader vocabulary of production planning, see the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## How a Transfer Batch Works
+
+Picture an order of 200 parts flowing through turning, then drilling. The **process batch** is 200: that is what the lathe will produce in one run. The question is when drilling may begin.
+
+- **No streaming:** drilling waits until piece 200 leaves the lathe. The operations run end to end, and total elapsed time is the sum of both.
+- **Transfer batch of 25:** as soon as 25 pieces exist, a tray moves to drilling. Drilling starts while turning continues, and from then on trays arrive faster than drilling consumes them. The operations overlap for most of their length.
+- **Transfer batch of 1:** one-piece flow, the lean ideal. Every piece moves the moment it is done, giving maximum overlap and minimum work-in-process, at the cost of continuous material handling.
+
+The downstream start time follows a simple formula: setup time plus the transfer batch quantity times the per-piece run time. That is the moment the first batch physically exists; add any material-handling delay (forklift travel, cooling before movement), and the next station may begin.
+
+## A Worked Example
+
+From the [EDGEBIC by User Solutions](/edgebic) documentation: 100 custom shafts, turned then drilled.
+
+| Parameter | Value |
+|---|---|
+| Turning run time | 0.5 hours per piece |
+| Turning setup | 2 hours |
+| Transfer batch | 20 pieces |
+| Handling delay | 0.5 hours per tray move |
+
+Downstream start = 2 + (20 × 0.5) + 0.5 = **12.5 hours** after turning begins.
+
+Without streaming, drilling waits for the full run: 2 + (100 × 0.5) = 52 hours. The transfer batch pulls drilling's start forward by 39.5 hours, and the job's total elapsed time compresses from 52 hours of turning plus the whole drilling run down to roughly 37 hours with the two overlapped. In a one-piece-flow variant from the same documentation (50 electronic sub-assemblies, soldering then test), the overlap cuts elapsed time from 18 hours to about 13.75, a reduction of roughly 24%, with the test station starting 45 minutes into the soldering run.
+
+The [lot streaming walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic) steps through timelines like these bar by bar.
+
+## How EDGEBIC Implements Transfer Batches
+
+In EDGEBIC, the transfer batch is a field on the routing step, so streaming is opt-in per operation rather than a global switch:
+
+- **Transfer batch size** on a routing step activates piece-count streaming for that step. Zero (the default) means no streaming: downstream waits for full completion. One means one-piece flow.
+- **Transfer delay** adds a flat number of hours for physical handling after each batch is ready, covering the forklift ride or a cooling period before pieces may move.
+- **The order-quantity cap** protects small orders: the effective batch is never larger than the order, so a 30-piece rush order against a 100-piece batch setting simply behaves serially instead of stalling.
+- **Continuous-process work centers opt out automatically.** A work center flagged as continuous-process (a paint line, a reactor) ignores piece counts, because pieces are meaningless there; those stations use a time-based head start instead, where the downstream step may begin a fixed number of hours after the upstream step starts.
+- **Actuals participate.** On a reschedule, if the shop floor has already logged enough pieces to cross the batch threshold, the downstream step is released immediately rather than waiting on the formula; if the run is mid-flight below the threshold, the projection works from the real start time.
+
+EDGEBIC's built-in configuration audit also watches for the settings that quietly disable streaming: a batch size at or above typical order quantities, both streaming models set on the same step, or piece counts configured on a continuous-process station. Each is flagged with the routing step named, so intent stays explicit.
+
+Transfer batches sit inside the wider machinery of overlap, queue buffers, and transit time that a finite capacity engine composes for every pair of steps; the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows where each piece fits, and [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) explains why the surrounding capacity model makes the overlap trustworthy.
+
+<Accordion title="What is a transfer batch in manufacturing?">
+A transfer batch is the number of pieces physically moved from one operation to the next at one time. Instead of the entire order waiting at each station until every piece is finished, work moves downstream in smaller quantities, so the next operation starts while the current one is still running. Moving a tray of 25 machined parts to deburring rather than waiting for all 200 is a transfer batch of 25.
+</Accordion>
+
+<Accordion title="What is the difference between a transfer batch and a process batch?">
+The process batch is the full order quantity a station processes in one run; the transfer batch is the subset that moves downstream at one time. A lathe can be turning a process batch of 200 while trays of 25, the transfer batch, flow to the next station. Making the transfer batch smaller than the process batch is the whole mechanism of lot streaming.
+</Accordion>
+
+<Accordion title="What is the ideal transfer batch size?">
+Smaller batches compress the schedule more but demand more material handling. A transfer batch of 1 (one-piece flow) is the lean ideal and gives the maximum overlap; batches of 10-25% of the typical order quantity capture most of the benefit with far fewer moves. A batch equal to or larger than the order quantity gives zero benefit, since everything then moves at once.
+</Accordion>
+
+<Accordion title="When should transfer batches not be used?">
+On continuous processes. A chemical reactor, extruder, or paint line produces a continuous stream where counting pieces is meaningless, so piece-count streaming does not apply; a time-based overlap (a fixed head start in hours) fits those stations instead. EDGEBIC marks such work centers as continuous-process and automatically uses the time-based model there.
+</Accordion>

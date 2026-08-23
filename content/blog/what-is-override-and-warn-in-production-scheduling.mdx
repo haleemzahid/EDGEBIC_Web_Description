@@ -1,0 +1,76 @@
+---
+title: "What Is Override and Warn in Production Scheduling?"
+description: "Override and warn is the contract where a planner can move any operation and the system flags the consequences without blocking the move. Learn what it does and does not check."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - override and warn scheduling
+  - planner authority scheduling
+  - manual schedule override
+  - gantt drag warnings
+  - validate and reject alternative
+  - staged schedule changes
+targetPhrase: "override and warn"
+wordCount: 977
+readingTime: 5
+faqQuestions:
+  - question: "What is override and warn in production scheduling?"
+    answer: "Override and warn is a design contract for manual schedule editing: the planner may move an operation anywhere, and the system surfaces the consequences instead of refusing the move. Drag an operation onto a machine that is already full and it lands, with a flag rather than a rejection. The alternative contract, validate and reject, refuses any edit that would break a rule. Override and warn assumes the planner knows something the engine does not, and treats the engine's plan as a proposal rather than a cage."
+  - question: "Does an override and warn system check capacity when I save a move?"
+    answer: "No, and that is the point of the contract. Saving a manual move records dates; it does not re-run the capacity arithmetic or rebalance the machines around it. You may have knowingly double-booked a machine because you know a second operator is coming in, and the system will let you. When you do want the engine to re-plan around your edits, you run a reschedule afterwards. The two actions are deliberately separate: recording what you know, then asking the engine to fit the rest of the plan to it."
+  - question: "Is override and warn safer or riskier than blocking bad moves?"
+    answer: "It is safer in practice, for a reason that is easy to miss: a system that blocks moves teaches planners to work around it. When the floor knows something the model does not, and the software refuses to record it, the real schedule migrates to a spreadsheet or a whiteboard and the system stops describing reality. Override and warn keeps the truth inside the system and makes the consequences visible. The safety comes from staging, warnings, and a full change history rather than from refusal."
+qaQuestions:
+  - question: "I moved an operation and got a warning but it saved anyway. Should I be worried?"
+    answer: "Treat the warning as a to-do item rather than an error. The most common one flags later operations in the same job that may now be out of sequence because you moved an earlier one. Nothing about those later operations changed in the data; the flag is asking you to look. You have two reasonable responses: move them too, so the whole job reads correctly, or run a reschedule and let the engine re-plan the remaining steps around your edit. Leaving the flag sitting there is the only genuinely poor option, because it means the plan contains a sequence nobody has confirmed."
+  - question: "How do I undo a move I regret under this contract?"
+    answer: "It depends on whether you have saved it. Before saving, the whole set of pending moves can be discarded together, which snaps every changed bar back to where the engine had it. There is no per-move undo inside a pending set, so review the batch before you commit it. After saving, the move has become recorded data, and you clear it the way you clear any recorded date: use the clear-actuals commands on that operation, which returns the bar to the position the engine planned. Either route is reversible; they just work differently."
+---
+
+**Override and warn is a design contract for manual schedule editing in which the planner may move any operation anywhere, and the system surfaces the consequences rather than refusing the move.** Its opposite is validate and reject, where software declines any edit that would break a modeled rule. EDGEBIC by User Solutions takes the override-and-warn side deliberately: the planner is assumed to know things the model does not, so the engine's plan is treated as a well-informed proposal rather than a boundary, and safety comes from staging, flags, and a full change history instead of from refusal.
+
+## How it works
+
+Three mechanisms carry the contract, and they are easier to trust once you can name them.
+
+**Nothing is blocked.** An operation can be moved earlier than its target start, onto a machine the engine did not choose, or into a week that is already full. Each of those produces a message. None produces a refusal. The message tells you what the engine would have objected to; the decision stays yours.
+
+**Nothing is written until you say so.** Edits accumulate as pending changes that live only on your screen. A changed bar shows a distinct state, and a pending count tells you how many edits are waiting. You then either commit the whole batch or discard the whole batch. Because the staging is a set rather than a stream, there is no per-edit undo inside it, which is a good reason to review the batch before committing rather than after.
+
+**Capacity is not re-checked on save.** This is the clause that surprises people most, and it follows directly from the first two. Committing a manual move records dates. It does not re-run the capacity search, re-balance machines, or push neighboring work out of the way. If you have deliberately put twelve hours of work on an eight hour day because you know a second operator is coming in, the system records exactly that. When you want the engine to fit the rest of the plan around your edits, you run a reschedule as a separate step, and it treats your saved edits as fixed points.
+
+Alongside those three, the system flags rather than blocks in one more place worth knowing: later operations in the same job that may now sit out of sequence after you moved an earlier one are marked for review. Nothing about them has changed in the data. The flag is a request to look.
+
+## A concrete example
+
+A job runs a saw, then a mill, then a paint booth. The engine planned the mill for Monday 08:00 to Tuesday 12:30 and the paint booth for Tuesday afternoon.
+
+The mill was actually down all Monday. You drag the mill bar to start Tuesday 08:00 and commit.
+
+| Aspect | What happens |
+|---|---|
+| The moved operation | Lands on Tuesday and takes a saved state showing its dates now differ from the engine's plan |
+| The paint booth after it | Flagged for review, because the mill's new end now runs past its planned start. No data changed |
+| Machine capacity | Not recalculated. The mill's Tuesday may now hold more than a day of work |
+| Everything else in the plant | Untouched. No other job moved and no other machine's load changed |
+| Change history | An entry recording the old dates and the new ones |
+
+At this point the plan is honest about what you know and unresolved about what follows. You press the reschedule action for the job. The engine keeps the mill where you put it, re-plans only the remaining steps around it, and the paint booth moves to Wednesday morning. The review flag clears on reload.
+
+Notice what a validate-and-reject system would have done instead: refused the drag, because Tuesday's mill capacity could not absorb it, and left you with a plan that still claimed the mill ran Monday. The schedule would have been internally consistent and factually wrong, which is the worse of the two failures.
+
+## How EDGEBIC uses it
+
+The contract governs the whole manual-editing surface. What a saved move actually records depends on the mode you chose before dragging, which is either recorded dates or a future position held for the engine to honor: the second of those is defined in [what is a planned start pin in scheduling](/blog/what-is-a-planned-start-pin-in-scheduling), and the first in [what is an actual date in scheduling](/blog/what-is-an-actual-date-in-scheduling).
+
+Because capacity is not re-checked on save, the pairing of a manual edit with a follow-up engine run is the normal rhythm rather than an exception. That pairing is laid out in [save vs re-schedule on the EDGEBIC Gantt](/blog/save-vs-re-schedule-on-the-edgebic-gantt), and what a reschedule preserves is covered in [what is a reschedule in scheduling](/blog/what-is-a-reschedule-in-scheduling).
+
+The warnings are not decoration. The prompt that appears when you edit an operation whose earlier steps have no recorded work is explained in [EDGEBIC Gantt safety prompts for prior operations](/blog/edgebic-gantt-safety-prompts-prior-operations), and every committed edit lands in the history described in [what is a schedule change log](/blog/what-is-a-schedule-change-log). Together those two are what make trusting the planner defensible: the move is allowed, but it is never anonymous.
+
+## The takeaway
+
+Override and warn is a statement about who is in charge. The engine plans, flags, and remembers; the planner decides. It works because the three mechanisms hold together: nothing blocked, nothing written until committed, and every commit recorded. The one habit it asks of you is to treat a warning as a task rather than noise, and to follow a batch of manual edits with a reschedule when you want the rest of the plan to agree with them. For the mechanics around it see [what is a planned start pin in scheduling](/blog/what-is-a-planned-start-pin-in-scheduling) and [what is a reschedule in scheduling](/blog/what-is-a-reschedule-in-scheduling), then explore [EDGEBIC](/edgebic) or, if you are moving from the legacy product, [RMDB to EDGEBIC](/rmdb-to-edgebic).

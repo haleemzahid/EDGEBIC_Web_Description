@@ -1,0 +1,154 @@
+---
+title: "An Epicor Plant's First Week With EDGEBIC (An Illustrative Walkthrough)"
+description: "An illustrative Epicor plant scheduling improvement, day by day: scope, exports, resource groups, the first finite capacity plan, and the parallel run."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - Epicor plant scheduling improvement
+  - Epicor finite capacity scheduling
+  - Epicor Kinetic scheduling rollout
+  - EDGEBIC Epicor implementation
+  - resource group scheduling
+  - multi-shift plant scheduling
+targetPhrase: "Epicor plant scheduling improvement"
+wordCount: 1980
+readingTime: 10
+faqQuestions:
+  - question: "Should a multi-plant Epicor site roll out scheduling everywhere at once?"
+    answer: "No. Start with one plant, ideally the one with the clearest constraint and the most pain. A single-plant scope proves the masks, the capacity model, and the dates within a week rather than a quarter, and none of the work is wasted: the same masks run against the second plant's export with only the file changed. Debugging a mapping problem and a cross-site routing question at the same time is what turns a week into a quarter."
+  - question: "Can a plant run EDGEBIC and Epicor scheduling in parallel while evaluating?"
+    answer: "Yes, and it is the normal evaluation path. Nothing inside Epicor is switched off, because EDGEBIC reads exports and produces its own plan. Running both for two or three weeks and comparing each against what the floor actually did settles the question with evidence rather than argument. The comparison that matters is not which plan looks better but which one predicted reality."
+  - question: "What does a plant discover in week one that its ERP never showed?"
+    answer: "Usually two things: that machines inside a resource group are not equivalent, and that the constraint work center is loaded past capacity on specific days. An ERP typically treats pooled machines as interchangeable and treats capacity as a number rather than a calendar of real shift hours. Modeling per-machine efficiency and real shift capacity makes both facts visible in the first schedule."
+  - question: "How long before dispatch lists can go to the floor?"
+    answer: "Usually day four or five, after the first schedule has been criticized and corrected at least once. Publishing early is a mistake worth avoiding: a plan that supervisors catch being wrong in its first week takes months to regain credibility. Run it privately, argue with it, fix the inputs it exposes, then publish once it survives the planner's objections."
+qaQuestions:
+  - question: "Our plant manager wants a business case before week one, not after. What can we honestly promise up front?"
+    answer: "Promise the diagnosis, not the improvement. What week one reliably delivers is a finite capacity model of the plant and a schedule that shows which promises are at risk and which work center is genuinely constraining output. That is a concrete deliverable and it is defensible. What you cannot honestly promise in advance is a percentage improvement, because it depends on how much setup time your changeover-heavy centers carry, how far your current plan drifts from reality, and how quickly the floor starts reporting actuals. The heritage results in this product line are real but belong to their engagements, and quoting one as your forecast is how a project loses credibility in month two."
+  - question: "We have five lathes in one Epicor resource group and everybody knows lathe 3 is slow, so the schedulers avoid it. Does modeling that actually change anything?"
+    answer: "It changes who makes the decision and how often. Today a person avoids lathe 3 by habit, which means it sits idle even when using it would still finish a job soonest. Put the five lathes in a work center group with per-member efficiency factors, set lathe 3's factor to reflect its real speed, and the engine compares actual finish times each time it plans. Lathe 3 gets the work when it is genuinely the fastest way to finish and gets skipped when it is not, and the calculation is redone on every reschedule for operations that have not started. Operations already running keep their machine, because recorded work is never moved."
+---
+
+**This walkthrough follows an illustrative plant, not a customer: roughly 180 people, Epicor Kinetic, 35 work centers, three shifts, about 400 open jobs, and a constraint everybody can name but nobody can schedule around.** The mechanics are real and grounded in how EDGEBIC works. The plant is a composite, and nothing below is presented as a measured customer result.
+
+EDGEBIC by User Solutions is a finite capacity scheduling platform that runs beside the ERP. For the mechanics without the narrative, see the [complete Epicor integration guide](/blog/edgebic-epicor-integration-guide) and the [Epicor mapping reference](/blog/epicor-to-edgebic-data-mapping-reference).
+
+## The plant, and the meeting it wants to stop having
+
+Thirty-five work centers across machining, weld, heat treat, finishing, and assembly. Three shifts, with third shift running unattended on two machines. A resource group of five CNC lathes that Epicor treats as equivalent and that the schedulers know are not. Heat treat is the constraint, and everybody says so.
+
+Epicor runs the business properly: orders, inventory, purchasing, costing, financials. Its scheduling module produces a plan. The plan is supplemented by a daily production meeting, three spreadsheets, and a materials person who keeps her own list of what is really going to be late. That combination works, in the sense that the plant ships. It costs an hour of six people's day, every day.
+
+## Day 0: scope, in one decision
+
+Before any exports, one decision saves the project: **one plant, not three.** The same masks will run against the other sites later with only the file changed, and a single-plant scope proves the model in a week rather than a quarter. Debugging a column mapping and a cross-site routing question simultaneously is the classic way this becomes a six-month program.
+
+Who is in the room matters too, and less than people expect:
+
+| Role | Week-one involvement |
+|---|---|
+| Planner | Every day. Owns the model |
+| Production supervisors | Two hours total, on day four, arguing with the first plan |
+| Materials | One hour, flagging jobs held for material |
+| IT | One hour, making the Epicor extracts saved reports that land in a known folder |
+
+That IT line is the whole integration footprint. Nothing installs inside Epicor, no schema changes, no integration account, no service writing into the ERP. The interface is a file.
+
+## Day 1: parts and resources
+
+Two exports, two masks, two runs. Parts come in first (a part number is the only mandatory column), then resources as work centers.
+
+The afternoon is where the schedule is actually won, because it covers what no ERP export carries:
+
+- **Instance counts.** Several work centers are cells of identical machines. Imported as one instance each, every plan would be several times too long on exactly the resources the plant runs hardest, and nothing would error to say so.
+- **Shift calendars.** One row per shift with a start and end pair per weekday, blank pairs where the plant is down, plus plant holidays. Third shift's two-machine coverage is modeled as its own shift rather than a plant-wide one.
+- **The bottleneck flag** on heat treat, so the engine can anchor the schedule around the constraint rather than treating it as one work center among 35.
+- **The lathe group.** Five lathes become a work center group with per-member efficiency factors, including the slow one. From then on the engine picks by real finish time and re-shops the pool on every reschedule for operations that have not started.
+
+That last item is the first thing the plant sees that Epicor never showed it. The lathes were pooled but not equal, and the difference was being handled by a scheduler's habit of avoiding one machine.
+
+## Day 2: methods of manufacture
+
+The routing export arrives wide, with setup in minutes and a few dozen columns nobody needs. Both are non-events: unmapped columns are ignored, and a conversion factor of 0.016667 on the setup column turns minutes into hours on every future run automatically.
+
+The mask maps end product, step name, the operation flag, hours per unit, sequence, setup, queue, and transit days. The next-step column stays blank deliberately, because the import wires the chain itself: pass one validates and buffers every row, pass two sorts each part's steps by sequence, writes them, and links 10 to 20, 20 to 30, and the terminal step to the finished part.
+
+Two ordinary problems appear. Subcontract operations were exported as material rows rather than operations, so they land as components instead of steps: fixing the operation flag and re-importing corrects it, and because a routing re-import wipes and recreates that part's steps, the corrected file simply replaces the last. And one part's routing was split across two files by a well-meaning analyst, which loses the first file's steps because the wipe happens once per run. One part, one file, always.
+
+By the end of day two, routings render as flow charts, and a process engineer notices that a step everyone assumed ran in parallel has been modeled sequentially for years.
+
+## Day 3: jobs in, first plan out
+
+Around 400 open jobs import in the morning. Rows sharing an order reference group under one sales order with jobs auto-numbered by line, which keeps multi-line orders together instead of scattering.
+
+Then the rule that catches every new site: **imports never schedule.** The jobs sit as unscheduled demand until the planner runs the scheduler, and a confirmation dialog states the scope in plain numbers before anything happens. The run finishes and the plant sees its first finite capacity plan.
+
+Heat treat is over capacity on four days in the next three weeks. That is not a defect in the schedule; it is the plant's actual load made visible for the first time, and it is what everyone in the daily meeting has been navigating from memory. What to do about it is a Theory of Constraints question rather than a software one, and [bottleneck identification](/blog/production-bottleneck-identification) covers the diagnosis while [the anchor scheduling example](/blog/toc-bottleneck-anchor-scheduling-example-edgebic) shows what the engine does once a constraint is declared.
+
+## Day 4: the supervisors get to break it
+
+Two hours with production supervisors is the most valuable meeting of the week, because their objections are diagnostic. Each one traces to a single input:
+
+| Objection | Input at fault |
+|---|---|
+| "Weld cannot start that job until the fixture frees up" | Constraint not modeled: use an alternate or restrict the pool |
+| "That job would never run on third shift, nobody is there" | Shift assignment on that work center |
+| "Heat treat cannot change recipes that quickly" | Sequence-dependent setup not configured for that center |
+| "Assembly does not run four of those at once" | Instance count too high |
+| "That is a subcontract step, it takes two weeks not two hours" | Transit days missing |
+
+Every fix lands in either the source export or a work center setting, and the plan is re-run. By late afternoon the plant has a schedule that survives its own supervisors, which is the only meaningful acceptance test.
+
+## Day 5: publish, and lock the rhythm
+
+Dispatch lists go out on Friday, not Monday, and the delay is deliberate. A plan that supervisors catch being wrong in week one takes months to regain credibility. Publish after it survives the objections, not before.
+
+The recurring loop is twenty minutes each morning: export open jobs and labor, run the saved masks, run the scheduler, publish. All three shifts get their lists from the same run, exported from the Job View grid and from work center reports with saved column layouts. [The daily Epicor and EDGEBIC scheduling workflow](/blog/the-daily-epicor-edgebic-scheduling-workflow) walks it in detail.
+
+Many plants also run the two schedules in parallel for two or three weeks, comparing each against what the floor actually did. That is a fair test, and the useful question is not which plan looks better but which one predicted reality.
+
+## What typically changes, and why
+
+Mechanisms rather than promises.
+
+**Capacity stops being a number and becomes a calendar.** Three shifts across 35 work centers with real instance counts is a different quantity of capacity than a rated figure per resource, and the plan reflects that immediately.
+
+**Pooled machines get used on merit.** Efficiency factors move the lathe decision from habit to arithmetic, on every reschedule, for every unstarted operation.
+
+**The constraint gets protected instead of discovered.** Anchoring around heat treat changes what happens upstream and downstream of it, which is the entire point of naming a constraint.
+
+**Changeover-heavy centers give hours back.** Where a setup matrix exists, grouping compatible work converts setup hours into run hours without buying capacity.
+
+**The daily meeting shortens.** Not because problems disappear, but because the question changes from "what is late?" to "which of these do we protect?"
+
+For documented outcomes rather than typical ones, the User Solutions lineage includes Cummins deploying this scheduling approach across 33 locations and GE Railcar moving from 30 percent to 90 percent on-time delivery. Those belong to their engagements and are quoted as heritage, not as forecasts.
+
+## What does not change
+
+Epicor keeps orders, inventory, purchasing, and financials. Nothing is installed inside it and nothing writes back automatically: dates return as Excel and go into the ERP through the date-maintenance path your team already uses. The [ERP integration architecture](/edgebic-erp-integration) explains the boundary, and the [EDGEBIC product overview](/edgebic) maps the engine on the other side of it.
+
+## The honest caveats
+
+One week builds a working model, not a finished one. Routing data usually needs two or three weekly cycles before it is trustworthy. Actuals capture is a habit change and habits move slower than software. And the first fortnight of honest dates is uncomfortable, because the backlog was always there.
+
+If your plant looks like this one, test it with your own data: export this week's jobs and one routing file and [bring them to a demo](/contact-us). The questions plants ask first are collected in the [Epicor integration FAQ](/blog/edgebic-epicor-integration-faq).
+
+<Accordion title="Should a multi-plant Epicor site roll out scheduling everywhere at once?">
+No. Start with one plant, ideally the one with the clearest constraint and the most pain. A single-plant scope proves the masks, the capacity model, and the dates within a week rather than a quarter, and none of the work is wasted: the same masks run against the second plant's export with only the file changed. Debugging a mapping problem and a cross-site routing question at the same time is what turns a week into a quarter.
+</Accordion>
+
+<Accordion title="Can a plant run EDGEBIC and Epicor scheduling in parallel while evaluating?">
+Yes, and it is the normal evaluation path. Nothing inside Epicor is switched off, because EDGEBIC reads exports and produces its own plan. Running both for two or three weeks and comparing each against what the floor actually did settles the question with evidence rather than argument. The comparison that matters is not which plan looks better but which one predicted reality.
+</Accordion>
+
+<Accordion title="What does a plant discover in week one that its ERP never showed?">
+Usually two things: that machines inside a resource group are not equivalent, and that the constraint work center is loaded past capacity on specific days. An ERP typically treats pooled machines as interchangeable and treats capacity as a number rather than a calendar of real shift hours. Modeling per-machine efficiency and real shift capacity makes both facts visible in the first schedule.
+</Accordion>
+
+<Accordion title="How long before dispatch lists can go to the floor?">
+Usually day four or five, after the first schedule has been criticized and corrected at least once. Publishing early is a mistake worth avoiding: a plan that supervisors catch being wrong in its first week takes months to regain credibility. Run it privately, argue with it, fix the inputs it exposes, then publish once it survives the planner's objections.
+</Accordion>

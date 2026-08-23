@@ -1,0 +1,101 @@
+---
+title: "EDGEBIC Database Recovery Explained: What Happens When It Cannot Start"
+description: "How the EDGEBIC database recovery window works: the four options it offers, what Repair database actually repairs, and why a failed connection is rarely a data problem."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - database connection problem
+  - manufacturing software recovery
+  - scheduling software will not start
+  - repair database
+  - SQL Server connection scheduling
+  - finite capacity scheduling
+targetPhrase: "database connection problem"
+wordCount: 1420
+readingTime: 7
+faqQuestions:
+  - question: "What is the EDGEBIC database recovery window?"
+    answer: "It is the window that opens instead of the main application when EDGEBIC cannot reach its database at startup. It names the error, lets you expand the technical details, and embeds the same data-source editor found in Settings so you can correct the connection on the spot. From there it offers four actions: retry the same connection, fall back to the default local database, repair the database's internal version history, or exit."
+  - question: "What does Repair database actually repair?"
+    answer: "It rebuilds the internal version bookkeeping for a database whose structure is already correct. Your data is not changed by it. It is the right action for one narrow situation, an error that mentions migration or version history, usually after a support-guided reset, and it is not a general-purpose fix. If the error is about reaching the server or finding the database, repairing changes nothing because nothing is broken in the place repair looks."
+  - question: "Does a failed connection mean my scheduling data is lost?"
+    answer: "Almost never. The overwhelming majority of startup failures are about reachability rather than content: a stopped SQL Server, a machine off the network, a renamed server, or a saved credential that no longer applies to the Windows account signing in. The database itself is usually intact and waiting. That is why the recovery window leads with retry and with an editor for the connection, rather than with anything that touches data."
+qaQuestions:
+  - question: "Someone clicked Reset to default local database to get back into EDGEBIC and now all our jobs are gone. Did we lose them?"
+    answer: "Almost certainly not. That option does not delete anything: it relaunches EDGEBIC against the default single-file local database on that PC, which on a machine that has always used a shared server is empty or holds an old evaluation. The shared database is untouched and still holds every job. The way back is to open the data source settings, point the connection at the SQL Server and database you were using, and restart. The lesson worth taking from it is that the option is a way to get a usable application on screen, not a fix for a connection, so on a shared-server site it should be the last thing anyone reaches for and the server name and database name should be written down somewhere other than in one person's memory."
+  - question: "Our test connection says the database does not exist. Is that the failure we are chasing?"
+    answer: "No, and mistaking it for one costs people an afternoon. Reaching the server and finding a database on it are two separate questions, and EDGEBIC asks them separately on purpose. A message that the server was reached but the named database is not there yet is a normal state, not an error: EDGEBIC creates the database and builds its structure on the first launch after you apply the connection and restart. The failure worth chasing is the other one, where the server itself cannot be reached, because that is a stopped service, a wrong server name, a network path, or a permissions issue. Read which of the two questions failed before you start changing things."
+---
+
+**EDGEBIC by User Solutions does not simply refuse to open when it cannot reach its database. It opens a recovery window that names the problem, embeds the connection editor so you can fix it on the spot, and offers four clearly separated ways forward.** That design choice matters because the alternative, an application that will not start and cannot be configured because it will not start, is a genuinely stuck situation.
+
+The window is titled after what actually went wrong: a database connection problem. It is worth understanding before the morning you meet it.
+
+## Why It Exists
+
+EDGEBIC keeps everything in one database: master data, orders, routings, schedules, actuals. If the application cannot reach it, there is nothing useful to show, so it does not pretend otherwise.
+
+The trap this avoids is the one where the only way to change a connection is inside an application that will not open with that connection. The recovery window carries the same data-source editor that lives on the Settings screen, so the fix and the failure are in the same place.
+
+## The Four Options
+
+| Option | What it does | When it is right |
+|---|---|---|
+| Retry | Relaunches and tries the same connection again | The cause has been fixed outside EDGEBIC: a service restarted, a network came back |
+| Reset to default local database | Relaunches against the default single-file local database | You need a working application now and are not on a shared server |
+| Repair database | Rebuilds internal version bookkeeping without changing data | The error mentions migration or version history |
+| Exit | Closes without changing anything | You are going to fix the server first |
+
+**Retry** is the one to reach for most often, because most causes are outside EDGEBIC. A SQL Server service that was stopped for maintenance, a laptop that has not reached the network yet, a server that reboots on a schedule: none of those are anything for EDGEBIC to fix, and once they are resolved, retry is the whole answer.
+
+**Reset to default local database** deserves a warning. It does not delete anything, but on a site that shares a SQL Server it takes you somewhere else entirely: the local single-file database on that PC, which is empty or holds a stale evaluation. Every job is still in the shared database, untouched, and the way back is to point the connection at the right server and restart. Treat it as the last option on a shared site, and make sure the server and database names live somewhere other than in one administrator's head.
+
+**Repair database** is narrow on purpose, and the next section covers why.
+
+## What Repair Actually Repairs
+
+EDGEBIC keeps internal bookkeeping about which version its database structure is at. That record is how the application knows the tables and columns it expects are the ones that are there.
+
+If that bookkeeping gets lost or reset, usually after a support-guided operation, EDGEBIC can find itself facing a database whose structure is entirely correct but whose version history says otherwise. Repair rebuilds that record. Your data is not modified.
+
+The important part is the boundary. Repair does nothing for a connection failure, because a connection failure never got as far as the bookkeeping. If the error is that the server could not be reached or the database could not be found, repairing is a no-op, and reaching for it repeatedly is a good way to spend an hour not fixing the actual problem. Read the error, expand the details if you need to, and pick the option that addresses what it says.
+
+## The Two Questions a Connection Answers
+
+EDGEBIC separates reaching a server from finding a database on it, and the distinction is the single most common source of wasted time.
+
+A test that says the server was reached but the named database is not there yet is not a failure. It is the expected state for a new installation: EDGEBIC creates the database and builds its structure on the first launch after you apply the connection and restart. Reading that message as an error and going hunting for a database somebody must have deleted is a very common afternoon.
+
+A test that cannot reach the server at all is the real failure, and its causes are the ordinary infrastructure ones: a stopped service, a wrong or renamed server, a network path, a firewall, or a permissions problem. None of those are solved inside EDGEBIC. [Troubleshooting database connections](/blog/troubleshooting-edgebic-database-connections) works through them.
+
+## The Credential Case Nobody Predicts
+
+One failure mode is worth naming because it looks like corruption and is not.
+
+A SQL Server password entered in EDGEBIC is stored encrypted and tied to the Windows account that entered it. Copy the configuration to a different Windows user or a different machine and that saved password no longer applies, so the connection fails on a machine where everything else looks identical.
+
+The fix is to re-enter the password on the new machine and apply again. The prevention is Windows authentication wherever your IT setup allows it, which stores no password at all and removes the whole class of problem. [How to connect EDGEBIC to SQL Server](/blog/how-to-connect-edgebic-to-sql-server) covers both authentication choices.
+
+## What Makes Recovery Easy
+
+Recovery is easy in proportion to what you prepared, and the preparation is short.
+
+**A current backup.** The DataSource tab creates a timestamped backup copy in one click on a single-workstation setup; a shared SQL Server database belongs in your IT team's normal backup rotation. This is the difference between an inconvenient morning and a real incident, and it is covered in [how to back up the database](/blog/how-to-back-up-the-edgebic-database).
+
+**The connection written down.** Server name, database name, and authentication method, recorded somewhere the person facing the recovery window can reach. Most of the panic in a recovery window is not knowing what to type into the editor it just handed you.
+
+**Knowing which shape you are on.** A single-workstation installation and a shared server have different failure modes and different right answers. [Deployment options](/blog/edgebic-deployment-options-explained) covers the difference, and [choosing a database](/blog/edgebic-database-options-for-it-buyers) covers picking one.
+
+## Where It Fits
+
+The recovery window is part of the administrative surface, alongside the data source, backup, security, and data management. It is the one part of that surface you meet without choosing to, which is exactly why it is worth reading about while nothing is wrong.
+
+The [administration guide](/blog/edgebic-admin-guide) covers the wider set of responsibilities, [how to change the database connection](/blog/how-to-change-the-database-connection-in-edgebic) covers the normal, non-emergency version of the same editor, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps the platform, and [/edgebic](/edgebic) covers it as a whole.
+
+## The Calmest Five Minutes
+
+When a scheduling system does not open on a Monday morning, the instinct is that something has been lost. It almost never has. The database is a database: it is either reachable or it is not, and the recovery window exists to tell you which, in plain words, with the editor you need already open in front of you. Read the error, decide whether it is about reaching, finding, or version bookkeeping, and pick the one option that addresses it. That is nearly always a five-minute problem wearing a much larger costume.

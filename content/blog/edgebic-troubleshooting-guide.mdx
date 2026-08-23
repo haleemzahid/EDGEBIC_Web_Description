@@ -1,0 +1,214 @@
+---
+title: "Why Does My Schedule Look Wrong? The EDGEBIC Troubleshooting Guide"
+description: "Production schedule looks wrong? A symptom-by-symptom EDGEBIC troubleshooting guide: late starts, missing jobs, overlaps, and the first fix for each."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - production schedule looks wrong
+  - scheduling software troubleshooting
+  - job starts too late scheduling
+  - job missing from schedule
+  - schedule overlap problem
+  - EDGEBIC troubleshooting
+  - schedule diagnostics
+targetPhrase: "production schedule looks wrong"
+wordCount: 3200
+readingTime: 16
+faqQuestions:
+  - question: "Why does my production schedule look wrong?"
+    answer: "Nine times out of ten a schedule that looks wrong is correctly reporting something wrong in the inputs: a routing with missing links, a work center with no shifts, a stale capacity reservation, or a higher-priority job that legitimately claimed the slot. Start by identifying the symptom family (job will not schedule, starts too late, missing entirely, steps out of order) and apply that family's first fix before assuming the engine erred."
+  - question: "Why does a job start much later than I expected?"
+    answer: "Work backward through four causes in order: a higher-priority job claimed the capacity first; a predecessor step finished later than you thought (a step starts at its latest predecessor's finish); a between-step mechanism added time (queue hours count only during shifts, and transit days add days); or the intended work center offered less capacity than you assumed because of holidays, downtime, utilization percentage, or a missing shift assignment."
+  - question: "Why is a job missing from my schedule entirely?"
+    answer: "Check three places. First the scheduling failure dialog: jobs that cannot schedule (no routing, inactive work center, no active shifts) are listed there with a reason and fix hint rather than crashing the run. Second, the run's mode: Incremental New only schedules orders with no existing schedule. Third, for stocked products, the order may have been legitimately satisfied from inventory, so no machine time was needed."
+  - question: "Why do two operations overlap on the same machine in the Gantt?"
+    answer: "Overlap is legitimate in two documented cases: lot streaming lets a downstream step begin before its upstream step finishes the full lot, and dependent parallel operations deliberately mirror one physical event across multiple machines with identical times. If neither applies, run the built-in anomaly report, which flags genuine double-bookings and over-capacity days with the affected work center and dates."
+  - question: "What diagnostic tools does EDGEBIC include?"
+    answer: "Three tiers. The scheduling failure dialog explains per-job why something could not schedule, with a category and a fix hint. The in-app anomaly report scans a schedule for dozens of known problem patterns (over-utilization, off-calendar bookings, ordering violations, configuration gaps) and lists the offending rows. And a session log records every decision the engine made during a run, for the deep cases support and engineers dig into."
+qaQuestions:
+  - question: "After this morning's reschedule, a job that was half done shows its remaining steps six days out, on a machine that looks empty. What happened?"
+    answer: "That symptom is the signature of stale reservations, and modern EDGEBIC releases them automatically: when a job is rescheduled, its old not-yet-started bookings are dropped so its own previous plan cannot block its new one. If you still see an unexplained gap, check the two legitimate causes first: another job's real bookings on that machine (the Gantt filter hides more than people remember), and a between-step mechanism such as transit days on the preceding step. Then run the anomaly report; an unexplained multi-day gap between sequential steps with no queue, flow, or transit configured is one of the exact patterns it checks for."
+  - question: "The same operation shows up twice for one job after a few reschedules, and the hours look double-counted. How do I clean this up and stop it recurring?"
+    answer: "First confirm it is genuine duplication and not the two legitimate look-alikes: a partially completed step correctly shows history plus a forward remainder while in progress, and dependent parallel mirrors correctly appear on multiple machines. Genuine duplicates (the same step, same work center, fully planned twice) show up in the anomaly report as split pairs or stray hour rows. The clean-up is a targeted reschedule of the affected job, which rebuilds its plan from actuals; the prevention is procedural: always log actuals before rescheduling, and use one scheduling mode consistently in the daily routine rather than alternating between full and incremental runs mid-day."
+---
+
+**When a production schedule looks wrong, the schedule is usually right about something being wrong: the surprise on the Gantt is almost always a correct computation over an input you did not know about.** A missing shift assignment, a routing link that points nowhere, a changeover the setup matrix honestly charged, a priority sort doing exactly its job. This guide organizes every "that looks wrong" moment in [EDGEBIC](/edgebic) by User Solutions into symptom families, in planner language, with the first fix to try for each. It is the triage page: start at your symptom, not at page one.
+
+Two principles before the symptoms. First, trust the arithmetic and audit the inputs; the [scheduling engine](/blog/edgebic-scheduling-engine-guide) is deterministic, so the same data always produces the same schedule, which means every surprise traces to data. Second, use the tools in escalation order: the failure dialog first, the built-in anomaly report second, the session log last. More on all three at the end.
+
+## Symptom 1: A Job Will Not Schedule at All
+
+**What it looks like:** you run the scheduler and a job comes back unscheduled, listed in the failure dialog.
+
+**What is usually happening:** the job failed pre-flight validation or hit a hard wall during placement. The common causes, roughly in order of frequency:
+
+- **The product has no routing**, or the routing has no steps. Nothing to schedule.
+- **A work center in the routing has no shift assigned.** A machine with no working time is a scheduling dead end; the engine cannot book hours that do not exist.
+- **A work center in the routing is inactive** or was deleted after the routing was written.
+- **The routing has a circular dependency:** step A waits for B, which waits for A. The engine detects the loop and refuses rather than guessing.
+- **No capacity exists within the search window**, which with a healthy calendar essentially means a work center whose shifts, holidays, and downtime net out to nothing.
+- **A synchronized parallel operation cannot find a simultaneous slot**: all machines in a dependent parallel group need a common shift with shared free time, and one member's calendar never lines up with the others.
+
+**First fix:** read the failure dialog before touching anything. Each failed job carries a category and a fix hint pointing at the exact gap. Then fix the master data, not the schedule: assign the shift, complete the routing link, reactivate or replace the work center. Two five-minute audits prevent most of this family entirely: check for work centers with no shifts, and check for products with no routing, both easy filters in the master data grids described in the [how-to library](/blog/edgebic-how-to-hub).
+
+## Symptom 2: A Job Starts Much Later Than Expected
+
+**What it looks like:** you expected Monday; the Gantt says next Thursday.
+
+**What is usually happening:** one of five things, and they are worth checking in this order because the early ones are the common ones:
+
+1. **A higher-priority job claimed the capacity.** Jobs are placed in priority order (lower number first, then start date, then due date). The rush order you bumped up yesterday is standing exactly where you put it: in front.
+2. **A predecessor finished later than you think.** A step starts at the latest finish among everything it depends on. If one branch of the routing is slow, the join waits for it. Walk the chain backward on the Gantt and find the long pole.
+3. **Between-step time you configured but forgot.** Queue time counts down only during working shifts (4 queue hours starting Friday afternoon can finish Monday morning). Transit days add days. Both are on the routing step, both are easy to overlook, and both are working as configured.
+4. **The work center offers less capacity than you assumed.** Effective capacity is shift hours times instances times utilization percent, minus holidays, downtime, and partial-day exceptions. A machine at 80% utilization with a maintenance window mid-week offers a lot less than the wall clock suggests.
+5. **The job needs a qualified operator who is not there.** If the step requires a skill, an unstaffed day offers zero hours for it regardless of machine availability: one certified welder on vacation moves the job, and the schedule knew before you did.
+
+**First fix:** open the step's detail and the work center's calendar side by side, then walk causes 1 through 5. If the gap still has no explanation (multiple idle days between sequential steps with no queue, flow, or transit configured anywhere), run the anomaly report: unexplained sequential gaps are one of the patterns it specifically hunts.
+
+## Symptom 3: A Job Is Missing From the Schedule Entirely
+
+**What it looks like:** the order exists, the run finished, and the Gantt simply does not show it.
+
+**What is usually happening:**
+
+- **It failed and you have not seen the dialog yet.** Failures do not crash the run; they are collected per job. One broken order never blocks the other forty, which also means a failure is easy to miss if you do not look.
+- **The mode did not include it.** Incremental New only touches orders with no existing schedule. A job you cleared and expected to re-plan needs a mode that includes it, or a targeted reschedule.
+- **It was satisfied from stock.** For stocked products, if on-hand inventory covers the order quantity, the engine legitimately builds nothing. The order is fulfilled, not forgotten. The [consume-from-stock walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic) shows this logic with numbers.
+- **A Gantt filter is hiding it.** Filters persist with your saved layout; the job is there, the view is not showing it.
+
+**First fix:** failure dialog, then mode, then the order's fulfillment status, then clear the Gantt filters. In that order, because that is the frequency order.
+
+## Symptom 4: Steps Appear Out of Order or Overlapping
+
+**What it looks like:** step 30 starts before step 20 ends, or two operations share a machine at the same time.
+
+**What is usually happening:** first, rule out the two cases where overlap is not a bug:
+
+- **Lot streaming is configured.** A transfer batch or start-to-start lag on the upstream step deliberately lets downstream begin before upstream finishes the whole lot. That overlap is the feature working; the [lot streaming walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic) shows what healthy overlap looks like.
+- **Dependent parallel machines are mirroring.** A synchronized operation legitimately appears on several machines with identical start and end times, because it is one physical event. The mirrors are copies, not conflicts.
+
+If neither applies, the genuine causes are:
+
+- **Broken next-step links in the routing.** The dependency chain is built from each step's link to its successor; a missing or wrong link means the engine cannot know B follows A. Rebuild the link and reschedule.
+- **A manual drag that broke sequence.** Hand-moved bars can violate dependencies; EDGEBIC can warn on out-of-sequence saves if you enable that check, and a reschedule restores computed order.
+
+**First fix:** open the routing and verify every step's next-step link, especially after bulk edits or imports. The routing integrity check (it detects circular and broken chains) takes a minute and belongs after every routing change, per the [how-to library](/blog/edgebic-how-to-hub) maintenance recipes.
+
+## Symptom 5: A Machine Looks Overloaded or Double-Booked
+
+**What it looks like:** a work center's day shows more booked hours than the shift contains, or two unrelated jobs claim the same instance at the same time.
+
+**What is usually happening:** the legitimate case first: dependent parallel mirrors intentionally book on top of the parent's timeline, and a day where mirrors land can display more raw hours than the calendar holds; the anomaly report knows to treat mirrors specially so they do not drown you in false alarms. The genuine cases: a capacity override you forgot about (that Saturday override is still offering hours), a utilization or instance count edited after jobs were placed, or a true double-booking, which the built-in checks flag with the machine, date, and jobs involved.
+
+**First fix:** run the anomaly report scoped to the work center's dates. It distinguishes physically impossible bookings from shift-design questions and points at the offending rows. If configuration changed after placement, a reschedule of the affected jobs re-fits the work to the current calendar.
+
+## Symptom 6: Work Booked on a Holiday or Weekend
+
+**What it looks like:** hours on a day the plant is closed.
+
+**What is usually happening:** either a capacity override made that day legitimately open (overrides on a Saturday create real bookable hours: that is their purpose), or the holiday exists at a different level than you think. Holidays live at three levels (plant-wide, shift-specific, work-center-specific) and downtime is a fourth mechanism; a plant holiday entered only as a shift holiday on one shift leaves the other shift open.
+
+**First fix:** check the date for an override first, then walk the three holiday levels for the work center in question. The anomaly report's off-calendar checks list every booking that lands on a closed day, so you audit from a list rather than scrolling a Gantt.
+
+## Symptom 7: Actuals and Reschedules Misbehaving
+
+**What it looks like:** a reschedule seemed to ignore logged work, or you cannot save an actual date.
+
+**What is usually happening:**
+
+- **Actuals were not saved before the reschedule ran.** The engine preserves what is recorded; work logged only in someone's head moves like any unstarted step. The end-of-day rhythm is actuals first, reschedule second.
+- **An actual end earlier than the actual start is being rejected.** That rejection is a guardrail, not a bug: inverted dates would corrupt history, so the save path blocks them. Usually it is a date-picker slip (wrong day on the end date).
+- **A completed step "moved."** It did not; completed steps are immutable through every reschedule. What usually happened is a look-alike: the step's forward remainder moved (for partially completed work), or a different step on the same machine moved. The [partial completion walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic) shows the correct anatomy of a half-done step so you can tell the two apart.
+
+**First fix:** verify the actuals are actually in the grid (not just punched on a kiosk screen someone forgot to submit), correct any inverted dates, and reschedule again. The [breakdown walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic) is the reference for what a healthy disruption-reschedule looks like end to end.
+
+## Symptom 8: A Bar Is Much Longer Than the Math in Your Head
+
+**What it looks like:** you expected quantity times hours-per-unit, and the bar is hours longer.
+
+**What is usually happening:** the engine is charging things your mental math skipped:
+
+- **A sequence-dependent changeover.** If the setup matrix is active, the setup charged depends on what ran before on that machine; a dark-to-light paint changeover can add hours. The Job View shows the setup source and a plain-language reason per operation, so check what the engine says it charged and why before disputing it.
+- **Utilization scaling.** A machine at 80% utilization spreads the same work over more clock time.
+- **Calendar interruptions.** A bar spanning a weekend or holiday is longer in calendar time than in working hours; the hours are right, the wall-clock span includes closed days.
+- **Remaining-hours logic on a partial.** A partially completed step's bar covers only the remainder, which confuses in the other direction: shorter than expected.
+
+**First fix:** open the operation's detail: allocated hours per day, the setup amount and its stated reason, and the shift calendar underneath. The number in your head assumed a naked formula; the bar includes the plant.
+
+## Symptom 9: The Inventory Numbers Disagree With the Shelf
+
+**What it looks like:** on-hand in EDGEBIC says 60, the shelf says 40, and scheduling decisions (build versus satisfy from stock) follow the wrong number.
+
+**What is usually happening:** the ledger and the cached balance have drifted, or transactions were never posted. In EDGEBIC the ledger of receipts and issues is the source of truth and the on-hand figure derives from it, so the fix is always through the ledger, never by typing over the balance.
+
+**First fix:** inspect the product's ledger entries, post the missing transactions (or reverse the wrong ones), and let the balance recompute. The built-in integrity checks flag drift between ledger and balance so you find it before it misroutes a netting decision.
+
+## Symptom 10: The Screen Looks Wrong, Not the Schedule
+
+**What it looks like:** columns missing from a grid, a filter you never set, every bar on the Gantt shifted by the same few hours, or a layout that "someone changed."
+
+**What is usually happening:** display, not data, and it is worth its own family because it burns real troubleshooting time on schedules that were never wrong:
+
+- **A saved personal grid layout.** Every grid in EDGEBIC remembers your column widths, order, visibility, sorting, grouping, and filters per user, restored automatically. A grid showing odd columns or a forgotten filter is almost always your own saved layout talking. Settings has a one-click reset of all layouts to factory defaults.
+- **A uniform offset on every bar.** When every single bar is shifted by the same amount, look at display and time-zone settings before anything else; a genuine scheduling problem rarely moves all jobs identically.
+- **The wrong sub-tab or view mode.** The Schedule tab has several views of the same underlying plan; comparing what you remember from one view against what you are reading in another is a classic source of phantom discrepancies.
+
+**First fix:** reset layouts, clear filters, and re-check before touching any data. Ten seconds of display hygiene beats an hour of hunting for a scheduling bug that does not exist.
+
+## Symptom 11: Scheduling Runs Take Too Long
+
+**What it looks like:** the run itself becomes the bottleneck: minutes of waiting on every change.
+
+**What is usually happening:** the run is doing more work than the change requires. Full Reschedule rebuilds every job from scratch; running it for a one-job change is using a demolition crew to hang a picture.
+
+**First fix:** match the run to the change. Daily intake belongs in Incremental New (only new orders). A disruption belongs in a targeted Reschedule of the affected jobs. Full Reschedule belongs in a maintenance window, weekly or after structural changes. If a properly scoped run is still slow, look at the scope of the data itself: an enormous scheduling horizon or a very large set of active orders multiplies everything, and archiving genuinely dead orders is the cheapest speedup available.
+
+## The Three-Tier Toolkit, and When to Use Which
+
+Every symptom above referenced the same three tools. Here is the deliberate division of labor:
+
+| Tier | Tool | Use it when | What you get |
+|---|---|---|---|
+| 1 | Scheduling failure dialog | A job did not schedule | Per-job reason, category, and fix hint |
+| 2 | In-app anomaly report | The schedule exists but something looks off | A scan of the schedule against dozens of known problem patterns: overloads, off-calendar bookings, ordering violations, configuration gaps, duplicated hours, with the offending rows listed. Run it plant-wide or scoped to one job, and export rows for a ticket |
+| 3 | Session log | You need to know why the engine chose what it chose | A decision-by-decision trace of the run, the tool of last resort you will mostly use with support |
+
+The habit that makes all three cheap: run the anomaly report after routing changes and before go-live weeks, not only when something hurts. A clean report is a one-minute confirmation; a dirty one is a problem found early. And when a job trips several checks at once, resist fixing them in list order: one root cause (a bad routing link, a mis-set calendar) commonly fans out into three or four flagged rows, so fix the most upstream finding first and re-run the report before touching the rest. Half the list usually clears itself.
+
+## The Prevention Checklist
+
+Most troubleshooting time is spent on preventable classes. The five habits that shrink this whole page:
+
+1. **Audit master data before scheduling:** no work centers without shifts, no products without routings.
+2. **Verify routing links after every edit or import**, and run the integrity check.
+3. **Log actuals before rescheduling**, every time, so the engine preserves reality instead of fiction.
+4. **One mode for the daily routine** (Incremental New), targeted reschedules for disruptions, Full Reschedule only in maintenance windows.
+5. **Run the anomaly report on a schedule you trust**, so you know what clean looks like before you need to recognize dirty.
+
+If your surprises keep coming from one overloaded resource rather than data problems, the issue is capacity, not correctness: start with [identifying your production bottleneck](/blog/production-bottleneck-identification) and the [results guide](/blog/edgebic-results-guide) for what fixing it is worth. And if you are still deciding whether structured scheduling beats the whiteboard that never showed you these problems at all, that is the argument of the [complete EDGEBIC guide](/blog/edgebic-complete-guide): the whiteboard was not conflict-free, it was just silent.
+
+Stuck on a symptom this page did not cover? [Contact US](/contact-us) with the failure dialog text or an exported anomaly row, and bring the job number. Specifics beat screenshots of a Gantt every time.
+
+<Accordion title="Why does my production schedule look wrong?">
+Nine times out of ten a schedule that looks wrong is correctly reporting something wrong in the inputs: a routing with missing links, a work center with no shifts, a stale capacity reservation, or a higher-priority job that legitimately claimed the slot. Start by identifying the symptom family (job will not schedule, starts too late, missing entirely, steps out of order) and apply that family's first fix before assuming the engine erred.
+</Accordion>
+
+<Accordion title="Why does a job start much later than I expected?">
+Work backward through four causes in order: a higher-priority job claimed the capacity first; a predecessor step finished later than you thought (a step starts at its latest predecessor's finish); a between-step mechanism added time (queue hours count only during shifts, and transit days add days); or the intended work center offered less capacity than you assumed because of holidays, downtime, utilization percentage, or a missing shift assignment.
+</Accordion>
+
+<Accordion title="Why is a job missing from my schedule entirely?">
+Check three places. First the scheduling failure dialog: jobs that cannot schedule (no routing, inactive work center, no active shifts) are listed there with a reason and fix hint rather than crashing the run. Second, the run's mode: Incremental New only schedules orders with no existing schedule. Third, for stocked products, the order may have been legitimately satisfied from inventory, so no machine time was needed.
+</Accordion>
+
+<Accordion title="Why do two operations overlap on the same machine in the Gantt?">
+Overlap is legitimate in two documented cases: lot streaming lets a downstream step begin before its upstream step finishes the full lot, and dependent parallel operations deliberately mirror one physical event across multiple machines with identical times. If neither applies, run the built-in anomaly report, which flags genuine double-bookings and over-capacity days with the affected work center and dates.
+</Accordion>
+
+<Accordion title="What diagnostic tools does EDGEBIC include?">
+Three tiers. The scheduling failure dialog explains per-job why something could not schedule, with a category and a fix hint. The in-app anomaly report scans a schedule for dozens of known problem patterns (over-utilization, off-calendar bookings, ordering violations, configuration gaps) and lists the offending rows. And a session log records every decision the engine made during a run, for the deep cases support and engineers dig into.
+</Accordion>

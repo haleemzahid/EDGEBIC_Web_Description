@@ -1,0 +1,94 @@
+---
+title: "What Is the Update Existing Records Import Option?"
+description: "Update Existing Records is the import mask option that decides whether a matched row overwrites the record it matched or is left untouched and counted Reused. Learn how EDGEBIC uses it."
+published: 2026-08-16T12:00:00.000Z
+modified: 2026-08-16T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+pillarSlug: edgebic-glossary-index
+keywords:
+  - update existing records
+  - import mask option
+  - reused import row
+  - overwrite on import
+  - import update setting
+  - refresh master data from file
+targetPhrase: "update existing records"
+wordCount: 1180
+readingTime: 6
+faqQuestions:
+  - question: "What is the Update Existing Records import option?"
+    answer: "Update Existing Records is a checkbox in an import mask's options that controls what happens when a row in your file matches a record that already exists. With it on, the matched record is overwritten with the file's values and the row is counted Updated. With it off, which is the default, the matched record is left exactly as it was and the row is counted Reused. It has no effect on rows that do not match anything: those are always created."
+  - question: "Why does my import say Reused instead of Updated?"
+    answer: "Because Update Existing Records is off, which is the default. Reused means the row found its match and deliberately changed nothing. This is the safe default, so a file loaded to add a handful of new records cannot quietly rewrite hundreds of existing ones. If you intended the run to refresh existing data, open the mask's options, tick Update Existing Records, and run the file again."
+  - question: "Which import types does Update Existing Records apply to?"
+    answer: "It applies to the master-data and demand types where overwriting an existing record is a meaningful choice: Product, Workcenter, Customer, SalesOrder, PlantHoliday, and Shift. Routing and actuals imports do not use it because they have their own replacement rules, and those rules are different in kind from a simple overwrite toggle."
+qaQuestions:
+  - question: "We turned Update Existing Records on for a weekly price file and it wiped a description that was blank in the file. Is that expected?"
+    answer: "Not quite, and the distinction matters. A blank cell does not overwrite an existing value on an update: blanks are treated as no information supplied, so the stored value survives. What does overwrite is a cell that carries a value, even if that value is wrong or a placeholder such as a single space, a zero, or the literal text NA exported by an upstream system. If something you did not expect changed, look at what the cell actually contained rather than assuming it was empty. Open the file with formatting visible, check the exact cell for the affected record, and check whether your export routine substitutes a placeholder for missing data. Once you know which it is, the fix is either to correct the source export or to narrow the mask so it does not map that column at all."
+  - question: "How do we run a weekly sync file safely without risking a mass overwrite of data our planners maintain by hand?"
+    answer: "Split the intent into two masks rather than trying to make one mask do both jobs. Build a narrow sync mask that maps only the columns your source system genuinely owns, for example product identifier and unit price, with Update Existing Records on. Fields your planners maintain by hand, such as lead time or category, are simply not mapped, so nothing can touch them no matter what the file contains. Keep a second, wider mask with Update Existing Records off for onboarding brand new records, where every match should stay untouched. This is more reliable than reviewing each file before every run, because the protection lives in the saved mask rather than in someone remembering. Run the sync mask, read the result summary, and confirm the Updated count matches roughly the number of prices you expected to change."
+---
+
+**Update Existing Records is the import mask option that decides what happens when a row in your file matches a record EDGEBIC already holds: with it on the record is overwritten and the row counts as Updated, with it off the record is left untouched and the row counts as Reused.** It is the single switch that separates an import that refreshes your data from an import that only adds what is missing, and it is off by default so the cautious behavior is the one you get without thinking about it.
+
+[EDGEBIC by User Solutions](/edgebic) exposes the option as a checkbox in the Import Options dialog for a saved mask. This article defines what it does and when to turn it on. For the outcome labels it produces, see the sibling term [import row status](/blog/what-is-an-import-row-status).
+
+## How It Works
+
+Every import type matches rows against existing data using a business key: products by product identifier, work centers by work center identifier, customers by name, and so on. Matching happens whether or not this option is set. What the option controls is what EDGEBIC does after a match is found.
+
+- **Off, the default.** The matched record is left exactly as it stands. The row is counted **Reused** in the result summary and written to the run log with that outcome. Nothing about the stored record changes.
+- **On.** The matched record is updated from the file's values. The row is counted **Updated**.
+
+Rows that match nothing are unaffected by the setting. They are always inserted and counted **Created**, whichever way the checkbox is set.
+
+The option is offered on the import types where overwriting is a real decision: Product, Workcenter, Customer, SalesOrder, PlantHoliday, and Shift. Routing imports and actuals imports do not use it, because each has its own replacement behavior that is stronger and more specific than a general overwrite toggle.
+
+One behavior is worth committing to memory, because it prevents most of the anxiety around turning the option on: a blank cell does not wipe a stored value. On an update, an empty cell is read as no information supplied, and the existing value survives. A cell carrying an actual value does overwrite, which is exactly the point.
+
+## A Concrete Example
+
+Think of a filing cabinet and a stack of updated forms. Reused is the clerk who checks each form against the folder, sees the folder already exists, and puts the form in the recycling without opening the folder. Updated is the clerk who opens the folder and replaces the pages the form covers. Both clerks file a brand new folder when there is no match. The only difference is what they do with the ones that already exist.
+
+At Acme Industries the planner receives a weekly price file. The saved Product mask has Update Existing Records on and is run against `prices-week29.xlsx`:
+
+| Product | Row outcome | What changed |
+|---|---|---|
+| Widget-A | Updated | unit price refreshed |
+| Bracket-B | Updated | unit price refreshed |
+| Frame-S | Updated | nothing: the price cell was blank, so the stored price survived |
+| Hinge-C | Created | product did not exist yet |
+
+Summary: `Created 1 · Updated 3 · Reused 14 · Failed 0`. The fourteen Reused rows are products the file listed but whose mapped columns were all blank, so they matched and nothing was supplied to change. Had the option been off, all seventeen matches would have read Reused and the two price changes would never have landed.
+
+## How EDGEBIC Uses It
+
+The setting lives per mask, not per run, which means the decision is made once when the mask is built and then repeats every time that mask is used. That is deliberate: a mask is meant to encode an intent. A mask named for a weekly sync should carry the option on, and a mask meant for onboarding new records should carry it off, so nobody has to remember which behavior today's file needs.
+
+The default being off is a safety property rather than a limitation. It means a file dropped into a mask nobody has reviewed cannot silently rewrite established master data. If a run comes back all Reused when you expected changes, that is the default doing its job, and the fix is a single tick in the mask's options followed by a re-run of the same file.
+
+Scoping the mask's mapped columns is the other half of control. The option decides whether matched records are written at all; the mapped columns decide which fields can be written. A narrow mask that maps only the fields your source system genuinely owns is safe to run with the option on, because the fields your planners maintain by hand are not in the mask at all and cannot be reached.
+
+For building and saving the mask itself, see [how import masks work in EDGEBIC](/blog/edgebic-import-masks-explained), and for setting the options on a saved mask see [how to set import options for a mask](/blog/how-to-set-import-options-for-a-mask-in-edgebic). For the create-or-update logic underneath, see [what is an upsert in data import](/blog/what-is-an-upsert-in-data-import). Browse more definitions in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+<Accordion title="What is the Update Existing Records import option?">
+Update Existing Records is a checkbox in an import mask's options that controls what happens when a row in your file matches a record that already exists. With it on, the matched record is overwritten with the file's values and the row is counted Updated. With it off, which is the default, the matched record is left exactly as it was and the row is counted Reused. It has no effect on rows that do not match anything: those are always created.
+</Accordion>
+
+<Accordion title="Why does my import say Reused instead of Updated?">
+Because Update Existing Records is off, which is the default. Reused means the row found its match and deliberately changed nothing. This is the safe default, so a file loaded to add a handful of new records cannot quietly rewrite hundreds of existing ones. If you intended the run to refresh existing data, open the mask's options, tick Update Existing Records, and run the file again.
+</Accordion>
+
+<Accordion title="Which import types does Update Existing Records apply to?">
+It applies to the master-data and demand types where overwriting an existing record is a meaningful choice: Product, Workcenter, Customer, SalesOrder, PlantHoliday, and Shift. Routing and actuals imports do not use it because they have their own replacement rules, and those rules are different in kind from a simple overwrite toggle.
+</Accordion>
+
+<Accordion title="We turned Update Existing Records on for a weekly price file and it wiped a description that was blank in the file. Is that expected?">
+Not quite, and the distinction matters. A blank cell does not overwrite an existing value on an update: blanks are treated as no information supplied, so the stored value survives. What does overwrite is a cell that carries a value, even if that value is wrong or a placeholder such as a single space, a zero, or the literal text NA exported by an upstream system. If something you did not expect changed, look at what the cell actually contained rather than assuming it was empty. Open the file with formatting visible, check the exact cell for the affected record, and check whether your export routine substitutes a placeholder for missing data. Once you know which it is, the fix is either to correct the source export or to narrow the mask so it does not map that column at all.
+</Accordion>
+
+<Accordion title="How do we run a weekly sync file safely without risking a mass overwrite of data our planners maintain by hand?">
+Split the intent into two masks rather than trying to make one mask do both jobs. Build a narrow sync mask that maps only the columns your source system genuinely owns, for example product identifier and unit price, with Update Existing Records on. Fields your planners maintain by hand, such as lead time or category, are simply not mapped, so nothing can touch them no matter what the file contains. Keep a second, wider mask with Update Existing Records off for onboarding brand new records, where every match should stay untouched. This is more reliable than reviewing each file before every run, because the protection lives in the saved mask rather than in someone remembering. Run the sync mask, read the result summary, and confirm the Updated count matches roughly the number of prices you expected to change.
+</Accordion>

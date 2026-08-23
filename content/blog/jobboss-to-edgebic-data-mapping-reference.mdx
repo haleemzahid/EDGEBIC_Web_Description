@@ -1,0 +1,191 @@
+---
+title: "JobBOSS to EDGEBIC: The Data Mapping Reference"
+description: "JobBOSS data export scheduling field by field: map parts, work centers, routings, orders, and actuals into EDGEBIC import masks with unit conversions."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+pillarSlug: edgebic-erp-integration-guide
+keywords:
+  - JobBOSS data export scheduling
+  - JobBOSS field mapping
+  - JobBOSS routing export
+  - import mask field reference
+  - JobBOSS work center export
+  - ERP data mapping scheduling
+targetPhrase: "JobBOSS data export scheduling"
+wordCount: 2091
+readingTime: 10
+faqQuestions:
+  - question: "Which columns must a JobBOSS export contain before EDGEBIC will import it?"
+    answer: "Each entity type has a short mandatory list and everything else is optional. Products need a product id. Work centers need a work center id. Routings need end product, step name, an operation flag, and hours required. Sales orders need product, quantity, and a job date. Actuals need job number, work center id, and the actual date. If a mandatory field is not mapped in the mask, the run stops before reading a single row."
+  - question: "How do I map JobBOSS setup times stored in minutes?"
+    answer: "Set a conversion factor of 0.016667 on that column in the import mask. The multiplication happens before the value is stored, so a 30-minute cell lands as 0.5 hours on every run without anyone remembering to convert. Seconds use 0.000278. The factor is saved with the mask, which makes the conversion permanent, repeatable, and auditable through the per-run import log."
+  - question: "What order should the JobBOSS files be imported in?"
+    answer: "Import in dependency order: parts first, then work centers, then routings, then open orders, then actuals. Routings reference both parts and work centers, and orders reference parts, so loading upstream data first keeps the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but records created that way carry only the name from the routing file."
+  - question: "What does each row outcome mean after an import run?"
+    answer: "Created means a new record was written. Updated means an existing record matched by natural key and was changed. Reused means an existing record matched and was deliberately left alone, which is the default safe behavior. Failed means the row was rejected and the reason is recorded. The result dialog shows the counts and the per-run log file records every row individually."
+qaQuestions:
+  - question: "Our JobBOSS part numbers use inconsistent capitalization between the item master export and the routing export. Will that create duplicate parts in EDGEBIC?"
+    answer: "No. Every natural key lookup is case-insensitive, so a routing row naming WIDGET-A finds the existing part Widget-A and links to it rather than creating a second record. The stored spelling is whatever landed in the database first, and import never renames on a case mismatch. The practical consequence is that you can leave your exports exactly as JobBOSS produces them. What does create duplicates is a genuine spelling difference (WIDGET-A versus WIDGET_A), so a five-minute pass over distinct part names in the routing file is worth doing once."
+  - question: "We have 400 routings averaging six operations. Do we import them as one file or one file per part?"
+    answer: "One file with all 2,400 rows is correct, and the reason is mechanical: a routing import wipes and recreates each end product's steps once per run, on first reference to that product. All of a part's steps must therefore travel in the same run. Splitting one part across two runs means the second run's wipe deletes the first run's steps, and you end up with only half the routing. Multiple parts in one file are fine, so the safe rule is simply never to split a single part. The two-pass import then sorts each part's steps by sequence number and wires the chain after every row is read."
+---
+
+**Mapping JobBOSS data into EDGEBIC is a column-mapping exercise, not a development project: you export parts, work centers, routings, open jobs, and optionally actuals to Excel or CSV, then drag each source column heading onto the matching EDGEBIC field once and save it as a reusable import mask.** This reference lists what maps to what, which columns are mandatory, how unit conversion and blank cells behave, and what each row outcome means when the run finishes.
+
+EDGEBIC by User Solutions integrates with JobBOSS through those import masks rather than a certified connector. If you have not read the end-to-end version yet, start with the [complete JobBOSS integration guide](/blog/edgebic-jobboss-integration-guide); this post is the lookup table you keep open while you build the masks.
+
+## The five files and their order
+
+Import in dependency order. Later files reference records the earlier ones created.
+
+| # | JobBOSS export | EDGEBIC entity type | Why it comes here |
+|---|---|---|---|
+| 1 | Parts / items | Product | Routings and orders both reference parts by name |
+| 2 | Work centers | Workcenter | Routing operation steps land on these |
+| 3 | Routings | BOR (bill of routing) | Needs parts and work centers to exist |
+| 4 | Open jobs / orders | SalesOrder | References the part being built |
+| 5 | Labor / actuals (optional) | Actuals | References jobs that are already scheduled |
+
+Two more entity types matter for a first load but do not come from JobBOSS: **Shift** (your working calendar, one row per shift with a start/end pair per weekday) and **PlantHoliday** (plant-wide closures by name and date). Build those from a plain spreadsheet you write yourself.
+
+## Parts to Product
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `Product_Id` | Yes | The JobBOSS part number. This is the natural key, matched case-insensitively |
+| `Product_Name` | | Longer name if your export carries one separately |
+| `Description` | | Part description |
+| `UOM` | | Each, LB, FT, whatever your export uses |
+| `Unit_Price` | | Sell price, if you want it visible for quoting |
+| `Lead_Time` | | Purchase or manufacturing lead time |
+| `Category`, `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+The one column you cannot skip is the part number. A blank part number cell fails that row with a recorded reason and, by default, the run continues through the remaining rows.
+
+## Work centers to Workcenter
+
+This is the file where scheduling accuracy is won or lost, because it carries capacity.
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `Workcenter Id` | Yes | The JobBOSS work center code. Natural key |
+| `Workcenter Name` | | Friendly name for the Gantt and reports |
+| `Number_Of_Instances` | | How many identical machines this center holds. Defaults to 1 when blank |
+| `Setup_Time_Hours` | | Default setup for the center, overridable per routing step |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency percentage applied to it |
+| `Hourly_Rate` | | Feeds cost rollups |
+| `Is_Bottleneck` | | Flags the constraint so the engine can anchor around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for centers with long changeovers |
+| `Use_Global_Shifts`, `Shift_Names` | | Which calendar this center runs on |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt colors |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits where they apply |
+
+`Number_Of_Instances` is the field most JobBOSS exports do not carry, because ERPs typically model a work center as one capacity number rather than a count of machines. Fill it by hand for any center that is really a cell of three or four identical machines. Getting it right is the difference between a plan the shop can run and a plan that quietly assumes one mill does the work of four. The general principle behind that is covered in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## Routings to BOR
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | The part number this routing builds |
+| `Sub_Prod` | Yes | The work center id for an operation step, or the component part number for a material step |
+| `Op_Flag` | Yes | True for an operation step, false for a material or component step |
+| `No_Req` | Yes | Hours required per unit at this step |
+| `Seq_No` | | Operation sequence: use gaps of 10 (10, 20, 30) |
+| `Next_Seq` | | Leave blank and let the chaining happen automatically |
+| `Setup_Time` | | Setup hours for this step at this work center |
+| `Queue_Time` | | Buffer hours before the step can start |
+| `Flow_Step`, `Transit_Days` | | Overlap and transport between steps |
+| `Parallel_Op` | | The parent step's work center name, for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent` (default), `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Number of applicable machine instances for this step |
+| `Fam_Dept` | | Department assignment for auto-created work centers |
+
+`Op_Flag` is the field people get wrong first. A true value says "this row is an operation running on a work center". A false value says "this row is a component consumed at this point in the routing". Mixing them up produces a routing full of work centers that are actually parts, and it shows up immediately in the graphical designer.
+
+### How sequence wiring actually happens
+
+A routing import runs in **two passes**, because step 10 cannot point at step 20 before step 20 exists. Pass one reads and validates every row, auto-creates any part or work center the file names that is not in EDGEBIC yet, and buffers the rows. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product so the routing renders as one connected flow.
+
+That last link matters more than it sounds. Without it, the routing designer draws a chain of operations floating unconnected to the part they build. Keeping the automatic chaining option on (it is on by default) and leaving `Next_Seq` blank produces the connected version every time.
+
+## Open jobs to SalesOrder
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Part number being built |
+| `Qty` | Yes | Order quantity |
+| `Job_Date` | Yes | Release or start date |
+| `Sales_Order(Ref#)` | | Order reference: rows sharing one reference group under a single sales order |
+| `Job_Number` | | Your JobBOSS job number, if you want it carried across |
+| `Due_Date`, `Order_Date` | | Promise and entry dates |
+| `Customer_Name` | | Auto-created if it does not exist yet |
+| `Priority`, `Unit_Price`, `User_Notes` | | Optional |
+
+When `Sales_Order(Ref#)` is filled, all rows sharing a reference group under one sales order and their jobs auto-number as `{Ref}-{line}`. Multi-line orders therefore stay together instead of scattering into unrelated jobs. Rows with a blank reference each become a standalone job.
+
+## Actuals
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `Job_Number` | Yes | Must match a job already scheduled in EDGEBIC |
+| `WorkCenter_Id` | Yes | Must match the work center on that job's operation |
+| `Actual_Date` | Yes | The day the work happened |
+| `Actual_Hours`, `Actual_Pieces` | | Either or both. The missing one is derived from the operation's rate |
+| `Complete` | | A truthy value marks that operation finished |
+| `Actual_Start` | | Explicit start, otherwise the earliest imported date is used |
+
+An actuals row can only find its home if the job is already scheduled, which is why actuals come last. The import always overwrites the days the file carries, so re-importing the same file never double-counts and a corrected timesheet file simply fixes the earlier numbers.
+
+## Conversion factors
+
+| From, to | Factor |
+|---|---|
+| Minutes to hours | `0.016667` |
+| Seconds to hours | `0.000278` |
+| Already in hours | leave empty |
+
+The factor lives on the mask row, applied before the value is stored. Non-numeric cells pass through untouched.
+
+## Blank cells, zeros, and re-imports
+
+Three behaviors govern every re-import, and they are worth memorizing:
+
+- **On an update, a blank cell preserves the existing value.** A price-refresh file carrying only part number and price changes prices and nothing else.
+- **A zero is a value, not a blank.** A column full of zeros writes zeros. Leave a column out of the file rather than filling it with zeros you do not mean.
+- **A routing re-import wipes and recreates that part's steps.** Every run is therefore idempotent: steps never accumulate. It is also safe for running jobs, because each scheduled job carries a frozen snapshot of the routing it was planned with. This is the same protection described in the [reschedule behavior](/blog/why-did-my-job-jump-after-a-reschedule-edgebic) posts: completed work is never moved.
+
+## Reading the outcomes
+
+| Outcome | Meaning | Typical cause |
+|---|---|---|
+| Created | New record written | First load, or genuinely new part |
+| Updated | Matched and changed | Updates enabled on a refresh run |
+| Reused | Matched and left alone | The safe default for master data |
+| Failed | Row rejected, reason recorded | Blank key, unparseable date, unmatched job |
+
+The result dialog shows the counts. The per-run log file records every row with its outcome and, for failures, the exact reason, which is where you go when a summary count looks wrong.
+
+## What does not come from JobBOSS
+
+Some of EDGEBIC's strongest scheduling inputs have no JobBOSS equivalent and are configured directly: work center groups (machine pools that re-shop on every reschedule), the sequence-dependent setup matrix, operator skills and certifications, and bottleneck anchoring. Import gets the skeleton in; those settings are what make the plan match the floor. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture page](/edgebic-erp-integration) covers how the same mask approach works across every ERP.
+
+Once the masks exist, the recurring cost drops to minutes. That rhythm is the subject of [the daily JobBOSS and EDGEBIC scheduling workflow](/blog/the-daily-jobboss-edgebic-scheduling-workflow), and the questions shops ask before they start are collected in the [JobBOSS integration FAQ](/blog/edgebic-jobboss-integration-faq).
+
+<Accordion title="Which columns must a JobBOSS export contain before EDGEBIC will import it?">
+Each entity type has a short mandatory list and everything else is optional. Products need a product id. Work centers need a work center id. Routings need end product, step name, an operation flag, and hours required. Sales orders need product, quantity, and a job date. Actuals need job number, work center id, and the actual date. If a mandatory field is not mapped in the mask, the run stops before reading a single row.
+</Accordion>
+
+<Accordion title="How do I map JobBOSS setup times stored in minutes?">
+Set a conversion factor of 0.016667 on that column in the import mask. The multiplication happens before the value is stored, so a 30-minute cell lands as 0.5 hours on every run without anyone remembering to convert. Seconds use 0.000278. The factor is saved with the mask, which makes the conversion permanent, repeatable, and auditable through the per-run import log.
+</Accordion>
+
+<Accordion title="What order should the JobBOSS files be imported in?">
+Import in dependency order: parts first, then work centers, then routings, then open orders, then actuals. Routings reference both parts and work centers, and orders reference parts, so loading upstream data first keeps the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but records created that way carry only the name from the routing file.
+</Accordion>
+
+<Accordion title="What does each row outcome mean after an import run?">
+Created means a new record was written. Updated means an existing record matched by natural key and was changed. Reused means an existing record matched and was deliberately left alone, which is the default safe behavior. Failed means the row was rejected and the reason is recorded. The result dialog shows the counts and the per-run log file records every row individually.
+</Accordion>

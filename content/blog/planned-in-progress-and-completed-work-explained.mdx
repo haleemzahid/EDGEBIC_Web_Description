@@ -1,0 +1,103 @@
+---
+title: "Planned, In-Progress, and Completed Work Explained (EDGEBIC)"
+description: "Every operation sits in one of three zones at reschedule time. Learn what planned, in-progress, and completed mean in EDGEBIC and how each is handled."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - three zone scheduling model
+  - completed in progress not started
+  - operation status scheduling
+  - work in progress reschedule
+  - actual start actual end
+  - production status tracking
+targetPhrase: "three zone scheduling model"
+wordCount: 1720
+readingTime: 9
+faqQuestions:
+  - question: "What are the three zones of work in EDGEBIC?"
+    answer: "The three zones are completed, in progress, and not started. A completed operation has both an actual start and an actual end and is frozen history. An in-progress operation has an actual start but no end: its logged hours are locked and only the remainder re-plans. A not-started operation has no actuals and re-plans freely. Every operation sits in exactly one zone at the moment you reschedule."
+  - question: "How does EDGEBIC decide which zone an operation is in?"
+    answer: "It reads the actuals recorded on the operation. Both actual dates set means completed. An actual start with no end means in progress. No actuals means not started. There is one inference: a step with no actuals that sits before a step that has them is assumed to have run, and its actuals are backfilled from the plan and tagged as system-filled for review."
+  - question: "Can an operation be complete without an actual end date?"
+    answer: "Yes, by a second road. An operation counts as done when its logged hours have fully covered the planned hours, even if no explicit actual end was stamped. The Job View, the Gantt shading, and the Actual Live cards all treat a fully-logged step as complete. An operator tapping Complete, or a planner recording the end, is the explicit path; full hours coverage is the implicit one."
+qaQuestions:
+  - question: "An operator started a step three hours ago and logged four hours out of a planned twelve. What zone is it in and what happens on reschedule?"
+    answer: "It is in progress: it has an actual start but no actual end. On reschedule the four logged hours stay locked on their real days and the step keeps its work center. The engine re-plans only the remaining eight hours onto the next free slot on that same machine, and downstream steps queue behind the new end. The step stays open so the operator's eventual real finish is honored rather than being locked to a projection."
+  - question: "Why does an in-progress operation show a schedule window longer than its planned hours?"
+    answer: "Because the window now spans both its history and its remainder. The hours already logged sit on their real days, and the hours still owed were placed on the next free slot, which may be a day or more later. The window stretches to cover both. It is still one operation, one row per routing step per work center: EDGEBIC merges the historical piece and the forward piece back together at save time so you never see it split into two."
+---
+
+**In EDGEBIC by User Solutions, every operation of every job sits in exactly one of three zones the moment you reschedule: completed, in progress, or not started. Each zone is handled differently, and knowing which is which tells you precisely what a reschedule will and will not touch.** This three zone scheduling model is the mental map that makes rescheduling predictable instead of scary. Once you can look at a job and name each step's zone, the plan stops surprising you.
+
+Most systems flatten this distinction. They treat a reschedule as one operation applied uniformly to every step, which is why planners fear pressing the button. EDGEBIC refuses to flatten it, because the shop floor does not: some work is done, some is happening now, and some has not begun, and those are genuinely different situations.
+
+## Zone One: Completed
+
+A **completed** operation has both an actual start and an actual end recorded. This can happen two ways. The explicit way is an operator tapping Complete Operation at the kiosk, or a planner recording the end date in the Log Actuals dialog. The implicit way is logged hours fully covering the planned hours, which counts as done on every screen even without a stamped end.
+
+Completed work is frozen history. No reschedule, mode, or setting moves it. The engine re-emits the completed row exactly as it was logged, with its dates, hours, and machine unchanged. This is the immutability guarantee explained in full in [why actuals are immutable](/blog/why-actuals-are-immutable-in-edgebic). When you see a completed step, you can stop worrying about it: it is a permanent record, not a plan.
+
+## Zone Two: In Progress
+
+An **in-progress** operation has an actual start but no actual end. Work has begun and is not finished.
+
+This is the subtle zone, and EDGEBIC handles it with care. The hours already clocked are locked on their real days and the operation keeps its work center: a reschedule will not move a started operation to a different machine. Only the remaining balance, planned hours minus logged hours, is re-planned. The engine places those remaining hours on the next available slot on the same work center, and the operation stays open so the operator's eventual real finish is honored.
+
+Crucially, the in-progress row is not backfilled with a projected end. Doing so would lock it into "complete" status and discard the operator's real finish when it finally arrives. The step stays genuinely in progress until reality closes it. For the deeper handling of started and short-logged work, see [what is a partial completion in scheduling](/blog/what-is-a-partial-completion-in-scheduling).
+
+## Zone Three: Not Started
+
+A **not-started** operation has no actuals at all. These steps re-plan freely: the engine schedules them from the job's resume point against current capacity and calendars, queuing behind whatever the in-progress work finishes. This is ordinary [forward scheduling](/blog/forward-vs-backward-scheduling), applied only to the work that has not yet begun.
+
+Not-started steps are where a reschedule does its real work. They absorb the reality of the zones above them: if an early step ran long, the not-started steps behind it shift later to match.
+
+## How the Zones Drive a Reschedule
+
+The zones are not just labels. They determine the entire reschedule.
+
+The engine reads actuals, sorts every operation into its zone, and computes the resume point: the later of the last completed step's real end and any in-progress step's projected end. Completed and in-progress history is preserved. Not-started work, plus the remainder of in-progress work, is planned forward from the resume point. The mechanics are traced in [how a reschedule uses last night's actuals](/blog/how-a-reschedule-uses-last-nights-actuals).
+
+One inference bridges a gap. If a step has no actuals of its own but sits before a step that does, the engine concludes it must have run (you cannot finish step 3 without doing step 2) and backfills its actuals from the scheduled dates, tagging them as system-filled. This handles shops where a downstream kiosk captures only the most recent operations. The backfilled days are marked so a planner can review them.
+
+## A Worked Example
+
+Consider a four-step routing at reschedule time.
+
+```
+Routing:  [1 Lathe]  ->  [2 Mill]  ->  [3 Paint]  ->  [4 QC]
+
+Shop floor now:
+  Step 1  logged start + end                     -> COMPLETED
+  Step 2  started, 3 of 8 hours logged           -> IN PROGRESS
+  Step 3  no actuals                             -> NOT STARTED
+  Step 4  no actuals                             -> NOT STARTED
+```
+
+After the reschedule:
+
+- **Step 1** is preserved verbatim. Its bar does not move.
+- **Step 2** keeps its 3 logged hours and its machine. The remaining 5 hours are placed on the mill's next free slot. The window stretches to cover both pieces, shown as one row.
+- **Step 3** is scheduled from the end of step 2's new forward allocation.
+- **Step 4** is scheduled after step 3.
+
+Every step landed in the right place because the engine knew which zone it was in. Nothing that happened was overwritten, and nothing that had not happened was frozen.
+
+## Why the Model Matters to You
+
+The three-zone model gives you three concrete guarantees.
+
+**Predictability.** You can look at any job and know, before you press reschedule, what will move and what will not. Completed stays put, in-progress keeps its machine, not-started re-flows.
+
+**Honest promise dates.** Because remaining work queues behind real positions, the completion date reflects reality. This is the discipline behind the on-time delivery gains User Solutions customers have seen for over 35 years: plan the future around the true present.
+
+**Clean [work in progress](/blog/wip-management) visibility.** The zones map directly onto a WIP picture. Completed is finished goods moving on, in-progress is active WIP, not-started is queued demand. Reading the zones reads your WIP.
+
+## Naming Zones on Your Own Floor
+
+The habit worth building is glancing at a job and naming each step's zone from its actuals. A step with an end date is completed and untouchable. A step with a start but no end is in progress, holding its machine, remainder movable. A blank step is not started and free. Once that reading is automatic, a reschedule holds no surprises, and the daily [shop floor rhythm](/blog/the-daily-rhythm-of-a-kiosk-run-shop) becomes routine.
+
+For the full punch-to-plan cycle, see the [shop floor execution guide](/blog/edgebic-shop-floor-guide), and explore the platform at [EDGEBIC](/edgebic).

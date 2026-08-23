@@ -9,98 +9,89 @@ import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
 
 export default function CompareProductsPage(): React.JSX.Element {
+  // Scheduling capabilities first, since both editions share them, then the
+  // material and inventory side that only Complete adds. A reader should be
+  // able to find the dividing line without reading every row.
   const features = [
-    'Shop Scheduling',
-    'Forward Scheduling',
-    'Reverse Scheduling',
-    'Finite Capacity',
-    'MRP/BOM',
-    'Multi-user',
-    'Security',
-    'SQL Database',
-    'Advanced Drag & Drop',
-    'Heat Map Reports',
-    'Schedule Key Dates',
-    'Live Embedded Excel',
-    'Business Intelligence',
-    'Advanced Analytics',
-    'ERP Integration'
+    'Finite Capacity Scheduling',
+    'Forward & Backward Scheduling',
+    'Schedule Optimization',
+    'Multi-Shift Capacity, Holidays & Downtime',
+    'Routings, Setup & Cycle Times',
+    'Sequence-Dependent Setup',
+    'Work Center Groups & Alternates',
+    'Planner View (Jobs & Machines Together)',
+    'Drag & Drop Schedule Editing',
+    'One Live Plan Across Workstations',
+    'Tracking Actuals from the Floor',
+    'ERP Integration (Import/Export)',
+    'Multi-Level MRP & Dependent Demand',
+    'Inventory Ledger & Projected Balance',
+    'Master Production Schedule',
+    'Purchasing, Suppliers & Receiving',
+    'Material Pegging',
+    'Sales Orders & Firm Demand'
   ];
 
+  // Two editions of one product. Everything scheduling is shared; Complete adds
+  // the material and inventory side. Legacy products (RMX, RMDB, EDGEBI) keep
+  // their pages for the customers running them, but they are no longer sold and
+  // so are not compared here.
   const products = [
     {
-      name: 'EDGEBI  ',
-      tier: 'Starter',
-      price: '$1,000+',
-      description: 'Perfect for Job Shops & Small Manufacturers',
-      image: '/images/Edgebic/2022-10/starter.png',
-      link: '/jsl-job-scheduler-lite',
-      features: {
-        'Shop Scheduling': false,
-        'Forward Scheduling': false,
-        'Reverse Scheduling': false,
-        'Finite Capacity': false,
-        'MRP/BOM': false,
-        'Multi-user': false,
-        Security: false,
-        'SQL Database': false,
-        'Advanced Drag & Drop': false,
-        'Heat Map Reports': false,
-        'Schedule Key Dates': false,
-        'Live Embedded Excel': false,
-        'Business Intelligence': false,
-        'Advanced Analytics': false,
-        'ERP Integration': false
-      }
-    },
-    {
-      name: 'Resource Manager DB',
-      tier: 'Advanced',
-      price: '$5,000+',
-      description: 'Ideal for Growing SMBs & Mid-Size Companies',
+      name: 'EDGEBIC APS',
+      tier: 'Scheduling',
+      price: '$25,000',
+      description: 'A plan the shop can actually run',
       image: '/images/Edgebic/2022-11/advanced-1.png',
-      link: '/resource-manager-db-2',
+      link: '/edgebic',
       features: {
-        'Shop Scheduling': true,
-        'Forward Scheduling': true,
-        'Reverse Scheduling': true,
-        'Finite Capacity': true,
-        'MRP/BOM': true,
-        'Multi-user': true,
-        Security: true,
-        'SQL Database': true,
-        'Advanced Drag & Drop': false,
-        'Heat Map Reports': false,
-        'Schedule Key Dates': false,
-        'Live Embedded Excel': false,
-        'Business Intelligence': false,
-        'Advanced Analytics': false,
-        'ERP Integration': true
+        'Finite Capacity Scheduling': true,
+        'Forward & Backward Scheduling': true,
+        'Schedule Optimization': true,
+        'Multi-Shift Capacity, Holidays & Downtime': true,
+        'Routings, Setup & Cycle Times': true,
+        'Sequence-Dependent Setup': true,
+        'Work Center Groups & Alternates': true,
+        'Planner View (Jobs & Machines Together)': true,
+        'Drag & Drop Schedule Editing': true,
+        'One Live Plan Across Workstations': true,
+        'Tracking Actuals from the Floor': true,
+        'ERP Integration (Import/Export)': true,
+        'Multi-Level MRP & Dependent Demand': false,
+        'Inventory Ledger & Projected Balance': false,
+        'Master Production Schedule': false,
+        'Purchasing, Suppliers & Receiving': false,
+        'Material Pegging': false,
+        'Sales Orders & Firm Demand': false
       }
     },
     {
-      name: 'EDGEBI (Bundled w/ RMDB)',
-      tier: 'Premium',
-      price: '$25,000+',
-      description: 'Enterprise-Grade for Multi-Nationals',
+      name: 'EDGEBIC Complete',
+      tier: 'Planning & Materials',
+      price: '$35,000',
+      description: 'The whole planning stack, one system',
       image: '/images/Edgebic/2022-11/Premium-1.png',
-      link: '/edgebi',
+      link: '/edgebic',
       features: {
-        'Shop Scheduling': true,
-        'Forward Scheduling': true,
-        'Reverse Scheduling': true,
-        'Finite Capacity': true,
-        'MRP/BOM': true,
-        'Multi-user': true,
-        Security: true,
-        'SQL Database': true,
-        'Advanced Drag & Drop': true,
-        'Heat Map Reports': true,
-        'Schedule Key Dates': true,
-        'Live Embedded Excel': true,
-        'Business Intelligence': true,
-        'Advanced Analytics': true,
-        'ERP Integration': true
+        'Finite Capacity Scheduling': true,
+        'Forward & Backward Scheduling': true,
+        'Schedule Optimization': true,
+        'Multi-Shift Capacity, Holidays & Downtime': true,
+        'Routings, Setup & Cycle Times': true,
+        'Sequence-Dependent Setup': true,
+        'Work Center Groups & Alternates': true,
+        'Planner View (Jobs & Machines Together)': true,
+        'Drag & Drop Schedule Editing': true,
+        'One Live Plan Across Workstations': true,
+        'Tracking Actuals from the Floor': true,
+        'ERP Integration (Import/Export)': true,
+        'Multi-Level MRP & Dependent Demand': true,
+        'Inventory Ledger & Projected Balance': true,
+        'Master Production Schedule': true,
+        'Purchasing, Suppliers & Receiving': true,
+        'Material Pegging': true,
+        'Sales Orders & Firm Demand': true
       }
     }
   ];
@@ -154,10 +145,13 @@ export default function CompareProductsPage(): React.JSX.Element {
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-6 text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-              Choose the Best Solution for Your Needs
+              Two Editions, One Engine
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Compare features across our three product tiers
+            <p className="mx-auto max-w-3xl text-xl text-muted-foreground">
+              Both editions share the same finite capacity engine and every
+              scheduling capability. The difference is the material side: take
+              APS to plan and schedule what you already know you need to build,
+              or Complete to work out what to build and what to buy as well.
             </p>
           </div>
 
@@ -238,6 +232,30 @@ export default function CompareProductsPage(): React.JSX.Element {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="mx-auto mt-8 max-w-3xl space-y-2 text-sm leading-relaxed text-muted-foreground">
+            <p>
+              <strong className="text-slate-900">EDGEBIC APS</strong> is $25,000
+              and covers finite capacity scheduling and optimization.
+            </p>
+            <p>
+              <strong className="text-slate-900">EDGEBIC Complete</strong> is
+              $35,000 and adds MRP, inventory, purchasing and material pegging
+              on top of everything in APS.
+            </p>
+            <p>
+              EDGEBIC is the current generation of Resource Manager DB. If you
+              run RMDB, EDGEBI or Resource Manager for Excel today, your
+              routings and work centers come with you.{' '}
+              <Link
+                href="/rmdb-to-edgebic"
+                className="font-semibold text-cyan-700 underline-offset-4 hover:underline"
+              >
+                See what changes when you upgrade
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </section>

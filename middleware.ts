@@ -68,6 +68,17 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/part-iii-combining-level-loading-with-finite-capacity-scheduling': '/blog/finite-vs-infinite-capacity-planning',
 };
 
+// Paths that have a markdown variant served by app/md/[[...slug]]/route.ts.
+// Kept to paths we actually support so an existing HTML-only page never 404s
+// when an agent asks for markdown — those fall through to HTML (with Vary).
+function hasMarkdownVariant(pathname: string): boolean {
+  return (
+    pathname === '/' ||
+    pathname === '/developers' ||
+    pathname.startsWith('/blog/')
+  );
+}
+
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') ?? '';
 
@@ -120,6 +131,22 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(redirectTo, request.url), 301);
   }
 
+  // Markdown content negotiation (acceptmarkdown.com): agents sending
+  // Accept: text/markdown get the markdown variant of supported pages.
+  // Browsers never send text/markdown, so HTML traffic is untouched.
+  const accept = request.headers.get('accept') ?? '';
+  const wantsMarkdown = accept.includes('text/markdown');
+  if (
+    wantsMarkdown &&
+    request.method === 'GET' &&
+    !pathname.startsWith('/md/') &&
+    hasMarkdownVariant(pathname)
+  ) {
+    const mdUrl = request.nextUrl.clone();
+    mdUrl.pathname = pathname === '/' ? '/md/index' : `/md${pathname}`;
+    return NextResponse.rewrite(mdUrl);
+  }
+
   // Redirect old /success_stories paths to /success-stories (underscore → hyphen)
   if (normalizedPath.startsWith('/success_stories')) {
     const newPath = normalizedPath.replace('/success_stories', '/success-stories');
@@ -141,13 +168,19 @@ export function middleware(request: NextRequest) {
     '/checkout',
     '/cart'
   ];
+  const response = NextResponse.next();
+
   if (NOINDEX_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
-    const response = NextResponse.next();
     response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
-    return response;
   }
 
-  return NextResponse.next();
+  // Pages that negotiate on Accept must say so, or a CDN can serve the cached
+  // HTML variant to an agent asking for markdown (and vice versa).
+  if (hasMarkdownVariant(pathname)) {
+    response.headers.append('Vary', 'Accept');
+  }
+
+  return response;
 }
 
 export const config = {
