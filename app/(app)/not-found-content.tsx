@@ -47,6 +47,56 @@ export function NotFoundContent(): React.JSX.Element {
             Go to Homepage
           </Link>
         </Button>
+
+        {/* Recovery links — help people and crawlers find the right place
+            instead of a dead end. */}
+        <nav
+          aria-label="Helpful links"
+          className="mt-10 border-t pt-6 text-left"
+        >
+          <p className="mb-3 text-sm font-semibold text-foreground">
+            Where to look instead
+          </p>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li>
+              <Link href="/blogs" className="hover:text-foreground hover:underline">
+                Blog &amp; knowledge base
+              </Link>{' '}
+              — 2,400+ articles at /blog/&#123;slug&#125;
+            </li>
+            <li>
+              <Link href="/edgebic" className="hover:text-foreground hover:underline">
+                EDGEBIC product overview
+              </Link>
+            </li>
+            <li>
+              <Link href="/docs" className="hover:text-foreground hover:underline">
+                Documentation
+              </Link>{' '}
+              and{' '}
+              <Link href="/developers" className="hover:text-foreground hover:underline">
+                developer resources
+              </Link>
+            </li>
+            <li>
+              <a href="/sitemap.xml" className="hover:text-foreground hover:underline">
+                sitemap.xml
+              </a>{' '}
+              — every URL on this site
+            </li>
+            <li>
+              <a href="/llms.txt" className="hover:text-foreground hover:underline">
+                llms.txt
+              </a>{' '}
+              — site guide for AI agents
+            </li>
+            <li>
+              <Link href="/contact-us" className="hover:text-foreground hover:underline">
+                Contact us
+              </Link>
+            </li>
+          </ul>
+        </nav>
       </div>
     </main>
   );

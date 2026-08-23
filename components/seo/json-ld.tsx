@@ -18,6 +18,7 @@ type OrganizationSchema = {
     '@type': 'PostalAddress';
     addressLocality: string;
     addressRegion: string;
+    postalCode: string;
     addressCountry: string;
   };
   contactPoint: {
@@ -191,6 +192,7 @@ export function OrganizationJsonLd({
       '@type': 'PostalAddress',
       addressLocality: AppInfo.ADDRESS.LOCALITY,
       addressRegion: AppInfo.ADDRESS.REGION,
+      postalCode: AppInfo.ADDRESS.POSTAL_CODE,
       addressCountry: AppInfo.ADDRESS.COUNTRY
     },
     contactPoint: [

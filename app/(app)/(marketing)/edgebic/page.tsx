@@ -2,6 +2,7 @@ import * as React from 'react';
 import Link from 'next/link';
 
 import { ScreenshotSlideshow } from '@/components/marketing/fragments/screenshot-slideshow';
+import { EdgebicPlanFlow } from '@/components/marketing/sections/edgebic-plan-flow';
 import { FAQJsonLd, SoftwareApplicationJsonLd } from '@/components/seo';
 import {
   Accordion,
@@ -302,6 +303,9 @@ export default function EdgebicPage(): React.JSX.Element {
             </div>
           </div>
         </section>
+
+        {/* The five stages, told with the real product screens */}
+        <EdgebicPlanFlow />
 
         {/* Scheduling engine */}
         <section className="py-12">

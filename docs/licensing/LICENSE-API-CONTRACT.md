@@ -5,6 +5,9 @@ self-service license request flow.
 **Base URL:** `https://usersolutions.com` (replace with your environment).
 **Status:** authoritative. If code and this doc disagree, treat it as a bug in
 one of them and reconcile.
+**Machine-readable mirror:** the desktop-facing endpoints in §4 are published as
+an OpenAPI 3.0 spec at [`/openapi.json`](../../public/openapi.json)
+(https://usersolutions.com/openapi.json). Keep it in sync with this contract.
 
 ---
 

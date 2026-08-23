@@ -483,6 +483,8 @@ export const FOOTER_LINKS: Array<{
     title: 'Resources',
     links: [
       { name: 'Blog', href: '/blogs', external: false },
+      { name: 'Documentation', href: '/docs', external: false },
+      { name: 'Developers & API', href: '/developers', external: false },
       { name: 'Excel Templates', href: '/excel-templates', external: false },
       { name: 'Compare Products', href: '/compare-products', external: false },
       { name: 'Product Downloads', href: '/product-downloads', external: false },

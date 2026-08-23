@@ -31,12 +31,13 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
   title: {
-    template: '%s | RMDB by User Solutions',
-    default: 'RMDB - Production Planning & Scheduling Software | User Solutions'
+    template: '%s | User Solutions',
+    default:
+      'EDGEBIC - Finite Capacity Scheduling & Production Planning Software | User Solutions'
   },
   description: AppInfo.APP_DESCRIPTION,
   keywords:
-    'production planning, scheduling, manufacturing, RMDB, Resource Manager DB, EDGEBI, operations, tracking, workflow, automation, planning software, scheduling solution, User Solutions, usersolutions.com, User Solutions Inc',
+    'EDGEBIC, finite capacity scheduling, production planning, production scheduling software, manufacturing scheduling, APS software, advanced planning and scheduling, MRP, RMDB, Resource Manager DB, EDGEBI, capacity planning, job shop scheduling, User Solutions, usersolutions.com, User Solutions Inc',
   authors: [{ name: AppInfo.COMPANY_NAME }],
   icons: {
     icon: [

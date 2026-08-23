@@ -27,6 +27,7 @@ export const AppInfo = {
   ADDRESS: {
     LOCALITY: 'South Lyon',
     REGION: 'MI',
+    POSTAL_CODE: '48178',
     COUNTRY: 'US'
   },
   VERSION: packageInfo.version,

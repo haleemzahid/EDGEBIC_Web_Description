@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 
 import { ScreenshotSlideshow } from '@/components/marketing/fragments/screenshot-slideshow';
+import { EdgebicPlanFlow } from '@/components/marketing/sections/edgebic-plan-flow';
 
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
@@ -90,9 +91,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Would an END-END, near realtime view of your entire
-                          supply chain be useful? How about adding
-                          Finite-Capacty scheduling to your existing ERP?
+                          Would an end-to-end, near real-time view of your
+                          entire supply chain be useful? How about adding
+                          finite-capacity scheduling to your existing ERP?
                         </p>
                       </motion.div>
                     )}
@@ -132,9 +133,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          With a method to completely reconfigure system upon
-                          demand, its suprisingly easy to try various models to
-                          achieve maximum efficiency.
+                          With a method to completely reconfigure the system on
+                          demand, it&apos;s surprisingly easy to try various
+                          models to achieve maximum efficiency.
                         </p>
                       </motion.div>
                     )}
@@ -176,7 +177,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          By identifying constaints and other business rules,
+                          By identifying constraints and other business rules,
                           the system quickly and easily generates a reasonable
                           schedule.
                         </p>
@@ -197,7 +198,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <FileText className="size-4 text-blue-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Allowing Instant User Overides
+                        Allowing Instant User Overrides
                       </h3>
                     </div>
                     {reportingExpanded ? (
@@ -259,8 +260,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                       >
                         <p className="text-md text-gray-600">
                           Easily map existing data, from your ERP or Excel or
-                          any other system directly into RMDB for importing. The
-                          same capability exists for exporting data to other
+                          any other system, directly into EDGEBIC for importing.
+                          The same capability exists for exporting data to other
                           systems.
                         </p>
                       </motion.div>
@@ -487,7 +488,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                           system rules with manual adjustments, maintenance is
                           effortless. The system intelligently rebalances based
                           on your updates; for instance, if you report starting
-                          the 6th step of a process, RMDB/EDGE automatically
+                          the 6th step of a process, EDGEBIC automatically
                           assumes previous steps are complete and reschedules
                           all subsequent steps.
                         </p>
@@ -560,6 +561,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* The six product screens, in the order you would use them */}
+        <EdgebicPlanFlow />
 
         {/* RMDB Integrate MRP and capacity planning - Moved to resource-management page */}
         {/* <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
