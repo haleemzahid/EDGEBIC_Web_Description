@@ -1,4 +1,5 @@
 import { AppInfo } from '@/constants/app-info';
+import { EDGEBIC_ALTERNATE_NAMES, schemaNodeIds } from '@/lib/seo/schema-nodes';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 type OrganizationSchema = {
@@ -48,8 +49,10 @@ type WebSiteSchema = {
 
 type SoftwareApplicationSchema = {
   '@context': 'https://schema.org';
-  '@type': 'SoftwareApplication';
+  '@type': 'SoftwareApplication' | ['SoftwareApplication', 'ProductModel'];
+  '@id'?: string;
   name: string;
+  alternateName?: string[];
   description: string;
   applicationCategory: string;
   applicationSubCategory?: string;
@@ -58,8 +61,14 @@ type SoftwareApplicationSchema = {
   publisher: {
     '@id': string;
   };
+  sameAs?: string[];
   featureList?: string[];
   softwareRequirements?: string;
+  softwareVersion?: string;
+  successorOf?: { '@id': string };
+  predecessorOf?: { '@id': string };
+  isBasedOn?: { '@id': string };
+  isVariantOf?: { '@id': string };
   offers?: {
     '@type': 'Offer';
     price: string;
@@ -245,32 +254,62 @@ export function SoftwareApplicationJsonLd({
   name,
   description,
   url,
+  id,
+  alternateName,
   price,
   priceCurrency = 'USD',
+  availability = 'https://schema.org/InStock',
   operatingSystem = 'Windows',
   applicationSubCategory,
   featureList,
   softwareRequirements,
-  offerUrl
+  softwareVersion,
+  offerUrl,
+  sameAs,
+  successorOf,
+  predecessorOf,
+  isBasedOn,
+  isVariantOf
 }: {
   name: string;
   description: string;
   url: string;
+  /** Canonical node id from lib/seo/schema-nodes. Pass it on every product. */
+  id?: string;
+  alternateName?: string[];
   price?: string;
   priceCurrency?: string;
+  availability?: string;
   operatingSystem?: string;
   applicationSubCategory?: string;
   featureList?: string[];
   softwareRequirements?: string;
+  softwareVersion?: string;
   offerUrl?: string;
+  sameAs?: string[];
+  /** @id of the product this one supersedes. */
+  successorOf?: string;
+  /** @id of the product that supersedes this one. */
+  predecessorOf?: string;
+  isBasedOn?: string;
+  isVariantOf?: string;
 }) {
   const baseUrl = getBaseUrl();
   const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
 
+  // successorOf and predecessorOf are ProductModel vocabulary, not
+  // SoftwareApplication vocabulary. Multi-typing the node keeps the succession
+  // explicit and valid instead of splitting one product across two entities.
+  const asProductModel = Boolean(successorOf || predecessorOf);
+
   const schema: SoftwareApplicationSchema = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
+    '@type': asProductModel
+      ? ['SoftwareApplication', 'ProductModel']
+      : 'SoftwareApplication',
+    ...(id && { '@id': id }),
     name,
+    ...(alternateName && alternateName.length > 0 && { alternateName }),
     description,
     applicationCategory: 'BusinessApplication',
     // No default: this varies per product. The simulation products are not
@@ -283,14 +322,23 @@ export function SoftwareApplicationJsonLd({
     publisher: {
       '@id': `${baseUrl}/#organization`
     },
+    ...(sameAs && sameAs.length > 0 && { sameAs }),
     ...(featureList && { featureList }),
     ...(softwareRequirements && { softwareRequirements }),
+    ...(softwareVersion && { softwareVersion }),
+    ...(successorOf && { successorOf: { '@id': successorOf } }),
+    ...(predecessorOf && { predecessorOf: { '@id': predecessorOf } }),
+    ...(isBasedOn && { isBasedOn: { '@id': isBasedOn } }),
+    ...(isVariantOf && { isVariantOf: { '@id': isVariantOf } }),
+    // No price means no offers block at all. That is the correct shape for a
+    // product that is still supported but no longer sold: describe the
+    // product, do not describe a transaction that is not on offer.
     ...(price && {
       offers: {
         '@type': 'Offer',
         price,
         priceCurrency,
-        availability: 'https://schema.org/InStock',
+        availability,
         // Defaults to the product's own page. Only EDGEBIC is bought from
         // /pricing, so a hardcoded pricing URL would be wrong elsewhere.
         url: offerUrl
@@ -400,6 +448,7 @@ export function FeaturePageJsonLd({
   customerNames?: string[];
 }) {
   const baseUrl = getBaseUrl();
+  const nodes = schemaNodeIds();
 
   const schema = {
     '@context': 'https://schema.org',
@@ -407,10 +456,17 @@ export function FeaturePageJsonLd({
     name: title,
     description,
     url: `${baseUrl}${url}`,
+    // These feature pages describe what the currently sold product does. The
+    // subject used to be hardcoded to RMDB at $4,000, which told every crawler
+    // that 18 head-term pages were about a product that is no longer sold.
     about: {
       '@type': 'SoftwareApplication',
-      name: 'RMDB - Resource Manager DB',
+      '@id': nodes.edgebic,
+      name: AppInfo.APP_NAME,
+      alternateName: EDGEBIC_ALTERNATE_NAMES,
+      url: `${baseUrl}/edgebic`,
       applicationCategory: 'BusinessApplication',
+      applicationSubCategory: 'Production Scheduling Software',
       operatingSystem: 'Windows',
       description: featureDescription,
       ...(featureList &&
@@ -419,13 +475,13 @@ export function FeaturePageJsonLd({
         }),
       offers: {
         '@type': 'Offer',
-        price: '4000',
+        price: AppInfo.EDITIONS.APS.PRICE,
         priceCurrency: 'USD',
-        availability: 'https://schema.org/InStock'
+        availability: 'https://schema.org/InStock',
+        url: `${baseUrl}/pricing`
       },
-      provider: {
-        '@type': 'Organization',
-        name: AppInfo.COMPANY_NAME
+      publisher: {
+        '@id': nodes.organization
       }
     },
     provider: {

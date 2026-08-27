@@ -43,27 +43,34 @@ export async function generateMetadata(props: {
 // ---------------------------------------------------------------------------
 // Helper: build FAQ data from state
 // ---------------------------------------------------------------------------
+/**
+ * These answers ship as FAQPage structured data on all 53 state pages, so a
+ * wrong figure here is a wrong figure 53 times over in the one schema type
+ * assistants quote verbatim. The subject is EDGEBIC because that is what is
+ * sold; "(RMDB)" stays in the first mention because that is the entity these
+ * pages have been indexed against for years.
+ */
 function buildFaqs(s: State) {
   return [
     {
-      question: `What manufacturing industries does RMDB support in ${s.name}?`,
-      answer: `RMDB supports all manufacturing types common in ${s.name}, including ${s.topIndustries.slice(0, 4).join(', ')}. Our finite capacity scheduling engine adapts to any discrete or batch manufacturing environment regardless of industry.`
+      question: `What manufacturing industries does EDGEBIC support in ${s.name}?`,
+      answer: `EDGEBIC, the current generation of Resource Manager DB (RMDB), supports all manufacturing types common in ${s.name}, including ${s.topIndustries.slice(0, 4).join(', ')}. Our finite capacity scheduling engine adapts to any discrete or batch manufacturing environment regardless of industry.`
     },
     {
-      question: `How quickly can ${s.name} manufacturers implement RMDB?`,
-      answer: `Most ${s.name} manufacturers are up and running with RMDB in as few as 5 days. Unlike enterprise APS systems that take months to deploy, RMDB integrates with your existing ERP via CSV or database connections and requires minimal IT involvement.`
+      question: `How quickly can ${s.name} manufacturers implement EDGEBIC?`,
+      answer: `Most ${s.name} manufacturers are up and running with EDGEBIC in as few as 5 days. Unlike enterprise APS systems that take months to deploy, EDGEBIC integrates with your existing ERP via Excel, CSV or database connections and requires minimal IT involvement.`
     },
     {
-      question: `Does RMDB integrate with ERP systems used by ${s.name} manufacturers?`,
-      answer: `Yes. RMDB integrates with SAP, Oracle, Epicor, Sage, Microsoft Dynamics, and other ERP systems commonly used by ${s.name} manufacturers. It works as a scheduling add-on that fills the capacity planning gap in your existing ERP.`
+      question: `Does EDGEBIC integrate with ERP systems used by ${s.name} manufacturers?`,
+      answer: `Yes. EDGEBIC integrates with SAP, Oracle, Epicor, Sage, Microsoft Dynamics, and other ERP systems commonly used by ${s.name} manufacturers. It works as a scheduling add-on that fills the capacity planning gap in your existing ERP.`
     },
     {
       question: `What is the cost of production scheduling software for ${s.name} manufacturers?`,
-      answer: `RMDB offers a one-time license fee starting at $4,000 — not a monthly subscription. This makes it uniquely affordable for small to mid-size ${s.name} manufacturers compared to SaaS alternatives that cost $500-2,000 per month indefinitely.`
+      answer: `EDGEBIC is a one-time perpetual license, not a monthly subscription: $25,000 for EDGEBIC APS and $35,000 for EDGEBIC Complete, which adds MRP, inventory and purchasing. That is a fixed, known cost for small to mid-size ${s.name} manufacturers compared with SaaS alternatives billed per user indefinitely.`
     },
     {
-      question: `Can RMDB handle the scheduling challenges specific to ${s.name}?`,
-      answer: `Absolutely. ${s.schedulingChallenges[0]} RMDB's finite capacity scheduling, what-if analysis, and real-time rescheduling capabilities are designed to handle exactly these kinds of challenges.`
+      question: `Can EDGEBIC handle the scheduling challenges specific to ${s.name}?`,
+      answer: `Absolutely. ${s.schedulingChallenges[0]} The EDGEBIC finite capacity scheduling engine, what-if analysis, and real-time rescheduling capabilities are designed to handle exactly these kinds of challenges.`
     }
   ];
 }
@@ -221,26 +228,27 @@ export default async function StatePage(props: {
           </div>
         </section>
 
-        {/* How RMDB Helps */}
+        {/* How EDGEBIC helps */}
         <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-7xl space-y-6">
               <h2 className="text-2xl font-bold text-slate-900">
-                How RMDB Helps {stateData.name} Manufacturers
+                How EDGEBIC Helps {stateData.name} Manufacturers
               </h2>
               <p className="leading-relaxed text-gray-700">
-                RMDB by User Solutions delivers finite capacity scheduling that
+                EDGEBIC by User Solutions, the current generation of Resource
+                Manager DB (RMDB), delivers finite capacity scheduling that
                 addresses the exact challenges {stateData.name} manufacturers
-                face — with a one-time license fee and 5-day implementation.
+                face, with a one-time license fee and 5-day implementation.
               </p>
               <ul className="grid gap-3 md:grid-cols-2">
                 {[
                   'Finite capacity scheduling across machines, labor, and materials',
-                  'Drag-and-drop Gantt charts with EDGEBI for visual scheduling',
+                  'Drag-and-drop Gantt charts and a graphical routing designer',
                   'What-if scenario analysis for demand volatility and disruptions',
                   'ERP integration with SAP, Oracle, Epicor, Sage, and more',
-                  'One-time license — no monthly subscription fees',
-                  '5-day implementation — not months',
+                  'One-time license with no monthly subscription fees',
+                  '5-day implementation, not months',
                   'Multi-constraint scheduling for complex manufacturing environments',
                   'Real-time rescheduling when priorities shift'
                 ].map((item) => (
@@ -273,8 +281,8 @@ export default async function StatePage(props: {
                   },
                   { metric: '100+', label: 'Manufacturer implementations' },
                   {
-                    metric: '$4,000',
-                    label: 'One-time license (not SaaS)'
+                    metric: '$25,000',
+                    label: 'One-time license, not SaaS'
                   }
                 ].map((result) => (
                   <div
@@ -324,8 +332,8 @@ export default async function StatePage(props: {
               Ready to optimize your {stateData.name} manufacturing schedule?
             </h2>
             <p className="mb-6 text-slate-600">
-              Join manufacturers across {stateData.name} who trust RMDB for
-              finite capacity production scheduling.
+              Join manufacturers across {stateData.name} who trust User
+              Solutions for finite capacity production scheduling.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
@@ -362,10 +370,10 @@ export default async function StatePage(props: {
                 className="rounded-lg border p-4 transition-colors hover:border-cyan-300 hover:bg-cyan-50"
               >
                 <p className="font-semibold text-slate-900">
-                  RMDB Product Overview
+                  Resource Manager DB (RMDB)
                 </p>
                 <p className="text-sm text-slate-600">
-                  Full-featured finite capacity scheduling software
+                  The legacy product, still fully supported
                 </p>
               </Link>
               <Link

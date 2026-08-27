@@ -48,9 +48,16 @@ export const MENU_LINKS = [
       {
         title: 'EDGEBIC',
         description:
-          'Next-generation finite capacity scheduling: the successor to RMDB + EDGEBI',
+          'Next-generation finite capacity scheduling: the successor to RMDB and EDGEBI',
         icon: <PackageIcon className="size-5 shrink-0" />,
         href: Routes.Edgebic,
+        external: false
+      },
+      {
+        title: 'Pricing',
+        description: '$25,000 APS or $35,000 Complete, one-time perpetual license',
+        icon: <PackageIcon className="size-5 shrink-0" />,
+        href: Routes.Pricing,
         external: false
       },
       {
@@ -335,7 +342,8 @@ export const FOOTER_LINKS: Array<{
   {
     title: 'Products',
     links: [
-      { name: 'EDGEBIC (New)', href: Routes.Edgebic, external: false },
+      { name: 'EDGEBIC', href: Routes.Edgebic, external: false },
+      { name: 'Pricing', href: Routes.Pricing, external: false },
       {
         name: 'EDGEBIC ERP Integration',
         href: Routes.EdgebicErpIntegration,
@@ -483,10 +491,14 @@ export const FOOTER_LINKS: Array<{
     title: 'Resources',
     links: [
       { name: 'Blog', href: '/blogs', external: false },
-      { name: 'Documentation', href: '/docs', external: false },
       { name: 'Developers & API', href: '/developers', external: false },
       { name: 'Excel Templates', href: '/excel-templates', external: false },
       { name: 'Compare Products', href: '/compare-products', external: false },
+      {
+        name: 'What Scheduling Software Costs',
+        href: Routes.ProductionSchedulingSoftwareCost,
+        external: false
+      },
       { name: 'Product Downloads', href: '/product-downloads', external: false },
       { name: 'Contact Us', href: Routes.Contact, external: false },
       { name: 'Privacy Policy', href: '/privacy-policy', external: false },

@@ -3,67 +3,27 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PUBLIC_ENDPOINTS } from '@/lib/api/public-endpoints';
+import type { PublicEndpoint } from '@/lib/api/public-endpoints';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
   title: 'Developer Resources & Public API | EDGEBIC by User Solutions',
   description:
-    'User Solutions developer resources: the public EDGEBIC licensing REST API, OpenAPI 3.0 specification, llms.txt agent guide, markdown content negotiation, and integration documentation.',
+    'User Solutions developer resources: the open EDGEBIC content API (product catalog, knowledge-base search), the EDGEBIC licensing REST API, OpenAPI 3.0 specification, llms.txt agent guide, markdown content negotiation, and integration documentation.',
   path: '/developers',
   keywords:
-    'User Solutions API, EDGEBIC API, EDGEBI API, User Solutions developer resources, EDGEBIC OpenAPI, license activation API, manufacturing software API, EDGEBIC integration, llms.txt, User Solutions documentation'
+    'User Solutions API, EDGEBIC API, EDGEBIC public API, EDGEBIC content API, EDGEBI API, User Solutions developer resources, EDGEBIC OpenAPI, license activation API, manufacturing software API, EDGEBIC integration, llms.txt, User Solutions documentation'
 });
 
-const endpoints = [
-  {
-    method: 'POST',
-    path: '/api/license/request',
-    operation: 'requestLicense',
-    desc: 'Submit a self-service license request for a device.'
-  },
-  {
-    method: 'GET',
-    path: '/api/license/request',
-    operation: 'pollLicenseRequest',
-    desc: 'Poll for approval and pick up the issued license key.'
-  },
-  {
-    method: 'POST',
-    path: '/api/license/activate',
-    operation: 'activateLicense',
-    desc: 'Activate a license on a device (consumes one seat; idempotent per machine).'
-  },
-  {
-    method: 'POST',
-    path: '/api/license/validate',
-    operation: 'validateLicense',
-    desc: 'Runtime check that a device still holds an active seat.'
-  },
-  {
-    method: 'POST',
-    path: '/api/license/deactivate',
-    operation: 'deactivateLicense',
-    desc: "Release a device's seat so another machine can use it."
-  },
-  {
-    method: 'POST',
-    path: '/api/software/latest',
-    operation: 'checkSoftwareUpdates',
-    desc: 'Seat-gated software update check for the calling customer.'
-  },
-  {
-    method: 'GET',
-    path: '/api/software/download',
-    operation: 'downloadSoftware',
-    desc: 'Download an installer with a short-lived, license-bound token.'
-  },
-  {
-    method: 'GET',
-    path: '/api/health',
-    operation: 'healthCheck',
-    desc: 'Service health and running version.'
-  }
-];
+const AUTH_LABEL: Record<PublicEndpoint['auth'], string> = {
+  none: 'None',
+  'license-key': 'License key',
+  token: 'Download token'
+};
+
+const contentEndpoints = PUBLIC_ENDPOINTS.filter((e) => e.tag === 'content');
+const licensingEndpoints = PUBLIC_ENDPOINTS.filter((e) => e.tag !== 'content');
 
 const machineResources = [
   {
@@ -90,13 +50,50 @@ const machineResources = [
     name: 'sitemap.xml',
     href: '/sitemap.xml',
     desc: 'The complete, authoritative URL list for the whole site.'
-  },
-  {
-    name: 'Documentation',
-    href: '/docs',
-    desc: 'Product and integration documentation.'
   }
 ];
+
+function EndpointTable({
+  endpoints
+}: {
+  endpoints: readonly PublicEndpoint[];
+}): React.JSX.Element {
+  return (
+    <div className="overflow-x-auto rounded-lg border">
+      <table className="w-full text-left text-sm">
+        <thead className="border-b bg-muted/50">
+          <tr>
+            <th className="px-4 py-3 font-semibold">Method</th>
+            <th className="px-4 py-3 font-semibold">Path</th>
+            <th className="px-4 py-3 font-semibold">Operation</th>
+            <th className="px-4 py-3 font-semibold">Auth</th>
+            <th className="px-4 py-3 font-semibold">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {endpoints.map((e) => (
+            <tr
+              key={`${e.method} ${e.path}`}
+              className="border-b last:border-b-0"
+            >
+              <td className="px-4 py-3 font-mono text-xs font-semibold">
+                {e.method}
+              </td>
+              <td className="px-4 py-3 font-mono text-xs">{e.path}</td>
+              <td className="px-4 py-3 font-mono text-xs">{e.operationId}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">
+                {AUTH_LABEL[e.auth]}
+              </td>
+              <td className="px-4 py-3 text-muted-foreground">
+                {e.description}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export default function DevelopersPage(): React.JSX.Element {
   return (
@@ -113,8 +110,9 @@ export default function DevelopersPage(): React.JSX.Element {
             </h1>
             <p className="mb-8 text-xl text-blue-100">
               Everything an integrator or AI agent needs to work with EDGEBIC by
-              User Solutions: the public licensing REST API, an OpenAPI 3.0
-              specification, llms.txt, and markdown content negotiation.
+              User Solutions: an open content API, the licensing REST API, an
+              OpenAPI 3.0 specification, llms.txt, and markdown content
+              negotiation.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Button
@@ -142,50 +140,36 @@ export default function DevelopersPage(): React.JSX.Element {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-5xl">
             <h2 className="mb-4 text-center text-3xl font-bold">
-              The EDGEBIC Licensing API
+              The User Solutions EDGEBIC Public API
             </h2>
             <p className="mx-auto mb-8 max-w-3xl text-center text-muted-foreground">
               A public REST API at{' '}
               <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
                 https://usersolutions.com/api
-              </code>{' '}
-              covering self-service license requests, seat-based device
-              activation, runtime validation, seat release, and seat-gated
-              software updates for the EDGEBIC / EDGEBI desktop applications.
-              The license key is the credential; every error is structured JSON
-              with a message and resolution hints.
+              </code>
+              . <strong>Content endpoints</strong> under{' '}
+              <span className="font-mono text-sm">/api/v1/</span> need no
+              authentication and are CORS-enabled: the product catalog with
+              list prices, and keyword search plus full markdown bodies for the
+              2,400-article knowledge base. <strong>Licensing endpoints</strong>{' '}
+              cover self-service license requests, seat-based device activation,
+              runtime validation, seat release, and seat-gated software updates
+              for the EDGEBIC / EDGEBI desktop applications; the license key is
+              the credential. Every error is structured JSON with a{' '}
+              <span className="font-mono text-sm">code</span>, a message, and a
+              resolution hint.
             </p>
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b bg-muted/50">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">Method</th>
-                    <th className="px-4 py-3 font-semibold">Path</th>
-                    <th className="px-4 py-3 font-semibold">Operation</th>
-                    <th className="px-4 py-3 font-semibold">Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {endpoints.map((e) => (
-                    <tr
-                      key={`${e.method} ${e.path}`}
-                      className="border-b last:border-b-0"
-                    >
-                      <td className="px-4 py-3 font-mono text-xs font-semibold">
-                        {e.method}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs">{e.path}</td>
-                      <td className="px-4 py-3 font-mono text-xs">
-                        {e.operation}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {e.desc}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+
+            <h3 className="mb-3 text-xl font-semibold">
+              Open content API (no authentication)
+            </h3>
+            <EndpointTable endpoints={contentEndpoints} />
+
+            <h3 className="mb-3 mt-10 text-xl font-semibold">
+              EDGEBIC licensing API (license key is the credential)
+            </h3>
+            <EndpointTable endpoints={licensingEndpoints} />
+
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Full request/response schemas, authentication, device-fingerprint
               headers, and rate limits are defined in the{' '}
@@ -205,6 +189,23 @@ export default function DevelopersPage(): React.JSX.Element {
       <section className="bg-muted/40 py-16">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-3xl">
+            <h2 className="mb-4 text-center text-3xl font-bold">
+              Example: search the knowledge base
+            </h2>
+            <pre className="mb-12 overflow-x-auto rounded-lg border bg-background p-4 text-sm">
+              <code>{`curl 'https://usersolutions.com/api/v1/articles?q=finite+capacity+scheduling&limit=3'
+
+# 200 → { "total": 412, "limit": 3, "offset": 0,
+#         "items": [ { "slug": "...", "url": "...", "markdownUrl": "...",
+#                      "title": "...", "description": "...", ... } ] }
+
+curl https://usersolutions.com/api/v1/articles/edgebic-complete-guide
+# 200 → the article with its full markdown "body" and "faq"
+
+curl https://usersolutions.com/api/v1/products
+# 200 → { "vendor": {...}, "products": [ { "name": "EDGEBIC APS", "price": { "amount": 25000, ... } }, ... ] }`}</code>
+            </pre>
+
             <h2 className="mb-4 text-center text-3xl font-bold">
               Example: validate a license
             </h2>
@@ -262,16 +263,18 @@ export default function DevelopersPage(): React.JSX.Element {
               Markdown Content Negotiation
             </h2>
             <p className="mb-6 text-center text-muted-foreground">
-              Key pages answer{' '}
+              Every page answers{' '}
               <code className="rounded bg-background px-1.5 py-0.5 text-sm">
                 Accept: text/markdown
               </code>{' '}
-              with a markdown variant (served with{' '}
+              and sends{' '}
               <code className="rounded bg-background px-1.5 py-0.5 text-sm">
                 Vary: Accept
               </code>
-              ). Supported today: the homepage, this page, and every article
-              under <span className="font-mono text-sm">/blog/</span>.
+              . The homepage, this page, and every article under{' '}
+              <span className="font-mono text-sm">/blog/</span> return a native
+              markdown variant; other pages return their HTML; unknown paths
+              return a markdown 404 with recovery links.
             </p>
             <pre className="overflow-x-auto rounded-lg border bg-background p-4 text-sm">
               <code>{`curl -H 'Accept: text/markdown' https://usersolutions.com/`}</code>

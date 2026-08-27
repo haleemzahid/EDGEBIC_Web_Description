@@ -2,26 +2,40 @@ import { NextRequest } from 'next/server';
 import { allPosts } from 'content-collections';
 
 import {
+  articlePath,
+  findArticle,
+  type ArticleSource
+} from '@/lib/api/public-content';
+import {
   DEVELOPERS_MARKDOWN,
   HOME_MARKDOWN,
-  notFoundMarkdown
+  notFoundMarkdown,
+  unavailableMarkdown
 } from '@/lib/markdown/agent-markdown';
+import {
+  MARKDOWN_FALLBACK_HEADER,
+  hasNativeMarkdownVariant
+} from '@/lib/markdown/markdown-negotiation';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 /**
  * Markdown variants for Accept: text/markdown content negotiation.
  *
- * middleware.ts rewrites GET requests that ask for text/markdown to
+ * middleware.ts rewrites every page GET that asks for text/markdown to
  * /md/<original-path> (the homepage maps to /md/index), which lands here.
  * Direct hits on /md/* work too but are noindexed — the HTML page stays the
  * canonical variant.
  *
- * Supported paths:
- * - /md/index              → static markdown mirror of the homepage
- * - /md/developers         → static markdown mirror of the developers page
- * - /md/blog/{slug}        → raw MDX source of the blog post
- * - /md/blog/glossary/{t}  → raw MDX source of the glossary post
- * Anything else            → markdown 404 with recovery links (real 404 status)
+ * Resolution order:
+ * 1. /md/index, /md/developers → static markdown mirrors
+ * 2. /md/blog/{slug}, /md/blog/glossary/{term} → the article's MDX source
+ * 3. Anything else → fetch the HTML twin of the same path:
+ *    - 404 → markdown 404 with recovery links (real 404 status)
+ *    - otherwise → pass the HTML through unchanged (still Vary: Accept), which
+ *      is what acceptmarkdown.com asks for when no markdown variant exists.
  */
+
+export const dynamic = 'force-dynamic';
 
 function markdownResponse(
   body: string,
@@ -42,17 +56,62 @@ function markdownResponse(
   });
 }
 
-function postMarkdown(post: (typeof allPosts)[number]): string {
+function postMarkdown(post: ArticleSource): string {
   const header = [
     `# ${post.title}`,
     '',
     post.description,
     '',
     `> Published: ${post.published.slice(0, 10)}${post.modified ? ` · Updated: ${post.modified.slice(0, 10)}` : ''} · Category: ${post.category}`,
-    `> Canonical: https://usersolutions.com${post.slug}`,
+    // articlePath, not post.slug: glossary posts are served at
+    // /blog/glossary/{term}, and the canonical must match the HTML page.
+    `> Canonical: https://usersolutions.com${articlePath(post.slugAsParams)}`,
     ''
   ].join('\n');
   return `${header}\n${post.body.raw}`;
+}
+
+/** Response headers worth carrying across from the HTML twin. */
+const PASSTHROUGH_HEADERS = [
+  'content-type',
+  'cache-control',
+  'location',
+  'x-robots-tag'
+];
+
+async function htmlFallback(
+  request: NextRequest,
+  pathname: string
+): Promise<Response> {
+  const target = `${getBaseUrl()}${pathname}${request.nextUrl.search}`;
+  let upstream: Response;
+  try {
+    upstream = await fetch(target, {
+      method: 'GET',
+      headers: {
+        Accept: 'text/html',
+        'User-Agent': request.headers.get('user-agent') ?? 'markdown-negotiation',
+        // Tells middleware not to rewrite this request back to /md/* again.
+        [MARKDOWN_FALLBACK_HEADER]: '1'
+      },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10_000)
+    });
+  } catch {
+    return markdownResponse(unavailableMarkdown(pathname), 502, 'no-store');
+  }
+
+  if (upstream.status === 404) {
+    return markdownResponse(notFoundMarkdown(pathname), 404, 'no-store');
+  }
+
+  const headers = new Headers();
+  for (const name of PASSTHROUGH_HEADERS) {
+    const value = upstream.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  headers.append('Vary', 'Accept');
+  return new Response(upstream.body, { status: upstream.status, headers });
 }
 
 export async function GET(
@@ -72,17 +131,16 @@ export async function GET(
   }
 
   if (segments[0] === 'blog' && segments.length >= 2) {
-    // Glossary posts live at content/blog/glossary-{term}.mdx but are served
-    // at /blog/glossary/{term} — same mapping as the glossary page route.
-    const postSlug =
-      segments[1] === 'glossary' && segments.length === 3
-        ? `glossary-${segments[2]}`
-        : segments.slice(1).join('/');
-    const post = allPosts.find((p) => p.slugAsParams === postSlug);
+    const post = findArticle(allPosts, segments.slice(1));
     if (post) {
       return markdownResponse(postMarkdown(post));
     }
+    // A /blog/... path with no post behind it is a 404 on the HTML side too;
+    // skip the round trip.
+    if (hasNativeMarkdownVariant(pathname)) {
+      return markdownResponse(notFoundMarkdown(pathname), 404, 'no-store');
+    }
   }
 
-  return markdownResponse(notFoundMarkdown(pathname), 404, 'no-store');
+  return htmlFallback(request, pathname === '/index' ? '/' : pathname);
 }

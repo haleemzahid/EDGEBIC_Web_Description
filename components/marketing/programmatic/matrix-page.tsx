@@ -8,7 +8,10 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '@/components/ui/accordion';
+import { AppInfo } from '@/constants/app-info';
 import type { MatrixCell } from '@/lib/programmatic/matrix';
+
+const usd = (price: string) => `$${Number(price).toLocaleString('en-US')}`;
 
 interface MatrixPageProps {
   cell: MatrixCell;
@@ -277,7 +280,7 @@ export function buildCellFaqs(cell: MatrixCell): { question: string; answer: str
     },
     {
       question: `How much does ${feature.shortLabel} cost for ${industry.shortLabel}?`,
-      answer: `Pricing is per-user, not per-machine — a critical difference for ${industry.plural} where machine count can vary widely. RMDB starts around $5,000 as a one-time perpetual license or $49/user/month subscription. Most ${industry.plural} add an optional support contract for ongoing updates and help desk. Compared to per-machine SaaS competitors, this typically costs 50–70% less over a 5-year horizon at 20+ machines.`
+      answer: `${AppInfo.APP_NAME}, the current generation of RMDB, is sold as a one-time perpetual license with no per-user or per-machine subscription: ${usd(AppInfo.EDITIONS.APS.PRICE)} for ${AppInfo.EDITIONS.APS.NAME} or ${usd(AppInfo.EDITIONS.COMPLETE.PRICE)} for ${AppInfo.EDITIONS.COMPLETE.NAME}. For ${industry.plural}, where machine count can vary widely, that is a fixed, known cost compared with per-machine SaaS competitors billed indefinitely at 20+ machines. Implementation services and an optional support contract are quoted separately.`
     }
   ];
 }

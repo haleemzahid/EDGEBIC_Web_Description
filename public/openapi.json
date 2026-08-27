@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "User Solutions EDGEBIC Licensing API",
-    "version": "1.0.0",
-    "description": "Public REST API for the EDGEBIC / EDGEBI desktop applications by User Solutions, Inc. It covers self-service license requests, per-device license activation (seat-based), runtime validation, seat release, and seat-gated software update checks.\n\nSecurity model: the license key (format `NTCB-XXXX-XXXX-XXXX-XXXX-XXXX`) is the credential. Any operator email may activate a key while a seat is free; the seat count is the limit, not the email. The server stores only a SHA-256 hash of the key.\n\nDevice fingerprint: `/api/license/request`, `/api/license/activate`, and `/api/software/latest` derive a device fingerprint server-side from request headers (`User-Agent`, `Accept-Language`, `X-Timezone`, `X-Screen-Resolution`, `X-Hardware-Info`). `X-Hardware-Info` is the primary per-machine distinguisher - always send it, or two machines can collapse into one seat. The algorithm is `SHA-256(platform | language | timezone | screenResolution | hardwareInfo)`.\n\nHuman-readable documentation: https://usersolutions.com/developers",
+    "title": "User Solutions EDGEBIC Public API",
+    "version": "1.1.0",
+    "description": "Public REST API of User Solutions, Inc. for EDGEBIC, its finite capacity scheduling software for manufacturers.\n\nTwo groups of endpoints:\n\n1. **Open content API** (`/api/v1/*`) - no authentication, CORS-enabled (`Access-Control-Allow-Origin: *`). The product catalog with list prices, and keyword search plus full markdown bodies for the 2,400-article knowledge base.\n\n2. **Licensing API** (`/api/license/*`, `/api/software/*`) for the EDGEBIC / EDGEBI desktop applications: self-service license requests, per-device license activation (seat-based), runtime validation, seat release, and seat-gated software update checks. The license key (format `NTCB-XXXX-XXXX-XXXX-XXXX-XXXX`) is the credential. Any operator email may activate a key while a seat is free; the seat count is the limit, not the email. The server stores only a SHA-256 hash of the key.\n\nDevice fingerprint: `/api/license/request`, `/api/license/activate`, and `/api/software/latest` derive a device fingerprint server-side from request headers (`User-Agent`, `Accept-Language`, `X-Timezone`, `X-Screen-Resolution`, `X-Hardware-Info`). `X-Hardware-Info` is the primary per-machine distinguisher - always send it, or two machines can collapse into one seat. The algorithm is `SHA-256(platform | language | timezone | screenResolution | hardwareInfo)`.\n\nErrors: every endpoint returns the `Error` envelope on failure - `error` (message), `code` (machine-readable), `message`, and usually a `hint` with the resolution.\n\nHuman-readable documentation: https://usersolutions.com/developers",
     "contact": {
       "name": "User Solutions, Inc.",
       "url": "https://usersolutions.com/contact-us",
@@ -23,6 +23,10 @@
   ],
   "tags": [
     {
+      "name": "content",
+      "description": "Open, read-only, no-authentication access to the EDGEBIC product catalog and the knowledge base (blog) articles."
+    },
+    {
       "name": "license",
       "description": "License request, activation, validation, and seat release for the EDGEBIC / EDGEBI desktop applications."
     },
@@ -36,22 +40,169 @@
     }
   ],
   "paths": {
+    "/api/v1/products": {
+      "get": {
+        "operationId": "listProducts",
+        "tags": [
+          "content"
+        ],
+        "summary": "List the EDGEBIC editions currently sold",
+        "description": "Returns the vendor record and every EDGEBIC edition currently sold, with its list price in USD, licensing model, platform, and links to the product and pricing pages. No authentication. Cacheable for one hour.",
+        "responses": {
+          "200": {
+            "description": "The product catalog.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCatalog"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/articles": {
+      "get": {
+        "operationId": "searchArticles",
+        "tags": [
+          "content"
+        ],
+        "summary": "Search the knowledge base",
+        "description": "Keyword search over the 2,400-article EDGEBIC knowledge base (blog, glossary, comparisons, case studies). Matches title, target phrase, keywords, and description; results are ranked by relevance when `q` is given, otherwise newest first. Filter by `category` or `cluster`. Paginate with `limit` and `offset`. No authentication.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Search term, at most 200 characters.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "example": "finite capacity scheduling"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "description": "Exact category name (case-insensitive), e.g. `Production Scheduling`, `Glossary`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cluster",
+            "in": "query",
+            "required": false,
+            "description": "Topic cluster slug (case-insensitive), e.g. `production-scheduling`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of results to skip.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ranked, paginated matches.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleSearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/api/v1/articles/{slug}": {
+      "get": {
+        "operationId": "getArticle",
+        "tags": [
+          "content"
+        ],
+        "summary": "Get one article with its markdown body",
+        "description": "Returns one knowledge-base article: metadata, FAQ pairs, and the full body as markdown. The slug is the value returned by searchArticles (the last segment of the article URL). Glossary terms are addressed as `glossary/{term}`. No authentication.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Article slug, e.g. `edgebic-complete-guide` or `glossary/finite-capacity-scheduling`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The article.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Article"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
     "/api/license/request": {
       "post": {
         "operationId": "requestLicense",
-        "tags": ["license"],
+        "tags": [
+          "license"
+        ],
         "summary": "Submit a self-service license request for this device",
         "description": "Self-registers the calling device in the admin approval queue. Re-posting from the same device while pending updates the existing request (no duplicates). If the device was already approved, the license key is returned immediately. No authentication required. Rate limit: 30 requests/minute/IP. Send the device fingerprint headers on every call.",
         "parameters": [
-          { "$ref": "#/components/parameters/XHardwareInfo" },
-          { "$ref": "#/components/parameters/XTimezone" },
-          { "$ref": "#/components/parameters/XScreenResolution" }
+          {
+            "$ref": "#/components/parameters/XHardwareInfo"
+          },
+          {
+            "$ref": "#/components/parameters/XTimezone"
+          },
+          {
+            "$ref": "#/components/parameters/XScreenResolution"
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/LicenseRequestInput" }
+              "schema": {
+                "$ref": "#/components/schemas/LicenseRequestInput"
+              }
             }
           }
         },
@@ -60,18 +211,28 @@
             "description": "Request queued (`status: pending`), or the device was already approved and the key is returned (`status: approved`).",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/LicenseRequestStatus" }
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseRequestStatus"
+                }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       },
       "get": {
         "operationId": "pollLicenseRequest",
-        "tags": ["license"],
+        "tags": [
+          "license"
+        ],
         "summary": "Poll a pending license request for approval",
         "description": "Poll until the request is approved, then pick up the license key. The key is returned only to the matching requester: same `email` and same device fingerprint (derived from the fingerprint headers). No authentication required.",
         "parameters": [
@@ -80,18 +241,29 @@
             "in": "query",
             "required": true,
             "description": "The requester email used on the original POST.",
-            "schema": { "type": "string", "format": "email" }
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
           },
-          { "$ref": "#/components/parameters/XHardwareInfo" },
-          { "$ref": "#/components/parameters/XTimezone" },
-          { "$ref": "#/components/parameters/XScreenResolution" }
+          {
+            "$ref": "#/components/parameters/XHardwareInfo"
+          },
+          {
+            "$ref": "#/components/parameters/XTimezone"
+          },
+          {
+            "$ref": "#/components/parameters/XScreenResolution"
+          }
         ],
         "responses": {
           "200": {
             "description": "Current request status. `licenseKey` is present only when `status` is `approved`.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/LicenseRequestStatus" }
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseRequestStatus"
+                }
               }
             }
           },
@@ -102,33 +274,52 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": { "type": "string", "enum": ["not_found"] }
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "not_found"
+                      ]
+                    }
                   }
                 }
               }
             }
           },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/license/activate": {
       "post": {
         "operationId": "activateLicense",
-        "tags": ["license"],
+        "tags": [
+          "license"
+        ],
         "summary": "Activate a license on this device (consume a seat)",
         "description": "Binds the calling machine to one seat on the license. Idempotent for the same machine: re-activating refreshes `lastSeenAt` instead of consuming another seat. Returns `409` when all seats are in use. The license key is the credential - no other authentication. Send the device fingerprint headers.",
         "parameters": [
-          { "$ref": "#/components/parameters/XHardwareInfo" },
-          { "$ref": "#/components/parameters/XTimezone" },
-          { "$ref": "#/components/parameters/XScreenResolution" }
+          {
+            "$ref": "#/components/parameters/XHardwareInfo"
+          },
+          {
+            "$ref": "#/components/parameters/XTimezone"
+          },
+          {
+            "$ref": "#/components/parameters/XScreenResolution"
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ActivateLicenseInput" }
+              "schema": {
+                "$ref": "#/components/schemas/ActivateLicenseInput"
+              }
             }
           }
         },
@@ -137,16 +328,22 @@
             "description": "Seat consumed (or refreshed for this machine).",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ActivationResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationResult"
+                }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "403": {
             "description": "License has been revoked.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -154,7 +351,9 @@
             "description": "Invalid (unknown) license key.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -164,7 +363,9 @@
               "application/json": {
                 "schema": {
                   "allOf": [
-                    { "$ref": "#/components/schemas/Error" },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
                     {
                       "type": "object",
                       "properties": {
@@ -179,21 +380,27 @@
               }
             }
           },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/license/validate": {
       "post": {
         "operationId": "validateLicense",
-        "tags": ["license"],
+        "tags": [
+          "license"
+        ],
         "summary": "Validate that this device still holds an active seat",
         "description": "Lightweight runtime check: valid when the license is `active` and this device holds an active seat, matched by `systemFingerprint` OR `processorId`. Unlike activate, this endpoint takes `systemFingerprint` in the request body.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ValidateLicenseInput" }
+              "schema": {
+                "$ref": "#/components/schemas/ValidateLicenseInput"
+              }
             }
           }
         },
@@ -202,7 +409,9 @@
             "description": "The device is licensed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ValidateLicenseResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateLicenseResult"
+                }
               }
             }
           },
@@ -210,7 +419,9 @@
             "description": "Invalid request data, or the license is not active.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ValidateLicenseError" }
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateLicenseError"
+                }
               }
             }
           },
@@ -218,7 +429,9 @@
             "description": "System validation failed - this device holds no active seat.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ValidateLicenseError" }
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateLicenseError"
+                }
               }
             }
           },
@@ -226,25 +439,33 @@
             "description": "License not found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ValidateLicenseError" }
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateLicenseError"
+                }
               }
             }
           },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/license/deactivate": {
       "post": {
         "operationId": "deactivateLicense",
-        "tags": ["license"],
+        "tags": [
+          "license"
+        ],
         "summary": "Release this device's seat",
         "description": "The inverse of activate: frees the seat this machine holds so another device can reuse it. Matches the seat by `systemFingerprint` OR `processorId`. Idempotent: if the device holds no active seat it still returns `200` with `alreadyReleased: true`. Never changes the license status itself - seat occupancy is the only thing it touches. Rate limit: 30 requests/minute/IP.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/DeactivateLicenseInput" }
+              "schema": {
+                "$ref": "#/components/schemas/DeactivateLicenseInput"
+              }
             }
           }
         },
@@ -253,44 +474,68 @@
             "description": "Seat released, or already free (`alreadyReleased: true`).",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/DeactivateLicenseResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/DeactivateLicenseResult"
+                }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "404": {
             "description": "Invalid (unknown) license key.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/software/latest": {
       "post": {
         "operationId": "checkSoftwareUpdates",
-        "tags": ["software"],
+        "tags": [
+          "software"
+        ],
         "summary": "Check for software updates (seat-gated)",
         "description": "Machine-to-machine update check plus install write-back. Returns only the calling customer's software, never the whole catalog. Seat-gated: once a license has occupied seats, the caller must hold one (matched by fingerprint or `processorId`). Authenticate with the license key via `Authorization: Bearer <key>` (preferred) or the `X-License-Key` header. Rate limit: 20 requests/minute/IP.",
         "security": [
-          { "licenseKeyBearer": [] },
-          { "licenseKeyHeader": [] }
+          {
+            "licenseKeyBearer": []
+          },
+          {
+            "licenseKeyHeader": []
+          }
         ],
         "parameters": [
-          { "$ref": "#/components/parameters/XHardwareInfo" },
-          { "$ref": "#/components/parameters/XTimezone" },
-          { "$ref": "#/components/parameters/XScreenResolution" }
+          {
+            "$ref": "#/components/parameters/XHardwareInfo"
+          },
+          {
+            "$ref": "#/components/parameters/XTimezone"
+          },
+          {
+            "$ref": "#/components/parameters/XScreenResolution"
+          }
         ],
         "requestBody": {
           "required": false,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/SoftwareLatestInput" }
+              "schema": {
+                "$ref": "#/components/schemas/SoftwareLatestInput"
+              }
             }
           }
         },
@@ -299,7 +544,9 @@
             "description": "The caller's available software and download URLs (short-lived, license-bound tokens).",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SoftwareLatestResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/SoftwareLatestResult"
+                }
               }
             }
           },
@@ -307,7 +554,9 @@
             "description": "Missing license key.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -315,7 +564,9 @@
             "description": "License not active, or this device holds no active seat.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -323,19 +574,27 @@
             "description": "Unknown license key.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/software/download": {
       "get": {
         "operationId": "downloadSoftware",
-        "tags": ["software"],
+        "tags": [
+          "software"
+        ],
         "summary": "Download an installer with a token from the update check",
         "description": "Streams an installer using the short-lived, license-bound token minted by `checkSoftwareUpdates` (token TTL is about one hour). Rate limit: 10 requests/minute/license.",
         "parameters": [
@@ -344,7 +603,9 @@
             "in": "query",
             "required": true,
             "description": "Signed download token returned in a `downloadUrl` by `/api/software/latest`.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -352,7 +613,10 @@
             "description": "The installer binary.",
             "content": {
               "application/octet-stream": {
-                "schema": { "type": "string", "format": "binary" }
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
@@ -360,21 +624,29 @@
             "description": "Missing, invalid, or expired token.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/health": {
       "get": {
         "operationId": "healthCheck",
-        "tags": ["system"],
+        "tags": [
+          "system"
+        ],
         "summary": "Service health check",
-        "description": "Returns the running application version when the service and its database are healthy. Returns `503` with an empty body when the database is unreachable.",
+        "description": "Returns `status: ok` and the running application version when the service and its database are healthy. Returns `503` with the JSON `Error` envelope when the database is unreachable.",
         "responses": {
           "200": {
             "description": "Service is healthy.",
@@ -383,18 +655,27 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    },
                     "version": {
                       "type": "string",
                       "description": "Running application version."
                     }
                   },
-                  "required": ["version"]
+                  "required": [
+                    "status",
+                    "version"
+                  ]
                 }
               }
             }
           },
           "503": {
-            "description": "Service unhealthy (database unreachable). Empty body."
+            "$ref": "#/components/responses/ServiceUnavailable"
           }
         }
       }
@@ -420,21 +701,30 @@
         "in": "header",
         "required": false,
         "description": "Primary per-machine distinguisher for the server-side device fingerprint - a stable value such as the processor ID, motherboard serial, or a hashed machine GUID. Strongly recommended on every call: without it, two machines can hash to the same fingerprint and collapse into one seat.",
-        "schema": { "type": "string", "example": "BFEBFBFF000906EA" }
+        "schema": {
+          "type": "string",
+          "example": "BFEBFBFF000906EA"
+        }
       },
       "XTimezone": {
         "name": "X-Timezone",
         "in": "header",
         "required": false,
         "description": "IANA timezone of the device, a fingerprint component.",
-        "schema": { "type": "string", "example": "America/Detroit" }
+        "schema": {
+          "type": "string",
+          "example": "America/Detroit"
+        }
       },
       "XScreenResolution": {
         "name": "X-Screen-Resolution",
         "in": "header",
         "required": false,
         "description": "Primary display resolution of the device, a fingerprint component.",
-        "schema": { "type": "string", "example": "1920x1080" }
+        "schema": {
+          "type": "string",
+          "example": "1920x1080"
+        }
       }
     },
     "responses": {
@@ -442,7 +732,9 @@
         "description": "Invalid request data (validation failure). `details` carries field-level issues.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
           }
         }
       },
@@ -450,7 +742,9 @@
         "description": "Too many requests - back off and retry.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
           }
         }
       },
@@ -458,7 +752,29 @@
         "description": "Unexpected server error - retry with backoff.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Nothing exists at this path. The body carries recovery links.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Service unhealthy (database unreachable). Retry with backoff.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
           }
         }
       }
@@ -470,15 +786,46 @@
         "properties": {
           "error": {
             "type": "string",
+            "description": "Human-readable error message (kept for older clients that only read this field)."
+          },
+          "code": {
+            "type": "string",
+            "description": "Machine-readable error code.",
+            "enum": [
+              "bad_request",
+              "not_found",
+              "rate_limited",
+              "service_unavailable",
+              "server_error"
+            ]
+          },
+          "message": {
+            "type": "string",
             "description": "Human-readable error message."
+          },
+          "hint": {
+            "type": "string",
+            "description": "What to do to resolve the error."
           },
           "details": {
             "type": "array",
             "description": "Field-level validation issues (present on 400 responses).",
-            "items": { "type": "object" }
+            "items": {
+              "type": "object"
+            }
+          },
+          "links": {
+            "type": "object",
+            "description": "Recovery links (API index, OpenAPI spec, docs, search).",
+            "additionalProperties": {
+              "type": "string",
+              "format": "uri"
+            }
           }
         },
-        "required": ["error"]
+        "required": [
+          "error"
+        ]
       },
       "LicenseKey": {
         "type": "string",
@@ -498,7 +845,10 @@
             "type": "string",
             "description": "Display name for the customer or site."
           },
-          "company": { "type": "string", "description": "Company name." },
+          "company": {
+            "type": "string",
+            "description": "Company name."
+          },
           "product": {
             "type": "string",
             "description": "Product being requested, e.g. `EDGEBI`."
@@ -519,18 +869,30 @@
           "operatorEmails": {
             "type": "array",
             "description": "All operator emails on this device; every one is added to the license roster.",
-            "items": { "type": "string", "format": "email" }
+            "items": {
+              "type": "string",
+              "format": "email"
+            }
           }
         },
-        "required": ["email", "processorId"]
+        "required": [
+          "email",
+          "processorId"
+        ]
       },
       "LicenseRequestStatus": {
         "type": "object",
         "properties": {
-          "requestId": { "type": "string" },
+          "requestId": {
+            "type": "string"
+          },
           "status": {
             "type": "string",
-            "enum": ["pending", "approved", "rejected"]
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
           },
           "licenseKey": {
             "$ref": "#/components/schemas/LicenseKey"
@@ -545,12 +907,17 @@
             "description": "Optional admin note."
           }
         },
-        "required": ["requestId", "status"]
+        "required": [
+          "requestId",
+          "status"
+        ]
       },
       "ActivateLicenseInput": {
         "type": "object",
         "properties": {
-          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
+          "licenseKey": {
+            "$ref": "#/components/schemas/LicenseKey"
+          },
           "email": {
             "type": "string",
             "format": "email",
@@ -569,15 +936,33 @@
             "description": "Optional device label."
           }
         },
-        "required": ["licenseKey", "email", "processorId", "systemInfo"]
+        "required": [
+          "licenseKey",
+          "email",
+          "processorId",
+          "systemInfo"
+        ]
       },
       "ActivationResult": {
         "type": "object",
         "properties": {
-          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
-          "email": { "type": "string", "format": "email" },
-          "status": { "type": "string", "enum": ["active"] },
-          "activatedAt": { "type": "string", "format": "date-time" },
+          "licenseKey": {
+            "$ref": "#/components/schemas/LicenseKey"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active"
+            ]
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "expiresAt": {
             "type": "string",
             "format": "date-time",
@@ -588,17 +973,35 @@
             "type": "string",
             "description": "Server-issued fingerprint for this device. Store it - `validate` and `deactivate` match on it."
           },
-          "processorId": { "type": "string" },
-          "seats": { "type": "integer", "description": "Total seats on the license." },
-          "seatsUsed": { "type": "integer" },
-          "seatsRemaining": { "type": "integer" }
+          "processorId": {
+            "type": "string"
+          },
+          "seats": {
+            "type": "integer",
+            "description": "Total seats on the license."
+          },
+          "seatsUsed": {
+            "type": "integer"
+          },
+          "seatsRemaining": {
+            "type": "integer"
+          }
         },
-        "required": ["licenseKey", "email", "status", "seats", "seatsUsed", "seatsRemaining"]
+        "required": [
+          "licenseKey",
+          "email",
+          "status",
+          "seats",
+          "seatsUsed",
+          "seatsRemaining"
+        ]
       },
       "ValidateLicenseInput": {
         "type": "object",
         "properties": {
-          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
+          "licenseKey": {
+            "$ref": "#/components/schemas/LicenseKey"
+          },
           "systemFingerprint": {
             "type": "string",
             "description": "The server-issued fingerprint from activation."
@@ -608,32 +1011,68 @@
             "description": "Fallback seat match when the fingerprint changed."
           }
         },
-        "required": ["licenseKey", "systemFingerprint", "processorId"]
+        "required": [
+          "licenseKey",
+          "systemFingerprint",
+          "processorId"
+        ]
       },
       "ValidateLicenseResult": {
         "type": "object",
         "properties": {
-          "valid": { "type": "boolean", "enum": [true] },
-          "purchaseId": { "type": "string" },
-          "activatedAt": { "type": "string", "format": "date-time", "nullable": true },
-          "customerName": { "type": "string", "nullable": true },
-          "seats": { "type": "integer" }
+          "valid": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "purchaseId": {
+            "type": "string"
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "seats": {
+            "type": "integer"
+          }
         },
-        "required": ["valid", "purchaseId", "seats"]
+        "required": [
+          "valid",
+          "purchaseId",
+          "seats"
+        ]
       },
       "ValidateLicenseError": {
         "type": "object",
         "properties": {
-          "valid": { "type": "boolean", "enum": [false] },
-          "error": { "type": "string" }
+          "valid": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "error": {
+            "type": "string"
+          }
         },
-        "required": ["valid", "error"]
+        "required": [
+          "valid",
+          "error"
+        ]
       },
       "DeactivateLicenseInput": {
         "type": "object",
         "description": "At least one of `systemFingerprint` / `processorId` is required.",
         "properties": {
-          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
+          "licenseKey": {
+            "$ref": "#/components/schemas/LicenseKey"
+          },
           "systemFingerprint": {
             "type": "string",
             "description": "The server-issued fingerprint from activation."
@@ -643,37 +1082,69 @@
             "description": "Fallback seat match."
           }
         },
-        "required": ["licenseKey"]
+        "required": [
+          "licenseKey"
+        ]
       },
       "DeactivateLicenseResult": {
         "type": "object",
         "properties": {
-          "success": { "type": "boolean" },
-          "status": { "type": "string", "enum": ["released"] },
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "released"
+            ]
+          },
           "alreadyReleased": {
             "type": "boolean",
             "description": "True when the device held no active seat (idempotent no-op)."
           },
-          "seats": { "type": "integer" },
-          "seatsUsed": { "type": "integer" },
-          "seatsRemaining": { "type": "integer" }
+          "seats": {
+            "type": "integer"
+          },
+          "seatsUsed": {
+            "type": "integer"
+          },
+          "seatsRemaining": {
+            "type": "integer"
+          }
         },
-        "required": ["success", "status", "alreadyReleased"]
+        "required": [
+          "success",
+          "status",
+          "alreadyReleased"
+        ]
       },
       "SoftwareLatestInput": {
         "type": "object",
         "description": "All fields optional; the license key travels in the `Authorization` or `X-License-Key` header (or `licenseKey` in the body, legacy).",
         "properties": {
-          "licenseKey": { "$ref": "#/components/schemas/LicenseKey" },
-          "processorId": { "type": "string" },
-          "product": { "type": "string", "example": "EDGEBI" },
+          "licenseKey": {
+            "$ref": "#/components/schemas/LicenseKey"
+          },
+          "processorId": {
+            "type": "string"
+          },
+          "product": {
+            "type": "string",
+            "example": "EDGEBI"
+          },
           "version": {
             "type": "string",
             "description": "Currently installed version (write-back for the admin dashboard).",
             "example": "10.2"
           },
-          "releaseDate": { "type": "string", "example": "3/6/2026" },
-          "downloadUrl": { "type": "string", "format": "uri" }
+          "releaseDate": {
+            "type": "string",
+            "example": "3/6/2026"
+          },
+          "downloadUrl": {
+            "type": "string",
+            "format": "uri"
+          }
         }
       },
       "SoftwareLatestResult": {
@@ -684,21 +1155,292 @@
             "items": {
               "type": "object",
               "properties": {
-                "productName": { "type": "string" },
-                "description": { "type": "string" },
-                "latestVersion": { "type": "string" },
+                "productName": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "latestVersion": {
+                  "type": "string"
+                },
                 "downloadUrl": {
                   "type": "string",
                   "format": "uri",
                   "description": "Gated download URL carrying a short-lived, license-bound token (about 1 hour TTL)."
                 },
-                "releaseDate": { "type": "string" }
+                "releaseDate": {
+                  "type": "string"
+                }
               },
-              "required": ["productName", "latestVersion"]
+              "required": [
+                "productName",
+                "latestVersion"
+              ]
             }
           }
         },
-        "required": ["software"]
+        "required": [
+          "software"
+        ]
+      },
+      "Product": {
+        "type": "object",
+        "description": "One EDGEBIC edition currently sold.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "edgebic-aps"
+          },
+          "name": {
+            "type": "string",
+            "example": "EDGEBIC APS"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number",
+                "example": 25000
+              },
+              "currency": {
+                "type": "string",
+                "enum": [
+                  "USD"
+                ]
+              },
+              "model": {
+                "type": "string",
+                "example": "one-time perpetual license"
+              }
+            },
+            "required": [
+              "amount",
+              "currency",
+              "model"
+            ]
+          },
+          "platform": {
+            "type": "string",
+            "example": "Windows desktop application (.NET 8)"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "pricingUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "contactUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "price",
+          "platform",
+          "url",
+          "pricingUrl",
+          "contactUrl"
+        ]
+      },
+      "ProductCatalog": {
+        "type": "object",
+        "properties": {
+          "vendor": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "example": "User Solutions"
+              },
+              "legalName": {
+                "type": "string",
+                "example": "User Solutions, Inc."
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "foundingYear": {
+                "type": "string",
+                "example": "1991"
+              },
+              "salesEmail": {
+                "type": "string",
+                "format": "email"
+              },
+              "phone": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "legalName",
+              "url",
+              "foundingYear",
+              "salesEmail",
+              "phone"
+            ]
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
+          }
+        },
+        "required": [
+          "vendor",
+          "products"
+        ]
+      },
+      "ArticleSummary": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Identifier to pass to getArticle. Glossary terms use the form `glossary-{term}`.",
+            "example": "edgebic-complete-guide"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Canonical HTML page."
+          },
+          "markdownUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Markdown variant of the article (also reachable via Accept: text/markdown on `url`)."
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "example": "Production Scheduling"
+          },
+          "cluster": {
+            "type": "string",
+            "description": "Topic cluster slug.",
+            "example": "production-scheduling"
+          },
+          "pillarSlug": {
+            "type": "string",
+            "nullable": true,
+            "description": "Slug of the cluster's pillar article, if this is a spoke."
+          },
+          "published": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "wordCount": {
+            "type": "integer",
+            "nullable": true
+          },
+          "readingTime": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Minutes."
+          }
+        },
+        "required": [
+          "slug",
+          "url",
+          "markdownUrl",
+          "title",
+          "description",
+          "category",
+          "cluster",
+          "published",
+          "keywords"
+        ]
+      },
+      "Article": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ArticleSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "faq": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string"
+                    },
+                    "answer": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "answer"
+                  ]
+                }
+              },
+              "body": {
+                "type": "string",
+                "description": "The full article body as markdown (MDX source)."
+              }
+            },
+            "required": [
+              "faq",
+              "body"
+            ]
+          }
+        ]
+      },
+      "ArticleSearchResult": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Total matches before pagination."
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArticleSummary"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "limit",
+          "offset",
+          "items"
+        ]
       }
     }
   }

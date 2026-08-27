@@ -28,6 +28,7 @@ export enum Routes {
   Roadmap = 'https://achromatic.canny.io',
   Docs = '/docs',
   Pricing = '/pricing',
+  ProductionSchedulingSoftwareCost = '/production-scheduling-software-cost',
   Blog = '/blog',
   Calendar = '/dashboard/calendar',
   News = '/news',

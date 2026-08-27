@@ -1,58 +1,106 @@
 import * as React from 'react';
 
-import { FAQJsonLd } from '@/components/seo';
-import { NTClipboardFAQ } from '@/components/marketing/sections/ntclipboard-faq';
-import { NTClipboardPricing } from '@/components/marketing/sections/ntclipboard-pricing';
+import { EdgebicPricing } from '@/components/marketing/sections/edgebic-pricing';
+import { FAQJsonLd, SoftwareApplicationJsonLd } from '@/components/seo';
+import { AppInfo } from '@/constants/app-info';
 import { createPageMetadata } from '@/lib/seo/metadata';
+import { schemaNodeIds } from '@/lib/seo/schema-nodes';
 
 export const metadata = createPageMetadata({
-  title: 'Pricing - RMDB Production Planning Software',
+  title: 'EDGEBIC Pricing: $25,000 APS, $35,000 Complete, One-Time License',
   description:
-    'View pricing plans for RMDB and EDGEBI production planning and scheduling software. Affordable solutions for manufacturers of all sizes.',
+    'EDGEBIC costs $25,000 for the APS edition and $35,000 for the Complete edition, both one-time perpetual licenses rather than subscriptions. Published pricing for finite capacity scheduling and production planning software from User Solutions.',
   path: '/pricing',
   keywords:
-    'RMDB pricing, production planning pricing, scheduling software cost, manufacturing software pricing, EDGEBI pricing, Resource Manager DB cost'
+    'EDGEBIC pricing, EDGEBIC cost, production scheduling software cost, finite capacity scheduling software price, APS software pricing, manufacturing scheduling software cost, advanced planning and scheduling price, one-time license scheduling software, production planning software pricing, how much does scheduling software cost'
 });
 
+/**
+ * Real pricing questions, replacing a set that described a PDF clipboard
+ * utility this theme shipped with. That content was being served as FAQ
+ * structured data on the pricing page of a $25,000 product, so an assistant
+ * asked what EDGEBIC costs was reading about keyboard shortcuts.
+ *
+ * Every answer here is verifiable from the product or the price list. Nothing
+ * about support contracts, discounts or implementation fees appears, because
+ * those are not published and inventing them is how false claims ship.
+ */
 const faqData = [
   {
-    question: 'What types of PDFs does EDGEBI work with?',
+    question: 'How much does EDGEBIC cost?',
     answer:
-      'EDGEBI works with any PDF containing structured data like parts lists, inventory documents, job sheets, and technical specifications. It uses intelligent pattern recognition to identify part numbers, descriptions, quantities, weights, and job numbers.'
+      'EDGEBIC costs $25,000 for the APS edition and $35,000 for the Complete edition. Both are one-time perpetual licenses rather than subscriptions. EDGEBIC APS covers finite capacity scheduling and optimization; EDGEBIC Complete adds MRP, inventory, purchasing and material pegging.'
   },
   {
-    question: 'How secure is my data?',
+    question: 'Is EDGEBIC a subscription?',
     answer:
-      'Your data never leaves your computer. EDGEBI processes everything locally on your Windows machine, ensuring complete privacy and security. No internet connection is required for the core functionality.'
+      'No. Both editions are one-time perpetual licenses. There is no recurring per-seat fee, which is the usual model among advanced planning and scheduling competitors such as PlanetTogether and Asprova.'
   },
   {
-    question: 'What keyboard shortcuts are available?',
+    question: 'What is the difference between EDGEBIC APS and EDGEBIC Complete?',
     answer:
-      'EDGEBI includes several time-saving shortcuts: ESC to clear, TAB to send selected items to clipboard, and ` (backtick) to view current clipboard contents. The app also minimizes to system tray for quick access.'
+      'Material planning, and nothing else. Both editions run the identical finite capacity scheduling engine, so neither schedules better than the other. EDGEBIC Complete adds material requirements planning, inventory, purchasing and material pegging, so shortages constrain the schedule alongside machines and labor. If capacity is your constraint, APS is the whole answer.'
   },
   {
-    question: 'Do I get updates with the one-time purchase?',
+    question: 'Why does User Solutions publish pricing when most APS vendors do not?',
     answer:
-      'Absolutely! Your one-time purchase includes all future updates and improvements. No subscription fees, no additional costs.'
+      'Because a manufacturer evaluating scheduling software should be able to decide whether it is worth a conversation before having one. Most advanced planning and scheduling vendors quote only after a discovery call, which means the buyer spends an hour before learning whether the product is in their range at all.'
   },
   {
-    question: 'How does the intelligent parsing work?',
+    question: 'What do I need to run EDGEBIC?',
     answer:
-      'EDGEBI uses advanced pattern recognition to identify structured data in PDFs. It looks for common patterns like part numbers, quantities, weights, descriptions, and job numbers, then organizes them into a clean, selectable format.'
+      'EDGEBIC is an installed Windows desktop application built on .NET 8, not a browser-based service. Single-user installations run on SQLite. Multi-user and enterprise installations run on SQL Server. Your data stays on your own machines, which matters for defense, medical device and other regulated work.'
   },
   {
-    question: 'Can I use EDGEBI on multiple computers?',
+    question: 'Do you still sell RMDB, EDGEBI or Resource Manager for Excel?',
     answer:
-      "Yes! Each individual user will need to download and install EDGEBI on their own system. The software works offline and doesn't require online activation after initial setup."
+      'No. RMDB, EDGEBI, RMX, Workcenter Scheduler XL and Job Scheduler Lite are no longer sold as new licenses. Existing installations remain supported and their documentation stays online. EDGEBIC is the current generation of Resource Manager DB and the upgrade path from all of them.'
+  },
+  {
+    question: 'Does EDGEBIC work with my ERP?',
+    answer:
+      'If your ERP can export data to Excel, CSV or a database, then yes. EDGEBIC integrates through configurable import and export masks rather than a native connector, which is why it works with systems no vendor has built a connector for. The approach covers products, work centers, customers, sales orders, bills of routing, actuals, plant holidays and shifts.'
   }
 ];
 
 export default function PricingPage(): React.JSX.Element {
+  const nodes = schemaNodeIds();
+
   return (
     <>
       <FAQJsonLd questions={faqData} />
-      <NTClipboardPricing />
-      <NTClipboardFAQ />
+      {/* One entry per edition so the published price is machine-readable.
+          This is the whole point of the page: an answer engine asked what
+          EDGEBIC costs should find a real number, not a contact form.
+
+          These carry the same @id and url as the nodes on /edgebic on purpose.
+          Without a shared id they were two more entities called "EDGEBIC APS"
+          at a second URL, which is how one product ends up with four prices. */}
+      <SoftwareApplicationJsonLd
+        id={nodes.edgebicAps}
+        name={AppInfo.EDITIONS.APS.NAME}
+        description={AppInfo.EDITIONS.APS.DESCRIPTION}
+        url="/edgebic"
+        price={AppInfo.EDITIONS.APS.PRICE}
+        operatingSystem="Windows"
+        applicationSubCategory="Production Scheduling Software"
+        offerUrl="/pricing"
+        softwareRequirements="Windows with .NET 8; SQLite for single-user, SQL Server for multi-user deployments"
+        isVariantOf={nodes.edgebic}
+      />
+      <SoftwareApplicationJsonLd
+        id={nodes.edgebicComplete}
+        name={AppInfo.EDITIONS.COMPLETE.NAME}
+        description={AppInfo.EDITIONS.COMPLETE.DESCRIPTION}
+        url="/edgebic"
+        price={AppInfo.EDITIONS.COMPLETE.PRICE}
+        operatingSystem="Windows"
+        applicationSubCategory="Production Scheduling Software"
+        offerUrl="/pricing"
+        softwareRequirements="Windows with .NET 8; SQLite for single-user, SQL Server for multi-user deployments"
+        isVariantOf={nodes.edgebic}
+      />
+      <EdgebicPricing />
     </>
   );
 }

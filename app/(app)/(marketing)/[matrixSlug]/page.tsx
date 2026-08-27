@@ -7,6 +7,7 @@ import {
   BreadcrumbJsonLd
 } from '@/components/seo';
 import { MatrixPage, buildCellFaqs } from '@/components/marketing/programmatic/matrix-page';
+import { AppInfo } from '@/constants/app-info';
 import { createPageMetadata } from '@/lib/seo/metadata';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
 import {
@@ -63,11 +64,16 @@ export default async function MatrixSlugPage({
 
   return (
     <>
+      {/* Each cell is a use case for one real product, not a product of its
+          own. Naming a phantom app per page (at a leftover theme price) put
+          ~186 false entities into the graph. */}
       <SoftwareApplicationJsonLd
-        name={`${cell.feature.name} for ${cell.industry.name}`}
-        description={`${cell.feature.shortLabel} purpose-built for ${cell.industry.shortLabel}. Finite capacity scheduling, drag-and-drop Gantt, ERP integration.`}
-        url={`${baseUrl}/${matrixSlug}`}
-        price="49"
+        name={AppInfo.APP_NAME}
+        description={`${AppInfo.APP_NAME} ${cell.feature.shortLabel.toLowerCase()} for ${cell.industry.shortLabel}. Finite capacity scheduling, drag-and-drop Gantt, ERP integration.`}
+        url={`${baseUrl}/edgebic`}
+        applicationSubCategory="Production Scheduling Software"
+        price={AppInfo.EDITIONS.APS.PRICE}
+        offerUrl="/pricing"
       />
       <FAQJsonLd
         questions={faqs.map((faq) => ({
