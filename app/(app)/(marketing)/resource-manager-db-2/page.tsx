@@ -1,8 +1,11 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import Script from 'next/script';
+import Link from 'next/link';
 
+import { BreadcrumbJsonLd, SoftwareApplicationJsonLd } from '@/components/seo';
+import { AppInfo } from '@/constants/app-info';
+import { RMDB_ALTERNATE_NAMES, schemaNodeIds } from '@/lib/seo/schema-nodes';
 import { EdgebicSuccessorCallout } from '@/components/marketing/sections/edgebic-successor-callout';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { RMDBTabsClient } from '@/components/marketing/sections/rmdb-tabs-client';
@@ -26,12 +29,14 @@ const IMAGES = {
 };
 
 export const metadata: Metadata = {
-  title: 'RMDB | Resource Manager for Excel — Production Scheduling Software',
+  // The title used to read "Resource Manager for Excel", which is RMX: a
+  // different product with its own page. Two of our own URLs were competing
+  // for the same phrase. Both RMDB spellings are kept because both rank.
+  title: 'Resource Manager DB (RMDB): Production Planning & Scheduling Software',
   description:
-    'Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations. Features finite capacity planning, MRP, drag-and-drop scheduling, and Excel integration.',
+    'Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations. Features finite capacity planning, MRP, drag-and-drop scheduling, and Excel integration. RMDB remains fully supported; new licenses are sold as EDGEBIC.',
   keywords: [
     'RMDB',
-    'resource manager for excel',
     'RMDB scheduling software',
     'Resource Manager DB',
     'production scheduling',
@@ -87,47 +92,64 @@ export const metadata: Metadata = {
   }
 };
 
-// JSON-LD Structured Data for SEO
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Resource Manager DB (RMDB)',
-  applicationCategory: 'BusinessApplication',
-  operatingSystem: 'Windows',
-  description:
-    'Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations.',
-  offers: {
-    '@type': 'Offer',
-    price: '4000',
-    priceCurrency: 'USD',
-    availability: 'https://schema.org/InStock'
+// The canonical RMDB feature list, shared with the visible feature section.
+const RMDB_FEATURE_LIST = [
+  'Finite Capacity Planning & Scheduling',
+  'MRP and Inventory Management',
+  'Easy "what-if" Analysis',
+  'Downtime Analysis and Reporting',
+  'Costing and Estimating',
+  'Running Stand Alone or Networked',
+  'Dragging and Dropping Adjustments',
+  'Optional LP Optimization Integration',
+  'Advanced Planning and Scheduling',
+  'Routings and Priority Scheduling',
+  'Purchasing and Receiving',
+  'Simple Maintenance and Updating',
+  'Integrating with All Systems',
+  'Production Planning',
+  'Concurrent Resource Scheduling',
+  'Customized Reports'
+];
+
+const RMDB_COMPARISONS = [
+  { href: '/compare-products/rmdb-vs-sap', label: 'RMDB vs SAP' },
+  { href: '/compare-products/rmdb-vs-epicor', label: 'RMDB vs Epicor' },
+  { href: '/compare-products/rmdb-vs-netsuite', label: 'RMDB vs NetSuite' },
+  { href: '/compare-products/rmdb-vs-preactor', label: 'RMDB vs Preactor' },
+  {
+    href: '/compare-products/rmdb-vs-e2-shop-system',
+    label: 'RMDB vs E2 Shop System'
   },
-  featureList: [
-    'Finite Capacity Planning & Scheduling',
-    'MRP and Inventory Management',
-    'Easy "what-if" Analysis',
-    'Downtime Analysis and Reporting',
-    'Costing and Estimating',
-    'Running Stand Alone or Networked',
-    'Dragging and Dropping Adjustments',
-    'Optional LP Optimization Integration',
-    'Advanced Planning and Scheduling',
-    'Routings and Priority Scheduling',
-    'Purchasing and Receiving',
-    'Simple Maintenance and Updating',
-    'Integrating with All Systems',
-    'Production Planning',
-    'Concurrent Resource Scheduling',
-    'Customized Reports'
-  ],
-  screenshot: `${BASE_URL}/images/rmdb/rmdb-edge-hero.png`,
-  softwareVersion: '2023',
-  publisher: {
-    '@type': 'Organization',
-    name: 'User Solutions',
-    url: BASE_URL
+  { href: '/compare-products/rmdb-vs-quickbooks', label: 'RMDB vs QuickBooks' }
+];
+
+const RMDB_MIGRATION_GUIDES = [
+  {
+    href: '/blog/what-carries-forward-from-rmdb-to-edgebic',
+    label: 'What carries forward from RMDB to EDGEBIC'
+  },
+  {
+    href: '/blog/rmdb-to-edgebic-feature-parity-map',
+    label: 'RMDB to EDGEBIC feature parity map'
+  },
+  {
+    href: '/blog/moving-rmdb-routings-into-edgebic',
+    label: 'Moving RMDB routings into EDGEBIC'
+  },
+  {
+    href: '/blog/running-rmdb-and-edgebic-side-by-side',
+    label: 'Running RMDB and EDGEBIC side by side'
+  },
+  {
+    href: '/blog/mapping-rmdb-terms-to-edgebic-terms',
+    label: 'Mapping RMDB terms to EDGEBIC terms'
+  },
+  {
+    href: '/blog/training-your-rmdb-team-on-edgebic',
+    label: 'Training your RMDB team on EDGEBIC'
   }
-};
+];
 
 // Summary tab content - rendered server-side
 function SummaryContent() {
@@ -287,14 +309,34 @@ function LiveDemoContent() {
 }
 
 export default function ResourceManagerDBPage() {
+  const nodes = schemaNodeIds();
+
   return (
     <>
-      {/* JSON-LD Structured Data - load early for SEO */}
-      <Script
-        id="json-ld-rmdb"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        strategy="beforeInteractive"
+      {/* The canonical RMDB node. Every rmdb-vs-* comparison page points at
+          this @id. No offers block: RMDB is fully supported but no longer sold
+          as a new license, and publishing an InStock price for it contradicted
+          /pricing on the same domain. */}
+      <SoftwareApplicationJsonLd
+        id={nodes.rmdb}
+        name="Resource Manager DB (RMDB)"
+        alternateName={RMDB_ALTERNATE_NAMES}
+        description="Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations."
+        url="/resource-manager-db-2"
+        applicationSubCategory="Production Scheduling Software"
+        operatingSystem="Windows"
+        featureList={RMDB_FEATURE_LIST}
+        sameAs={[AppInfo.PROFILE_LINKS.CAPTERRA, AppInfo.PROFILE_LINKS.G2]}
+        predecessorOf={nodes.edgebic}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: `${BASE_URL}/` },
+          {
+            name: 'Resource Manager DB (RMDB)',
+            url: `${BASE_URL}/resource-manager-db-2`
+          }
+        ]}
       />
 
       <main className="min-h-screen">
@@ -310,7 +352,7 @@ export default function ResourceManagerDBPage() {
                   id="hero-heading"
                   className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl"
                 >
-                  Resource Manager DB
+                  Resource Manager DB (RMDB)
                 </h1>
                 <p className="text-lg leading-relaxed text-slate-600">
                   Resource Manager-DB (RMDB) is a flexible and affordable
@@ -320,6 +362,29 @@ export default function ResourceManagerDBPage() {
                   scheduling, just easier and quicker than you ever thought
                   possible. Give US a chance to prove it by scheduling a Live
                   Demo today!
+                </p>
+                {/* The site said "RMDB is not discontinued" on one page and
+                    "we no longer sell RMDB" on another. Both are true. Saying
+                    them together, here, is what resolves it. */}
+                <p className="mt-4 text-base leading-relaxed text-slate-600">
+                  RMDB remains fully supported for existing installations. New
+                  licenses are sold as{' '}
+                  <Link
+                    href="/edgebic"
+                    className="font-medium text-cyan-700 underline underline-offset-4"
+                  >
+                    EDGEBIC
+                  </Link>
+                  , the current generation of Resource Manager DB, which carries
+                  the full RMDB scheduling engine forward into one modern
+                  application. See the{' '}
+                  <Link
+                    href="/rmdb-to-edgebic"
+                    className="font-medium text-cyan-700 underline underline-offset-4"
+                  >
+                    RMDB to EDGEBIC upgrade path
+                  </Link>
+                  .
                 </p>
               </div>
               <div className="flex justify-center">
@@ -352,6 +417,74 @@ export default function ResourceManagerDBPage() {
             liveDemoContent={<LiveDemoContent />}
           />
         </Suspense>
+        {/* This page was HIGH priority in the sitemap and linked out to a PDF
+            and a contact form. Everything below already links in to it; none
+            of it was reachable from here. */}
+        <section
+          className="border-t border-slate-200 py-12"
+          aria-labelledby="rmdb-resources-heading"
+        >
+          <div className="container mx-auto max-w-7xl px-4">
+            <h2
+              id="rmdb-resources-heading"
+              className="mb-8 text-2xl font-bold text-slate-900"
+            >
+              RMDB comparisons and guides
+            </h2>
+            <div className="grid gap-10 md:grid-cols-2">
+              <div>
+                <h3 className="mb-3 text-base font-semibold text-slate-900">
+                  How RMDB compares
+                </h3>
+                <ul className="space-y-2 text-slate-600">
+                  {RMDB_COMPARISONS.map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className="hover:text-cyan-700 hover:underline underline-offset-4"
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm">
+                  <Link
+                    href="/compare-products"
+                    className="font-medium text-cyan-700 underline underline-offset-4"
+                  >
+                    See all comparisons
+                  </Link>
+                </p>
+              </div>
+              <div>
+                <h3 className="mb-3 text-base font-semibold text-slate-900">
+                  Moving from RMDB to EDGEBIC
+                </h3>
+                <ul className="space-y-2 text-slate-600">
+                  {RMDB_MIGRATION_GUIDES.map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className="hover:text-cyan-700 hover:underline underline-offset-4"
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm">
+                  <Link
+                    href="/rmdb-to-edgebic"
+                    className="font-medium text-cyan-700 underline underline-offset-4"
+                  >
+                    Read the full upgrade path
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
         <EdgebicSuccessorCallout variant="rmdb" />
         <RelatedSuccessStories productKey="rmdb" />
       </main>

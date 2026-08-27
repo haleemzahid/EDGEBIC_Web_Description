@@ -8,7 +8,15 @@ import {
   FAQJsonLd,
   SoftwareApplicationJsonLd
 } from '@/components/seo/json-ld';
+import { AppInfo } from '@/constants/app-info';
+import {
+  EDGEBIC_ALTERNATE_NAMES,
+  RMDB_ALTERNATE_NAMES,
+  schemaNodeIds
+} from '@/lib/seo/schema-nodes';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
+
+const usd = (price: string) => `$${Number(price).toLocaleString('en-US')}`;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -96,6 +104,7 @@ function CellIcon({ value }: { value: ComparisonCell }) {
 // ---------------------------------------------------------------------------
 export function ComparisonPage({ data }: { data: ComparisonPageData }) {
   const baseUrl = getBaseUrl();
+  const nodes = schemaNodeIds();
   const url = `${baseUrl}/compare-products/${data.slug}`;
 
   const breadcrumbs = [
@@ -116,12 +125,29 @@ export function ComparisonPage({ data }: { data: ComparisonPageData }) {
           answer: f.answer
         }))}
       />
+      {/* RMDB is the product this comparison is written about, so it stays the
+          subject. It carries no offer: it is supported but not sold, and 30
+          pages publishing an InStock $5,000 price contradicted /pricing. */}
       <SoftwareApplicationJsonLd
-        name="RMDB - Resource Manager DB"
+        id={nodes.rmdb}
+        name="Resource Manager DB (RMDB)"
+        alternateName={RMDB_ALTERNATE_NAMES}
         description="Finite-capacity production planning and scheduling software for manufacturers. Drag-and-drop Gantt, ERP integration, and one-time licensing."
         url={`${baseUrl}/resource-manager-db-2`}
-        price="5000"
-        priceCurrency="USD"
+        applicationSubCategory="Production Scheduling Software"
+        predecessorOf={nodes.edgebic}
+      />
+      {/* ...and this is what is actually sold today, at the real price. */}
+      <SoftwareApplicationJsonLd
+        id={nodes.edgebic}
+        name={AppInfo.APP_NAME}
+        alternateName={EDGEBIC_ALTERNATE_NAMES}
+        description={AppInfo.APP_DESCRIPTION}
+        url={`${baseUrl}/edgebic`}
+        applicationSubCategory="Production Scheduling Software"
+        price={AppInfo.EDITIONS.APS.PRICE}
+        offerUrl="/pricing"
+        successorOf={nodes.rmdb}
       />
 
       <article className="min-h-screen bg-white">
@@ -172,6 +198,24 @@ export function ComparisonPage({ data }: { data: ComparisonPageData }) {
                 The short answer
               </p>
               <p className="text-base text-slate-800 md:text-lg">{data.tldr}</p>
+              <p className="mt-3 text-sm text-slate-600">
+                RMDB is the product this comparison is written about.{' '}
+                <Link
+                  href="/edgebic"
+                  className="font-medium text-cyan-700 underline underline-offset-4"
+                >
+                  {AppInfo.APP_NAME}
+                </Link>{' '}
+                is its current generation and carries the same scheduling engine
+                forward; see the{' '}
+                <Link
+                  href="/rmdb-to-edgebic"
+                  className="font-medium text-cyan-700 underline underline-offset-4"
+                >
+                  upgrade path
+                </Link>
+                .
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -271,15 +315,29 @@ export function ComparisonPage({ data }: { data: ComparisonPageData }) {
             <h2 className="mb-6 text-2xl font-bold text-slate-900 md:text-3xl">
               Pricing comparison
             </h2>
-            <div className="grid gap-5 md:grid-cols-2">
-              <div className="rounded-xl border-2 border-cyan-200 bg-white p-6 shadow-sm">
-                <p className="text-sm font-semibold uppercase tracking-wide text-cyan-700">
-                  RMDB
+            {/* Three cards, identical structure, so every row lines up across
+                all of them. Anything variable-length sits below the grid. */}
+            <div className="grid gap-5 md:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+                  RMDB (legacy license)
                 </p>
                 <p className="mt-2 text-3xl font-bold text-slate-900">
                   {data.pricing.rmdbPrice}
                 </p>
                 <p className="mt-1 text-sm text-slate-500">{data.pricing.rmdbModel}</p>
+              </div>
+              <div className="rounded-xl border-2 border-cyan-200 bg-white p-6 shadow-sm">
+                <p className="text-sm font-semibold uppercase tracking-wide text-cyan-700">
+                  {AppInfo.APP_NAME} (current generation)
+                </p>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
+                  {usd(AppInfo.EDITIONS.APS.PRICE)} or{' '}
+                  {usd(AppInfo.EDITIONS.COMPLETE.PRICE)}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  One-time perpetual license, APS or Complete
+                </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p className="text-sm font-semibold uppercase tracking-wide text-slate-600">
@@ -293,7 +351,19 @@ export function ComparisonPage({ data }: { data: ComparisonPageData }) {
                 </p>
               </div>
             </div>
-            <p className="mt-5 text-slate-700">{data.pricing.summary}</p>
+            <p className="mt-5 text-sm text-slate-500">
+              RMDB pricing shown is the historic list price. RMDB is no longer
+              sold as a new license and existing installations remain fully
+              supported;{' '}
+              <Link
+                href="/pricing"
+                className="font-medium text-cyan-700 underline underline-offset-4"
+              >
+                current pricing
+              </Link>{' '}
+              is for {AppInfo.APP_NAME}.
+            </p>
+            <p className="mt-4 text-slate-700">{data.pricing.summary}</p>
           </section>
 
           {/* ---------- Where Each Wins ---------- */}

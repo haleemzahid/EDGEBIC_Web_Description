@@ -23,6 +23,7 @@ const HIGH_PRIORITY_PAGES = new Set([
 const MEDIUM_PRIORITY_PAGES = new Set([
   'rmdb-to-edgebic',
   'edgebic-erp-integration',
+  'production-scheduling-software-cost',
   'contact-us',
   'consulting',
   'edgebi',

@@ -70,12 +70,8 @@ export function NotFoundContent(): React.JSX.Element {
               </Link>
             </li>
             <li>
-              <Link href="/docs" className="hover:text-foreground hover:underline">
-                Documentation
-              </Link>{' '}
-              and{' '}
               <Link href="/developers" className="hover:text-foreground hover:underline">
-                developer resources
+                Developer resources and API
               </Link>
             </li>
             <li>

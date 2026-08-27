@@ -8,6 +8,8 @@
  * The canonical long-form agent reference remains public/llms.txt.
  */
 
+import { PUBLIC_ENDPOINTS } from '@/lib/api/public-endpoints';
+
 export const HOME_MARKDOWN = `# EDGEBIC Production Scheduling Software | User Solutions
 
 Your partner for solving production planning and scheduling challenges — your way.
@@ -51,6 +53,12 @@ Platform: Windows desktop application on .NET 8 (SQLite single-user, SQL Server 
 - Sitemap: https://usersolutions.com/sitemap.xml
 `;
 
+function endpointRows(): string {
+  return PUBLIC_ENDPOINTS.map(
+    (e) => `| ${e.method} | ${e.path} | ${e.operationId} — ${e.description} |`
+  ).join('\n');
+}
+
 export const DEVELOPERS_MARKDOWN = `# User Solutions Developer Resources
 
 Machine-readable resources and the public API for EDGEBIC by User Solutions, Inc.
@@ -59,22 +67,31 @@ Machine-readable resources and the public API for EDGEBIC by User Solutions, Inc
 
 Base URL: \`https://usersolutions.com\`
 
-The public REST API covers self-service license requests, seat-based device
-activation, runtime validation, seat release, and seat-gated software update
-checks for the EDGEBIC / EDGEBI desktop applications. The license key
-(\`NTCB-XXXX-XXXX-XXXX-XXXX-XXXX\`) is the credential. All errors are structured
-JSON (\`{ "error": "…" }\`).
+Two groups of endpoints:
+
+1. **Open content API (\`/api/v1/*\`)** — no authentication. The product
+   catalog with list prices, and keyword search plus full markdown bodies for
+   the 2,400-article knowledge base. CORS-enabled (\`Access-Control-Allow-Origin: *\`).
+2. **Licensing API (\`/api/license/*\`, \`/api/software/*\`)** — self-service
+   license requests, seat-based device activation, runtime validation, seat
+   release, and seat-gated software update checks for the EDGEBIC / EDGEBI
+   desktop applications. The license key (\`NTCB-XXXX-XXXX-XXXX-XXXX-XXXX\`)
+   is the credential.
+
+Every error is structured JSON:
+\`{ "error", "code", "message", "hint"?, "details"?, "links"? }\`.
 
 | Method | Path | Operation |
 |---|---|---|
-| POST | /api/license/request | requestLicense — submit a device license request |
-| GET | /api/license/request | pollLicenseRequest — poll for approval, pick up the key |
-| POST | /api/license/activate | activateLicense — consume a seat for this device |
-| POST | /api/license/validate | validateLicense — check the device still holds a seat |
-| POST | /api/license/deactivate | deactivateLicense — release this device's seat |
-| POST | /api/software/latest | checkSoftwareUpdates — seat-gated update check |
-| GET | /api/software/download | downloadSoftware — token-gated installer download |
-| GET | /api/health | healthCheck — service health |
+${endpointRows()}
+
+Examples:
+
+\`\`\`bash
+curl https://usersolutions.com/api/v1/products
+curl 'https://usersolutions.com/api/v1/articles?q=finite+capacity+scheduling&limit=5'
+curl https://usersolutions.com/api/v1/articles/edgebic-complete-guide
+\`\`\`
 
 ## Machine-readable resources
 
@@ -83,13 +100,14 @@ JSON (\`{ "error": "…" }\`).
 - llms.txt (agent site guide): https://usersolutions.com/llms.txt
 - llms-full.txt (extended reference): https://usersolutions.com/llms-full.txt
 - Sitemap: https://usersolutions.com/sitemap.xml
-- Documentation: https://usersolutions.com/docs
 
 ## Markdown content negotiation
 
-Key pages of this site answer \`Accept: text/markdown\` with a markdown variant
-(\`Content-Type: text/markdown\`, \`Vary: Accept\`). Supported: the homepage,
-this page, and every blog article under /blog/.
+Every page on this site answers \`Accept: text/markdown\` and sends
+\`Vary: Accept\`. The homepage, this page, and every article under /blog/
+return a native markdown variant (\`Content-Type: text/markdown\`); other
+pages return their HTML; unknown paths return a markdown 404 with recovery
+links (real 404 status).
 
 Example:
 
@@ -104,6 +122,18 @@ curl -H 'Accept: text/markdown' https://usersolutions.com/
 - Contact page: https://usersolutions.com/contact-us
 `;
 
+export function unavailableMarkdown(pathname: string): string {
+  return `# 502 — Markdown variant unavailable
+
+The markdown negotiation for \`${pathname}\` could not reach the page's HTML
+twin. Retry, or read the HTML directly:
+
+- Canonical page: https://usersolutions.com${pathname}
+- Site guide for agents (llms.txt): https://usersolutions.com/llms.txt
+- Full sitemap (all URLs): https://usersolutions.com/sitemap.xml
+`;
+}
+
 export function notFoundMarkdown(pathname: string): string {
   return `# 404 — Page not found
 
@@ -117,7 +147,7 @@ Nothing exists at \`${pathname}\` on usersolutions.com.
 - Blog and knowledge base index: https://usersolutions.com/blogs
 - Product overview (EDGEBIC): https://usersolutions.com/edgebic
 - Developer resources and API: https://usersolutions.com/developers
-- Documentation: https://usersolutions.com/docs
+- Search the knowledge base by API: https://usersolutions.com/api/v1/articles?q={term}
 
 Blog articles live at \`/blog/{slug}\`; glossary terms at \`/blog/glossary/{term}\`.
 All valid URLs are enumerated in the sitemap.

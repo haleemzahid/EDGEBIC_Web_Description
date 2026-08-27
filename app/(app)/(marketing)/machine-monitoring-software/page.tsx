@@ -14,6 +14,7 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '@/components/ui/accordion';
+import { AppInfo } from '@/constants/app-info';
 import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
@@ -61,7 +62,7 @@ const FAQS = [
   {
     question: 'How much does machine monitoring software cost?',
     answer:
-      'EDGEBI starts at $49/user/month or as a one-time perpetual license with no per-machine fees — a critical difference from per-machine SaaS competitors that get expensive fast at 20+ machines. Implementation services are quoted separately based on machine count and hardware requirements. Most shops see ROI within 90 days from a single recovered shift of capacity.'
+      'There is no per-user or per-machine subscription. Shop floor data capture, OEE and utilization reporting are included in EDGEBIC, the current generation of RMDB and EDGEBI, sold as a one-time perpetual license: $25,000 for EDGEBIC APS or $35,000 for EDGEBIC Complete. That is a critical difference from per-machine SaaS competitors that get expensive fast at 20+ machines. Implementation services are quoted separately based on machine count and hardware requirements. Most shops see ROI within 90 days from a single recovered shift of capacity.'
   }
 ];
 
@@ -70,10 +71,12 @@ export default function MachineMonitoringSoftwarePage(): React.JSX.Element {
   return (
     <>
       <SoftwareApplicationJsonLd
-        name="EDGEBI Machine Monitoring"
+        name={AppInfo.APP_NAME}
         description="Real-time machine monitoring, OEE tracking, downtime analysis, and shop floor analytics integrated with finite-capacity production scheduling."
-        url={`${baseUrl}/machine-monitoring-software`}
-        price="49"
+        url={`${baseUrl}/edgebic`}
+        applicationSubCategory="Production Scheduling Software"
+        price={AppInfo.EDITIONS.APS.PRICE}
+        offerUrl="/pricing"
       />
       <FAQJsonLd
         questions={FAQS.map((faq) => ({

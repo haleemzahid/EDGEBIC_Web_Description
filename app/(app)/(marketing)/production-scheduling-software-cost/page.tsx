@@ -1,9 +1,11 @@
 import * as React from 'react';
 import Link from 'next/link';
 
-import { FAQJsonLd } from '@/components/seo';
+import { FAQJsonLd, SoftwareApplicationJsonLd } from '@/components/seo';
+import { AppInfo } from '@/constants/app-info';
 import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
+import { schemaNodeIds } from '@/lib/seo/schema-nodes';
 
 export const metadata = createPageMetadata({
   title: 'How Much Does Production Scheduling Software Cost? (2026 Prices)',
@@ -82,9 +84,36 @@ const faqData = [
 ];
 
 export default function ProductionSchedulingSoftwareCostPage(): React.JSX.Element {
+  const nodes = schemaNodeIds();
+
   return (
     <>
       <FAQJsonLd questions={faqData} />
+      {/* This page exists to answer what the category costs, and it states two
+          real prices in the body. Without an Offer, the one page most likely
+          to be cited for a price left its own answer unreadable to machines. */}
+      <SoftwareApplicationJsonLd
+        id={nodes.edgebicAps}
+        name={AppInfo.EDITIONS.APS.NAME}
+        description={AppInfo.EDITIONS.APS.DESCRIPTION}
+        url="/edgebic"
+        price={AppInfo.EDITIONS.APS.PRICE}
+        operatingSystem="Windows"
+        applicationSubCategory="Production Scheduling Software"
+        offerUrl="/pricing"
+        isVariantOf={nodes.edgebic}
+      />
+      <SoftwareApplicationJsonLd
+        id={nodes.edgebicComplete}
+        name={AppInfo.EDITIONS.COMPLETE.NAME}
+        description={AppInfo.EDITIONS.COMPLETE.DESCRIPTION}
+        url="/edgebic"
+        price={AppInfo.EDITIONS.COMPLETE.PRICE}
+        operatingSystem="Windows"
+        applicationSubCategory="Production Scheduling Software"
+        offerUrl="/pricing"
+        isVariantOf={nodes.edgebic}
+      />
 
       <section className="bg-white py-14">
         <div className="container mx-auto max-w-5xl px-4">

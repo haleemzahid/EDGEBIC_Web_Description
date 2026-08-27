@@ -1,4 +1,5 @@
 import { createProductMetadata } from '@/lib/seo/metadata';
+import { schemaNodeIds } from '@/lib/seo/schema-nodes';
 import { SoftwareApplicationJsonLd, VideoObjectJsonLd } from '@/components/seo';
 
 export const metadata = createProductMetadata({
@@ -9,13 +10,19 @@ export const metadata = createProductMetadata({
 });
 
 export default function EdgebiLayout({ children }: { children: React.ReactNode }) {
+  const nodes = schemaNodeIds();
+
   return (
     <>
+      {/* Supported, not sold. No offers block: describing the product is
+          correct, describing a transaction that is not available is not. */}
       <SoftwareApplicationJsonLd
+        id={nodes.edgebi}
         name="EDGEBI"
+        alternateName={['EDGEBI', 'Edge BI']}
         description="Advanced graphical extension for RMDB with interactive Gantt charts, visual drag-and-drop scheduling, and browser-based dashboards."
         url="/edgebi"
-        price="49"
+        predecessorOf={nodes.edgebic}
       />
       <VideoObjectJsonLd
         name="EDGEBI Demo — Interactive Gantt Chart Scheduling"

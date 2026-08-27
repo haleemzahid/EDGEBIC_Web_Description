@@ -11,10 +11,14 @@ import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
+  // "Job Shop & Manufacturing Scheduling Software" are the tokens this page
+  // already ranks on. Leading with a brand nobody searches yet, and dropping
+  // them, would trade proven head terms for brand impressions we do not have.
+  // The brand goes first; the ranking phrase stays intact behind it.
   title:
-    'EDGEBIC Production Scheduling Software | RMDB Successor | User Solutions',
+    'EDGEBIC Job Shop & Manufacturing Scheduling Software | User Solutions',
   description:
-    'Finite capacity scheduling with multi-shift planning, schedule optimization and drag-and-drop planning. 35 years behind it, trusted by GE, Cummins and the US Navy.',
+    'EDGEBIC is the current generation of Resource Manager DB (RMDB): finite capacity scheduling for job shops and manufacturers, with multi-shift planning, schedule optimization and drag-and-drop planning. 35 years behind it, trusted by GE, Cummins and the US Navy. Works with SAP, QuickBooks and Epicor, with no ERP replacement needed.',
   path: '/',
   keywords:
     'EDGEBIC, production planning software, production scheduling software, finite capacity scheduling, schedule optimization, multi-shift scheduling, drag and drop scheduling, visual production planning, multi-user scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, MRP software, production tracking, EDGEBI, User Solutions',

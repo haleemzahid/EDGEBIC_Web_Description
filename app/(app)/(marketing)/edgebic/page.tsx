@@ -13,6 +13,7 @@ import {
 import { AppInfo } from '@/constants/app-info';
 import { Routes } from '@/constants/routes';
 import { createProductMetadata } from '@/lib/seo/metadata';
+import { EDGEBIC_ALTERNATE_NAMES, schemaNodeIds } from '@/lib/seo/schema-nodes';
 
 export const metadata = createProductMetadata({
   name: 'EDGEBIC - Next-Generation Finite Capacity Planning & Scheduling Software',
@@ -127,11 +128,31 @@ const PLATFORM_FEATURES: Array<{ title: string; body: string }> = [
 ];
 
 export default function EdgebicPage(): React.JSX.Element {
+  const nodes = schemaNodeIds();
+
   return (
     <>
+      {/* The product family node. Every other page on the site points at this
+          @id instead of describing EDGEBIC again, and the succession from RMDB
+          is declared here once. */}
+      <SoftwareApplicationJsonLd
+        id={nodes.edgebic}
+        name={AppInfo.APP_NAME}
+        alternateName={EDGEBIC_ALTERNATE_NAMES}
+        description={AppInfo.APP_DESCRIPTION}
+        url="/edgebic"
+        price={AppInfo.EDITIONS.APS.PRICE}
+        applicationSubCategory="Production Scheduling Software"
+        offerUrl="/pricing"
+        operatingSystem="Windows"
+        softwareRequirements="Windows with .NET 8; SQLite for single-user, SQL Server for multi-user deployments"
+        successorOf={nodes.rmdb}
+        isBasedOn={nodes.rmdb}
+      />
       {/* One entry per edition. A single node could not carry two prices, and
           the price is the thing an answer engine is asked for most often. */}
       <SoftwareApplicationJsonLd
+        id={nodes.edgebicAps}
         name={AppInfo.EDITIONS.APS.NAME}
         description={AppInfo.EDITIONS.APS.DESCRIPTION}
         url="/edgebic"
@@ -139,6 +160,7 @@ export default function EdgebicPage(): React.JSX.Element {
         applicationSubCategory="Production Scheduling Software"
         offerUrl="/pricing"
         operatingSystem="Windows"
+        isVariantOf={nodes.edgebic}
         softwareRequirements="Windows with .NET 8; SQLite for single-user, SQL Server for multi-user deployments"
         featureList={[
           'Graphical drag-and-drop routing designer',
@@ -155,6 +177,7 @@ export default function EdgebicPage(): React.JSX.Element {
         ]}
       />
       <SoftwareApplicationJsonLd
+        id={nodes.edgebicComplete}
         name={AppInfo.EDITIONS.COMPLETE.NAME}
         description={AppInfo.EDITIONS.COMPLETE.DESCRIPTION}
         url="/edgebic"
@@ -162,6 +185,7 @@ export default function EdgebicPage(): React.JSX.Element {
         applicationSubCategory="Production Scheduling Software"
         offerUrl="/pricing"
         operatingSystem="Windows"
+        isVariantOf={nodes.edgebic}
         softwareRequirements="Windows with .NET 8; SQLite for single-user, SQL Server for multi-user deployments"
         featureList={[
           'Everything in EDGEBIC APS',

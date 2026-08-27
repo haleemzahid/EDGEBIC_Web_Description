@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+import {
+  MARKDOWN_FALLBACK_HEADER,
+  markdownPathFor,
+  shouldRewriteToMarkdown
+} from '@/lib/markdown/markdown-negotiation';
+
 // Legacy WordPress URLs → new equivalents (301 redirects for SEO)
 const LEGACY_REDIRECTS: Record<string, string> = {
   // Old WordPress nested paths → new flat paths
@@ -68,17 +74,6 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/part-iii-combining-level-loading-with-finite-capacity-scheduling': '/blog/finite-vs-infinite-capacity-planning',
 };
 
-// Paths that have a markdown variant served by app/md/[[...slug]]/route.ts.
-// Kept to paths we actually support so an existing HTML-only page never 404s
-// when an agent asks for markdown — those fall through to HTML (with Vary).
-function hasMarkdownVariant(pathname: string): boolean {
-  return (
-    pathname === '/' ||
-    pathname === '/developers' ||
-    pathname.startsWith('/blog/')
-  );
-}
-
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') ?? '';
 
@@ -132,18 +127,20 @@ export function middleware(request: NextRequest) {
   }
 
   // Markdown content negotiation (acceptmarkdown.com): agents sending
-  // Accept: text/markdown get the markdown variant of supported pages.
+  // Accept: text/markdown are rewritten to the /md handler for every page.
+  // Pages with a native markdown variant answer in markdown; the rest fall
+  // back to their HTML; unknown paths get a markdown 404 with recovery links.
   // Browsers never send text/markdown, so HTML traffic is untouched.
-  const accept = request.headers.get('accept') ?? '';
-  const wantsMarkdown = accept.includes('text/markdown');
   if (
-    wantsMarkdown &&
-    request.method === 'GET' &&
-    !pathname.startsWith('/md/') &&
-    hasMarkdownVariant(pathname)
+    shouldRewriteToMarkdown({
+      method: request.method,
+      pathname,
+      accept: request.headers.get('accept'),
+      fallbackHeader: request.headers.get(MARKDOWN_FALLBACK_HEADER)
+    })
   ) {
     const mdUrl = request.nextUrl.clone();
-    mdUrl.pathname = pathname === '/' ? '/md/index' : `/md${pathname}`;
+    mdUrl.pathname = markdownPathFor(pathname);
     return NextResponse.rewrite(mdUrl);
   }
 
@@ -174,11 +171,10 @@ export function middleware(request: NextRequest) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
   }
 
-  // Pages that negotiate on Accept must say so, or a CDN can serve the cached
-  // HTML variant to an agent asking for markdown (and vice versa).
-  if (hasMarkdownVariant(pathname)) {
-    response.headers.append('Vary', 'Accept');
-  }
+  // Every page negotiates on Accept (markdown or HTML), so every page must
+  // say so, or a CDN can serve the cached HTML variant to an agent asking for
+  // markdown (and vice versa).
+  response.headers.append('Vary', 'Accept');
 
   return response;
 }

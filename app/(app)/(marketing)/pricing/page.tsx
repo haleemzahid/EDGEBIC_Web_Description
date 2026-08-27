@@ -4,6 +4,7 @@ import { EdgebicPricing } from '@/components/marketing/sections/edgebic-pricing'
 import { FAQJsonLd, SoftwareApplicationJsonLd } from '@/components/seo';
 import { AppInfo } from '@/constants/app-info';
 import { createPageMetadata } from '@/lib/seo/metadata';
+import { schemaNodeIds } from '@/lib/seo/schema-nodes';
 
 export const metadata = createPageMetadata({
   title: 'EDGEBIC Pricing: $25,000 APS, $35,000 Complete, One-Time License',
@@ -63,31 +64,41 @@ const faqData = [
 ];
 
 export default function PricingPage(): React.JSX.Element {
+  const nodes = schemaNodeIds();
+
   return (
     <>
       <FAQJsonLd questions={faqData} />
       {/* One entry per edition so the published price is machine-readable.
           This is the whole point of the page: an answer engine asked what
-          EDGEBIC costs should find a real number, not a contact form. */}
+          EDGEBIC costs should find a real number, not a contact form.
+
+          These carry the same @id and url as the nodes on /edgebic on purpose.
+          Without a shared id they were two more entities called "EDGEBIC APS"
+          at a second URL, which is how one product ends up with four prices. */}
       <SoftwareApplicationJsonLd
+        id={nodes.edgebicAps}
         name={AppInfo.EDITIONS.APS.NAME}
         description={AppInfo.EDITIONS.APS.DESCRIPTION}
-        url="/pricing"
+        url="/edgebic"
         price={AppInfo.EDITIONS.APS.PRICE}
         operatingSystem="Windows"
         applicationSubCategory="Production Scheduling Software"
         offerUrl="/pricing"
         softwareRequirements="Windows with .NET 8; SQLite for single-user, SQL Server for multi-user deployments"
+        isVariantOf={nodes.edgebic}
       />
       <SoftwareApplicationJsonLd
+        id={nodes.edgebicComplete}
         name={AppInfo.EDITIONS.COMPLETE.NAME}
         description={AppInfo.EDITIONS.COMPLETE.DESCRIPTION}
-        url="/pricing"
+        url="/edgebic"
         price={AppInfo.EDITIONS.COMPLETE.PRICE}
         operatingSystem="Windows"
         applicationSubCategory="Production Scheduling Software"
         offerUrl="/pricing"
         softwareRequirements="Windows with .NET 8; SQLite for single-user, SQL Server for multi-user deployments"
+        isVariantOf={nodes.edgebic}
       />
       <EdgebicPricing />
     </>
