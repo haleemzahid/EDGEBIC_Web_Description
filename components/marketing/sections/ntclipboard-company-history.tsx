@@ -27,6 +27,15 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
 
   const milestones = [
     {
+      year: '2025',
+      icon: <Rocket className="size-6" />,
+      title: 'EDGEBIC Launch',
+      description:
+        'Released EDGEBIC, the next generation of Resource Manager-DB and EDGEBI, rebuilt from the ground up on .NET 8. EDGEBIC delivers forward and backward finite capacity scheduling, Theory of Constraints anchor scheduling, a graphical drag-and-drop routing designer, a two-layer optimizer with OR-Tools CP-SAT, an interactive Gantt, a shop-floor kiosk, and reschedules that preserve completed and in-progress work. Sold as a one-time perpetual license in two editions: EDGEBIC APS and EDGEBIC Complete (adds MRP, inventory, purchasing, and material pegging). EDGEBIC is the upgrade path for every RMDB, EDGEBI, and RMX customer.',
+      highlight: 'Next Generation',
+      link: { href: '/edgebic', label: 'Explore EDGEBIC' }
+    },
+    {
       year: '2015',
       icon: <Award className="size-6" />,
       title: 'Construction Industry Adaptation',
@@ -245,7 +254,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                 Continuing Innovation & Customer Focus
               </h3>
               <p className="text-md text-slate-700">
-                In the last decade, User Solutions continues to enhance and adapt their flagship offering (Resource Manager DB with EDGE Overlay) to accommodate various customer challenges while at the same time focusing on developing a new generation of powerful but easy to use production planning and scheduling tools on latest technology to take advantage of AI, Mobile, Subscription Based, and more.
+                For the better part of a decade, User Solutions continued to enhance and adapt Resource Manager DB with EDGE Overlay to meet customer challenges while developing a new generation of powerful but easy to use production planning and scheduling tools on the latest technology. That work culminated in 2025 with the release of EDGEBIC, our current flagship and the successor to RMDB and EDGEBI.
               </p>
 
               <p className="text-slate-700">
@@ -397,7 +406,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                 {/* Image - Right Column */}
                 <Image
                   src="/happygrils.jpeg"
-                  alt="Resource Manager DB with EDGE Overlay - Modern Production Scheduling"
+                  alt="EDGEBIC, the successor to Resource Manager DB with EDGE Overlay - Modern Production Scheduling"
                   width={1024}
                   height={483}
                   className="h-[444px] w-full rounded-2xl object-cover"
@@ -447,6 +456,11 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                     </h3>
 
                     <p className="text-slate-700">{milestone.description}</p>
+                    {milestone.link && (
+                      <Button asChild variant="link" className="mt-3 px-0 text-orange-600">
+                        <Link href={milestone.link.href}>{milestone.link.label}</Link>
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -466,8 +480,9 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                 From our founding in 1991 to today, User Solutions has
                 consistently delivered innovative, affordable, and flexible
                 manufacturing solutions. We've evolved from Lotus 1-2-3
-                templates to cutting-edge cloud-based systems while maintaining
-                our core commitment to customer success.
+                templates to Resource Manager-DB and now EDGEBIC, our 2025 finite
+                capacity scheduling platform, while maintaining our core
+                commitment to customer success.
               </p>
               <p className="text-xl font-semibold text-orange-600">
                 35 Years of Production Planning Excellence - Here's to the
