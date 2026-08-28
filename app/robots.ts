@@ -43,7 +43,22 @@ const DISALLOWED_PATHS = [
   '/products/'
 ];
 
-const ALLOWED_PATHS = ['/', '/llms.txt', '/llms-full.txt'];
+/**
+ * Explicit allows. '/api/' stays disallowed as a whole (auth, licensing and
+ * dashboard routes), but the public content API that llms.txt invites agents
+ * to call must be fetchable, otherwise every robots-compliant assistant
+ * refuses the very endpoints we document. Longest-match wins in the Google,
+ * Bing and OpenAI parsers, so '/api/v1/' beats '/api/'. '/api$' is the JSON
+ * endpoint index only.
+ */
+const ALLOWED_PATHS = [
+  '/',
+  '/llms.txt',
+  '/llms-full.txt',
+  '/openapi.json',
+  '/api$',
+  '/api/v1/'
+];
 
 /**
  * Crawlers that feed AI assistants and answer engines.
@@ -55,6 +70,9 @@ const ALLOWED_PATHS = ['/', '/llms.txt', '/llms-full.txt'];
  * to be read, quoted and cited by AI assistants.
  */
 const AI_ASSISTANT_AGENTS = [
+  // Classic search indexes that feed AI Overviews, Copilot and DuckDuckGo
+  'Googlebot',
+  'Bingbot',
   // OpenAI: training, ChatGPT search index, and user-triggered fetches
   'GPTBot',
   'OAI-SearchBot',
@@ -74,6 +92,8 @@ const AI_ASSISTANT_AGENTS = [
   'Applebot-Extended',
   // Meta AI
   'meta-externalagent',
+  'Meta-ExternalAgent',
+  'Meta-ExternalFetcher',
   'FacebookBot',
   // Common Crawl, which seeds a large share of open model corpora
   'CCBot',

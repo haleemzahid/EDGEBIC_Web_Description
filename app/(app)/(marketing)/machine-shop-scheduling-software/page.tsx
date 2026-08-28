@@ -15,12 +15,13 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Machine Shop Scheduling Software (2026) — Built for High-Mix Job Shops',
+  title: 'Machine Shop Scheduling Software (2026): Built for High-Mix Job Shops',
   description:
-    'Production scheduling and management software for machine shops. Finite capacity scheduling, drag-and-drop Gantt, work order tracking, and one-time licensing. 35+ years of machine shop experience.',
+    'EDGEBIC machine shop scheduling software: finite capacity scheduling, drag-and-drop Gantt, ERP integration and one-time licensing. How to choose a tool.',
   path: '/machine-shop-scheduling-software',
+  modifiedTime: '2026-08-28',
   keywords:
-    'machine shop scheduling software, machine shop management software, machine shop production scheduling, machine shop ERP, finite capacity scheduling machine shop, automotive parts scheduling software, precision machining scheduling'
+    'machine shop scheduling software, machine shop management software, machine shop production scheduling, machine shop ERP, finite capacity scheduling machine shop, automotive parts scheduling software, precision machining scheduling, how to choose a finite capacity scheduling tool for a machine shop, best finite capacity scheduling software for job shops, machine shop scheduling software UK, machine shop scheduling software Europe, CNC scheduling software Germany'
 });
 
 const FAQS = [
@@ -28,12 +29,12 @@ const FAQS = [
     question:
       'What makes machine shop scheduling different from generic production scheduling?',
     answer:
-      'Machine shops run high-mix, low-volume work where every job is different — different materials, different routings, different setup times, different customers. Generic ERP scheduling assumes repetitive runs and falls apart in this environment. Real machine shop scheduling has to handle setup-time-aware sequencing, alternate work centers, operator skill matching, and daily reschedules driven by customer expedites. RMDB was built for this from day one.'
+      'Machine shops run high-mix, low-volume work where every job is different - different materials, different routings, different setup times, different customers. Generic ERP scheduling assumes repetitive runs and falls apart in this environment. Real machine shop scheduling has to handle setup-time-aware sequencing, alternate work centers, operator skill matching, and daily reschedules driven by customer expedites. RMDB was built for this from day one.'
   },
   {
     question: 'Does RMDB integrate with our existing ERP or accounting system?',
     answer:
-      'Yes. RMDB integrates with QuickBooks, Sage, Microsoft Dynamics, Epicor, JobBOSS, E2 Shop System, Global Shop Solutions, and many others. The integration is bi-directional — work orders flow into RMDB for finite-capacity scheduling, and completed-quantity and labor data flow back to your ERP for accurate WIP and cost tracking.'
+      'Yes. RMDB integrates with QuickBooks, Sage, Microsoft Dynamics, Epicor, JobBOSS, E2 Shop System, Global Shop Solutions, and many others. The integration is bi-directional - work orders flow into RMDB for finite-capacity scheduling, and completed-quantity and labor data flow back to your ERP for accurate WIP and cost tracking.'
   },
   {
     question: 'How does RMDB handle setup times and changeovers?',
@@ -43,7 +44,7 @@ const FAQS = [
   {
     question: 'Can we schedule across multiple work centers and operators?',
     answer:
-      'Yes. RMDB schedules every routing operation against the work center it requires AND the operator skill it requires (if you model labor as a constraint). Alternate work centers are supported — when a primary machine is overloaded, the scheduler can offload to a backup if you allow it. This is critical for high-mix shops where machine availability changes daily.'
+      'Yes. RMDB schedules every routing operation against the work center it requires AND the operator skill it requires (if you model labor as a constraint). Alternate work centers are supported - when a primary machine is overloaded, the scheduler can offload to a backup if you allow it. This is critical for high-mix shops where machine availability changes daily.'
   },
   {
     question: 'How long does implementation take?',
@@ -53,7 +54,7 @@ const FAQS = [
   {
     question: 'How much does machine shop scheduling software cost?',
     answer:
-      'RMDB starts around $5,000 as a one-time perpetual license — no per-user fees, no monthly subscriptions. Most machine shops add an optional support contract for ongoing updates and help desk. Compared to subscription-based competitors, RMDB typically costs 50–70% less over a 5-year horizon for any team larger than 3–4 users.'
+      'RMDB starts around $5,000 as a one-time perpetual license - no per-user fees, no monthly subscriptions. Most machine shops add an optional support contract for ongoing updates and help desk. Compared to subscription-based competitors, RMDB typically costs 50–70% less over a 5-year horizon for any team larger than 3–4 users.'
   }
 ];
 
@@ -93,6 +94,13 @@ export default function MachineShopSchedulingPage(): React.JSX.Element {
                 and the schedule changes three times before lunch. Used by
                 manufacturers since 1991.
               </p>
+              <p className="mx-auto mt-4 max-w-3xl text-[18px] text-gray-700">
+                To choose a finite capacity scheduling tool for a machine shop,
+                look for machines and operators scheduled together,
+                sequence-dependent setups, alternate machines, drag-and-drop
+                rescheduling and import from your existing ERP. EDGEBIC by User
+                Solutions covers all five with a one-time license.
+              </p>
             </div>
           </div>
         </section>
@@ -106,7 +114,7 @@ export default function MachineShopSchedulingPage(): React.JSX.Element {
               </h2>
               <p className="leading-relaxed text-gray-700">
                 Generic production scheduling tools were built for repetitive
-                manufacturing — long runs of the same product on the same
+                manufacturing - long runs of the same product on the same
                 machine. Machine shops are the opposite: high mix, low volume,
                 custom routings, and a constant stream of expedites that breaks
                 whatever schedule you posted yesterday. Off-the-shelf ERP
@@ -144,8 +152,8 @@ export default function MachineShopSchedulingPage(): React.JSX.Element {
               <p className="leading-relaxed text-gray-700">
                 RMDB is a finite-capacity scheduling engine purpose-built for
                 high-mix, low-volume environments. It handles the messiness of
-                real machine shops — alternate routings, sequence-dependent
-                setups, operator skill constraints, and daily expedites — in a
+                real machine shops - alternate routings, sequence-dependent
+                setups, operator skill constraints, and daily expedites - in a
                 single Gantt-driven interface that planners can actually use.
               </p>
               <ul className="grid gap-3 md:grid-cols-2">
@@ -157,7 +165,7 @@ export default function MachineShopSchedulingPage(): React.JSX.Element {
                   'Operator skill matrices and labor scheduling alongside machines',
                   'Realistic customer promise dates based on actual capacity',
                   'Integrates with QuickBooks, Sage, Epicor, JobBOSS, and others',
-                  'One-time license — no per-user subscription fees'
+                  'One-time license - no per-user subscription fees'
                 ].map((item) => (
                   <li
                     key={item}
@@ -268,7 +276,7 @@ export default function MachineShopSchedulingPage(): React.JSX.Element {
             Ready to fix your machine shop scheduling?
           </h2>
           <p className="mx-auto mb-6 max-w-2xl text-gray-700">
-            Get a live demo with your real production data — no slide deck. See
+            Get a live demo with your real production data - no slide deck. See
             finite-capacity scheduling, drag-and-drop Gantt, and ERP integration
             in action on jobs your shop is running today.
           </p>

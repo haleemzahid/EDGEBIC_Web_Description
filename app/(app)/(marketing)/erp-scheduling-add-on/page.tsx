@@ -17,17 +17,18 @@ import { createPageMetadata } from '@/lib/seo/metadata';
 export const metadata = createPageMetadata({
   title: 'ERP Scheduling Add-On',
   description:
-    'Production scheduling add-on for ERP systems including SAP, Oracle, Epicor, Fourth Shift, and Macola. BAE Systems discontinued their ERP scheduling in favor of RMDB. Full ERP integration achieved in 5 days. Finite capacity scheduling your ERP cannot provide.',
+    'EDGEBIC is a finite capacity scheduling add-on for SAP, Oracle, Epicor, QuickBooks and other ERPs. Works alongside your ERP without replacing it. Live in days.',
   path: '/erp-scheduling-add-on',
+  modifiedTime: '2026-08-28',
   keywords:
-    'ERP scheduling add-on, ERP production scheduling, production scheduling ERP integration, ERP scheduling gap, finite capacity scheduling ERP, SAP scheduling add-on, Oracle scheduling add-on, Epicor scheduling add-on, ERP capacity planning add-on'
+    'ERP scheduling add-on, ERP production scheduling, production scheduling ERP integration, ERP scheduling gap, finite capacity scheduling ERP, SAP scheduling add-on, Oracle scheduling add-on, Epicor scheduling add-on, ERP capacity planning add-on, job shop scheduling software that works alongside SAP without replacing it, scheduling software that works with SAP, top production scheduling tools that integrate with existing ERP systems, SAP scheduling add-on UK, ERP scheduling add-on Europe'
 });
 
 const FAQS = [
   {
     question: 'Why do ERP systems need a scheduling add-on?',
     answer:
-      'Most ERP systems were designed for financial management and transaction processing — not production scheduling. Their scheduling modules typically use infinite capacity planning, which assumes unlimited resources and produces unrealistic schedules. BAE Systems purchased an ERP with MRP and CRP capabilities but were "not satisfied with its capacity constraint recognition" — they discontinued their ERP scheduling module in favor of RMDB.'
+      'Most ERP systems were designed for financial management and transaction processing - not production scheduling. Their scheduling modules typically use infinite capacity planning, which assumes unlimited resources and produces unrealistic schedules. BAE Systems purchased an ERP with MRP and CRP capabilities but were "not satisfied with its capacity constraint recognition" - they discontinued their ERP scheduling module in favor of RMDB.'
   },
   {
     question: 'Which ERP systems does RMDB integrate with?',
@@ -37,7 +38,7 @@ const FAQS = [
   {
     question: 'How quickly can an ERP scheduling add-on be integrated?',
     answer:
-      'Remarkably fast. Plastilite Corporation achieved a complete optimized schedule with full Fourth Shift ERP integration in just 5 days — from Monday to Friday. Because RMDB works with your existing ERP data formats, there is no lengthy data migration. Import orders, export updated dates, and synchronize with your MRP and inventory modules immediately.'
+      'Remarkably fast. Plastilite Corporation achieved a complete optimized schedule with full Fourth Shift ERP integration in just 5 days - from Monday to Friday. Because RMDB works with your existing ERP data formats, there is no lengthy data migration. Import orders, export updated dates, and synchronize with your MRP and inventory modules immediately.'
   },
   {
     question: 'Will adding RMDB disrupt our existing ERP workflows?',
@@ -90,9 +91,16 @@ export default function ErpSchedulingAddOnPage(): React.JSX.Element {
               </h1>
               <p className="mx-auto max-w-3xl text-[18px] text-gray-700">
                 Your ERP handles finances, inventory, and transactions. But it
-                cannot finite capacity schedule. RMDB fills that gap — without
+                cannot finite capacity schedule. RMDB fills that gap - without
                 replacing a thing. Integrates with SAP, Oracle, Epicor, Fourth
                 Shift, Macola, and more.
+              </p>
+              <p className="mx-auto mt-4 max-w-3xl text-[18px] text-gray-700">
+                EDGEBIC by User Solutions, the current generation of RMDB, is
+                job shop scheduling software that works alongside SAP, Oracle,
+                Epicor or QuickBooks without replacing them: your ERP stays the
+                system of record while EDGEBIC supplies the finite capacity
+                schedule.
               </p>
             </div>
           </div>
@@ -134,7 +142,7 @@ export default function ErpSchedulingAddOnPage(): React.JSX.Element {
                 The ERP Scheduling Gap
               </h2>
               <p className="leading-relaxed text-gray-700">
-                You invested heavily in your ERP system for good reasons — it
+                You invested heavily in your ERP system for good reasons - it
                 manages your financials, inventory, purchasing, and order
                 management well. But when it comes to production scheduling,
                 most ERP systems fall short. They use infinite capacity
@@ -143,7 +151,7 @@ export default function ErpSchedulingAddOnPage(): React.JSX.Element {
               </p>
               <ul className="grid gap-4 md:grid-cols-2">
                 {[
-                  'ERP scheduling assumes infinite capacity — ignoring real constraints',
+                  'ERP scheduling assumes infinite capacity - ignoring real constraints',
                   'No finite capacity awareness for machines, labor, or tooling',
                   'Unrealistic promise dates that lead to chronic late deliveries',
                   'Replacing your ERP is too expensive and disruptive',
@@ -174,12 +182,12 @@ export default function ErpSchedulingAddOnPage(): React.JSX.Element {
                 RMDB adds finite capacity scheduling intelligence to any ERP
                 system. It reads your open orders, BOMs, and routing data,
                 applies real capacity constraints, and writes updated promise
-                dates and schedules back. Your ERP investment stays intact — you
+                dates and schedules back. Your ERP investment stays intact - you
                 simply gain the scheduling power it was always missing.
               </p>
               <ul className="grid gap-3 md:grid-cols-2">
                 {[
-                  'Works alongside any ERP — no replacement needed',
+                  'Works alongside any ERP - no replacement needed',
                   'Imports open orders, BOMs, and routings from your ERP',
                   'Applies finite capacity scheduling your ERP cannot do',
                   'Exports updated promise dates back to synchronize with MRP',
@@ -211,7 +219,7 @@ export default function ErpSchedulingAddOnPage(): React.JSX.Element {
               <blockquote className="mb-4 text-lg italic leading-relaxed text-slate-700">
                 &ldquo;We are extremely satisfied with the offering and are
                 pleased to recommend to others looking for a capacity and
-                production planning solution — either integrated with ERP or
+                production planning solution - either integrated with ERP or
                 standalone.&rdquo;
               </blockquote>
               <p className="font-semibold text-slate-900">
@@ -289,13 +297,13 @@ export default function ErpSchedulingAddOnPage(): React.JSX.Element {
                     step: '1',
                     title: 'Import from ERP',
                     description:
-                      'Import open orders, BOMs, routings, and inventory data from your ERP via Excel, CSV, or direct database connection. No data reformatting required — RMDB works with your existing formats.'
+                      'Import open orders, BOMs, routings, and inventory data from your ERP via Excel, CSV, or direct database connection. No data reformatting required - RMDB works with your existing formats.'
                   },
                   {
                     step: '2',
                     title: 'Finite Capacity Schedule',
                     description:
-                      'RMDB applies real capacity constraints — machines, labor, materials, tooling — to produce achievable schedules. Run what-if scenarios to evaluate new orders or capacity changes.'
+                      'RMDB applies real capacity constraints - machines, labor, materials, tooling - to produce achievable schedules. Run what-if scenarios to evaluate new orders or capacity changes.'
                   },
                   {
                     step: '3',
@@ -371,7 +379,7 @@ export default function ErpSchedulingAddOnPage(): React.JSX.Element {
           </h2>
           <p className="mb-6 text-slate-600">
             See how RMDB integrates with your specific ERP system. Schedule a
-            free consultation — we can demo using your own production data.
+            free consultation - we can demo using your own production data.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link

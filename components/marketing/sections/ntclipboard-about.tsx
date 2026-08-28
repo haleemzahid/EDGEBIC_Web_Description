@@ -102,7 +102,7 @@ export function NTClipboardAbout(): React.JSX.Element {
       <div className="pt-6 px-2 sm:container">
         <SiteHeading
           title="Meet Our Team"
-          description="The folks behind 35+ years of delivering manufacturing software excellence"
+          description="The folks behind 35+ years of delivering manufacturing software excellence. User Solutions is headquartered in South Lyon, Michigan and serves manufacturers across North America, the United Kingdom and Europe."
         />
 
         {/* Team Members Section */}

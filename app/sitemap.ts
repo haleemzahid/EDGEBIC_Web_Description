@@ -62,7 +62,11 @@ const MEDIUM_PRIORITY_PAGES = new Set([
   'spreadsheet-qc',
   'compare-products',
   'production-scheduling-products',
-  'machine-monitoring-software'
+  'machine-monitoring-software',
+  'best-production-scheduling-software-erp-integration',
+  'drag-and-drop-production-planning-software',
+  'what-if-scenario-planning-tools-manufacturing',
+  'multi-shift-manufacturing-scheduling-software'
 ]);
 
 function getPagePriority(urlPath: string): number {

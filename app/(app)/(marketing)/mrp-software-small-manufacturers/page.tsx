@@ -17,22 +17,23 @@ import { createPageMetadata } from '@/lib/seo/metadata';
 export const metadata = createPageMetadata({
   title: 'MRP Software for Small Manufacturers',
   description:
-    'Affordable MRP software designed for small to mid-size manufacturers. Bills of Materials, inventory management, purchasing, and finite capacity scheduling. Used by Sleepmaster (AUD$50M), Turner Bicycles, and more. Implement in days, not months.',
+    'EDGEBIC Complete combines MRP, inventory, purchasing and finite capacity scheduling in one affordable package for small manufacturers. Implement in days.',
   path: '/mrp-software-small-manufacturers',
+  modifiedTime: '2026-08-28',
   keywords:
-    'MRP software small manufacturers, MRP system small business, affordable MRP software, material requirements planning small manufacturer, MRP for small business, small manufacturer production planning, MRP software affordable, material planning software SMB, small factory management software, small manufacturer scheduling software, closed loop MRP, closed-loop MRP, what is closed loop MRP'
+    'MRP software small manufacturers, MRP system small business, affordable MRP software, material requirements planning small manufacturer, MRP for small business, small manufacturer production planning, MRP software affordable, material planning software SMB, small factory management software, small manufacturer scheduling software, closed loop MRP, closed-loop MRP, what is closed loop MRP, MRP and scheduling software combined solutions for manufacturers, combined MRP and scheduling software, MRP with finite capacity scheduling, MRP software small manufacturers UK, MRP software small manufacturers Europe'
 });
 
 const FAQS = [
   {
     question: 'Is RMDB really affordable for small manufacturers?',
     answer:
-      'Yes. RMDB was specifically designed to be accessible for small to mid-size manufacturers. Sleepmaster Ltd, an AUD$50M manufacturer, chose RMDB because it delivered powerful MRP and scheduling capabilities at a fraction of the cost of enterprise systems. The USS Nimitz purchased it at discretionary fund level — proving enterprise-grade capability at small-business pricing.'
+      'Yes. RMDB was specifically designed to be accessible for small to mid-size manufacturers. Sleepmaster Ltd, an AUD$50M manufacturer, chose RMDB because it delivered powerful MRP and scheduling capabilities at a fraction of the cost of enterprise systems. The USS Nimitz purchased it at discretionary fund level - proving enterprise-grade capability at small-business pricing.'
   },
   {
     question: 'Can RMDB replace enterprise MRP systems?',
     answer:
-      'RMDB can serve as a complete MRP system for small manufacturers or as a powerful add-on to existing ERP systems. It provides Bills of Materials, inventory management, purchasing, finite capacity scheduling, and costing — all in one system. Enevate Corporation uses it for everything from 10-level deep sub-assemblies to lot traceability and inventory valuation.'
+      'RMDB can serve as a complete MRP system for small manufacturers or as a powerful add-on to existing ERP systems. It provides Bills of Materials, inventory management, purchasing, finite capacity scheduling, and costing - all in one system. Enevate Corporation uses it for everything from 10-level deep sub-assemblies to lot traceability and inventory valuation.'
   },
   {
     question: 'How long does MRP software implementation take for a small manufacturer?',
@@ -42,7 +43,7 @@ const FAQS = [
   {
     question: 'Can I start with just one MRP module and expand later?',
     answer:
-      'Absolutely. Sleepmaster Ltd noted that RMDB "can be used in sections — materials planning first, then costings, then scheduling — without requiring whole system implementation." This modular approach means you can start seeing value immediately and expand as your business grows, without an all-or-nothing deployment.'
+      'Absolutely. Sleepmaster Ltd noted that RMDB "can be used in sections - materials planning first, then costings, then scheduling - without requiring whole system implementation." This modular approach means you can start seeing value immediately and expand as your business grows, without an all-or-nothing deployment.'
   }
 ];
 
@@ -90,7 +91,14 @@ export default function MrpSoftwareSmallManufacturersPage(): React.JSX.Element {
               <p className="mx-auto max-w-3xl text-[18px] text-gray-700">
                 Enterprise-grade MRP capabilities without the enterprise price
                 tag. Bills of Materials, inventory management, scheduling, and
-                purchasing — implement in days, not months.
+                purchasing - implement in days, not months.
+              </p>
+              <p className="mx-auto mt-4 max-w-3xl text-[18px] text-gray-700">
+                For manufacturers who need MRP and scheduling combined, EDGEBIC
+                Complete by User Solutions puts material requirements planning,
+                inventory, purchasing and finite capacity scheduling in one
+                application, so material availability constrains the schedule
+                alongside machines and labor.
               </p>
             </div>
           </div>
@@ -129,7 +137,7 @@ export default function MrpSoftwareSmallManufacturersPage(): React.JSX.Element {
                 choice: overspend on enterprise systems that take months to
                 implement, or underperform with spreadsheets that cannot handle
                 growing complexity. Most MRP systems are priced and designed for
-                large enterprises — leaving small manufacturers underserved.
+                large enterprises - leaving small manufacturers underserved.
               </p>
               <ul className="grid gap-4 md:grid-cols-2">
                 {[
@@ -162,8 +170,8 @@ export default function MrpSoftwareSmallManufacturersPage(): React.JSX.Element {
               </h2>
               <p className="leading-relaxed text-gray-700">
                 RMDB delivers the full suite of MRP capabilities that small
-                manufacturers need — Bills of Materials, inventory management,
-                purchasing, finite capacity scheduling, and costing — in a
+                manufacturers need - Bills of Materials, inventory management,
+                purchasing, finite capacity scheduling, and costing - in a
                 system that implements in days and works with your existing
                 data. No enterprise IT team required.
               </p>
@@ -174,11 +182,11 @@ export default function MrpSoftwareSmallManufacturersPage(): React.JSX.Element {
                   'Material Requirements Planning with purchasing integration',
                   'Finite capacity scheduling for realistic delivery dates',
                   'Costing and estimating tied to actual production data',
-                  'Modular deployment — start with what you need most',
+                  'Modular deployment - start with what you need most',
                   'Excel-familiar interface with no steep learning curve',
                   'Works with your existing data formats (no migration)',
                   'Scales from single site to international operations',
-                  'One-person setup — no dedicated IT team needed'
+                  'One-person setup - no dedicated IT team needed'
                 ].map((item) => (
                   <li
                     key={item}
@@ -218,7 +226,7 @@ export default function MrpSoftwareSmallManufacturersPage(): React.JSX.Element {
                 ))}
               </ul>
               <p className="text-gray-600">
-                RMDB implements closed-loop MRP logic by connecting your planned schedule to actual work order completions — automatically adjusting downstream material requirements when upstream jobs are late or early. This is the difference between an MRP system that plans once and gets stale versus one that stays synchronized with your shop floor in real time.
+                RMDB implements closed-loop MRP logic by connecting your planned schedule to actual work order completions - automatically adjusting downstream material requirements when upstream jobs are late or early. This is the difference between an MRP system that plans once and gets stale versus one that stays synchronized with your shop floor in real time.
               </p>
             </div>
           </div>
@@ -268,7 +276,7 @@ export default function MrpSoftwareSmallManufacturersPage(): React.JSX.Element {
                   {
                     metric: '1 Person',
                     label:
-                      'Part-time setup by one individual — no IT team required',
+                      'Part-time setup by one individual - no IT team required',
                     company: 'Sleepmaster Ltd'
                   },
                   {
@@ -345,7 +353,7 @@ export default function MrpSoftwareSmallManufacturersPage(): React.JSX.Element {
           </h2>
           <p className="mb-6 text-slate-600">
             See how RMDB can give your small manufacturing operation
-            enterprise-grade capabilities — in days, not months.
+            enterprise-grade capabilities - in days, not months.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link

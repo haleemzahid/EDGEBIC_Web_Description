@@ -1,5 +1,9 @@
 import { AppInfo } from '@/constants/app-info';
-import { EDGEBIC_ALTERNATE_NAMES, schemaNodeIds } from '@/lib/seo/schema-nodes';
+import {
+  EDGEBIC_ALTERNATE_NAMES,
+  SERVED_AREAS,
+  schemaNodeIds
+} from '@/lib/seo/schema-nodes';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 type OrganizationSchema = {
@@ -30,6 +34,7 @@ type OrganizationSchema = {
     areaServed: string;
     availableLanguage: string;
   }[];
+  areaServed: string[];
   knowsAbout: string[];
   award: string[];
   sameAs?: string[];
@@ -75,6 +80,7 @@ type SoftwareApplicationSchema = {
     priceCurrency: string;
     availability: string;
     url: string;
+    areaServed: string[];
   };
 };
 
@@ -101,10 +107,12 @@ type ArticleSchema = {
   description: string;
   author: {
     '@type': 'Organization';
+    '@id'?: string;
     name: string;
   };
   publisher: {
     '@type': 'Organization';
+    '@id'?: string;
     name: string;
     logo: {
       '@type': 'ImageObject';
@@ -115,6 +123,10 @@ type ArticleSchema = {
   dateModified?: string;
   mainEntityOfPage: {
     '@type': 'WebPage';
+    '@id': string;
+  };
+  /** Links the article to the canonical EDGEBIC SoftwareApplication node. */
+  about?: {
     '@id': string;
   };
 };
@@ -222,6 +234,9 @@ export function OrganizationJsonLd({
         availableLanguage: 'English'
       }
     ],
+    // Explicit country list. The contactPoint entries say 'Worldwide', which
+    // answer engines cannot match against a 'UK' or 'Germany' query.
+    areaServed: [...SERVED_AREAS],
     knowsAbout: [...AppInfo.KNOWS_ABOUT],
     award: [...AppInfo.AWARDS],
     sameAs: links
@@ -345,7 +360,11 @@ export function SoftwareApplicationJsonLd({
           ? offerUrl.startsWith('http')
             ? offerUrl
             : `${baseUrl}${offerUrl}`
-          : absoluteUrl
+          : absoluteUrl,
+        // areaServed is Offer vocabulary, not SoftwareApplication vocabulary,
+        // so it lives on the offer. Products with no offer are not sold
+        // anywhere and correctly carry no region list.
+        areaServed: [...SERVED_AREAS]
       }
     })
   };
@@ -373,15 +392,23 @@ export function ArticleJsonLd({
   description,
   url,
   datePublished,
-  dateModified
+  dateModified,
+  aboutEdgebic = false
 }: {
   title: string;
   description: string;
   url: string;
   datePublished: string;
   dateModified?: string;
+  /**
+   * When true, the article is tied to the EDGEBIC SoftwareApplication node
+   * and to the Organization node by @id, so answer engines connect shortlist
+   * and comparison pages to the product entity instead of a bare name.
+   */
+  aboutEdgebic?: boolean;
 }) {
   const baseUrl = getBaseUrl();
+  const ids = schemaNodeIds();
 
   const schema: ArticleSchema = {
     '@context': 'https://schema.org',
@@ -390,10 +417,12 @@ export function ArticleJsonLd({
     description,
     author: {
       '@type': 'Organization',
+      ...(aboutEdgebic && { '@id': ids.organization }),
       name: AppInfo.COMPANY_NAME
     },
     publisher: {
       '@type': 'Organization',
+      ...(aboutEdgebic && { '@id': ids.organization }),
       name: AppInfo.COMPANY_NAME,
       logo: {
         '@type': 'ImageObject',
@@ -405,7 +434,8 @@ export function ArticleJsonLd({
     mainEntityOfPage: {
       '@type': 'WebPage',
       '@id': url
-    }
+    },
+    ...(aboutEdgebic && { about: { '@id': ids.edgebic } })
   };
 
   return <JsonLdScript data={schema} />;

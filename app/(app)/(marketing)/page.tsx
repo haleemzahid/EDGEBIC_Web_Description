@@ -21,8 +21,9 @@ export const metadata = createPageMetadata({
     'EDGEBIC is the current generation of Resource Manager DB (RMDB): finite capacity scheduling for job shops and manufacturers, with multi-shift planning, schedule optimization and drag-and-drop planning. 35 years behind it, trusted by GE, Cummins and the US Navy. Works with SAP, QuickBooks and Epicor, with no ERP replacement needed.',
   path: '/',
   keywords:
-    'EDGEBIC, production planning software, production scheduling software, finite capacity scheduling, schedule optimization, multi-shift scheduling, drag and drop scheduling, visual production planning, multi-user scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, MRP software, production tracking, EDGEBI, User Solutions',
-  absoluteTitle: true
+    'EDGEBIC, production planning software, production scheduling software, finite capacity scheduling, schedule optimization, multi-shift scheduling, drag and drop scheduling, visual production planning, multi-user scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, MRP software, production tracking, EDGEBI, User Solutions, production scheduling software UK, production scheduling software Europe',
+  absoluteTitle: true,
+  modifiedTime: '2026-08-28'
 });
 
 export default function IndexPage(): React.JSX.Element {

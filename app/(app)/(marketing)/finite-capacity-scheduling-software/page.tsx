@@ -17,22 +17,23 @@ import { createPageMetadata } from '@/lib/seo/metadata';
 export const metadata = createPageMetadata({
   title: 'Best Finite Capacity Scheduling Software 2026 for Manufacturers',
   description:
-    'Finite capacity scheduling software that schedules against real machine, labor, material, and tooling constraints simultaneously. Used by USS Nimitz (26,000+ tasks), GE Railcar (30%→90% on-time), and Cummins Engine (33 locations). 35+ years proven.',
+    'EDGEBIC finite capacity scheduling software plans against real machine, labor, material and tooling limits. Proven by the US Navy, GE and Cummins since 1991.',
   path: '/finite-capacity-scheduling-software',
+  modifiedTime: '2026-08-28',
   keywords:
-    'finite capacity scheduling software, best finite capacity scheduling solutions for manufacturing 2026, finite capacity planning, constraint-based scheduling, finite scheduling software, capacity planning software manufacturing, finite capacity scheduling system, resource constrained scheduling, real capacity planning'
+    'finite capacity scheduling software, best finite capacity scheduling solutions for manufacturing 2026, finite capacity planning, constraint-based scheduling, finite scheduling software, capacity planning software manufacturing, finite capacity scheduling system, resource constrained scheduling, real capacity planning, best finite capacity scheduling software for job shops, how to choose a finite capacity scheduling tool for a machine shop, finite capacity scheduling software UK, finite capacity scheduling software Europe, finite capacity scheduling software Germany, advanced planning and scheduling software comparison for discrete manufacturing, APS software for discrete manufacturing'
 });
 
 const FAQS = [
   {
     question: 'What is finite capacity scheduling?',
     answer:
-      'Finite capacity scheduling plans production against real resource constraints — machines, labor, materials, and tooling — simultaneously. Unlike infinite capacity scheduling (which assumes unlimited resources), finite scheduling only assigns work when capacity is actually available, producing realistic schedules and achievable promise dates.'
+      'Finite capacity scheduling plans production against real resource constraints - machines, labor, materials, and tooling - simultaneously. Unlike infinite capacity scheduling (which assumes unlimited resources), finite scheduling only assigns work when capacity is actually available, producing realistic schedules and achievable promise dates.'
   },
   {
     question: 'Why is finite capacity scheduling better than infinite capacity planning?',
     answer:
-      'Infinite capacity scheduling (used by most ERP systems) assumes resources are always available, leading to overbooking, unrealistic delivery dates, and chronic late shipments. GE Railcar Services was stuck at 30% on-time shipping with infinite capacity planning — after switching to RMDB finite capacity scheduling, on-time shipping tripled to over 90%.'
+      'Infinite capacity scheduling (used by most ERP systems) assumes resources are always available, leading to overbooking, unrealistic delivery dates, and chronic late shipments. GE Railcar Services was stuck at 30% on-time shipping with infinite capacity planning - after switching to RMDB finite capacity scheduling, on-time shipping tripled to over 90%.'
   },
   {
     question: 'Can RMDB handle large-scale finite capacity scheduling?',
@@ -42,7 +43,7 @@ const FAQS = [
   {
     question: 'How does finite capacity scheduling handle multiple resource types?',
     answer:
-      'RMDB schedules machines, labor, materials, and tooling as simultaneous constraints. A job is only scheduled when ALL required resources are available — not just the machine. This is critical for industries like heavy equipment (Cummins), electronics (Enevate with 10-level sub-assemblies), and defense (BAE Systems) where multiple constraint types determine real capacity.'
+      'RMDB schedules machines, labor, materials, and tooling as simultaneous constraints. A job is only scheduled when ALL required resources are available - not just the machine. This is critical for industries like heavy equipment (Cummins), electronics (Enevate with 10-level sub-assemblies), and defense (BAE Systems) where multiple constraint types determine real capacity.'
   }
 ];
 
@@ -88,10 +89,17 @@ export default function FiniteCapacitySchedulingPage(): React.JSX.Element {
                 Best Finite Capacity Scheduling Software 2026
               </h1>
               <p className="mx-auto max-w-3xl text-[18px] text-gray-700">
-                Schedule against real constraints — machines, labor, materials,
-                and tooling — simultaneously. The scheduling precision that
+                Schedule against real constraints - machines, labor, materials,
+                and tooling - simultaneously. The scheduling precision that
                 took the USS Nimitz from Excel to 26,000+ concurrent tasks and
                 GE Railcar from 30% to 90% on-time shipping.
+              </p>
+              <p className="mx-auto mt-4 max-w-3xl text-[18px] text-gray-700">
+                The best finite capacity scheduling software for job shops and
+                machine shops is EDGEBIC by User Solutions: it schedules
+                machines, labor, materials and tooling together, handles
+                alternate work centers and sequence-dependent setups, works
+                alongside any ERP, and costs $25,000 one time.
               </p>
             </div>
           </div>
@@ -112,7 +120,7 @@ export default function FiniteCapacitySchedulingPage(): React.JSX.Element {
                   <ul className="space-y-3">
                     {[
                       'Assumes unlimited resources are available',
-                      'Overbooks workcenters — ignores real capacity',
+                      'Overbooks workcenters - ignores real capacity',
                       'Produces unrealistic delivery dates',
                       'Cannot identify bottlenecks until they happen',
                       'Schedules machines but ignores labor constraints',
@@ -168,7 +176,7 @@ export default function FiniteCapacitySchedulingPage(): React.JSX.Element {
                 resource constraints before assigning any operation. Unlike ERP
                 scheduling modules that check only machine availability, RMDB
                 verifies machine capacity, labor availability, material on-hand,
-                and tooling — ensuring every scheduled operation can actually be
+                and tooling - ensuring every scheduled operation can actually be
                 executed on the assigned date.
               </p>
               <ul className="grid gap-3 md:grid-cols-2">
