@@ -11,7 +11,8 @@ export const metadata = createPageMetadata({
     'Expert production scheduling consultants helping manufacturers implement finite-capacity APS software in 5 days. RMDB implementation, ERP integration, and scheduling process design since 1991.',
   path: '/consulting',
   keywords:
-    'production scheduling consultant, production planning consultant USA, APS implementation services, manufacturing scheduling consultant, finite capacity scheduling implementation, RMDB implementation, production scheduling consulting, manufacturing software consultant Michigan'
+    'production scheduling consultant, production planning consultant USA, APS implementation services, manufacturing scheduling consultant, finite capacity scheduling implementation, RMDB implementation, production scheduling consulting, manufacturing software consultant Michigan, production scheduling consulting UK, APS implementation Europe',
+  modifiedTime: '2026-08-28'
 });
 
 export default function ConsultingPage(): React.JSX.Element {
@@ -28,7 +29,7 @@ export default function ConsultingPage(): React.JSX.Element {
               Production Scheduling Consulting & APS Implementation
             </h1>
             <p className="mb-8 text-xl text-blue-100">
-              We help manufacturers replace spreadsheet chaos with a live finite-capacity schedule — in 5 days, not 5 months. Our consultants have implemented production scheduling at 1,000+ facilities including GE, Cummins, and BAE Systems.
+              We help manufacturers replace spreadsheet chaos with a live finite-capacity schedule - in 5 days, not 5 months. Our consultants have implemented production scheduling at 1,000+ facilities including GE, Cummins, and BAE Systems. User Solutions provides production scheduling consulting and APS implementation services, on-site or remote, for manufacturers in North America, the UK and Europe.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Button

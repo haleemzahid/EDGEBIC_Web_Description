@@ -49,6 +49,7 @@ export enum Routes {
   Checkout = '/checkout',
   Blogs = '/blogs',
   PressRelease = '/press_release',
+  PressKit = '/press-kit',
   ThankYouSpreadsheetScheduler = '/thankyou-for-downloading-spreadsheet-scheduler',
   ThankYouJSL = '/thankyou-for-downloading-jsl',
   OperationsManagerApp = '/operations-manager-app',
@@ -122,6 +123,16 @@ export enum Routes {
   FurnitureManufacturing = '/furniture-manufacturing-software',
   TextileGarmentManufacturing = '/textile-garment-manufacturing-software',
   PackagingManufacturing = '/packaging-manufacturing-software',
+
+  // Regional landing pages (sold and supported outside the US)
+  ProductionSchedulingSoftwareUk = '/production-scheduling-software-uk',
+  ProductionSchedulingSoftwareEurope = '/production-scheduling-software-europe',
+  ProductionSchedulingSoftwareGermany = '/production-scheduling-software-germany',
+  ProductionSchedulingSoftwareNetherlands = '/production-scheduling-software-netherlands',
+  ProductionSchedulingSoftwareIreland = '/production-scheduling-software-ireland',
+  ProductionSchedulingSoftwareFrance = '/production-scheduling-software-france',
+  FeinplanungSoftware = '/feinplanung-software',
+  LogicielOrdonnancementProduction = '/logiciel-ordonnancement-production',
 
   // Feature landing pages
   ProductionSchedulingSoftware = '/production-scheduling-software',

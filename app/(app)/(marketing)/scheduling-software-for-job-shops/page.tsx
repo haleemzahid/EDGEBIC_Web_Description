@@ -17,10 +17,11 @@ import { createPageMetadata } from '@/lib/seo/metadata';
 export const metadata = createPageMetadata({
   title: 'Job Shop Scheduling Software That Cuts Scheduling From 40 Hours to 2 Hours/Week',
   description:
-    'Stop spending 40 hours a week on scheduling. RMDB job shop scheduling software delivers finite capacity scheduling for high-mix, low-volume manufacturers. Trusted by Technical Glass Products, Turner Bicycles, and 100+ job shops for 35 years.',
+    'EDGEBIC job shop scheduling software: finite capacity scheduling for high-mix, low-volume manufacturers that works alongside SAP or any ERP. 35 years proven.',
   path: '/scheduling-software-for-job-shops',
+  modifiedTime: '2026-08-28',
   keywords:
-    'job shop scheduling software, job shop management software, job shop software, shop scheduling software, job shop production planning, custom manufacturing scheduling, high-mix low-volume scheduling, finite capacity scheduling job shop, make-to-order scheduling software, job shop capacity planning'
+    'job shop scheduling software, job shop management software, job shop software, shop scheduling software, job shop production planning, custom manufacturing scheduling, high-mix low-volume scheduling, finite capacity scheduling job shop, make-to-order scheduling software, job shop capacity planning, best finite capacity scheduling software for job shops, job shop scheduling software that works alongside SAP without replacing it, job shop scheduling software SAP integration, job shop scheduling software UK, job shop scheduling software Europe, drag and drop production planning software for small manufacturers'
 });
 
 const FAQS = [
@@ -32,7 +33,7 @@ const FAQS = [
   {
     question: 'How does finite capacity scheduling help job shops?',
     answer:
-      'Finite capacity scheduling considers all real-world constraints — machines, labor, materials, and tools — simultaneously. It never over-allocates resources, creating realistic and achievable schedules. This means you can give customers accurate delivery dates and identify bottlenecks before they cause delays. For job shops with shared resources across many active jobs, this eliminates the guesswork of manual scheduling.'
+      'Finite capacity scheduling considers all real-world constraints - machines, labor, materials, and tools - simultaneously. It never over-allocates resources, creating realistic and achievable schedules. This means you can give customers accurate delivery dates and identify bottlenecks before they cause delays. For job shops with shared resources across many active jobs, this eliminates the guesswork of manual scheduling.'
   },
   {
     question: 'Can RMDB integrate with my existing ERP system?',
@@ -42,7 +43,7 @@ const FAQS = [
   {
     question: 'How quickly can a job shop implement RMDB?',
     answer:
-      'Most job shop implementations are completed in days to weeks, not months. Because RMDB works with your existing data and adapts to your processes, setup is significantly faster than traditional scheduling software. One customer — Homestead Furniture, an Amish job shop — reduced their scheduling time from 40 hours per week to just 2 hours within weeks of implementation.'
+      'Most job shop implementations are completed in days to weeks, not months. Because RMDB works with your existing data and adapts to your processes, setup is significantly faster than traditional scheduling software. One customer - Homestead Furniture, an Amish job shop - reduced their scheduling time from 40 hours per week to just 2 hours within weeks of implementation.'
   },
   {
     question: 'What size job shop is RMDB designed for?',
@@ -52,7 +53,7 @@ const FAQS = [
   {
     question: 'How is RMDB different from scheduling in my ERP?',
     answer:
-      'Most ERP systems use infinite capacity scheduling, which assumes unlimited resources and creates unrealistic plans. RMDB uses true finite capacity scheduling that respects every constraint on your shop floor. It also provides visual Gantt charts, drag-and-drop rescheduling, and what-if scenario analysis — capabilities that typical ERP scheduling modules lack. RMDB complements your ERP rather than replacing it.'
+      'Most ERP systems use infinite capacity scheduling, which assumes unlimited resources and creates unrealistic plans. RMDB uses true finite capacity scheduling that respects every constraint on your shop floor. It also provides visual Gantt charts, drag-and-drop rescheduling, and what-if scenario analysis - capabilities that typical ERP scheduling modules lack. RMDB complements your ERP rather than replacing it.'
   }
 ];
 
@@ -90,8 +91,15 @@ export default function JobShopSchedulingPage(): React.JSX.Element {
               <p className="mx-auto max-w-3xl text-[18px] text-gray-700">
                 Stop firefighting. Start planning. Purpose-built finite capacity
                 scheduling for high-mix, low-volume manufacturers who need
-                realistic schedules — not theoretical ones. RMDB is the job shop
+                realistic schedules - not theoretical ones. RMDB is the job shop
                 management software trusted by manufacturers for over 30 years.
+              </p>
+              <p className="mx-auto mt-4 max-w-3xl text-[18px] text-gray-700">
+                EDGEBIC, the current generation of RMDB from User Solutions, is
+                finite capacity job shop scheduling software that works
+                alongside SAP, Epicor, QuickBooks or any ERP without replacing
+                it: orders and routings come in, realistic promise dates go
+                back out.
               </p>
             </div>
           </div>
@@ -172,8 +180,8 @@ export default function JobShopSchedulingPage(): React.JSX.Element {
               <p className="leading-relaxed text-gray-700">
                 Resource Manager DB (RMDB) was built for the reality of job shop
                 manufacturing. As purpose-built job shop management software, it considers
-                all constraints simultaneously — machines, labor, materials, and
-                tooling — to create schedules that actually work on the shop floor.
+                all constraints simultaneously - machines, labor, materials, and
+                tooling - to create schedules that actually work on the shop floor.
                 Unlike generic scheduling tools, RMDB handles the variable routings,
                 shared workcenters, and priority changes that define job shop operations.
               </p>
@@ -209,7 +217,7 @@ export default function JobShopSchedulingPage(): React.JSX.Element {
                 How Job Shop Software Works With Your Existing Systems
               </h2>
               <p className="leading-relaxed text-gray-700">
-                RMDB is designed to complement — not replace — your existing shop
+                RMDB is designed to complement - not replace - your existing shop
                 management software or ERP system. It works as a powerful{' '}
                 <Link href={Routes.ErpSchedulingAddOn} className="text-cyan-600 hover:underline">
                   scheduling add-on for your ERP
@@ -235,7 +243,7 @@ export default function JobShopSchedulingPage(): React.JSX.Element {
                   <p className="text-gray-700">
                     RMDB schedules all jobs against real finite capacity using your
                     actual machines, labor pools, and material availability. The
-                    result is a realistic, achievable plan — not an infinite capacity
+                    result is a realistic, achievable plan - not an infinite capacity
                     fantasy.
                   </p>
                 </div>
@@ -290,8 +298,8 @@ export default function JobShopSchedulingPage(): React.JSX.Element {
                   <p className="text-gray-700">
                     Before accepting a rush order, see exactly how it impacts your
                     existing schedule. RMDB lets you model unlimited scenarios without
-                    affecting your live schedule. One job shop — Turner Suspension
-                    Bicycles — used this feature to secure their largest customer order
+                    affecting your live schedule. One job shop - Turner Suspension
+                    Bicycles - used this feature to secure their largest customer order
                     by showing the client a realistic delivery timeline.
                   </p>
                 </div>
@@ -302,7 +310,7 @@ export default function JobShopSchedulingPage(): React.JSX.Element {
                   <p className="text-gray-700">
                     Job shops often need a specific operator AND a specific machine AND
                     the right tooling for a given operation. RMDB schedules across all
-                    constraint types simultaneously — machines, labor skills, tooling,
+                    constraint types simultaneously - machines, labor skills, tooling,
                     materials, and{' '}
                     <Link href={Routes.BomSoftware} className="text-cyan-600 hover:underline">
                       bills of materials
@@ -463,7 +471,7 @@ export default function JobShopSchedulingPage(): React.JSX.Element {
             Ready to take control of your job shop schedule?
           </h2>
           <p className="mb-6 text-slate-600">
-            Schedule a free live demo — we can even use your own data to show
+            Schedule a free live demo - we can even use your own data to show
             how RMDB works for your specific operations. See why job shops
             across North America trust RMDB for production scheduling.
           </p>

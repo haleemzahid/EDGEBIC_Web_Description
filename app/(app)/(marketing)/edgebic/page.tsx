@@ -21,7 +21,7 @@ export const metadata = createProductMetadata({
     'EDGEBIC by User Solutions is the next-generation finite capacity planning and scheduling platform: the successor to RMDB and EDGEBI. Drag-and-drop graphical routing designer, TOC bottleneck scheduling, multi-shift allocation, mathematical schedule optimization, shop-floor kiosk tracking, and flexible ERP integration through Excel/CSV import masks.',
   path: '/edgebic',
   keywords:
-    'EDGEBIC, EDGEBIC software, EDGEBIC User Solutions, finite capacity planning software, finite capacity scheduling, production scheduling software, RMDB successor, EDGEBI successor, APS software, advanced planning and scheduling, drag and drop production scheduling, graphical routing designer, TOC scheduling software, schedule optimization software'
+    'EDGEBIC, EDGEBIC software, EDGEBIC User Solutions, finite capacity planning software, finite capacity scheduling, production scheduling software, RMDB successor, EDGEBI successor, APS software, advanced planning and scheduling, drag and drop production scheduling, graphical routing designer, TOC scheduling software, schedule optimization software, drag and drop production planning software for small manufacturers, best scheduling software for multi-shift manufacturing operations, best software for optimizing multi-shift factory schedules, manufacturing what-if scenario planning tools, production scheduling software UK, production scheduling software Europe, Produktionsplanungssoftware, APS software Germany'
 });
 
 const FAQS = [

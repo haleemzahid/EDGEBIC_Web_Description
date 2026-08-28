@@ -12,12 +12,13 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'EDGEBIC ERP Integration — JobBOSS, Epicor, Fourth Shift & More',
+  title: 'EDGEBIC ERP Integration: JobBOSS, Epicor, SAP, QuickBooks & More',
   description:
     'How EDGEBIC integrates with JobBOSS, Epicor, Fourth Shift, SAP, and virtually any ERP: flexible Excel/CSV/database import masks bring items, routings, and orders in; finite capacity schedules and realistic dates flow back out. The same proven approach behind 35 years of ERP integrations.',
   path: '/edgebic-erp-integration',
+  modifiedTime: '2026-08-28',
   keywords:
-    'EDGEBIC ERP integration, JobBOSS scheduling software, JobBOSS finite capacity scheduling, Epicor scheduling add-on, Fourth Shift scheduling, ERP scheduling integration, production scheduling ERP add-on, Excel CSV ERP import scheduling'
+    'EDGEBIC ERP integration, JobBOSS scheduling software, JobBOSS finite capacity scheduling, Epicor scheduling add-on, Fourth Shift scheduling, ERP scheduling integration, production scheduling ERP add-on, Excel CSV ERP import scheduling, top production scheduling tools that integrate with existing ERP systems, job shop scheduling software that works alongside SAP without replacing it, QuickBooks scheduling integration, SAP scheduling integration, EDGEBIC ERP integration UK, EDGEBIC ERP integration Europe'
 });
 
 const FAQS = [

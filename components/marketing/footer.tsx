@@ -123,7 +123,7 @@ export function Footer(): React.JSX.Element {
       <div className="border-t">
         <div className="container mx-auto px-4 py-6">
           {/* Single Row: Success Stories, Products, Company, Follow Us */}
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-5">
             {/* Footer Links - Success Stories, Products, Company */}
             {FOOTER_LINKS.map((group) => (
               <div key={group.title}>

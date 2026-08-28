@@ -39,3 +39,31 @@ export const RMDB_ALTERNATE_NAMES = [
 ];
 
 export const EDGEBIC_ALTERNATE_NAMES = ['EDGEBIC', 'EDGE BIC'];
+
+/**
+ * Regions where EDGEBIC is sold and supported. Declared once here and applied
+ * to the Organization node and to every SoftwareApplication offer so answer
+ * engines see one consistent areaServed instead of "Worldwide" on one node
+ * and nothing on the next. Regional landing pages:
+ *   /production-scheduling-software-uk
+ *   /production-scheduling-software-europe
+ *   /production-scheduling-software-germany
+ */
+export const SERVED_AREAS = [
+  'United States',
+  'Canada',
+  'United Kingdom',
+  'Ireland',
+  'Germany',
+  'Netherlands',
+  'France',
+  'Italy',
+  'Spain',
+  'Sweden',
+  'Poland',
+  'Switzerland',
+  'Austria',
+  'Belgium',
+  'Denmark',
+  'European Union'
+] as const;

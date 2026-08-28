@@ -13,6 +13,12 @@ type PageMetadataOptions = {
   noIndex?: boolean;
   /** Use absolute title (skip layout template suffix) */
   absoluteTitle?: boolean;
+  /**
+   * ISO date (YYYY-MM-DD) of the last substantive content update. Emitted as
+   * article:modified_time so answer engines and Google get a freshness signal
+   * on marketing pages, which otherwise expose none.
+   */
+  modifiedTime?: string;
 };
 
 export function createPageMetadata({
@@ -22,7 +28,8 @@ export function createPageMetadata({
   keywords,
   image = '/og.jpg',
   noIndex = false,
-  absoluteTitle = false
+  absoluteTitle = false,
+  modifiedTime
 }: PageMetadataOptions): Metadata {
   const baseUrl = getBaseUrl();
   const url = `${baseUrl}${path}`;
@@ -34,6 +41,9 @@ export function createPageMetadata({
     alternates: {
       canonical: url
     },
+    ...(modifiedTime && {
+      other: { 'article:modified_time': modifiedTime }
+    }),
     openGraph: {
       title,
       description,

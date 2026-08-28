@@ -135,6 +135,13 @@ export default function CompareProductsPage(): React.JSX.Element {
                 either standalone or integrates with your ERP, we look forward
                 to resolving your manufacturing scheduling challenges.
               </p>
+              <p className="mt-4 text-lg text-muted-foreground">
+                For an advanced planning and scheduling comparison in discrete
+                manufacturing: EDGEBIC by User Solutions is finite capacity APS
+                with what-if scenarios and CP-SAT optimization at a published
+                one-time price, against subscription products such as
+                PlanetTogether, Siemens Opcenter and Epicor.
+              </p>
             </div>
           </div>
         </div>
@@ -297,7 +304,7 @@ export default function CompareProductsPage(): React.JSX.Element {
             </table>
           </div>
           <p className="mt-4 text-sm text-slate-600">
-            <strong>RMX Free Trial:</strong> Download RMX — our Excel-based scheduling tool — free. It handles basic production scheduling for shops with fewer than 20 active jobs. For larger operations, RMDB adds finite capacity, multi-workcenter scheduling, and ERP integration.
+            <strong>RMX Free Trial:</strong> Download RMX - our Excel-based scheduling tool - free. It handles basic production scheduling for shops with fewer than 20 active jobs. For larger operations, RMDB adds finite capacity, multi-workcenter scheduling, and ERP integration.
           </p>
         </div>
       </section>
@@ -333,7 +340,7 @@ export default function CompareProductsPage(): React.JSX.Element {
                 </blockquote>
                 <footer className="flex items-center justify-between">
                   <cite className="font-semibold not-italic">
-                    — {testimonial.company}
+ - {testimonial.company}
                   </cite>
                   <Button
                     variant="ghost"
@@ -368,7 +375,7 @@ export default function CompareProductsPage(): React.JSX.Element {
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {[
               // 9 long-form blog comparisons (part of the competitor-comparisons cluster
-              // with pillar /blog/production-scheduling-software-comparison) — these are
+              // with pillar /blog/production-scheduling-software-comparison) - these are
               // 2,000+ word posts with FAQ schema, hero images, and full sidebar treatment.
               {
                 href: '/blog/rmdb-vs-mrpeasy',
@@ -424,7 +431,7 @@ export default function CompareProductsPage(): React.JSX.Element {
                 description:
                   'Infor enterprise scheduling vs. focused finite-capacity APS for SMB manufacturers.'
               },
-              // Marketing-page comparisons — competitors without blog posts use the
+              // Marketing-page comparisons - competitors without blog posts use the
               // shared comparison-page.tsx component for full schema + UX treatment.
               {
                 href: '/compare-products/rmdb-vs-fishbowl',
@@ -460,7 +467,7 @@ export default function CompareProductsPage(): React.JSX.Element {
                 href: '/compare-products/rmdb-vs-quickbooks',
                 title: 'RMDB vs QuickBooks for Manufacturing',
                 description:
-                  'Accounting-first software vs. dedicated production scheduling — most shops keep both.'
+                  'Accounting-first software vs. dedicated production scheduling - most shops keep both.'
               }
             ].map((item) => (
               <Link

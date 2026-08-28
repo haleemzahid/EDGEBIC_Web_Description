@@ -484,6 +484,7 @@ export const FOOTER_LINKS: Array<{
       { name: 'Consulting', href: '/consulting', external: false },
       { name: 'Training', href: '/training', external: false },
       { name: 'News', href: '/news', external: false },
+      { name: 'Press Kit', href: Routes.PressKit, external: false },
       { name: 'Why User Solutions', href: '/why-user-solutions', external: false }
     ]
   },
@@ -504,6 +505,51 @@ export const FOOTER_LINKS: Array<{
       { name: 'Privacy Policy', href: '/privacy-policy', external: false },
       { name: 'Cookie Policy', href: '/cookie-policy', external: false },
       { name: 'Terms of Use', href: '/terms-of-use', external: false }
+    ]
+  },
+  {
+    title: 'Regions We Serve',
+    links: [
+      {
+        name: 'United Kingdom',
+        href: Routes.ProductionSchedulingSoftwareUk,
+        external: false
+      },
+      {
+        name: 'Europe (EU)',
+        href: Routes.ProductionSchedulingSoftwareEurope,
+        external: false
+      },
+      {
+        name: 'Germany (DACH)',
+        href: Routes.ProductionSchedulingSoftwareGermany,
+        external: false
+      },
+      {
+        name: 'Netherlands',
+        href: Routes.ProductionSchedulingSoftwareNetherlands,
+        external: false
+      },
+      {
+        name: 'Ireland',
+        href: Routes.ProductionSchedulingSoftwareIreland,
+        external: false
+      },
+      {
+        name: 'France',
+        href: Routes.ProductionSchedulingSoftwareFrance,
+        external: false
+      },
+      {
+        name: 'Feinplanung Software (DE)',
+        href: Routes.FeinplanungSoftware,
+        external: false
+      },
+      {
+        name: 'Ordonnancement (FR)',
+        href: Routes.LogicielOrdonnancementProduction,
+        external: false
+      }
     ]
   }
 ];

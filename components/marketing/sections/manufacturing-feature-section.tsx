@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import Image from 'next/image';
-// import Link from 'next/link';
+import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Brain,
@@ -22,6 +22,7 @@ import {
 
 import { ScreenshotSlideshow } from '@/components/marketing/fragments/screenshot-slideshow';
 import { EdgebicPlanFlow } from '@/components/marketing/sections/edgebic-plan-flow';
+import { Routes } from '@/constants/routes';
 
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
@@ -284,6 +285,22 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <p className="text-md text-slate-600">
               We guide you through a structured five-step path to move from raw
               data to an Optimal Schedule that reflects shop-floor reality.
+              Since 1991, User Solutions has served manufacturers across North
+              America, the{' '}
+              <Link
+                href={Routes.ProductionSchedulingSoftwareUk}
+                className="text-blue-600 hover:underline"
+              >
+                United Kingdom
+              </Link>{' '}
+              and{' '}
+              <Link
+                href={Routes.ProductionSchedulingSoftwareEurope}
+                className="text-blue-600 hover:underline"
+              >
+                Europe
+              </Link>{' '}
+              from our Michigan headquarters.
             </p>
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Expandable Cards Column */}

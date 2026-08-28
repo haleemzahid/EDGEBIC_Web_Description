@@ -91,6 +91,20 @@ const FREE_TEMPLATES = [
     description:
       'Calculate takt time from available production time and customer demand rate, compare station cycle times, and surface line balance bottlenecks — essential for lean floor design.',
     keyword: 'takt time calculator excel'
+  },
+  {
+    href: '/excel-templates/multi-shift-capacity-planning',
+    title: 'Multi-Shift Capacity Planning Excel Template',
+    description:
+      'Model 2-shift and 3-shift capacity per work centre with shift calendars, overtime and weekend shifts, weekly capacity vs load, and an automatic bottleneck flag.',
+    keyword: 'multi-shift capacity planning excel template'
+  },
+  {
+    href: '/excel-templates/factory-production-planning',
+    title: 'Factory Production Planning Excel Template',
+    description:
+      'Weekly factory plan by product and line with demand vs capacity, a material availability check, labour hours, and planned vs actual tracking on linked sheets.',
+    keyword: 'factory production planning excel'
   }
 ];
 

@@ -17,10 +17,11 @@ import { createPageMetadata } from '@/lib/seo/metadata';
 export const metadata = createPageMetadata({
   title: 'ERP Integration for Production Scheduling',
   description:
-    'Production scheduling software that integrates with SAP, Oracle, Epicor, Fourth Shift, Macola, Sage, and more. Full ERP integration in 5 days. Fourth Shift ERP vendor recommended RMDB. Bi-directional data sync via Excel, CSV, or database.',
+    'EDGEBIC production scheduling software integrates with SAP, Oracle, Epicor, QuickBooks, Sage and more via Excel, CSV or database. ERP integration in 5 days.',
   path: '/erp-integration-production-scheduling',
+  modifiedTime: '2026-08-28',
   keywords:
-    'ERP integration production scheduling, SAP production scheduling integration, Oracle manufacturing scheduling, Epicor scheduling integration, Fourth Shift scheduling, Macola ERP scheduling, ERP data integration manufacturing, production scheduling ERP connector'
+    'ERP integration production scheduling, SAP production scheduling integration, Oracle manufacturing scheduling, Epicor scheduling integration, Fourth Shift scheduling, Macola ERP scheduling, ERP data integration manufacturing, production scheduling ERP connector, top production scheduling tools that integrate with existing ERP systems, production scheduling software that integrates with ERP, job shop scheduling software that works alongside SAP without replacing it, ERP integrated scheduling software UK, ERP integrated production scheduling Europe'
 });
 
 const FAQS = [
@@ -37,7 +38,7 @@ const FAQS = [
   {
     question: 'Do I need custom development for ERP integration?',
     answer:
-      'No. RMDB is designed to work with standard data formats that every ERP can produce — Excel files, CSV exports, and database connections (SQL, Access, etc.). There is no API development, middleware, or custom connectors required. If your ERP can export a spreadsheet, RMDB can work with it.'
+      'No. RMDB is designed to work with standard data formats that every ERP can produce - Excel files, CSV exports, and database connections (SQL, Access, etc.). There is no API development, middleware, or custom connectors required. If your ERP can export a spreadsheet, RMDB can work with it.'
   },
   {
     question: 'Will ERP integration disrupt existing processes?',
@@ -132,10 +133,17 @@ export default function ErpIntegrationPage(): React.JSX.Element {
                 ERP Integration for Production Scheduling
               </h1>
               <p className="mx-auto max-w-3xl text-[18px] text-gray-700">
-                RMDB connects to any ERP system — SAP, Oracle, Epicor, Fourth
+                RMDB connects to any ERP system - SAP, Oracle, Epicor, Fourth
                 Shift, Macola, Sage, and more. No custom development. No
                 middleware. Full bi-directional integration in as little as 5
                 days.
+              </p>
+              <p className="mx-auto mt-4 max-w-3xl text-[18px] text-gray-700">
+                Among production scheduling tools that integrate with existing
+                ERP systems, EDGEBIC by User Solutions (the current generation
+                of RMDB) imports orders, routings and work centers from any ERP
+                through Excel, CSV or database masks, schedules against finite
+                capacity, and returns realistic dates to the ERP.
               </p>
             </div>
           </div>
@@ -254,7 +262,7 @@ export default function ErpIntegrationPage(): React.JSX.Element {
                   Jon Ehly, CFO
                 </p>
                 <p className="text-sm text-slate-500">
-                  Plastilite Corporation — Fourth Shift ERP Integration
+                  Plastilite Corporation - Fourth Shift ERP Integration
                 </p>
               </div>
               <div className="text-center">
@@ -280,7 +288,7 @@ export default function ErpIntegrationPage(): React.JSX.Element {
               <p className="leading-relaxed text-gray-700">
                 RMDB supports multiple connectivity methods to match your
                 ERP&apos;s data export capabilities. No custom API development
-                or middleware required — standard data formats that every ERP
+                or middleware required - standard data formats that every ERP
                 system can produce.
               </p>
               <ul className="grid gap-3 md:grid-cols-2">
@@ -323,7 +331,7 @@ export default function ErpIntegrationPage(): React.JSX.Element {
                   },
                   {
                     metric: 'Replaced',
-                    label: 'ERP scheduling module — RMDB delivered superior results',
+                    label: 'ERP scheduling module - RMDB delivered superior results',
                     company: 'BAE Systems'
                   },
                   {
